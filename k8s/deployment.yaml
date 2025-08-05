@@ -1,0 +1,229 @@
+# SPRINT 4 - KUBERNETES DEPLOYMENT FOR 500+ USERS SCALING
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fortnite-pronos-app
+  namespace: fortnite-pronos
+  labels:
+    app: fortnite-pronos
+    component: backend
+    version: v1.0.0
+  annotations:
+    description: "Fortnite Pronos Backend Application Deployment"
+    deployment.kubernetes.io/revision: "1"
+spec:
+  replicas: 3  # Horizontal scaling pour 500+ users
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime deployment
+  
+  selector:
+    matchLabels:
+      app: fortnite-pronos
+      component: backend
+  
+  template:
+    metadata:
+      labels:
+        app: fortnite-pronos
+        component: backend
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      # Anti-affinity pour distribution sur différents nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - fortnite-pronos
+              topologyKey: kubernetes.io/hostname
+      
+      containers:
+      - name: fortnite-pronos
+        image: fortnite-pronos:latest
+        imagePullPolicy: Always
+        
+        # Resource limits optimisés pour 500+ users
+        resources:
+          limits:
+            cpu: "2000m"      # 2 CPU cores
+            memory: "6Gi"     # 6GB RAM
+            ephemeral-storage: "5Gi"
+          requests:
+            cpu: "1000m"      # 1 CPU core minimum
+            memory: "4Gi"     # 4GB RAM minimum
+            ephemeral-storage: "2Gi"
+        
+        # Environment variables
+        envFrom:
+        - configMapRef:
+            name: fortnite-pronos-config
+        - secretRef:
+            name: fortnite-pronos-secrets
+        
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        
+        # Ports
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: actuator
+          containerPort: 8081
+          protocol: TCP
+        
+        # Health checks optimisés
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        
+        # Startup probe pour éviter les timeouts au démarrage
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # 5 minutes max pour démarrer
+          successThreshold: 1
+        
+        # Volume mounts
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: tmp-volume
+          mountPath: /tmp
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      
+      # Volumes
+      volumes:
+      - name: logs-volume
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # DNS policy
+      dnsPolicy: ClusterFirst
+      
+      # Termination grace period
+      terminationGracePeriodSeconds: 45
+
+---
+# HORIZONTAL POD AUTOSCALER POUR SCALING AUTOMATIQUE
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fortnite-pronos-hpa
+  namespace: fortnite-pronos
+  labels:
+    app: fortnite-pronos
+    component: autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fortnite-pronos-app
+  
+  minReplicas: 3      # Minimum pour haute disponibilité
+  maxReplicas: 10     # Maximum pour gérer les pics de charge
+  
+  # Métriques pour scaling intelligent
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale up à 70% CPU
+  
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Scale up à 80% mémoire
+  
+  # Comportement de scaling
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50      # Augmente de 50% max
+        periodSeconds: 60
+      - type: Pods
+        value: 2       # Ou ajoute 2 pods max
+        periodSeconds: 60
+      selectPolicy: Max
+    
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Attendre 5 minutes avant de scale down
+      policies:
+      - type: Percent
+        value: 25      # Réduit de 25% max
+        periodSeconds: 60
+      - type: Pods
+        value: 1       # Ou retire 1 pod max
+        periodSeconds: 60
+      selectPolicy: Min

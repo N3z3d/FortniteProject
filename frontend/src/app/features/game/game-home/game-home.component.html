@@ -1,0 +1,173 @@
+<!-- Games Management Page -->
+<div class="games-management-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Gestion des Games</h1>
+    <p>Créez, rejoignez et gérez vos parties Fantasy League</p>
+    
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="createGame()">
+        <mat-icon>add</mat-icon>
+        Créer une Game
+      </button>
+      <button mat-stroked-button color="accent" (click)="joinGame()">
+        <mat-icon>group_add</mat-icon>
+        Rejoindre une Game
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner diameter="50"></mat-progress-spinner>
+    <p>Chargement de vos games...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <mat-icon color="warn" class="error-icon">error</mat-icon>
+    <h3>Erreur de chargement</h3>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="reloadUserGames()">
+      Réessayer
+    </button>
+  </div>
+
+  <!-- My Games Section -->
+  <section class="my-games-section" *ngIf="!loading && !error">
+    <h2>Mes Games ({{ getGameCount() }})</h2>
+    
+    <div class="games-grid" *ngIf="hasGames()">
+      <mat-card 
+        *ngFor="let game of userGames; trackBy: trackByGameId" 
+        class="game-card"
+        [class.selected]="selectedGame?.id === game.id"
+        (click)="selectGame(game)">
+        
+        <mat-card-header>
+          <mat-icon mat-card-avatar>sports_esports</mat-icon>
+          <mat-card-title>{{ game.name }}</mat-card-title>
+          <mat-card-subtitle>
+            {{ game.participantCount }} participants • {{ getTotalFortnitePlayers() }} joueurs Fortnite
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="game-status-info">
+            <mat-chip 
+              [color]="getStatusColor(game.status)" 
+              selected 
+              class="status-chip">
+              {{ getStatusLabel(game.status) }}
+            </mat-chip>
+            
+            <span class="creation-date" *ngIf="game.createdAt">
+              Créée le {{ game.createdAt | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          
+          <div class="game-participants" *ngIf="game.participantCount > 0">
+            <div class="participants-preview">
+              <mat-icon>group</mat-icon>
+              <span>{{ game.participantCount }} participant(s)</span>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-button (click)="viewGame(game.id); $event.stopPropagation()">
+            <mat-icon>visibility</mat-icon>
+            Voir détails
+          </button>
+          
+          <button 
+            mat-button 
+            color="primary" 
+            *ngIf="game.status === 'ACTIVE'"
+            (click)="router.navigate(['/dashboard']); $event.stopPropagation()">
+            <mat-icon>dashboard</mat-icon>
+            Dashboard
+          </button>
+          
+          <button 
+            mat-button 
+            color="accent" 
+            *ngIf="game.status === 'DRAFTING'"
+            (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
+            <mat-icon>how_to_vote</mat-icon>
+            Draft
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+    
+    <!-- No Games Message -->
+    <div class="no-games-message" *ngIf="!hasGames()">
+      <mat-card class="empty-state-card">
+        <mat-card-content>
+          <mat-icon class="empty-icon">sports_esports</mat-icon>
+          <h3>Aucune game trouvée</h3>
+          <p>Vous ne participez à aucune game actuellement. Créez-en une nouvelle ou rejoignez une game existante !</p>
+          
+          <div class="empty-actions">
+            <button mat-raised-button color="primary" (click)="createGame()">
+              <mat-icon>add</mat-icon>
+              Créer ma première game
+            </button>
+            <button mat-button (click)="joinGame()">
+              <mat-icon>search</mat-icon>
+              Chercher des games
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </section>
+
+  <!-- Available Games Section -->
+  <section class="available-games-section" *ngIf="!loading && !error && availableGames.length > 0">
+    <h2>Games Disponibles</h2>
+    <p>Rejoignez des games créées par d'autres joueurs</p>
+    
+    <div class="games-grid">
+      <mat-card 
+        *ngFor="let game of availableGames; trackBy: trackByGameId" 
+        class="game-card available-game">
+        
+        <mat-card-header>
+          <mat-icon mat-card-avatar color="accent">group_add</mat-icon>
+          <mat-card-title>{{ game.name }}</mat-card-title>
+          <mat-card-subtitle>
+            {{ game.participantCount }} / {{ game.maxParticipants || 'Illimité' }} participants
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="game-status-info">
+            <mat-chip 
+              [color]="getStatusColor(game.status)" 
+              selected 
+              class="status-chip">
+              {{ getStatusLabel(game.status) }}
+            </mat-chip>
+          </div>
+          
+          <div class="game-description" *ngIf="game.description">
+            <p>{{ game.description }}</p>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-raised-button color="accent" (click)="joinSpecificGame(game)">
+            <mat-icon>group_add</mat-icon>
+            Rejoindre
+          </button>
+          <button mat-button (click)="viewGame(game.id)">
+            <mat-icon>info</mat-icon>
+            Détails
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </section>
+</div> 

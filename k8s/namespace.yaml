@@ -1,0 +1,14 @@
+# SPRINT 4 - KUBERNETES NAMESPACE CONFIGURATION
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fortnite-pronos
+  labels:
+    name: fortnite-pronos
+    environment: production
+    app: fortnite-pronos
+    version: v1.0.0
+  annotations:
+    description: "Fortnite Pronos Application - Production Namespace"
+    contact: "devops@fortnite-pronos.com"
+    monitoring: "enabled"

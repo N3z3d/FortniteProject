@@ -1,0 +1,553 @@
+// Import Premium Gaming Mixins
+@import '../../../shared/styles/mixins';
+
+/* Premium Gaming Game List */
+.game-list-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  background: var(--gradient-dark);
+  min-height: 100vh;
+  position: relative;
+  
+  // Animated background particles
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 25% 40%, rgba(var(--gaming-primary-rgb), 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 75% 60%, rgba(var(--gaming-accent-rgb), 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    @include floating(10s, 20px);
+  }
+}
+
+// Premium Gaming Header
+.game-list-header {
+  @include glass-card-dark();
+  @include fade-in-up(0s);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2xl);
+  padding: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+  
+  // Glowing border effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    @include gaming-gradient-bg();
+    opacity: 0.9;
+  }
+  
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    margin: 0;
+    font-size: 2.8rem;
+    @include gaming-text-gradient();
+    @include neon-glow(var(--gaming-primary), 0.4);
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: var(--space-md);
+    
+    button {
+      @include gaming-button();
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-md) var(--space-lg);
+      
+      &.mat-primary {
+        @include gaming-button(var(--gaming-primary));
+      }
+      
+      &.mat-accent {
+        @include gaming-button(var(--gaming-accent));
+      }
+      
+      mat-icon {
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// Premium Gaming Loading State
+.loading-container {
+  @include glass-card-dark();
+  @include fade-in-up(0.2s);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  text-align: center;
+  max-width: 500px;
+  margin: var(--space-3xl) auto;
+  
+  mat-spinner {
+    @include pulse-glow(var(--gaming-primary), 2s);
+  }
+  
+  p {
+    font-family: 'Inter', sans-serif;
+    margin-top: var(--space-lg);
+    color: var(--gaming-light);
+    font-size: 1.1rem;
+  }
+}
+
+// Premium Gaming Error State
+.error-container {
+  @include fade-in-up(0.3s);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2xl);
+  
+  .error-card {
+    @include glass-card-dark();
+    max-width: 500px;
+    text-align: center;
+    border: 2px solid var(--gaming-error);
+    
+    mat-card-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+      padding: var(--space-2xl);
+      
+      mat-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        color: var(--gaming-error);
+        @include neon-glow(var(--gaming-error), 0.5);
+      }
+      
+      p {
+        margin: 0;
+        color: var(--gaming-gray-light);
+        font-size: 1.1rem;
+      }
+      
+      button {
+        @include gaming-button(var(--gaming-error));
+      }
+    }
+  }
+}
+
+// Premium Gaming Games Grid
+.games-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xl);
+  
+  .games-section {
+    @include fade-in-up(0.3s);
+    
+    h2 {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      margin: 0 0 var(--space-xl) 0;
+      font-size: 2rem;
+      @include gaming-text-gradient();
+      @include neon-glow(var(--gaming-primary), 0.3);
+      padding-bottom: var(--space-md);
+      border-bottom: 2px solid rgba(var(--gaming-primary-rgb), 0.3);
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        @include gaming-gradient-bg();
+      }
+    }
+    
+    .games-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: var(--space-xl);
+    }
+  }
+}
+
+// Premium Gaming Game Cards
+.game-card {
+  @include premium-card(-8px, var(--gaming-primary));
+  @include fade-in-up(0.1s);
+  position: relative;
+  overflow: hidden;
+  
+  // Glowing animated border for available games
+  &.available {
+    border-left: 4px solid var(--gaming-success);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--gradient-success);
+      @include pulse-glow(var(--gaming-success), 2s);
+    }
+  }
+  
+  // Stagger animation for cards
+  &:nth-child(1) { animation-delay: 0.1s; }
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
+  &:nth-child(4) { animation-delay: 0.4s; }
+  &:nth-child(5) { animation-delay: 0.5s; }
+  &:nth-child(6) { animation-delay: 0.6s; }
+  &:nth-child(7) { animation-delay: 0.7s; }
+  &:nth-child(8) { animation-delay: 0.8s; }
+  &:nth-child(9) { animation-delay: 0.9s; }
+  &:nth-child(10) { animation-delay: 1.0s; }
+  &:nth-child(11) { animation-delay: 1.1s; }
+  &:nth-child(12) { animation-delay: 1.2s; }
+  
+  mat-card-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: var(--space-lg) var(--space-xl) 0;
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    
+    mat-card-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: var(--space-xs);
+      @include neon-glow(white, 0.2);
+    }
+    
+    mat-card-subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+  
+  mat-card-content {
+    padding: var(--space-lg) var(--space-xl);
+    background: var(--glass-bg-dark);
+    color: var(--gaming-light);
+  }
+  
+  mat-card-actions {
+    padding: var(--space-lg) var(--space-xl) var(--space-xl);
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    background: var(--glass-bg-dark);
+    
+    button {
+      @include gaming-button();
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: 0.9rem;
+      padding: var(--space-sm) var(--space-md);
+      
+      &.mat-button {
+        background: transparent;
+        color: var(--gaming-primary);
+        border: 2px solid var(--gaming-primary);
+        
+        &:hover {
+          background: rgba(var(--gaming-primary-rgb), 0.1);
+          transform: translateY(-2px);
+        }
+        
+        &[color="primary"] {
+          color: var(--gaming-primary);
+          border-color: var(--gaming-primary);
+        }
+        
+        &[color="accent"] {
+          color: var(--gaming-accent);
+          border-color: var(--gaming-accent);
+          
+          &:hover {
+            background: rgba(var(--gaming-accent-rgb), 0.1);
+          }
+        }
+        
+        &[color="warn"] {
+          color: var(--gaming-error);
+          border-color: var(--gaming-error);
+          
+          &:hover {
+            background: rgba(var(--gaming-error-rgb), 0.1);
+          }
+        }
+      }
+      
+      &.mat-raised-button {
+        &.mat-accent {
+          @include gaming-button(var(--gaming-accent));
+        }
+        
+        &.mat-warn {
+          @include gaming-button(var(--gaming-error));
+        }
+      }
+      
+      mat-icon {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  
+  .game-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    flex: 1;
+    
+    .stat {
+      @include glass-card-dark(0.3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--gaming-light);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-medium);
+      border: 1px solid rgba(var(--gaming-primary-rgb), 0.2);
+      transition: all var(--transition-fast);
+      
+      &:hover {
+        border-color: rgba(var(--gaming-primary-rgb), 0.5);
+        transform: translateX(4px);
+      }
+      
+      mat-icon {
+        font-size: 1.1rem;
+        width: 1.1rem;
+        height: 1.1rem;
+        color: var(--gaming-primary);
+      }
+    }
+  }
+  
+  .game-status {
+    display: flex;
+    justify-content: flex-end;
+    
+    mat-chip {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      height: 32px;
+      border-radius: var(--radius-large);
+      
+      &[color="primary"] {
+        background: var(--gradient-primary) !important;
+        color: white !important;
+      }
+      
+      &[color="accent"] {
+        background: var(--gradient-accent) !important;
+        color: white !important;
+      }
+      
+      &[color="warn"] {
+        background: linear-gradient(135deg, var(--gaming-error) 0%, #cc1f3d 100%) !important;
+        color: white !important;
+      }
+    }
+  }
+}
+
+// Premium Gaming Empty State
+.empty-state {
+  @include fade-in-up(0.4s);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3xl);
+  
+  .empty-card {
+    @include premium-card(-8px, var(--gaming-accent));
+    max-width: 600px;
+    text-align: center;
+    
+    mat-card-content {
+      padding: var(--space-3xl);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xl);
+      background: var(--glass-bg-dark);
+      color: var(--gaming-light);
+      
+      .empty-icon {
+        font-size: 5rem;
+        width: 5rem;
+        height: 5rem;
+        color: var(--gaming-accent);
+        @include neon-glow(var(--gaming-accent), 0.4);
+        @include floating(3s, 8px);
+      }
+      
+      h3 {
+        font-family: 'Orbitron', monospace;
+      font-weight: 700;
+        margin: 0;
+        font-size: 1.8rem;
+        @include gaming-text-gradient();
+      }
+      
+      p {
+        margin: 0;
+        color: var(--gaming-gray-light);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        font-weight: 500;
+      }
+      
+      .empty-actions {
+        display: flex;
+        gap: var(--space-lg);
+        flex-wrap: wrap;
+        justify-content: center;
+        
+        button {
+          @include gaming-button();
+          display: flex;
+          align-items: center;
+          gap: var(--space-sm);
+          padding: var(--space-md) var(--space-xl);
+          
+          &.mat-primary {
+            @include gaming-button(var(--gaming-primary));
+          }
+          
+          &.mat-accent {
+            @include gaming-button(var(--gaming-accent));
+          }
+          
+          mat-icon {
+            font-size: 1.2rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Premium Gaming Responsive Design
+@media (max-width: 768px) {
+  .game-list-container {
+    padding: var(--space-md);
+    
+    .game-list-header {
+      flex-direction: column;
+      gap: var(--space-lg);
+      align-items: stretch;
+      text-align: center;
+      
+      h1 {
+        font-size: 2.2rem;
+      }
+      
+      .header-actions {
+        justify-content: center;
+      }
+    }
+    
+    .games-grid {
+      .games-section {
+        .games-cards {
+          grid-template-columns: 1fr;
+          gap: var(--space-lg);
+        }
+      }
+    }
+    
+    .game-info {
+      flex-direction: column;
+      gap: var(--space-md);
+      
+      .game-status {
+        justify-content: flex-start;
+      }
+    }
+    
+    .empty-state {
+      .empty-card {
+        mat-card-content {
+          .empty-actions {
+            flex-direction: column;
+            align-items: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .game-list-container {
+    padding: var(--space-sm);
+    
+    .game-list-header {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .header-actions {
+        button {
+          padding: var(--space-sm) var(--space-md);
+          font-size: 0.9rem;
+          
+          mat-icon {
+            font-size: 1rem;
+          }
+        }
+      }
+    }
+    
+    .game-card {
+      mat-card-actions {
+        flex-direction: column;
+        
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}
+
+// Premium Gaming Motion Settings
+@include reduced-motion;

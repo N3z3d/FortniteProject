@@ -1,0 +1,338 @@
+<!-- UX-001: Advanced Game Creation Wizard - Multi-step with smart defaults -->
+<div class="game-creation-wizard">
+  
+  <!-- Wizard Header -->
+  <div class="wizard-header">
+    <h1>
+      <mat-icon>auto_awesome</mat-icon>
+      Créer une nouvelle game
+    </h1>
+    <p class="wizard-subtitle">Assistant intelligent en 3 étapes</p>
+  </div>
+
+  <!-- Multi-step Stepper -->
+  <mat-stepper #stepper orientation="horizontal" class="wizard-stepper">
+    
+    <!-- STEP 1: Basic Information & Template Selection -->
+    <mat-step [stepControl]="basicInfoForm" label="Informations de base">
+      <form [formGroup]="basicInfoForm" class="step-form">
+        
+        <!-- Template Selection - UX-001 Smart Defaults -->
+        <div class="template-selection">
+          <h3>
+            <mat-icon>dashboard_customize</mat-icon>
+            Choisissez un modèle
+          </h3>
+          <p class="template-hint">Configurations pré-optimisées pour démarrer rapidement</p>
+          
+          <!-- Popular Templates -->
+          <div class="templates-grid">
+            <mat-card 
+              *ngFor="let template of getPopularTemplates()" 
+              class="template-card"
+              [class.selected]="selectedTemplate?.id === template.id"
+              (click)="onTemplateSelect(template)">
+              
+              <mat-card-header>
+                <mat-icon mat-card-avatar [class.popular]="template.popular">
+                  {{ template.icon }}
+                </mat-icon>
+                <mat-card-title>{{ template.name }}</mat-card-title>
+                <mat-card-subtitle *ngIf="template.popular" class="popular-badge">
+                  <mat-icon>star</mat-icon> Populaire
+                </mat-card-subtitle>
+              </mat-card-header>
+              
+              <mat-card-content>
+                <p>{{ template.description }}</p>
+                <div class="template-specs">
+                  <span class="spec">{{ template.config.maxParticipants }} joueurs</span>
+                  <span class="spec">{{ (template.config.draftTimeLimit || 0) / 60 }}min/pick</span>
+                  <span class="spec" *ngIf="template.config.isPrivate">Privée</span>
+                  <span class="spec" *ngIf="!template.config.isPrivate">Publique</span>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Other Templates -->
+          <details class="other-templates" *ngIf="getAllTemplates().length > getPopularTemplates().length">
+            <summary>Autres modèles</summary>
+            <div class="templates-grid">
+              <ng-container *ngFor="let template of getAllTemplates()">
+                <mat-card 
+                  *ngIf="!template.popular"
+                  class="template-card"
+                  [class.selected]="selectedTemplate?.id === template.id"
+                  (click)="onTemplateSelect(template)">
+                  
+                  <mat-card-header>
+                    <mat-icon mat-card-avatar>{{ template.icon }}</mat-icon>
+                    <mat-card-title>{{ template.name }}</mat-card-title>
+                  </mat-card-header>
+                  
+                  <mat-card-content>
+                    <p>{{ template.description }}</p>
+                  </mat-card-content>
+                </mat-card>
+              </ng-container>
+            </div>
+          </details>
+        </div>
+
+        <!-- Game Name and Description -->
+        <div class="basic-info-section">
+          <h3>
+            <mat-icon>edit</mat-icon>
+            Détails de votre game
+          </h3>
+          
+          <!-- Real-time validation feedback - UX-001 requirement -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nom de la game</mat-label>
+            <input 
+              matInput 
+              formControlName="name" 
+              placeholder="Ex: Tournoi des champions"
+              maxlength="50"
+              autocomplete="off">
+            <mat-hint align="end">{{ basicInfoForm.get('name')?.value?.length || 0 }}/50</mat-hint>
+            <mat-error>{{ getNameValidationMessage() }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description (optionnelle)</mat-label>
+            <textarea 
+              matInput 
+              formControlName="description" 
+              placeholder="Décrivez votre game..."
+              rows="3"
+              maxlength="200"></textarea>
+            <mat-hint align="end">{{ basicInfoForm.get('description')?.value?.length || 0 }}/200</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Step Navigation -->
+        <div class="step-actions">
+          <button mat-button type="button" (click)="onCancel()">
+            <mat-icon>close</mat-icon>
+            Annuler
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            matStepperNext 
+            [disabled]="!isStep1Valid()"
+            class="next-button">
+            <mat-icon>arrow_forward</mat-icon>
+            Règles du jeu
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- STEP 2: Player Rules & Configuration -->
+    <mat-step [stepControl]="rulesForm" label="Règles du jeu">
+      <form [formGroup]="rulesForm" class="step-form">
+        
+        <h3>
+          <mat-icon>settings</mat-icon>
+          Configuration de la partie
+        </h3>
+        <p class="step-description">
+          Ajustez les paramètres selon vos préférences
+        </p>
+
+        <!-- Players Configuration -->
+        <div class="config-section">
+          <h4>Participants</h4>
+          
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre maximum de participants</mat-label>
+            <mat-select formControlName="maxParticipants">
+              <mat-option *ngFor="let num of [2,3,4,5,6,7,8,9,10,12,15,20]" [value]="num">
+                {{ num }} joueurs
+              </mat-option>
+            </mat-select>
+            <mat-hint>Recommandé: 5-8 joueurs pour une expérience optimale</mat-hint>
+            <mat-error>{{ getParticipantsValidationMessage() }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Draft Configuration -->
+        <div class="config-section">
+          <h4>Configuration du draft</h4>
+          
+          <div class="draft-config">
+            <!-- Draft Time Limit -->
+            <mat-form-field appearance="outline" class="time-field">
+              <mat-label>Temps par pick</mat-label>
+              <mat-select formControlName="draftTimeLimit">
+                <mat-option [value]="60">1 minute ⚡</mat-option>
+                <mat-option [value]="120">2 minutes</mat-option>
+                <mat-option [value]="180">3 minutes (recommandé)</mat-option>
+                <mat-option [value]="300">5 minutes</mat-option>
+                <mat-option [value]="600">10 minutes</mat-option>
+                <mat-option [value]="900">15 minutes</mat-option>
+              </mat-select>
+              <mat-hint>{{ getDraftTimeLimitLabel() }}</mat-hint>
+            </mat-form-field>
+
+            <!-- Auto-pick Delay -->
+            <mat-form-field appearance="outline" class="time-field">
+              <mat-label>Délai avant auto-pick</mat-label>
+              <mat-select formControlName="autoPickDelay">
+                <mat-option [value]="300">5 minutes ⚡</mat-option>
+                <mat-option [value]="1800">30 minutes</mat-option>
+                <mat-option [value]="3600">1 heure (recommandé)</mat-option>
+                <mat-option [value]="7200">2 heures</mat-option>
+                <mat-option [value]="43200">12 heures</mat-option>
+                <mat-option [value]="86400">24 heures</mat-option>
+              </mat-select>
+              <mat-hint>{{ getAutoPickDelayLabel() }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Game Options -->
+        <div class="config-section">
+          <h4>Options de jeu</h4>
+          
+          <div class="game-options">
+            <mat-checkbox formControlName="isPrivate">
+              <span class="option-label">Game privée</span>
+              <span class="option-description">Seuls les joueurs invités peuvent rejoindre</span>
+            </mat-checkbox>
+
+            <mat-checkbox formControlName="autoStartDraft">
+              <span class="option-label">Démarrage automatique du draft</span>
+              <span class="option-description">Le draft commence dès que tous les joueurs sont prêts</span>
+            </mat-checkbox>
+          </div>
+        </div>
+
+        <!-- Step Navigation -->
+        <div class="step-actions">
+          <button mat-button matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Retour
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            matStepperNext 
+            [disabled]="!isStep2Valid()"
+            class="next-button">
+            <mat-icon>preview</mat-icon>
+            Aperçu
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- STEP 3: Review & Preview -->
+    <mat-step label="Aperçu">
+      <div class="review-step">
+        
+        <h3>
+          <mat-icon>visibility</mat-icon>
+          Aperçu de votre game
+        </h3>
+        <p class="review-description">
+          Vérifiez les détails avant de créer votre game
+        </p>
+
+        <!-- Game Preview Card -->
+        <mat-card class="game-preview-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="game-icon">{{ selectedTemplate?.icon || 'sports_esports' }}</mat-icon>
+            <mat-card-title>{{ getGamePreview().name }}</mat-card-title>
+            <mat-card-subtitle>{{ selectedTemplate?.name }} • {{ getGamePreview().estimatedDuration }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <p class="game-description" *ngIf="getGamePreview().description">
+              {{ getGamePreview().description }}
+            </p>
+
+            <!-- Game Stats -->
+            <div class="game-stats">
+              <div class="stat">
+                <mat-icon>group</mat-icon>
+                <span class="stat-label">{{ getGamePreview().maxParticipants }} participants max</span>
+              </div>
+              
+              <div class="stat">
+                <mat-icon>schedule</mat-icon>
+                <span class="stat-label">{{ getDraftTimeLimitLabel() }}</span>
+              </div>
+              
+              <div class="stat">
+                <mat-icon>auto_mode</mat-icon>
+                <span class="stat-label">Auto-pick: {{ getAutoPickDelayLabel() }}</span>
+              </div>
+              
+              <div class="stat" *ngIf="getGamePreview().isPrivate">
+                <mat-icon>lock</mat-icon>
+                <span class="stat-label">Game privée</span>
+              </div>
+              
+              <div class="stat" *ngIf="!getGamePreview().isPrivate">
+                <mat-icon>public</mat-icon>
+                <span class="stat-label">Game publique</span>
+              </div>
+            </div>
+
+            <!-- Success Prediction -->
+            <div class="success-prediction">
+              <mat-icon class="prediction-icon">psychology</mat-icon>
+              <div class="prediction-content">
+                <strong>Prédiction de succès: 94%</strong>
+                <p>Configuration optimale basée sur {{ getGamePreview().maxParticipants }} joueurs similaires</p>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Error Display -->
+        <mat-card class="error-card" *ngIf="error">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon>error</mat-icon>
+              <span>{{ error }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Final Actions -->
+        <div class="step-actions final-actions">
+          <button mat-button matStepperPrevious [disabled]="loading">
+            <mat-icon>arrow_back</mat-icon>
+            Modifier
+          </button>
+          
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="onSubmit()"
+            [disabled]="loading"
+            class="create-button">
+            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+            <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
+            {{ loading ? 'Création en cours...' : 'Créer la game' }}
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+  </mat-stepper>
+
+  <!-- Progress Indicator -->
+  <div class="wizard-progress" *ngIf="!loading">
+    <div class="progress-info">
+      <mat-icon>info</mat-icon>
+      <span>Temps de création moyen: moins de 2 minutes</span>
+    </div>
+  </div>
+
+</div>

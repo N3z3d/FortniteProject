@@ -1,0 +1,84 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+  flyway:
+    enabled: false  # Désactiver Flyway pour les tests
+  
+  sql:
+    init:
+      mode: never
+  
+  # Configuration de sécurité pour les tests
+  security:
+    user:
+      name: test
+      password: test
+    basic:
+      enabled: false
+    oauth2:
+      enabled: false
+  # Désactiver complètement la sécurité pour les tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+
+# Configuration des endpoints pour les tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+
+# Désactiver complètement la sécurité pour les tests
+fortnite:
+  security:
+    enabled: false
+    jwt:
+      enabled: false
+    basic:
+      enabled: false
+    oauth2:
+      enabled: false
+
+
+
+logging:
+  level:
+    root: WARN
+    com.fortnite.pronos: DEBUG
+    org.springframework.test: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: DEBUG
+
+# Configuration pour les tests
+fortnite-api:
+  key: "test-api-key"
+  url: "https://test-api.com"
+
+jwt:
+  secret: "test_jwt_secret_key_123456"
+  expiration: 3600000 

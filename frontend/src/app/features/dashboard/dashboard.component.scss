@@ -1,0 +1,1348 @@
+// Import Premium Gaming Mixins
+@import '../../shared/styles/mixins';
+
+.dashboard-container {
+  padding: var(--space-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--gradient-dark);
+  min-height: 100vh;
+  position: relative;
+  
+  // Animated background particles
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 50%, rgba(var(--gaming-primary-rgb), 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(var(--gaming-accent-rgb), 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(var(--gaming-primary-rgb), 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    @include floating(6s, 20px);
+  }
+
+  // Gaming Header
+  .dashboard-header {
+    @include glass-card-dark();
+    @include fade-in-up(0s);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2xl);
+    padding: var(--space-2xl);
+    position: relative;
+    overflow: hidden;
+    
+    // Glowing border effect
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      @include gaming-gradient-bg();
+      opacity: 0.8;
+    }
+    
+    h1 {
+      @include gaming-title;
+      font-size: 2.5rem;
+      margin: 0;
+      @include gaming-text-gradient();
+      @include neon-glow(var(--gaming-primary), 0.3);
+    }
+
+    .welcome-section {
+      .dashboard-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .title-icon {
+          font-size: 2.5rem;
+          color: var(--accent-color);
+        }
+      }
+
+      .season-info {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        margin: 0;
+      }
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 16px;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: none;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+      }
+    }
+  }
+
+  // Premium Gaming Stats Grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+
+    .stat-card {
+      @include stats-card();
+      @include fade-in-up(0.1s);
+      @include pulse-glow(var(--gaming-primary), 3s);
+      
+      &.total-teams {
+        @include stats-card(var(--gaming-primary));
+        animation-delay: 0.1s;
+      }
+      
+      &.total-players {
+        @include stats-card(var(--gaming-accent));
+        animation-delay: 0.2s;
+      }
+      
+      &.total-points {
+        @include stats-card(var(--gaming-success));
+        animation-delay: 0.3s;
+      }
+      
+      &.season-progress {
+        @include stats-card(var(--gaming-warning));
+        animation-delay: 0.4s;
+        
+        .progress-bar {
+          margin-top: var(--space-md);
+          height: 8px;
+          border-radius: var(--radius-small);
+          background: rgba(var(--gaming-gray-rgb), 0.2);
+          overflow: hidden;
+          
+          .mat-progress-bar-fill::after {
+            @include gaming-gradient-bg();
+          }
+        }
+      }
+    }
+  }
+
+  // Premium Gaming Charts Section
+  .charts-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+
+    .chart-card {
+      @include premium-card(-8px, var(--gaming-primary));
+      @include fade-in-up(0.5s);
+      
+      mat-card-header {
+        background: var(--gradient-gaming);
+        color: white;
+        border-radius: var(--radius-large) var(--radius-large) 0 0;
+        
+        mat-card-title {
+          @include gaming-font;
+          display: flex;
+          align-items: center;
+          gap: var(--space-md);
+          font-weight: 600;
+          @include neon-glow(white, 0.2);
+        }
+      }
+
+      .chart-container {
+        padding: var(--space-lg);
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+
+  // Premium Gaming Leaderboard Preview
+  .leaderboard-preview {
+    @include premium-card(-8px, var(--gaming-success));
+    @include fade-in-up(0.6s);
+    
+    mat-card-header {
+      background: var(--gradient-success);
+      color: white;
+      border-radius: var(--radius-large) var(--radius-large) 0 0;
+      
+      mat-card-title {
+        @include gaming-font;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        font-weight: 700;
+      }
+    }
+    
+    .top-teams {
+      padding: var(--space-lg);
+      
+      .team-row {
+        @include glass-card-dark(0.6);
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        padding: var(--space-md);
+        margin-bottom: var(--space-md);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: var(--gradient-gaming);
+        }
+        
+        &:hover {
+          transform: translateX(8px) translateY(-2px);
+          @include pulse-glow(var(--gaming-primary), 1s);
+        }
+        
+        .team-rank {
+          .rank-badge {
+            @include rank-badge(1);
+            
+            &.rank-1 { @include rank-badge(1); }
+            &.rank-2 { @include rank-badge(2); }
+            &.rank-3 { @include rank-badge(3); }
+          }
+        }
+        
+        .team-info {
+          flex: 1;
+          
+          .team-name {
+            @include gaming-font;
+            font-weight: 600;
+            color: var(--gaming-light);
+            margin-bottom: var(--space-xs);
+            font-size: 1.1rem;
+          }
+          
+          .team-points {
+            @include gaming-text-gradient();
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.2rem;
+          }
+        }
+      }
+    }
+  }
+
+      mat-card-actions {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-color);
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--primary-color);
+          text-transform: none;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+
+  // Premium Gaming Navigation
+  .gaming-navigation {
+    @include fade-in-up(0.7s);
+    margin-bottom: var(--space-3xl);
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: var(--space-2xl);
+      
+      h2 {
+        font-family: 'Orbitron', monospace;
+        font-size: 2.2rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: var(--space-md);
+        background: var(--gradient-gaming);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        @include neon-glow(var(--gaming-primary), 0.3);
+      }
+      
+      p {
+        color: var(--gaming-gray-light);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  .navigation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-xl);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .premium-nav-card {
+    @include glass-card-dark(0.7, 20px, 0.3);
+    padding: var(--space-xl);
+    cursor: pointer;
+    transition: all var(--transition-spring);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    
+    // Animated background gradient
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(var(--gaming-primary-rgb), 0.1) 50%,
+        transparent 70%
+      );
+      transform: translateX(-100%);
+      transition: transform 0.6s ease-out;
+      z-index: 0;
+    }
+    
+    // Glow effect container
+    .nav-card-glow {
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: inherit;
+      background: var(--gradient-gaming);
+      opacity: 0;
+      filter: blur(15px);
+      transition: opacity var(--transition-normal);
+      z-index: -1;
+    }
+    
+    &:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: rgba(var(--gaming-primary-rgb), 0.5);
+      
+      &::before {
+        transform: translateX(100%);
+      }
+      
+      .nav-card-glow {
+        opacity: 0.6;
+      }
+      
+      .nav-card-icon {
+        transform: scale(1.2) rotateZ(10deg);
+        
+        svg {
+          filter: drop-shadow(0 0 20px currentColor);
+        }
+      }
+      
+      .nav-card-title {
+        background: var(--gradient-gaming);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    }
+    
+    &:active {
+      transform: translateY(-4px) scale(0.98);
+    }
+    
+    &:focus {
+      outline: 2px solid var(--gaming-primary);
+      outline-offset: 4px;
+    }
+  }
+
+  .nav-card-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: var(--radius-large);
+    background: rgba(var(--gaming-primary-rgb), 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-lg);
+    transition: all var(--transition-spring);
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    
+    // Enhanced cyber border
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    
+    svg {
+      width: 45px;
+      height: 45px;
+      color: var(--gaming-primary);
+      transition: all var(--transition-normal);
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    
+    // Holographic shimmer effect
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+      );
+      transform: translateX(-100%);
+      transition: transform 0.8s ease-out;
+    }
+    
+    &:hover::before {
+      transform: translateX(100%);
+    }
+  }
+
+  .nav-card-content {
+    position: relative;
+    z-index: 1;
+    
+    .nav-card-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gaming-light);
+      margin-bottom: var(--space-sm);
+      transition: all var(--transition-normal);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .nav-card-desc {
+      color: var(--gaming-gray-light);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin: 0;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // Enhanced Fortnite-style card styling with authentic colors
+  .games-card {
+    .nav-card-icon {
+      background: linear-gradient(135deg, rgba(var(--gaming-primary-rgb), 0.2), rgba(var(--gaming-primary-rgb), 0.1));
+      border: 2px solid rgba(var(--gaming-primary-rgb), 0.3);
+      svg { color: var(--gaming-primary); }
+      
+      &::before {
+        background: radial-gradient(circle, var(--gaming-primary), transparent);
+      }
+    }
+    &:hover .nav-card-glow {
+      background: linear-gradient(45deg, var(--gaming-primary), #0099cc);
+    }
+  }
+
+  .leaderboard-card {
+    .nav-card-icon {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+      border: 2px solid rgba(255, 215, 0, 0.4);
+      svg { color: #ffd700; }
+      
+      &::before {
+        background: radial-gradient(circle, #ffd700, transparent);
+      }
+    }
+    &:hover .nav-card-glow {
+      background: linear-gradient(45deg, #ffd700, #ffed4e);
+    }
+  }
+
+  .teams-card {
+    .nav-card-icon {
+      background: linear-gradient(135deg, rgba(var(--gaming-success-rgb), 0.2), rgba(var(--gaming-success-rgb), 0.1));
+      border: 2px solid rgba(var(--gaming-success-rgb), 0.4);
+      svg { color: var(--gaming-success); }
+      
+      &::before {
+        background: radial-gradient(circle, var(--gaming-success), transparent);
+      }
+    }
+    &:hover .nav-card-glow {
+      background: linear-gradient(45deg, var(--gaming-success), #00cc6a);
+    }
+  }
+
+  .trades-card {
+    .nav-card-icon {
+      background: linear-gradient(135deg, rgba(var(--gaming-accent-rgb), 0.2), rgba(var(--gaming-accent-rgb), 0.1));
+      border: 2px solid rgba(var(--gaming-accent-rgb), 0.4);
+      svg { color: var(--gaming-accent); }
+      
+      &::before {
+        background: radial-gradient(circle, var(--gaming-accent), transparent);
+      }
+    }
+    &:hover .nav-card-glow {
+      background: linear-gradient(45deg, var(--gaming-accent), #e55a2b);
+    }
+  }
+
+  .draft-card {
+    .nav-card-icon {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(138, 43, 226, 0.1));
+      border: 2px solid rgba(138, 43, 226, 0.4);
+      svg { color: #8a2be2; }
+      
+      &::before {
+        background: radial-gradient(circle, #8a2be2, transparent);
+      }
+    }
+    &:hover .nav-card-glow {
+      background: linear-gradient(45deg, #8a2be2, #9932cc);
+    }
+  }
+
+  // Special "New Game" card with Battle Bus theme and enhanced effects
+  .new-game-card {
+    position: relative;
+    
+    // Battle Bus gradient background
+    background: linear-gradient(135deg, 
+      rgba(var(--gaming-accent-rgb), 0.1),
+      rgba(var(--gaming-primary-rgb), 0.05),
+      rgba(var(--gaming-accent-rgb), 0.1));
+    
+    .special-effects {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      border: 3px solid var(--gaming-accent);
+      border-radius: 50%;
+      opacity: 0;
+      animation: battleBusPulse 4s infinite;
+      box-shadow: inset 0 0 20px rgba(var(--gaming-accent-rgb), 0.3);
+    }
+    
+    .particle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: var(--gaming-accent);
+      border-radius: 50%;
+      opacity: 0;
+      box-shadow: 0 0 8px var(--gaming-accent);
+      
+      &:nth-child(2) {
+        top: 15%;
+        left: 15%;
+        animation: battleParticle 5s infinite 0.5s;
+        background: var(--gaming-primary);
+        box-shadow: 0 0 10px var(--gaming-primary);
+      }
+      
+      &:nth-child(3) {
+        top: 20%;
+        right: 20%;
+        animation: battleParticle 5s infinite 1s;
+        background: var(--gaming-success);
+        box-shadow: 0 0 10px var(--gaming-success);
+      }
+      
+      &:nth-child(4) {
+        bottom: 20%;
+        left: 25%;
+        animation: battleParticle 5s infinite 1.5s;
+        background: var(--gaming-warning);
+        box-shadow: 0 0 10px var(--gaming-warning);
+      }
+    }
+    
+    .nav-card-icon {
+      background: linear-gradient(135deg, 
+        rgba(var(--gaming-accent-rgb), 0.3),
+        rgba(var(--gaming-primary-rgb), 0.2));
+      border: 3px solid rgba(var(--gaming-accent-rgb), 0.5);
+      position: relative;
+      z-index: 2;
+      
+      svg {
+        color: var(--gaming-accent);
+        filter: drop-shadow(0 0 8px currentColor);
+      }
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: inherit;
+        background: linear-gradient(45deg, var(--gaming-accent), var(--gaming-primary));
+        opacity: 0;
+        filter: blur(10px);
+        transition: opacity 0.3s ease-out;
+        z-index: -1;
+      }
+      
+      &:hover::after {
+        opacity: 0.8;
+      }
+    }
+    
+    &:hover {
+      .pulse-ring {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.3);
+        animation-duration: 2s;
+      }
+      
+      .particle {
+        opacity: 1;
+        animation-duration: 3s;
+      }
+      
+      // Battle royale storm effect
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: conic-gradient(
+          from 0deg,
+          transparent,
+          rgba(var(--gaming-accent-rgb), 0.1),
+          transparent,
+          rgba(var(--gaming-primary-rgb), 0.1),
+          transparent
+        );
+        border-radius: inherit;
+        animation: stormRotate 8s linear infinite;
+        opacity: 0.6;
+        z-index: 1;
+      }
+    }
+  }
+
+  // Enhanced Fortnite-style animations
+  @keyframes battleBusPulse {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7);
+      border-color: var(--gaming-accent);
+    }
+    25% {
+      border-color: var(--gaming-primary);
+    }
+    50% {
+      opacity: 0.8;
+      transform: translate(-50%, -50%) scale(1.2);
+      border-color: var(--gaming-success);
+    }
+    75% {
+      border-color: var(--gaming-warning);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.8);
+      border-color: var(--gaming-accent);
+    }
+  }
+
+  @keyframes battleParticle {
+    0%, 100% {
+      opacity: 0;
+      transform: translateY(0) scale(0.5) rotate(0deg);
+    }
+    25% {
+      opacity: 0.8;
+      transform: translateY(-15px) scale(1.2) rotate(90deg);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(-25px) scale(1) rotate(180deg);
+    }
+    75% {
+      opacity: 0.8;
+      transform: translateY(-15px) scale(1.2) rotate(270deg);
+    }
+  }
+  
+  @keyframes stormRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  // Premium Gaming Loading & Error States
+  .loading-container {
+    @include glass-card-dark();
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl);
+    text-align: center;
+    
+    mat-progress-spinner {
+      @include pulse-glow(var(--gaming-primary), 2s);
+    }
+    
+    p {
+      @include gaming-font;
+      color: var(--gaming-light);
+      margin-top: var(--space-lg);
+      font-size: 1.1rem;
+    }
+  }
+  
+  .error-container {
+    @include glass-card-dark();
+    @include fade-in-up(0.3s);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl);
+    text-align: center;
+    border: 2px solid var(--gaming-error);
+    
+    .error-icon {
+      font-size: 4rem;
+      color: var(--gaming-error);
+      @include neon-glow(var(--gaming-error), 0.5);
+      margin-bottom: var(--space-lg);
+    }
+    
+    h2 {
+      @include gaming-title;
+      color: var(--gaming-error);
+      margin-bottom: var(--space-md);
+    }
+    
+    p {
+      color: var(--gaming-gray-light);
+      margin-bottom: var(--space-lg);
+    }
+    
+    button {
+      @include gaming-button(var(--gaming-error));
+    }
+  }
+  
+  .no-game-selected {
+    @include fade-in-up(0.3s);
+    
+    .selection-card {
+      @include premium-card(-8px, var(--gaming-primary));
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto;
+      
+      mat-card-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: var(--radius-large) var(--radius-large) 0 0;
+        
+        mat-icon {
+          font-size: 3rem;
+          @include neon-glow(white, 0.3);
+        }
+        
+        mat-card-title h2 {
+          @include gaming-title;
+          margin: 0;
+        }
+      }
+      
+      mat-card-content {
+        padding: var(--space-2xl);
+        color: var(--gaming-light);
+      }
+      
+      mat-card-actions {
+        padding: var(--space-lg);
+        gap: var(--space-md);
+        justify-content: center;
+        
+        button {
+          @include gaming-button();
+          
+          &.mat-primary {
+            @include gaming-button(var(--gaming-primary));
+          }
+        }
+      }
+    }
+  }
+  
+  .dashboard-footer {
+    @include glass-card-dark(0.4);
+    text-align: center;
+    padding: var(--space-lg);
+    margin-top: var(--space-2xl);
+    
+    p {
+      color: var(--gaming-gray-light);
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Premium Gaming Responsive Design
+@media (max-width: 1200px) {
+  .dashboard-container {
+    .charts-section {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: var(--space-md);
+
+    .dashboard-header {
+      flex-direction: column;
+      gap: var(--space-lg);
+      text-align: center;
+
+      h1 {
+        font-size: 2rem;
+      }
+    }
+    
+    .stats-overview {
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+    
+    .premium-stat-card {
+      padding: var(--space-lg);
+      
+      .fortnite-icon {
+        font-size: 3rem;
+      }
+      
+      .stat-value {
+        font-size: 2.2rem;
+      }
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+
+    .charts-section {
+      grid-template-columns: 1fr;
+    }
+
+    .navigation-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-md);
+    }
+    
+    .premium-nav-card {
+      min-height: 140px;
+      padding: var(--space-lg);
+      
+      .nav-card-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: var(--space-md);
+        
+        svg {
+          width: 30px;
+          height: 30px;
+        }
+      }
+      
+      .nav-card-title {
+        font-size: 1.1rem;
+      }
+      
+      .nav-card-desc {
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: var(--space-sm);
+    
+    .navigation-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+    
+    .premium-nav-card {
+      min-height: 120px;
+      padding: var(--space-md);
+      
+      .nav-card-icon {
+        width: 50px;
+        height: 50px;
+        margin-bottom: var(--space-sm);
+        
+        svg {
+          width: 24px;
+          height: 24px;
+        }
+      }
+      
+      .nav-card-title {
+        font-size: 1rem;
+      }
+      
+      .nav-card-desc {
+        font-size: 0.75rem;
+      }
+    }
+    
+    .gaming-navigation .section-header {
+      h2 {
+        font-size: 1.8rem;
+      }
+      
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+// Premium Gaming Motion Settings
+@include reduced-motion;
+
+/* ===== ENHANCED FORTNITE-STYLE STATS OVERVIEW ===== */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-xl);
+  margin-bottom: var(--space-3xl);
+  padding: var(--space-lg) 0;
+}
+
+.premium-stat-card {
+  @include fortnite-neon-border(var(--gaming-primary), 2px, 0.6);
+  @include cyber-panel(var(--gaming-primary));
+  padding: var(--space-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-spring);
+  cursor: pointer;
+  background: linear-gradient(135deg, 
+    rgba(var(--gaming-dark-rgb), 0.95), 
+    rgba(var(--gaming-dark-lighter-rgb, 26, 31, 46), 0.9));
+  
+  // Enhanced energy bar top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 3px;
+    @include energy-bar(var(--gaming-primary), 3px, true);
+    transition: left 0.8s ease-out;
+  }
+  
+  &:hover {
+    transform: translateY(-8px) scale(1.03);
+    border-color: rgba(var(--gaming-primary-rgb), 0.6);
+    box-shadow: 
+      0 15px 35px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(var(--gaming-primary-rgb), 0.3);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    .stat-icon {
+      transform: scale(1.3) rotateZ(15deg);
+      filter: drop-shadow(0 0 15px currentColor);
+    }
+    
+    .stat-value {
+      background: var(--gradient-gaming);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.5);
+    }
+  }
+  
+  .fortnite-icon {
+    font-size: 3.5rem;
+    margin-bottom: var(--space-lg);
+    transition: all var(--transition-spring);
+    display: block;
+    filter: drop-shadow(0 0 8px currentColor);
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, currentColor, transparent);
+      opacity: 0;
+      border-radius: 50%;
+      transition: all var(--transition-normal);
+      z-index: -1;
+    }
+    
+    &:hover::after {
+      opacity: 0.2;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+  }
+  
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--gaming-light);
+    margin-bottom: var(--space-sm);
+    transition: all var(--transition-normal);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .stat-label {
+    color: var(--gaming-gray-light);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: var(--space-md);
+  }
+  
+  .stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-large);
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'Exo 2', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &.positive {
+      background: linear-gradient(135deg, 
+        rgba(var(--gaming-success-rgb), 0.3),
+        rgba(var(--gaming-success-rgb), 0.1));
+      color: var(--gaming-success);
+      border: 2px solid rgba(var(--gaming-success-rgb), 0.4);
+      box-shadow: 0 0 15px rgba(var(--gaming-success-rgb), 0.2);
+    }
+    
+    &.negative {
+      background: linear-gradient(135deg, 
+        rgba(var(--gaming-error-rgb), 0.3),
+        rgba(var(--gaming-error-rgb), 0.1));
+      color: var(--gaming-error);
+      border: 2px solid rgba(var(--gaming-error-rgb), 0.4);
+      box-shadow: 0 0 15px rgba(var(--gaming-error-rgb), 0.2);
+    }
+    
+    &.neutral {
+      background: linear-gradient(135deg, 
+        rgba(var(--gaming-gray-rgb), 0.3),
+        rgba(var(--gaming-gray-rgb), 0.1));
+      color: var(--gaming-gray-light);
+      border: 2px solid rgba(var(--gaming-gray-rgb), 0.4);
+      box-shadow: 0 0 15px rgba(var(--gaming-gray-rgb), 0.2);
+    }
+  }
+}
+
+// Specific themed stat cards
+.score-card {
+  .fortnite-icon {
+    color: var(--gaming-warning);
+    animation: energyPulse 3s ease-in-out infinite;
+  }
+}
+
+.ranking-card {
+  .fortnite-icon {
+    color: #ffd700;
+    animation: crownGlow 4s ease-in-out infinite;
+  }
+}
+
+.games-card {
+  .fortnite-icon {
+    color: var(--gaming-error);
+    animation: fireFlicker 2s ease-in-out infinite;
+  }
+}
+
+.weekly-card {
+  .fortnite-icon {
+    color: var(--gaming-accent);
+    animation: gemSparkle 3.5s ease-in-out infinite;
+  }
+}
+
+// Themed animations
+@keyframes energyPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.1); filter: brightness(1.3); }
+}
+
+@keyframes crownGlow {
+  0%, 100% { 
+    color: #ffd700;
+    filter: drop-shadow(0 0 8px #ffd700);
+  }
+  50% { 
+    color: #ffed4e;
+    filter: drop-shadow(0 0 20px #ffd700);
+  }
+}
+
+@keyframes fireFlicker {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.05) rotate(-2deg); }
+  75% { transform: scale(1.05) rotate(2deg); }
+}
+
+@keyframes gemSparkle {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+  33% { 
+    transform: scale(1.1) rotate(120deg);
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+  66% { 
+    transform: scale(1.1) rotate(240deg);
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+/* ===== PREMIUM GAME SELECTION ===== */
+.game-selection-section {
+  margin-bottom: var(--space-3xl);
+  
+  .section-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+    
+    h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: var(--space-md);
+      background: var(--gradient-gaming);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    p {
+      color: var(--gaming-gray-light);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  }
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-xl);
+}
+
+.premium-game-card {
+  @include glass-card-dark();
+  padding: var(--space-xl);
+  cursor: pointer;
+  transition: all var(--transition-spring);
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-8px) rotateY(2deg);
+    border-color: rgba(var(--gaming-primary-rgb), 0.5);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.3),
+      0 0 60px rgba(var(--gaming-primary-rgb), 0.2);
+    
+    .game-icon {
+      transform: scale(1.2) rotateZ(15deg);
+    }
+  }
+  
+  &.selected {
+    border-color: var(--gaming-primary);
+    background: rgba(var(--gaming-primary-rgb), 0.1);
+    
+    .game-name {
+      color: var(--gaming-primary);
+    }
+  }
+  
+  .game-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    
+    .game-icon {
+      font-size: 2.5rem;
+      padding: var(--space-md);
+      background: rgba(var(--gaming-primary-rgb), 0.2);
+      border-radius: var(--radius-large);
+      transition: all var(--transition-spring);
+    }
+    
+    .game-info {
+      flex: 1;
+      
+      .game-name {
+        font-family: 'Orbitron', monospace;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--gaming-light);
+        margin-bottom: var(--space-xs);
+        transition: color var(--transition-normal);
+      }
+      
+      .game-status {
+        color: var(--gaming-gray-light);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+    }
+  }
+  
+  .game-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md) 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    
+    .game-stat {
+      text-align: center;
+      
+      .stat-value {
+        display: block;
+        font-family: 'Orbitron', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gaming-accent);
+        margin-bottom: var(--space-xs);
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        color: var(--gaming-gray-light);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+  
+  .game-actions {
+    text-align: center;
+    
+    .btn-sm {
+      padding: var(--space-sm) var(--space-lg);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+} 

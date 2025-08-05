@@ -1,0 +1,139 @@
+<div class="ultra-fast-create">
+  <!-- Header Simple -->
+  <div class="create-header">
+    <h1>🎮 Nouvelle Game</h1>
+    <p class="header-subtitle">Créez votre game en 10 secondes</p>
+  </div>
+
+  <!-- Formulaire Ultra-Simplifié -->
+  <div class="instant-create-form">
+    <form [formGroup]="gameForm" (ngSubmit)="onSubmit()" class="lightning-form">
+      
+      <!-- Seul Champ Requis : Nom -->
+      <div class="name-section">
+        <mat-form-field appearance="outline" class="game-name-mega">
+          <mat-label>Nom de votre game</mat-label>
+          <input 
+            matInput 
+            formControlName="name" 
+            placeholder="Ex: Game entre amis"
+            maxlength="30"
+            autofocus
+            autocomplete="off">
+          <mat-hint>C'est tout ce qu'il vous faut !</mat-hint>
+          <mat-error *ngIf="gameForm.get('name')?.hasError('required')">
+            Donnez un nom à votre game
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Configuration Automatique Visible -->
+      <div class="auto-config-preview">
+        <div class="config-card">
+          <div class="config-icon">
+            <mat-icon>auto_awesome</mat-icon>
+          </div>
+          <div class="config-details">
+            <h3>Configuration optimale</h3>
+            <div class="config-specs">
+              <span class="spec-item">5 participants max</span>
+              <span class="spec-item">5 joueurs par équipe</span>
+              <span class="spec-item">Draft rapide</span>
+            </div>
+            <p class="config-note">Tout est pré-configuré pour une expérience parfaite</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Ultra-Rapides -->
+      <div class="instant-actions">
+        <button 
+          mat-fab 
+          extended
+          color="primary" 
+          type="submit"
+          [disabled]="gameForm.get('name')?.invalid || loading"
+          class="mega-create-btn">
+          <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+          <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
+          {{ loading ? 'Création...' : 'Créer & Jouer' }}
+        </button>
+        
+        <!-- Options Avancées (Cachées par défaut) -->
+        <button 
+          *ngIf="!showAdvancedOptions"
+          mat-button 
+          type="button"
+          (click)="showAdvancedOptions = true"
+          class="show-advanced">
+          Personnaliser
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Mode Avancé (Masqué par défaut) -->
+  <div class="advanced-panel" *ngIf="showAdvancedOptions">
+    <div class="panel-header">
+      <h3>Configuration personnalisée</h3>
+      <button 
+        mat-icon-button 
+        (click)="showAdvancedOptions = false"
+        class="close-advanced">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <div class="advanced-controls">
+      <!-- Participants -->
+      <mat-form-field appearance="outline">
+        <mat-label>Participants max</mat-label>
+        <mat-select formControlName="maxParticipants">
+          <mat-option value="2">2 joueurs</mat-option>
+          <mat-option value="3">3 joueurs</mat-option>
+          <mat-option value="4">4 joueurs</mat-option>
+          <mat-option value="5">5 joueurs</mat-option>
+          <mat-option value="6">6 joueurs</mat-option>
+          <mat-option value="8">8 joueurs</mat-option>
+          <mat-option value="10">10 joueurs</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Type de Game -->
+      <mat-form-field appearance="outline">
+        <mat-label>Type de game</mat-label>
+        <mat-select [(ngModel)]="gameType" [ngModelOptions]="{standalone: true}">
+          <mat-option value="casual">Casual (recommandé)</mat-option>
+          <mat-option value="competitive">Compétitif</mat-option>
+          <mat-option value="tournament">Tournoi</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Messages d'Erreur -->
+  <div *ngIf="error" class="error-banner">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Trust & Social Proof -->
+  <div class="trust-section">
+    <div class="trust-stats">
+      <div class="stat">
+        <span class="number">1.2k</span>
+        <span class="label">Games créées</span>
+      </div>
+      <div class="stat">
+        <span class="number">98%</span>
+        <span class="label">Satisfaction</span>
+      </div>
+      <div class="stat">
+        <span class="number">< 30s</span>
+        <span class="label">Temps moyen</span>
+      </div>
+    </div>
+  </div>
+
+</div>

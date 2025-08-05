@@ -1,0 +1,329 @@
+# SPRINT 4 - PRODUCTION DOCKER COMPOSE FOR 500+ USERS
+# Configuration complète avec monitoring avancé et scaling horizontal
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # APPLICATION BACKEND
+  # ==========================================
+  fortnite-pronos-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: fortnite-pronos-app
+    restart: unless-stopped
+    
+    # Resource limits optimisés pour 500+ users
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 6G
+        reservations:
+          cpus: '1.0'
+          memory: 4G
+    
+    # Environment variables
+    environment:
+      # Database configuration
+      - DB_PRIMARY_HOST=postgres-primary
+      - DB_PRIMARY_PORT=5432
+      - DB_READONLY_HOST=postgres-readonly
+      - DB_READONLY_PORT=5432
+      - DB_NAME=fortnite_pronos
+      - DB_PRIMARY_USERNAME=fortnite_user
+      - DB_PRIMARY_PASSWORD=${DB_PASSWORD}
+      - DB_READONLY_USERNAME=fortnite_readonly
+      - DB_READONLY_PASSWORD=${DB_READONLY_PASSWORD}
+      
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      
+      # External APIs
+      - FORTNITE_API_KEY=${FORTNITE_API_KEY}
+      
+      # Monitoring
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
+      - LOGGING_LEVEL_ROOT=INFO
+      
+      # Performance tuning
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=100
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=30
+      
+    ports:
+      - "8080:8080"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    networks:
+      - fortnite-network
+
+  # ==========================================
+  # DATABASE PRIMARY (WRITE)
+  # ==========================================
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: postgres-primary
+    restart: unless-stopped
+    
+    # Resource optimization for write operations
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    environment:
+      - POSTGRES_DB=fortnite_pronos
+      - POSTGRES_USER=fortnite_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+      
+      # Performance tuning for 500+ users
+      - POSTGRES_SHARED_BUFFERS=1GB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=3GB
+      - POSTGRES_MAINTENANCE_WORK_MEM=256MB
+      - POSTGRES_CHECKPOINT_COMPLETION_TARGET=0.9
+      - POSTGRES_WAL_BUFFERS=16MB
+      - POSTGRES_DEFAULT_STATISTICS_TARGET=100
+    
+    # PostgreSQL configuration
+    command: >
+      postgres
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c maintenance_work_mem=256MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=8MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+      -c max_worker_processes=8
+      -c max_parallel_workers_per_gather=4
+      -c max_parallel_workers=8
+      -c max_parallel_maintenance_workers=4
+    
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortnite_user -d fortnite_pronos"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    
+    networks:
+      - fortnite-network
+
+  # ==========================================
+  # DATABASE READ REPLICA (READ-ONLY)
+  # ==========================================
+  postgres-readonly:
+    image: postgres:16-alpine
+    container_name: postgres-readonly
+    restart: unless-stopped
+    
+    # Resource optimization for read operations
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1.5G
+    
+    environment:
+      - POSTGRES_DB=fortnite_pronos
+      - POSTGRES_USER=fortnite_readonly
+      - POSTGRES_PASSWORD=${DB_READONLY_PASSWORD}
+      - PGUSER=fortnite_readonly
+    
+    # Read-optimized configuration
+    command: >
+      postgres
+      -c shared_buffers=768MB
+      -c effective_cache_size=2GB
+      -c random_page_cost=1.0
+      -c effective_io_concurrency=300
+      -c work_mem=16MB
+      -c default_transaction_isolation=repeatable_read
+      -c hot_standby=on
+      -c max_standby_streaming_delay=30s
+    
+    volumes:
+      - postgres_readonly_data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortnite_readonly -d fortnite_pronos"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    
+    networks:
+      - fortnite-network
+
+  # ==========================================
+  # REDIS CACHE
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Redis optimization for 500+ users
+    command: >
+      redis-server
+      --maxmemory 1536mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --tcp-keepalive 300
+      --timeout 300
+      --tcp-backlog 512
+      --databases 16
+    
+    volumes:
+      - redis_data:/data
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+    networks:
+      - fortnite-network
+
+  # ==========================================
+  # PROMETHEUS MONITORING
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+    
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    
+    ports:
+      - "9090:9090"
+    
+    networks:
+      - fortnite-network
+
+  # ==========================================
+  # GRAFANA DASHBOARDS
+  # ==========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources
+    
+    ports:
+      - "3000:3000"
+    
+    depends_on:
+      - prometheus
+    
+    networks:
+      - fortnite-network
+
+# ==========================================
+# NETWORKS
+# ==========================================
+networks:
+  fortnite-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ==========================================
+# VOLUMES
+# ==========================================
+volumes:
+  postgres_primary_data:
+    driver: local
+  postgres_readonly_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

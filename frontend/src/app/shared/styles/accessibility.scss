@@ -1,0 +1,259 @@
+/**
+ * Classes utilitaires d'accessibilité pour Fortnite Pronos
+ * Améliore la conformité WCAG 2.1 AA
+ */
+
+/* Classe pour masquer visuellement mais garder accessible aux lecteurs d'écran */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Lien de saut visible au focus pour navigation clavier */
+.skip-link {
+  @extend .sr-only;
+  z-index: 1000;
+  color: #ffffff;
+  background-color: #0066cc;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  
+  &:focus {
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+}
+
+/* Amélioration des indicateurs de focus pour tous les éléments interactifs */
+.accessible-focus {
+  &:focus,
+  &:focus-visible {
+    outline: 2px solid #0066cc !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.25) !important;
+  }
+}
+
+/* Focus pour les boutons Material */
+.mat-button,
+.mat-raised-button,
+.mat-flat-button,
+.mat-stroked-button,
+.mat-fab,
+.mat-mini-fab {
+  @extend .accessible-focus;
+}
+
+/* Focus pour les liens */
+a {
+  @extend .accessible-focus;
+}
+
+/* Focus pour les contrôles de formulaire */
+.mat-form-field-flex,
+.mat-select-trigger,
+.mat-checkbox-inner-container,
+.mat-radio-outer-circle {
+  @extend .accessible-focus;
+}
+
+/* États de focus pour les éléments personnalisés */
+.draft-player-card,
+.leaderboard-entry,
+.game-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:focus,
+  &:focus-visible {
+    @extend .accessible-focus;
+    transform: translateY(-2px);
+  }
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Amélioration des contrastes pour les textes */
+.text-high-contrast {
+  color: #1a1a1a !important;
+  
+  .dark-theme & {
+    color: #ffffff !important;
+  }
+}
+
+.text-medium-contrast {
+  color: #4a4a4a !important;
+  
+  .dark-theme & {
+    color: #cccccc !important;
+  }
+}
+
+/* États pour les régions live (annonces dynamiques) */
+.live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Amélioration de la navigation au clavier pour les listes */
+.keyboard-navigable {
+  &[tabindex="0"]:focus {
+    @extend .accessible-focus;
+  }
+  
+  .item {
+    &[tabindex="0"]:focus {
+      @extend .accessible-focus;
+    }
+  }
+}
+
+/* Headers avec hiérarchie claire */
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  
+  .dark-theme & {
+    color: #ffffff;
+  }
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2a2a2a;
+  margin-bottom: 0.75rem;
+  
+  .dark-theme & {
+    color: #f0f0f0;
+  }
+}
+
+.subsection-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #3a3a3a;
+  margin-bottom: 0.5rem;
+  
+  .dark-theme & {
+    color: #e0e0e0;
+  }
+}
+
+/* Améliorations pour les tables accessibles */
+.accessible-table {
+  th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    
+    .dark-theme & {
+      background-color: #2a2a2a;
+    }
+  }
+  
+  tbody tr {
+    &:nth-child(even) {
+      background-color: #fafafa;
+      
+      .dark-theme & {
+        background-color: #1a1a1a;
+      }
+    }
+    
+    &:hover,
+    &:focus-within {
+      background-color: #e3f2fd;
+      
+      .dark-theme & {
+        background-color: #1a3a5c;
+      }
+    }
+  }
+}
+
+/* Messages d'erreur accessibles */
+.error-message {
+  color: #d32f2f;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  
+  &::before {
+    content: "⚠ ";
+    font-weight: bold;
+  }
+}
+
+/* Messages de succès accessibles */
+.success-message {
+  color: #2e7d32;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  
+  &::before {
+    content: "✓ ";
+    font-weight: bold;
+  }
+}
+
+/* Amélioration des boutons pour l'accessibilité */
+.accessible-button {
+  min-height: 44px;
+  min-width: 44px;
+  position: relative;
+  
+  &[aria-expanded="true"] {
+    &::after {
+      content: " (ouvert)";
+      @extend .sr-only;
+    }
+  }
+  
+  &[aria-expanded="false"] {
+    &::after {
+      content: " (fermé)";
+      @extend .sr-only;
+    }
+  }
+}
+
+/* Indicateurs de chargement accessibles */
+.loading-spinner {
+  &[aria-busy="true"] {
+    &::after {
+      content: "Chargement en cours...";
+      @extend .sr-only;
+    }
+  }
+}
+
+/* Mode réduit de mouvement pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

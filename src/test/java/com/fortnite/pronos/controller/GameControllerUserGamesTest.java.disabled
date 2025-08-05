@@ -1,0 +1,183 @@
+package com.fortnite.pronos.controller;
+
+import com.fortnite.pronos.dto.GameDto;
+import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.service.RefactoredGameService;
+import com.fortnite.pronos.service.UserContextService;
+import com.fortnite.pronos.service.ValidationService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("GameController - Tests TDD pour les games de l'utilisateur")
+class GameControllerUserGamesTest {
+
+    @Mock
+    private RefactoredGameService refactoredGameService;
+
+    @Mock
+    private ValidationService validationService;
+
+    @Mock
+    private UserContextService userContextService;
+
+    @InjectMocks
+    private GameController gameController;
+
+    private MockMvc mockMvc;
+    private UUID thibautId;
+    private List<GameDto> thibautGames;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(gameController).build();
+        
+        thibautId = UUID.fromString("5764d97a-b1d4-449b-8127-d449b4d2ede6");
+        
+        // Créer des games de test pour Thibaut
+        GameDto game1 = new GameDto();
+        game1.setId(UUID.randomUUID());
+        game1.setName("Game Thibaut-Teddy-Marcel");
+        game1.setDescription("Game entre amis");
+        game1.setStatus(GameStatus.CREATING);
+        game1.setCreatorId(thibautId);
+        game1.setCreatorUsername("Thibaut");
+        game1.setMaxParticipants(10);
+        game1.setCurrentParticipantCount(3);
+        game1.setCreatedAt(LocalDateTime.now().minusDays(1));
+        
+        GameDto game2 = new GameDto();
+        game2.setId(UUID.randomUUID());
+        game2.setName("Game Pro League");
+        game2.setDescription("Compétition sérieuse");
+        game2.setStatus(GameStatus.ACTIVE);
+        game2.setCreatorId(thibautId);
+        game2.setCreatorUsername("Thibaut");
+        game2.setMaxParticipants(8);
+        game2.setCurrentParticipantCount(2);
+        game2.setCreatedAt(LocalDateTime.now().minusWeeks(1));
+        
+        thibautGames = Arrays.asList(game1, game2);
+    }
+
+    @Test
+    @DisplayName("devrait récupérer les games de l'utilisateur connecté avec le paramètre user")
+    void shouldGetUserGamesWithUserParam() throws Exception {
+        // Given
+        when(userContextService.getCurrentUserIdWithFallback("Thibaut")).thenReturn(thibautId);
+        when(refactoredGameService.getGamesByUser(thibautId)).thenReturn(thibautGames);
+        
+        // When & Then
+        mockMvc.perform(get("/api/games/my-games")
+                .param("user", "Thibaut")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].name").value("Game Thibaut-Teddy-Marcel"))
+            .andExpect(jsonPath("$[0].creatorUsername").value("Thibaut"))
+            .andExpect(jsonPath("$[1].name").value("Game Pro League"))
+            .andExpect(jsonPath("$[1].creatorUsername").value("Thibaut"));
+    }
+
+    @Test
+    @DisplayName("devrait retourner une liste vide si l'utilisateur n'a pas de games")
+    void shouldReturnEmptyListIfNoGames() throws Exception {
+        // Given
+        when(userContextService.getCurrentUserIdWithFallback(any())).thenReturn(thibautId);
+        when(refactoredGameService.getGamesByUser(thibautId)).thenReturn(Arrays.asList());
+        
+        // When & Then
+        mockMvc.perform(get("/api/games/my-games")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DisplayName("devrait retourner 401 si l'utilisateur n'est pas trouvé")
+    void shouldReturn401IfUserNotFound() throws Exception {
+        // Given
+        when(userContextService.getCurrentUserIdWithFallback(any()))
+            .thenThrow(new IllegalStateException("Utilisateur non trouvé"));
+        
+        // When & Then
+        mockMvc.perform(get("/api/games/my-games")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    @DisplayName("devrait gérer les erreurs internes du service")
+    void shouldHandleServiceErrors() throws Exception {
+        // Given
+        when(userContextService.getCurrentUserIdWithFallback(any())).thenReturn(thibautId);
+        when(refactoredGameService.getGamesByUser(thibautId))
+            .thenThrow(new RuntimeException("Erreur base de données"));
+        
+        // When & Then
+        mockMvc.perform(get("/api/games/my-games")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("Devrait retourner les games de l'utilisateur quand l'utilisateur est trouvé")
+    void shouldReturnUserGamesWhenUserFound() throws Exception {
+        // Créer des games de test pour Thibaut avec le builder
+        GameDto game1 = GameDto.builder()
+            .id(UUID.randomUUID())
+            .name("Game Thibaut-Teddy-Marcel")
+            .description("Game entre amis")
+            .status(GameStatus.CREATING)
+            .creatorId(thibautId)
+            .creatorUsername("Thibaut")
+            .maxParticipants(10)
+            .currentParticipantCount(3)
+            .createdAt(LocalDateTime.now().minusDays(1))
+            .build();
+        
+        GameDto game2 = GameDto.builder()
+            .id(UUID.randomUUID())
+            .name("Game Pro League")
+            .description("Compétition sérieuse")
+            .status(GameStatus.ACTIVE)
+            .creatorId(thibautId)
+            .creatorUsername("Thibaut")
+            .maxParticipants(12)
+            .currentParticipantCount(5)
+            .createdAt(LocalDateTime.now().minusDays(5))
+            .build();
+
+        List<GameDto> userGames = Arrays.asList(game1, game2);
+
+        when(refactoredGameService.getGamesByUser(thibautId)).thenReturn(userGames);
+
+        mockMvc.perform(get("/api/games/my-games")
+                .param("user", "Thibaut")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].name").value("Game Thibaut-Teddy-Marcel"))
+            .andExpect(jsonPath("$[1].name").value("Game Pro League"));
+    }
+} 

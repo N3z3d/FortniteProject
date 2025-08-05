@@ -1,0 +1,191 @@
+<div class="progressive-draft">
+  <!-- Draft Status Header -->
+  <div class="draft-status-bar">
+    <div class="status-info">
+      <h1 class="draft-title">⚡ Draft - {{ gameId }}</h1>
+      <div class="progress-indicator">
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="getDraftProgress()"></div>
+        </div>
+        <span class="progress-text">{{ getDraftProgressText() }}</span>
+      </div>
+    </div>
+    <div class="draft-actions-minimal">
+      <button mat-fab mini color="accent" (click)="refreshDraftState()" [disabled]="isLoading">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Current Turn Focus -->
+  <div class="current-turn-focus" *ngIf="draftState && getCurrentTurnPlayer()">
+    <div class="turn-announcement">
+      <div class="turn-player">
+        <mat-icon class="crown-icon">emoji_events</mat-icon>
+        <h2>{{ getCurrentTurnPlayer()?.username }}</h2>
+        <span class="turn-subtitle">C'est votre tour de sélectionner</span>
+      </div>
+      <div class="turn-timer" *ngIf="getCurrentTurnPlayer()?.timeRemaining">
+        <div class="timer-circle">
+          <span class="timer-value">{{ formatTime(getCurrentTurnPlayer()?.timeRemaining || 0) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smart Player Selection (Progressive Disclosure) -->
+  <div class="smart-selection" *ngIf="draftState && canSelectPlayer()">
+    
+    <!-- Quick Search -->
+    <div class="quick-search">
+      <mat-form-field appearance="outline" class="search-mega">
+        <mat-label>Trouvez votre joueur</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="searchTerm" 
+          placeholder="Nom du joueur..."
+          autocomplete="off"
+          autofocus>
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Smart Suggestions -->
+    <div class="smart-suggestions" *ngIf="getSmartSuggestions().length > 0">
+      <h3>🎯 Suggestions pour vous</h3>
+      <div class="suggestions-grid">
+        <div 
+          *ngFor="let suggestion of getSmartSuggestions()" 
+          class="suggestion-card"
+          (click)="selectPlayer(suggestion.player)">
+          <div class="suggestion-rank">TOP {{ suggestion.rank }}</div>
+          <div class="suggestion-player">
+            <h4>{{ suggestion.player.nickname }}</h4>
+            <span class="suggestion-region">{{ getRegionLabel(suggestion.player.region) }}</span>
+          </div>
+          <div class="suggestion-score">{{ suggestion.score }}pts</div>
+          <button mat-fab mini color="primary" class="select-fab">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtered Results (Only if searching) -->
+    <div class="search-results" *ngIf="searchTerm && getFilteredPlayers().length > 0">
+      <h3>Résultats de recherche ({{ getFilteredPlayers().length }})</h3>
+      <div class="results-list">
+        <div 
+          *ngFor="let player of getFilteredPlayers() | slice:0:5" 
+          class="result-item"
+          (click)="selectPlayer(player)">
+          <div class="player-info">
+            <span class="player-name">{{ player.nickname }}</span>
+            <span class="player-details">{{ getRegionLabel(player.region) }} • {{ getTrancheLabel(player.tranche) }}</span>
+          </div>
+          <button mat-button color="primary">Sélectionner</button>
+        </div>
+      </div>
+      
+      <!-- Show More Results -->
+      <button 
+        *ngIf="getFilteredPlayers().length > 5"
+        mat-button 
+        (click)="showAllResults = !showAllResults"
+        class="show-more-btn">
+        {{ showAllResults ? 'Voir moins' : 'Voir tous (' + getFilteredPlayers().length + ')' }}
+      </button>
+    </div>
+
+    <!-- All Results (Extended View) -->
+    <div class="all-results" *ngIf="showAllResults && searchTerm">
+      <div class="results-grid">
+        <div 
+          *ngFor="let player of getFilteredPlayers()" 
+          class="player-card-mini"
+          [class.disabled]="!canSelectPlayer()"
+          (click)="selectPlayer(player)">
+          <div class="player-header">
+            <span class="player-nickname">{{ player.nickname }}</span>
+            <mat-chip class="region-mini" color="primary" selected>
+              {{ getRegionLabel(player.region) }}
+            </mat-chip>
+          </div>
+          <button mat-icon-button color="primary" class="select-mini">
+            <mat-icon>add_circle</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <div class="no-results" *ngIf="searchTerm && getFilteredPlayers().length === 0">
+      <mat-icon class="no-results-icon">search_off</mat-icon>
+      <h3>Aucun joueur trouvé</h3>
+      <p>Essayez un autre nom ou réduisez votre recherche</p>
+      <button mat-button (click)="searchTerm = ''" color="primary">
+        Effacer la recherche
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Waiting State (When not your turn) -->
+  <div class="waiting-state" *ngIf="draftState && !canSelectPlayer()">
+    <div class="waiting-info">
+      <mat-icon class="waiting-icon">hourglass_empty</mat-icon>
+      <h2>En attente...</h2>
+      <p>{{ getWaitingMessage() }}</p>
+    </div>
+    
+    <!-- Quick Team Preview -->
+    <div class="team-preview">
+      <h3>Votre équipe actuelle</h3>
+      <div class="current-team">
+        <div 
+          *ngFor="let player of getCurrentUserTeam()" 
+          class="team-player">
+          <span>{{ player.nickname }}</span>
+          <mat-chip class="region-chip" color="accent" selected>
+            {{ getRegionLabel(player.region) }}
+          </mat-chip>
+        </div>
+        <div class="team-slots" *ngIf="getRemainingSlots() > 0">
+          <span class="slots-remaining">{{ getRemainingSlots() }} places restantes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading States -->
+  <div *ngIf="isLoading || isSelectingPlayer" class="loading-overlay">
+    <mat-spinner diameter="60"></mat-spinner>
+    <p>{{ isSelectingPlayer ? 'Sélection en cours...' : 'Chargement du draft...' }}</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-state">
+    <mat-icon color="warn">error_outline</mat-icon>
+    <h3>Problème de connexion</h3>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadDraftState()">
+      Réessayer
+    </button>
+  </div>
+
+  <!-- Debug Info (Hidden by default) -->
+  <div class="debug-panel" *ngIf="showDebugPanel">
+    <h4>Debug Info</h4>
+    <pre>{{ draftState | json }}</pre>
+  </div>
+
+</div>
+
+<!-- Loading Template -->
+<ng-template #loading>
+  <div class="draft-loading">
+    <mat-spinner diameter="80"></mat-spinner>
+    <h2>Préparation du draft...</h2>
+    <p>Chargement des joueurs et configuration</p>
+  </div>
+</ng-template>

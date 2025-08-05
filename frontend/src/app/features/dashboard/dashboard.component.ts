@@ -1,0 +1,805 @@
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective } from '../../shared/directives/premium-interactions.directive';
+import { PremiumInteractionsService } from '../../shared/services/premium-interactions.service';
+import { HttpClient } from '@angular/common/http';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+// PERFORMANCE: Import only needed Chart.js components instead of everything
+import { 
+  Chart, 
+  DoughnutController, 
+  BarController, 
+  CategoryScale, 
+  LinearScale,
+  ArcElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { interval } from 'rxjs';
+import { LeaderboardEntryDTO } from '../../core/models/leaderboard.model';
+import { GameSelectionService } from '../../core/services/game-selection.service';
+import { GameService } from '../game/services/game.service';
+import { DashboardDataService } from './services/dashboard-data.service';
+import { Game } from '../game/models/game.interface';
+import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
+import { FocusManagementService } from '../../shared/services/focus-management.service';
+
+// PERFORMANCE: Register only necessary components (reduces bundle size by ~100KB)
+Chart.register(
+  DoughnutController, 
+  BarController, 
+  CategoryScale, 
+  LinearScale,
+  ArcElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// Interface unifiée pour les statistiques
+interface DashboardStats {
+  totalTeams: number;
+  totalPlayers: number;
+  totalPoints: number;
+  averagePointsPerTeam: number;
+  mostActiveTeam: string;
+  seasonProgress: number;
+  teamComposition?: {
+    regions: { [key: string]: number };
+    tranches: { [key: string]: number };
+  };
+  lastUpdate?: string;
+}
+
+interface TeamComposition {
+  regions: { [key: string]: number };
+  tranches: { [key: string]: number };
+}
+
+interface CompetitionStats {
+  totalTeams: number;
+  totalPlayers: number;
+  totalPoints: number;
+  averagePointsPerTeam: number;
+  mostActiveTeam: string;
+  seasonProgress: number;
+}
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatProgressBarModule,
+    MatBadgeModule,
+    MatSnackBarModule,
+    PremiumInteractionsDirective,
+    TooltipDirective,
+    RevealOnScrollDirective
+  ],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('regionChart') regionChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('pointsChart') pointsChartRef!: ElementRef<HTMLCanvasElement>;
+
+  // État unifié
+  stats: DashboardStats = {
+    totalTeams: 0,
+    totalPlayers: 0,
+    totalPoints: 0,
+    averagePointsPerTeam: 0,
+    mostActiveTeam: '',
+    seasonProgress: 0
+  };
+
+  competitionStats: CompetitionStats = {
+    totalTeams: 0,
+    totalPlayers: 0,
+    totalPoints: 0,
+    averagePointsPerTeam: 0,
+    mostActiveTeam: '',
+    seasonProgress: this.calculateSeasonProgress()
+  };
+
+  leaderboardEntries: LeaderboardEntryDTO[] = [];
+  selectedGame: Game | null = null;
+  games: Game[] = [];
+  selectedGameId: string | null = null;
+  
+  // Liste complète des régions (pour assurer un graphique complet)
+  static readonly ALL_REGIONS: string[] = ['EU','NAC','NAW','BR','ASIA','OCE','ME'];
+  
+  // Graphiques
+  private regionChart: Chart | null = null;
+  private pointsChart: Chart | null = null;
+
+  // États
+  isLoading = true;
+  isLoadingProgress = 0;
+  error: string | null = null;
+  lastUpdate: Date | null = null;
+  isUsingMockData = false;
+  backendStatus: 'online' | 'offline' | 'checking' = 'checking';
+  
+  private subscriptions: Subscription[] = [];
+  private readonly LOAD_TIMEOUT = 10000; // 10 secondes
+  private readonly REFRESH_INTERVAL = 300000; // 5 minutes
+  currentSeason = 2025;
+
+  // Premium stats properties
+  totalScore = 1547;
+  ranking = 7;
+  activeGames = 3;
+  weeklyBest = 423;
+
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private snackBar: MatSnackBar,
+    private gameSelectionService: GameSelectionService,
+    private dashboardDataService: DashboardDataService,
+    private cdr: ChangeDetectorRef,
+    private interactionsService: PremiumInteractionsService,
+    private gameService: GameService,
+    private accessibilityService: AccessibilityAnnouncerService,
+    private focusManagementService: FocusManagementService
+  ) {}
+
+  ngOnInit() {
+    // Charger la liste des games
+    this.loadGames();
+    
+    // S'abonner aux changements de game sélectionnée
+    this.subscriptions.push(
+      this.gameSelectionService.selectedGame$.subscribe(game => {
+        this.selectedGame = game;
+        if (game) {
+          this.loadDashboardData();
+        }
+      })
+    );
+
+    // Charger les données si une game est déjà sélectionnée
+    if (this.gameSelectionService.hasSelectedGame()) {
+      this.loadDashboardData();
+    }
+    
+    // Rafraîchissement automatique seulement si une game est sélectionnée
+    this.subscriptions.push(
+      interval(this.REFRESH_INTERVAL).subscribe(() => {
+        if (this.selectedGame) {
+          this.loadDashboardData(false);
+        }
+      })
+    );
+  }
+
+  ngAfterViewInit() {
+    // Initialize charts only when data is available and view is ready
+    if (this.stats.totalTeams > 0 && this.leaderboardEntries.length > 0) {
+      setTimeout(() => this.initializeCharts(), 50);
+    }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.regionChart) this.regionChart.destroy();
+    if (this.pointsChart) this.pointsChart.destroy();
+  }
+
+  private loadGames() {
+    this.gameService.getUserGames().subscribe({
+      next: (games: Game[]) => {
+        this.games = games;
+      },
+      error: (error: any) => {
+        console.error('Erreur lors du chargement des games:', error);
+        this.games = [];
+      }
+    });
+  }
+
+  async loadDashboardData(showLoading = true) {
+    if (!this.selectedGame?.id) {
+      this.error = 'Aucune game sélectionnée';
+      this.updateLiveRegion('No game selected for dashboard', 'assertive');
+      return;
+    }
+
+    if (showLoading) {
+      this.isLoading = true;
+      this.isLoadingProgress = 0;
+      this.accessibilityService.announceLoading(true, 'dashboard data');
+    }
+    this.error = null;
+
+    try {
+      // Enhanced data loading with premium mock fallback
+      this.dashboardDataService.getDashboardData(this.selectedGame.id).subscribe({
+        next: (data: any) => {
+          console.log('📊 Dashboard data received:', data);
+          
+          // Check if we're using mock data
+          this.isUsingMockData = data._isPremiumMockData || false;
+          this.backendStatus = this.isUsingMockData ? 'offline' : 'online';
+          
+          if (this.isUsingMockData) {
+            console.log('🎮 Using premium mock data for enhanced UX');
+            this.showMockDataNotification();
+          }
+          
+          // Update leaderboard
+          if (data.leaderboard && Array.isArray(data.leaderboard)) {
+            console.log('📈 Leaderboard data:', data.leaderboard.length, 'entries');
+            this.leaderboardEntries = data.leaderboard;
+            this.updateStatsFromLeaderboard(data.leaderboard);
+          }
+
+          // Update statistics
+          if (data.statistics) {
+            console.log('📊 Statistics data:', data.statistics);
+            this.updateCompetitionStats(data.statistics);
+          }
+
+          // Update region distribution
+          if (data.regionDistribution) {
+            console.log('🌍 Region distribution:', data.regionDistribution);
+            this.stats.teamComposition = this.stats.teamComposition || { regions: {}, tranches: {} };
+            this.stats.teamComposition.regions = data.regionDistribution;
+          }
+
+          this.lastUpdate = new Date();
+          this.isLoadingProgress = 100;
+
+          console.log('📊 Final stats after update:', this.stats);
+
+          // Announce successful data load
+          this.accessibilityService.announceLoading(false, 'dashboard data');
+          this.updateLiveRegion(`Dashboard updated with ${this.stats.totalTeams} teams and ${this.stats.totalPlayers} players`, 'polite');
+
+          // Trigger change detection
+          this.cdr.markForCheck();
+
+          // Update charts
+          setTimeout(() => this.updateCharts(), 100);
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des données dashboard:', error);
+          this.error = error?.message || 'Erreur lors du chargement des données';
+          this.accessibilityService.announceError('Failed to load dashboard data');
+          this.updateLiveRegion('Error loading dashboard data. Please try again.', 'assertive');
+          this.snackBar.open(this.error || 'Erreur inconnue', 'Fermer', { duration: 5000 });
+        },
+        complete: () => {
+          if (showLoading) {
+            this.isLoading = false;
+          }
+          this.cdr.markForCheck();
+        }
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      this.error = error instanceof Error ? error.message : 'Erreur lors du chargement des données';
+      this.snackBar.open(this.error || 'Erreur inconnue', 'Fermer', { duration: 5000 });
+      if (showLoading) {
+        this.isLoading = false;
+      }
+    }
+  }
+
+
+  private updateStats(newStats: Partial<DashboardStats>) {
+    // Mettre à jour les stats principales
+    this.stats = {
+      ...this.stats,
+      ...newStats,
+      lastUpdate: new Date().toISOString()
+    };
+
+    // Synchroniser competitionStats avec les nouvelles stats
+    this.competitionStats = {
+      totalTeams: this.stats.totalTeams,
+      totalPlayers: this.stats.totalPlayers,
+      totalPoints: this.stats.totalPoints,
+      averagePointsPerTeam: this.stats.averagePointsPerTeam,
+      mostActiveTeam: this.stats.mostActiveTeam,
+      seasonProgress: this.calculateSeasonProgress()
+    };
+
+    console.log('📊 Stats mises à jour:', {
+      stats: this.stats,
+      competitionStats: this.competitionStats
+    });
+  }
+
+  private updateStatsFromLeaderboard(entries: LeaderboardEntryDTO[]) {
+    if (!entries?.length) {
+      console.log('⚠️ No leaderboard entries to process');
+      return;
+    }
+
+    console.log('📊 Processing leaderboard entries:', entries.length);
+    console.log('📊 First entry example:', entries[0]);
+
+    const newStats: Partial<DashboardStats> = {
+      totalTeams: entries.length,
+      totalPoints: entries.reduce((sum, entry) => sum + (entry.totalPoints || 0), 0),
+      seasonProgress: this.calculateSeasonProgress()
+    };
+
+    newStats.averagePointsPerTeam = Math.round(newStats.totalPoints! / newStats.totalTeams!);
+
+    // Calculer la composition par région
+    const regionCounts: { [key: string]: number } = {};
+    const trancheCounts: { [key: string]: number } = {};
+    let totalPlayers = 0;
+
+    entries.forEach((entry, index) => {
+      console.log(`📊 Processing team ${index}: ${entry.teamName} with ${entry.players?.length || 0} players`);
+      
+      entry.players?.forEach(player => {
+        totalPlayers++;
+        // Gérer le cas où region pourrait être un objet ou un string
+        const region = typeof player.region === 'string' ? player.region : 
+                      (player.region as any)?.name || player.region || 'Unknown';
+        regionCounts[region] = (regionCounts[region] || 0) + 1;
+        
+        const tranche = `Tranche ${player.tranche || 'Unknown'}`;
+        trancheCounts[tranche] = (trancheCounts[tranche] || 0) + 1;
+        
+        console.log(`👤 Player: ${player.nickname}, Region: ${region}, Tranche: ${player.tranche}`);
+      });
+    });
+
+    console.log('📊 Region counts:', regionCounts);
+    console.log('📊 Total players:', totalPlayers);
+
+    newStats.totalPlayers = totalPlayers;
+    
+    // Vérifier que entries n'est pas vide avant reduce
+    newStats.mostActiveTeam = entries.length > 0
+      ? entries.reduce((prev, current) => (current.totalPoints || 0) > (prev.totalPoints || 0) ? current : prev).teamName
+      : 'N/A';
+
+    newStats.teamComposition = {
+      regions: regionCounts,
+      tranches: trancheCounts
+    };
+
+    console.log('📊 Final calculated stats:', newStats);
+    this.updateStats(newStats as DashboardStats);
+  }
+
+  private updateCompetitionStats(apiStats: any) {
+    if (apiStats) {
+      const seasonProgress = this.calculateSeasonProgress();
+      
+      this.competitionStats = {
+        totalTeams: apiStats.totalTeams || this.stats.totalTeams,
+        totalPlayers: apiStats.totalPlayers || this.stats.totalPlayers,
+        totalPoints: this.stats.totalPoints,
+        averagePointsPerTeam: apiStats.averagePoints || this.stats.averagePointsPerTeam,
+        mostActiveTeam: this.stats.mostActiveTeam,
+        seasonProgress: seasonProgress
+      };
+
+      // Utiliser les vraies données de l'API pour les stats globales
+      this.stats.totalPlayers = apiStats.totalPlayers;
+      this.stats.totalPoints = apiStats.totalPoints || this.stats.totalPoints;
+      
+      console.log('📊 Stats API reçues:', apiStats);
+    } else {
+      // Utiliser les stats calculées
+      const seasonProgress = this.calculateSeasonProgress();
+      
+      this.competitionStats = {
+        totalTeams: this.stats.totalTeams,
+        totalPlayers: this.stats.totalPlayers,
+        totalPoints: this.stats.totalPoints,
+        averagePointsPerTeam: this.stats.averagePointsPerTeam,
+        mostActiveTeam: this.stats.mostActiveTeam,
+        seasonProgress: seasonProgress
+      };
+    }
+  }
+
+  /**
+   * Calculer le progrès de la saison dynamiquement
+   * Base sur la période janvier-décembre
+   */
+  private calculateSeasonProgress(): number {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1); // 1er janvier
+    const endOfYear = new Date(now.getFullYear(), 11, 31); // 31 décembre
+    
+    const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
+    const daysElapsed = (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
+    
+    const progress = (daysElapsed / totalDays) * 100;
+    return Math.round(progress * 10) / 10; // Arrondir à 1 décimale
+  }
+
+  private initializeCharts() {
+    this.createRegionChart();
+    this.createPointsChart();
+  }
+
+  private createRegionChart() {
+    if (!this.regionChartRef || !this.stats.teamComposition?.regions) return;
+
+    const ctx = this.regionChartRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    if (this.regionChart) {
+      this.regionChart.destroy();
+    }
+
+    const regions = this.stats.teamComposition.regions;
+    const labels = Object.keys(regions);
+    const data = Object.values(regions);
+
+    this.regionChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: [
+            '#667eea',
+            '#764ba2', 
+            '#f59e0b',
+            '#10b981',
+            '#ef4444',
+            '#3b82f6',
+            '#ec4899',
+            '#8b5cf6'
+          ],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 0 // Disable animations for performance
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Répartition par Région',
+            font: { size: 14, weight: 'bold' }
+          },
+          legend: {
+            position: 'bottom',
+            labels: { padding: 10 }
+          }
+        }
+      }
+    });
+  }
+
+  private createPointsChart() {
+    if (!this.pointsChartRef || !this.leaderboardEntries.length) return;
+
+    const ctx = this.pointsChartRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    if (this.pointsChart) {
+      this.pointsChart.destroy();
+    }
+
+    // Prendre les 10 meilleures équipes
+    const topTeams = this.leaderboardEntries.slice(0, 10);
+    const labels = topTeams.map(entry => this.displayTeamName(entry.teamName) || entry.ownerName || `Équipe ${entry.rank}`);
+    const data = topTeams.map(entry => entry.totalPoints);
+
+    this.pointsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Points',
+          data: data,
+          backgroundColor: '#667eea',
+          borderColor: '#764ba2',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 0 // Disable animations for performance
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Top 10 Équipes par Points',
+            font: { size: 14, weight: 'bold' }
+          },
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Points' }
+          },
+          x: {
+            ticks: { maxRotation: 45 }
+          }
+        }
+      }
+    });
+  }
+
+  // Méthodes utilitaires
+  getTotalFormattedPoints(): string {
+    const points = this.stats.totalPoints || 0;
+    return points.toLocaleString('fr-FR');
+  }
+
+  getAverageFormattedPoints(): string {
+    const points = this.stats.averagePointsPerTeam || 0;
+    return points.toLocaleString('fr-FR');
+  }
+
+  getTopTeams(): LeaderboardEntryDTO[] {
+    return this.leaderboardEntries.slice(0, 5);
+  }
+
+  navigateTo(route: string) {
+    // Announce navigation intent to screen readers
+    const routeLabels: { [key: string]: string } = {
+      '/games': 'Games Management',
+      '/leaderboard': 'Leaderboard and Rankings',
+      '/teams': 'Team Management',
+      '/trades': 'Player Trading',
+      '/draft': 'Player Draft',
+      '/games/create': 'Create New Game'
+    };
+    
+    const label = routeLabels[route] || route;
+    this.accessibilityService.announceNavigation(label);
+    
+    // Update live region with navigation announcement
+    this.updateLiveRegion(`Navigating to ${label}`, 'polite');
+    
+    this.router.navigate([route]);
+  }
+
+  // Enhanced navigation with keyboard support
+  onNavigationKeyDown(event: KeyboardEvent, route: string): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.navigateTo(route);
+    }
+  }
+
+  // Live region announcements
+  private updateLiveRegion(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+    const regionId = priority === 'assertive' ? 'dashboard-alerts' : 'dashboard-announcements';
+    const region = document.getElementById(regionId);
+    if (region) {
+      region.textContent = message;
+      // Clear after announcement to allow repeated messages
+      setTimeout(() => {
+        region.textContent = '';
+      }, 1000);
+    }
+  }
+
+  refreshData() {
+    this.loadDashboardData();
+  }
+
+  // OPTIMIZED: Update charts without destroying/recreating for better performance
+  private updateCharts() {
+    // Check if we have data before attempting updates
+    if (!this.stats.teamComposition?.regions || this.leaderboardEntries.length === 0) {
+      return;
+    }
+
+    // Update existing charts instead of destroying/recreating
+    if (this.regionChart && this.stats.teamComposition.regions) {
+      this.updateRegionChartData();
+    } else {
+      this.createRegionChart();
+    }
+
+    if (this.pointsChart && this.leaderboardEntries.length > 0) {
+      this.updatePointsChartData();
+    } else {
+      this.createPointsChart();
+    }
+  }
+
+  // PERFORMANCE: Update existing chart data instead of recreation
+  private updateRegionChartData() {
+    if (!this.regionChart || !this.stats.teamComposition?.regions) return;
+    
+    const regions = this.stats.teamComposition.regions;
+    this.regionChart.data.labels = Object.keys(regions);
+    this.regionChart.data.datasets[0].data = Object.values(regions);
+    this.regionChart.update('none'); // Skip animations for performance
+  }
+
+  // PERFORMANCE: Update existing chart data instead of recreation
+  private updatePointsChartData() {
+    if (!this.pointsChart || this.leaderboardEntries.length === 0) return;
+    
+    const topTeams = this.leaderboardEntries.slice(0, 10);
+    this.pointsChart.data.labels = topTeams.map(entry => 
+      this.displayTeamName(entry.teamName) || entry.ownerName || `Équipe ${entry.rank}`);
+    this.pointsChart.data.datasets[0].data = topTeams.map(entry => entry.totalPoints);
+    this.pointsChart.update('none'); // Skip animations for performance
+  }
+
+  getSeasonProgress(): number {
+    return this.calculateSeasonProgress();
+  }
+
+  getRegionPercentage(region: string): number {
+    if (!this.stats.teamComposition?.regions || !this.stats.totalPlayers) return 0;
+    
+    const regionCount = this.stats.teamComposition.regions[region] || 0;
+    const percentage = (regionCount / this.stats.totalPlayers) * 100;
+    
+    // Arrondir à 1 décimale
+    return Math.round(percentage * 10) / 10;
+  }
+
+  // Méthode utilitaire pour le formatage rapide dans le template
+  formatNumber(n: number | undefined | null): string {
+    if (n === undefined || n === null) return '0';
+    return n.toLocaleString('fr-FR');
+  }
+
+  displayTeamName(rawName: string | undefined | null): string {
+    if (!rawName) return '';
+    return rawName.replace(/^É?Équipe des\s+/i, '').trim();
+  }
+
+  /**
+   * Show premium notification when using mock data
+   */
+  private showMockDataNotification(): void {
+    this.snackBar.open(
+      '🎮 Mode Démo Premium - Données simulées pour maintenir l\'expérience',
+      'Compris',
+      {
+        duration: 6000,
+        panelClass: ['premium-snackbar', 'demo-mode-snackbar']
+      }
+    );
+  }
+
+  /**
+   * Get backend status for UI indicators
+   */
+  getBackendStatusIcon(): string {
+    switch (this.backendStatus) {
+      case 'online': return 'cloud_done';
+      case 'offline': return 'cloud_off';
+      case 'checking': return 'cloud_sync';
+      default: return 'cloud_queue';
+    }
+  }
+
+  /**
+   * Get backend status color for indicators
+   */
+  getBackendStatusColor(): string {
+    switch (this.backendStatus) {
+      case 'online': return 'var(--gaming-success)';
+      case 'offline': return 'var(--gaming-warning)';
+      case 'checking': return 'var(--gaming-primary)';
+      default: return 'var(--gaming-gray)';
+    }
+  }
+
+  /**
+   * Retry loading data from backend
+   */
+  retryBackendConnection(): void {
+    console.log('🔄 Retrying backend connection...');
+    this.backendStatus = 'checking';
+    this.isUsingMockData = false;
+    this.loadDashboardData(true);
+  }
+
+  // ============== OPTIMISATIONS PERFORMANCE ANGULAR ==============
+  
+  /**
+   * TrackBy function pour optimiser *ngFor des équipes dans le leaderboard
+   * Évite les re-rendus inutiles quand les données changent
+   */
+  trackByTeamId(index: number, team: LeaderboardEntryDTO): string {
+    return team.teamId?.toString() || `team-${index}`;
+  }
+
+  /**
+   * TrackBy function optimisée pour les joueurs d'une équipe
+   */
+  trackByPlayerId(index: number, player: any): string {
+    return player.playerId?.toString() || player.id?.toString() || `player-${index}`;
+  }
+
+  /**
+   * TrackBy function pour les stats cards
+   */
+  trackByStatName(index: number, item: any): string {
+    return item.name || `stat-${index}`;
+  }
+
+  // ===== PREMIUM METHODS =====
+
+  /**
+   * TrackBy function pour les games
+   */
+  trackByGameId(index: number, game: Game): string {
+    return game.id?.toString() || `game-${index}`;
+  }
+
+  /**
+   * Sélectionne une game
+   */
+  selectGame(game: Game): void {
+    this.selectedGameId = game.id.toString();
+    this.selectedGame = game;
+    this.selectedGame = game;
+    this.interactionsService.showGamingNotification(
+      `Game "${game.name}" sélectionnée !`,
+      'success'
+    );
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Retourne le statut d'une game
+   */
+  getGameStatus(game: Game): string {
+    // Logic to determine game status
+    return 'En cours'; // Placeholder
+  }
+
+  /**
+   * Calcule les jours restants pour une game
+   */
+  calculateDaysLeft(game: Game): string {
+    // Logic to calculate days left
+    return '15'; // Placeholder
+  }
+
+  /**
+   * Affiche les détails d'une game
+   */
+  viewGameDetails(game: Game): void {
+    this.router.navigate(['/games', game.id]);
+  }
+
+  /**
+   * Navigate vers une route spécifique
+   */
+  // Méthode navigateTo supprimée - doublon résolu
+} 

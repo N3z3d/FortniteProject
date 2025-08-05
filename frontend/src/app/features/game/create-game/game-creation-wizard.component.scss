@@ -1,0 +1,530 @@
+// UX-001: Advanced Game Creation Wizard Styles
+// Premium design with smooth animations and visual feedback
+
+.game-creation-wizard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  
+  // Smooth entrance animation
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Wizard Header
+.wizard-header {
+  text-align: center;
+  margin-bottom: 32px;
+  position: relative;
+  
+  // Premium background effect
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--gaming-primary), transparent);
+    border-radius: 2px;
+    animation: floating-gentle 4s ease-in-out infinite;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #1976d2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+    
+    mat-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+  }
+  
+  .wizard-subtitle {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
+  }
+}
+
+// Stepper Customization
+.wizard-stepper {
+  background: transparent;
+  
+  ::ng-deep {
+    .mat-stepper-horizontal-line {
+      border-top-width: 2px;
+      border-top-style: solid;
+      border-top-color: #e0e0e0;
+    }
+    
+    .mat-step-header {
+      padding: 16px 24px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: #f5f5f5;
+      }
+      
+      .mat-step-icon {
+        background-color: #1976d2;
+        width: 32px;
+        height: 32px;
+      }
+    }
+    
+    .mat-step-content {
+      padding: 24px 0;
+    }
+  }
+}
+
+// Step Form Styling
+.step-form {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Template Selection
+.template-selection {
+  margin-bottom: 32px;
+  
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    color: #333;
+    
+    mat-icon {
+      color: #1976d2;
+    }
+  }
+  
+  .template-hint {
+    color: #666;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.template-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  
+  &.selected {
+    border-color: #1976d2;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 40px 40px 0;
+      border-color: transparent #1976d2 transparent transparent;
+    }
+    
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+  }
+  
+  .popular-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #ff9800;
+    font-weight: 500;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+  
+  .template-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    
+    .spec {
+      background: #f5f5f5;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+  }
+}
+
+// Other Templates Disclosure
+.other-templates {
+  summary {
+    cursor: pointer;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background: #e9ecef;
+    }
+  }
+}
+
+// Basic Info Section
+.basic-info-section {
+  margin-bottom: 32px;
+  
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+    color: #333;
+    
+    mat-icon {
+      color: #1976d2;
+    }
+  }
+  
+  .full-width {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+}
+
+// Configuration Sections
+.config-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #1976d2;
+  
+  h4 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 1.2rem;
+  }
+  
+  .draft-config {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .time-field {
+    width: 100%;
+  }
+}
+
+.game-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  mat-checkbox {
+    .option-label {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .option-description {
+      display: block;
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+  }
+}
+
+// Step Actions
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+  
+  &.final-actions {
+    justify-content: center;
+    gap: 16px;
+  }
+  
+  .next-button,
+  .create-button {
+    min-width: 140px;
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 500;
+    
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Review Step
+.review-step {
+  max-width: 600px;
+  margin: 0 auto;
+  
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    color: #333;
+    text-align: center;
+    
+    mat-icon {
+      color: #1976d2;
+    }
+  }
+  
+  .review-description {
+    text-align: center;
+    color: #666;
+    margin-bottom: 32px;
+  }
+}
+
+.game-preview-card {
+  margin-bottom: 24px;
+  overflow: hidden;
+  
+  .game-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 24px;
+  }
+  
+  .game-description {
+    margin-bottom: 20px;
+    color: #555;
+    font-style: italic;
+  }
+  
+  .game-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      
+      mat-icon {
+        color: #1976d2;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+      
+      .stat-label {
+        font-size: 0.9rem;
+        color: #333;
+      }
+    }
+  }
+  
+  .success-prediction {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border-radius: 12px;
+    border-left: 4px solid #4caf50;
+    
+    .prediction-icon {
+      color: #4caf50;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      margin-top: 2px;
+    }
+    
+    .prediction-content {
+      strong {
+        color: #2e7d32;
+        font-size: 1.1rem;
+      }
+      
+      p {
+        margin: 4px 0 0 0;
+        color: #555;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+.error-card {
+  margin-bottom: 24px;
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+  
+  .error-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #c62828;
+    
+    mat-icon {
+      color: #f44336;
+    }
+  }
+}
+
+// Wizard Progress
+.wizard-progress {
+  margin-top: 32px;
+  text-align: center;
+  
+  .progress-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #e3f2fd;
+    border-radius: 20px;
+    color: #1565c0;
+    font-size: 0.9rem;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .game-creation-wizard {
+    padding: 16px;
+  }
+  
+  .wizard-header h1 {
+    font-size: 2rem;
+    
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+  
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .step-actions {
+    flex-direction: column;
+    gap: 12px;
+    
+    &.final-actions {
+      flex-direction: row;
+    }
+  }
+  
+  .game-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Loading State
+.create-button {
+  transition: all 0.3s ease;
+  
+  &:disabled {
+    opacity: 0.7;
+  }
+  
+  mat-spinner {
+    margin-right: 8px;
+  }
+}

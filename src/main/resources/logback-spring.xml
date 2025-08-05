@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Variables communes -->
+    <property name="LOG_PATH" value="logs"/>
+    
+    <!-- Pattern simplifié pour développement -->
+    <springProfile name="!prod">
+        <property name="CONSOLE_LOG_PATTERN" 
+                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] %-40.40logger{39} : %m%n"/>
+    </springProfile>
+    
+    <!-- SPRINT 4: ENHANCED PRODUCTION PATTERN WITH CORRELATION TRACKING -->
+    <springProfile name="prod">
+        <property name="CONSOLE_LOG_PATTERN" 
+                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] [%X{correlationId:-no-correlation}|%X{requestId:-no-request}] %-40.40logger{39} : %m%n"/>
+    </springProfile>
+
+    <!-- SPRINT 4: ENHANCED FILE PATTERN WITH FULL CONTEXT -->
+    <property name="FILE_LOG_PATTERN" 
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{correlationId:-no-correlation}|%X{requestId:-no-request}] %logger{36} - %msg - Context{user=%X{userId:-anonymous}, operation=%X{operation:-unknown}, duration=%X{durationMs:-}ms}%n"/>
+
+    <!-- SPRINT 4: STRUCTURED JSON LOGGING FOR ADVANCED MONITORING -->
+    <property name="JSON_LOG_PATTERN" 
+              value='{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%level","thread":"%thread","logger":"%logger","message":"%message","mdc":%mdc,"correlation_id":"%X{correlationId:-}","request_id":"%X{requestId:-}","user_id":"%X{userId:-}","operation":"%X{operation:-}","duration_ms":"%X{durationMs:-}"}%n'/>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Appender principal avec rotation -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/fortnite-pronos.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/fortnite-pronos.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Appender pour les erreurs -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/fortnite-pronos-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/fortnite-pronos-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Appender pour les performances -->
+    <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/fortnite-pronos-performance.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/fortnite-pronos-performance.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Appender pour les accès HTTP -->
+    <appender name="ACCESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/fortnite-pronos-access.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/fortnite-pronos-access.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <totalSizeCap>3GB</totalSizeCap>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- SPRINT 4: STRUCTURED JSON APPENDER FOR MONITORING SYSTEMS -->
+    <springProfile name="prod">
+        <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/fortnite-pronos-structured.json</file>
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <logLevel/>
+                    <loggerName/>
+                    <message/>
+                    <mdc/>
+                    <pattern>
+                        <pattern>
+                        {
+                            "correlation_id": "%X{correlationId:-}",
+                            "request_id": "%X{requestId:-}",
+                            "user_id": "%X{userId:-}",
+                            "operation": "%X{operation:-}",
+                            "duration_ms": "%X{durationMs:-}",
+                            "thread": "%thread",
+                            "application": "fortnite-pronos",
+                            "environment": "production"
+                        }
+                        </pattern>
+                    </pattern>
+                </providers>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/fortnite-pronos-structured.%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <!-- SPRINT 4: METRICS APPENDER FOR PROMETHEUS/GRAFANA -->
+        <appender name="METRICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/fortnite-pronos-metrics.log</file>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} METRIC [%X{correlationId:-}] %msg%n</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/fortnite-pronos-metrics.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <maxHistory>15</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+    </springProfile>
+
+    <!-- Appenders asynchrones pour les performances -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <maxFlushTime>5000</maxFlushTime>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <maxFlushTime>5000</maxFlushTime>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <!-- SPRINT 4: ENHANCED SPECIALIZED LOGGERS -->
+    <logger name="performance" level="INFO" additivity="false">
+        <appender-ref ref="PERFORMANCE_FILE"/>
+    </logger>
+
+    <logger name="http-access" level="INFO" additivity="false">
+        <appender-ref ref="ACCESS_FILE"/>
+    </logger>
+
+    <!-- SPRINT 4: NEW SPECIALIZED LOGGERS FOR ADVANCED MONITORING -->
+    <logger name="metrics" level="INFO" additivity="false">
+        <appender-ref ref="METRICS_FILE"/>
+    </logger>
+
+    <logger name="com.fortnite.pronos.config.DistributedTracingConfig" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE"/>
+        <springProfile name="prod">
+            <appender-ref ref="JSON_FILE"/>
+        </springProfile>
+    </logger>
+
+    <logger name="com.fortnite.pronos.config.DatabaseMonitoringConfig" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_FILE"/>
+        <springProfile name="prod">
+            <appender-ref ref="JSON_FILE"/>
+        </springProfile>
+    </logger>
+
+    <!-- Configuration pour développement -->
+    <springProfile name="!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <!-- Réduction du bruit en développement -->
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.hibernate" level="INFO"/>
+        <logger name="com.zaxxer.hikari" level="INFO"/>
+        <logger name="org.apache.catalina" level="INFO"/>
+        
+        <!-- Nos packages en DEBUG -->
+        <logger name="com.fortnite.pronos" level="DEBUG"/>
+    </springProfile>
+
+    <!-- Configuration pour production -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <!-- Niveaux optimisés pour la production -->
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="root.org.springframework" level="WARN"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        
+        <!-- Notre application en INFO -->
+        <logger name="com.fortnite.pronos" level="INFO"/>
+    </springProfile>
+</configuration> 

@@ -1,0 +1,302 @@
+/* Ultra-Fast Create Game Styles */
+.ultra-fast-create {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+/* Header */
+.create-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.create-header h1 {
+  font-size: 2.5rem;
+  color: white;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 300;
+}
+
+/* Form Container */
+.instant-create-form {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.lightning-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Name Section - The Only Required Field */
+.name-section {
+  text-align: center;
+}
+
+.game-name-mega {
+  width: 100%;
+  font-size: 1.2rem;
+}
+
+.game-name-mega .mat-mdc-form-field-focus-overlay {
+  background-color: rgba(103, 126, 234, 0.1);
+}
+
+.game-name-mega input {
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Auto Configuration Preview */
+.auto-config-preview {
+  margin: 1.5rem 0;
+}
+
+.config-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+  border-radius: 12px;
+  border: 2px solid rgba(103, 126, 234, 0.2);
+}
+
+.config-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  color: white;
+}
+
+.config-details h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.config-specs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.spec-item {
+  background: rgba(103, 126, 234, 0.1);
+  color: #667eea;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.config-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Actions */
+.instant-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mega-create-btn {
+  min-width: 200px;
+  height: 56px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: none;
+  box-shadow: 0 8px 25px rgba(103, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+.mega-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(103, 126, 234, 0.5);
+}
+
+.show-advanced {
+  color: #667eea;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+/* Advanced Panel */
+.advanced-panel {
+  margin-top: 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+  border-bottom: 1px solid rgba(103, 126, 234, 0.1);
+}
+
+.panel-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.advanced-controls {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(244, 67, 54, 0.1);
+  color: #d32f2f;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Trust Section */
+.trust-section {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.trust-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat .number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.stat .label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 0.25rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .ultra-fast-create {
+    padding: 1rem;
+  }
+  
+  .instant-create-form {
+    padding: 1.5rem;
+  }
+  
+  .create-header h1 {
+    font-size: 2rem;
+  }
+  
+  .config-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .config-specs {
+    justify-content: center;
+  }
+  
+  .advanced-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .trust-stats {
+    gap: 1rem;
+  }
+}
+
+/* Focus and Accessibility */
+.game-name-mega input:focus {
+  outline: none;
+}
+
+.mega-create-btn:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Loading State */
+.mega-create-btn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Success Animation */
+@keyframes success-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.mega-create-btn.success {
+  animation: success-pulse 0.3s ease-in-out;
+  background-color: #4caf50;
+}

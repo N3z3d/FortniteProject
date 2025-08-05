@@ -1,0 +1,317 @@
+package com.fortnite.pronos.service;
+
+import com.fortnite.pronos.dto.DraftDto;
+import com.fortnite.pronos.dto.GameDto;
+import com.fortnite.pronos.exception.*;
+import com.fortnite.pronos.model.*;
+import com.fortnite.pronos.repository.*;
+import com.fortnite.pronos.service.draft.DraftService;
+import com.fortnite.pronos.util.TestDataBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Tests TDD pour GameService.finishDraft()
+ * Clean Code : une classe de test par fonctionnalité majeure
+ */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@DisplayName("Tests TDD - GameService.finishDraft()")
+class GameServiceFinishDraftTest {
+
+    @Mock
+    private GameRepository gameRepository;
+    
+    @Mock
+    private UserRepository userRepository;
+    
+    @Mock
+    private DraftRepository draftRepository;
+    
+    @Mock
+    private DraftPickRepository draftPickRepository;
+    
+    @Mock
+    private GameParticipantRepository gameParticipantRepository;
+    
+    @Mock
+    private DraftService draftService;
+    
+    @InjectMocks
+    private RefactoredGameService refactoredGameService;
+    
+    private User marcel;
+    private User teddy;
+    private User thibaut;
+    private User sarah;
+    private Game testGame;
+    private Draft testDraft;
+    private List<GameParticipant> participants;
+    
+    @BeforeEach
+    void setUp() {
+        // Créer les utilisateurs
+        marcel = TestDataBuilder.createMarcel();
+        marcel.setId(UUID.randomUUID());
+        
+        teddy = TestDataBuilder.createTeddy();
+        teddy.setId(UUID.randomUUID());
+        
+        thibaut = TestDataBuilder.createThibaut();
+        thibaut.setId(UUID.randomUUID());
+        
+        sarah = TestDataBuilder.createSarah();
+        sarah.setId(UUID.randomUUID());
+        
+        // Créer une game en draft
+        testGame = TestDataBuilder.createValidGame(marcel, "Draft Fortnite");
+        testGame.setId(UUID.randomUUID());
+        testGame.setStatus(GameStatus.DRAFTING);
+        
+        // Créer le draft actif
+        testDraft = new Draft(testGame);
+        testDraft.setId(UUID.randomUUID());
+        testDraft.setStatus(Draft.Status.ACTIVE);
+        testDraft.setCurrentRound(3);
+        testDraft.setCurrentPick(4);
+        testDraft.setTotalRounds(3);
+        
+        // Créer les participants
+        participants = Arrays.asList(
+            createParticipant(marcel, 1),
+            createParticipant(teddy, 2),
+            createParticipant(thibaut, 3),
+            createParticipant(sarah, 4)
+        );
+    }
+    
+    private GameParticipant createParticipant(User user, int draftOrder) {
+        GameParticipant participant = TestDataBuilder.createValidParticipant(testGame, user, draftOrder);
+        participant.setId(UUID.randomUUID());
+        return participant;
+    }
+    
+    // UC9.1 : Terminer un draft avec succès
+    @Test
+    @DisplayName("UC9.1 - Marcel devrait pouvoir terminer le draft quand tous ont sélectionné")
+    void shouldAllowMarcelToFinishDraftWhenComplete() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        
+        // Tous les participants ont 3 joueurs (draft complet)
+        when(draftPickRepository.countByDraftAndParticipant(eq(testDraft), any())).thenReturn(3L);
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(gameRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        
+        // When
+        refactoredGameService.finishDraft(testGame.getId(), marcel.getId());
+        
+        // Then
+        // Vérifier que la méthode s'exécute sans exception
+        
+        // Vérifier que le draft est terminé
+        verify(draftRepository).save(argThat(draft -> 
+            draft.getStatus() == Draft.Status.FINISHED
+        ));
+        
+        // Vérifier que la game est active
+        verify(gameRepository).save(argThat(game -> 
+            game.getStatus() == GameStatus.ACTIVE
+        ));
+    }
+    
+    // UC9.2 : Seul le créateur peut terminer
+    @Test
+    @DisplayName("UC9.2 - Teddy ne devrait pas pouvoir terminer le draft créé par Marcel")
+    void shouldRejectIfNotCreator() {
+        // Given
+        when(userRepository.findById(teddy.getId())).thenReturn(Optional.of(teddy));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        
+        // When/Then
+        assertThatThrownBy(() -> refactoredGameService.finishDraft(testGame.getId(), teddy.getId()))
+            .isInstanceOf(UnauthorizedAccessException.class)
+            .hasMessageContaining("Seul le créateur");
+    }
+    
+    // UC9.3 : Draft incomplet
+    @Test
+    @DisplayName("UC9.3 - Ne devrait pas pouvoir terminer si tous n'ont pas sélectionné")
+    void shouldRejectIfDraftIncomplete() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        
+        // Marcel et Teddy ont 3 joueurs, mais Thibaut n'en a que 2
+        when(draftPickRepository.countByDraftAndParticipant(testDraft, participants.get(0))).thenReturn(3L);
+        when(draftPickRepository.countByDraftAndParticipant(testDraft, participants.get(1))).thenReturn(3L);
+        when(draftPickRepository.countByDraftAndParticipant(testDraft, participants.get(2))).thenReturn(2L);
+        when(draftPickRepository.countByDraftAndParticipant(testDraft, participants.get(3))).thenReturn(3L);
+        
+        // When/Then
+        assertThatThrownBy(() -> refactoredGameService.finishDraft(testGame.getId(), marcel.getId()))
+            .isInstanceOf(DraftIncompleteException.class)
+            .hasMessageContaining("n'ont pas terminé");
+    }
+    
+    // UC9.4 : Draft déjà terminé
+    @Test
+    @DisplayName("UC9.4 - Ne devrait pas pouvoir terminer un draft déjà fini")
+    void shouldRejectIfDraftAlreadyFinished() {
+        // Given
+        testDraft.setStatus(Draft.Status.FINISHED);
+        
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        
+        // When/Then
+        assertThatThrownBy(() -> refactoredGameService.finishDraft(testGame.getId(), marcel.getId()))
+            .isInstanceOf(InvalidDraftStateException.class)
+            .hasMessageContaining("déjà terminé");
+    }
+    
+    // UC9.5 : Pas de draft
+    @Test
+    @DisplayName("UC9.5 - Ne devrait pas pouvoir terminer si pas de draft")
+    void shouldRejectIfNoDraft() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+        
+        // When/Then
+        assertThatThrownBy(() -> refactoredGameService.finishDraft(testGame.getId(), marcel.getId()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Aucun draft");
+    }
+    
+    // UC9.6 : Finir avec des règles régionales
+    @Test
+    @DisplayName("UC9.6 - Devrait terminer le draft avec validation des règles régionales")
+    void shouldFinishDraftWithRegionRules() {
+        // Given - Game avec règles régionales
+        GameRegionRule euRule = GameRegionRule.builder()
+            .id(UUID.randomUUID())
+            .game(testGame)
+            .region(Player.Region.EU)
+            .maxPlayers(2)
+            .build();
+        testGame.getRegionRules().add(euRule);
+        
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        when(draftPickRepository.countByDraftAndParticipant(eq(testDraft), any())).thenReturn(3L);
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(gameRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        
+        // When
+        refactoredGameService.finishDraft(testGame.getId(), marcel.getId());
+        
+        // Then
+        // Vérifier que la méthode s'exécute sans exception
+    }
+    
+    // UC9.7 : Notification des participants
+    @Test
+    @DisplayName("UC9.7 - Devrait notifier tous les participants quand le draft est terminé")
+    void shouldNotifyParticipantsWhenDraftFinished() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        when(draftPickRepository.countByDraftAndParticipant(eq(testDraft), any())).thenReturn(3L);
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(gameRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        
+        // When
+        refactoredGameService.finishDraft(testGame.getId(), marcel.getId());
+        
+        // Then
+        // Vérifier que la méthode s'exécute sans exception
+        
+        // TODO: Vérifier que les notifications sont envoyées quand le service sera implémenté
+        // verify(notificationService).notifyDraftFinished(testGame, participants);
+    }
+    
+    // Test d'intégration : Workflow complet
+    @Test
+    @DisplayName("Workflow complet - Terminer un draft avec toutes les vérifications")
+    void shouldCompleteFullFinishWorkflow() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        when(draftPickRepository.countByDraftAndParticipant(eq(testDraft), any())).thenReturn(3L);
+        
+        when(draftRepository.save(any())).thenAnswer(i -> {
+            Draft draft = i.getArgument(0);
+            draft.setFinishedAt(LocalDateTime.now());
+            return draft;
+        });
+        
+        when(gameRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        
+        // When
+        refactoredGameService.finishDraft(testGame.getId(), marcel.getId());
+        
+        // Then
+        // Vérifier que la méthode s'exécute sans exception
+        
+        // Vérifications détaillées
+        verify(draftRepository).save(argThat(draft -> 
+            draft.getStatus() == Draft.Status.FINISHED &&
+            draft.getFinishedAt() != null
+        ));
+        
+        verify(gameRepository).save(argThat(game ->
+            game.getStatus() == GameStatus.ACTIVE
+        ));
+    }
+    
+    // Performance
+    @Test
+    @DisplayName("Performance - Devrait terminer le draft en moins de 200ms")
+    void shouldFinishDraftQuickly() {
+        // Given
+        when(userRepository.findById(marcel.getId())).thenReturn(Optional.of(marcel));
+        when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+        when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+        when(gameParticipantRepository.findByGame(testGame)).thenReturn(participants);
+        when(draftPickRepository.countByDraftAndParticipant(eq(testDraft), any())).thenReturn(3L);
+        when(draftRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(gameRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        
+        // When
+        long startTime = System.currentTimeMillis();
+        refactoredGameService.finishDraft(testGame.getId(), marcel.getId());
+        long endTime = System.currentTimeMillis();
+        
+        // Then
+        assertThat(endTime - startTime).isLessThan(200);
+    }
+} 

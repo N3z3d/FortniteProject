@@ -1,0 +1,570 @@
+// Import Premium Gaming Mixins
+@import '../../../shared/styles/mixins';
+
+/* Premium Gaming Team Detail */
+.team-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  background: var(--gradient-dark);
+  min-height: 100vh;
+  position: relative;
+  
+  // Animated background particles
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 25% 30%, rgba(var(--gaming-primary-rgb), 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 75% 70%, rgba(var(--gaming-accent-rgb), 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    @include floating(12s, 25px);
+  }
+}
+
+/* Premium Gaming Team Header */
+.team-header {
+  @include premium-card(-8px, var(--gaming-primary));
+  @include fade-in-up(0s);
+  margin-bottom: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+  
+  mat-card-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: var(--space-2xl);
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      
+      .team-info {
+        flex: 1;
+        
+        mat-card-title {
+          @include gaming-title;
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin: 0 0 var(--space-sm) 0;
+          @include neon-glow(white, 0.4);
+          display: flex;
+          align-items: center;
+          gap: var(--space-md);
+          
+          mat-icon {
+            font-size: 2.5rem;
+            color: #ffd700;
+            @include neon-glow(#ffd700, 0.6);
+          }
+        }
+        
+        mat-card-subtitle {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 1.1rem;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: var(--space-md);
+          
+          .team-status {
+            @include glass-card(0.2);
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-large);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+          }
+        }
+      }
+      
+      .team-actions {
+        display: flex;
+        gap: var(--space-md);
+        
+        button {
+          @include gaming-button();
+          
+          &.mat-primary {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            border: 2px solid white;
+            
+            &:hover {
+              background: white !important;
+              color: var(--gaming-primary) !important;
+            }
+          }
+          
+          &[color="warn"] {
+            @include gaming-button(var(--gaming-error));
+          }
+        }
+      }
+    }
+  }
+  
+  mat-card-content {
+    padding: var(--space-2xl);
+    background: var(--glass-bg-dark);
+    color: var(--gaming-light);
+  }
+}
+
+/* Premium Gaming Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.stat-card {
+  @include stats-card(var(--gaming-primary));
+  @include fade-in-up(0.1s);
+  
+  &.total-points {
+    @include stats-card(var(--gaming-success));
+    animation-delay: 0.1s;
+  }
+  
+  &.avg-points {
+    @include stats-card(var(--gaming-accent));
+    animation-delay: 0.2s;
+  }
+  
+  &.ranking {
+    @include stats-card(var(--gaming-warning));
+    animation-delay: 0.3s;
+  }
+  
+  &.players-count {
+    @include stats-card(var(--gaming-primary));
+    animation-delay: 0.4s;
+  }
+}
+
+/* Premium Gaming Players Section */
+.players-section {
+  @include premium-card(-8px, var(--gaming-success));
+  @include fade-in-up(0.3s);
+  margin-bottom: var(--space-2xl);
+  
+  mat-card-header {
+    background: var(--gradient-success);
+    color: white;
+    padding: var(--space-xl) var(--space-2xl) 0;
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    
+    mat-card-title {
+      @include gaming-title;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      @include neon-glow(white, 0.3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      
+      mat-icon {
+        font-size: 1.8rem;
+      }
+    }
+  }
+  
+  mat-card-content {
+    padding: var(--space-2xl);
+    background: var(--glass-bg-dark);
+    color: var(--gaming-light);
+  }
+}
+
+/* Premium Gaming Players Table */
+.players-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th {
+    background: var(--gradient-primary);
+    padding: var(--space-lg);
+    text-align: left;
+    @include gaming-font;
+    font-weight: 700;
+    color: white;
+    border-bottom: 2px solid var(--gaming-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    @include neon-glow(white, 0.2);
+    
+    &:first-child {
+      border-radius: var(--radius-medium) 0 0 0;
+    }
+    
+    &:last-child {
+      border-radius: 0 var(--radius-medium) 0 0;
+    }
+  }
+  
+  td {
+    padding: var(--space-lg);
+    border-bottom: 1px solid rgba(var(--gaming-gray-rgb), 0.2);
+    color: var(--gaming-light);
+  }
+}
+
+.player-row {
+  transition: all var(--transition-normal);
+  
+  &:hover {
+    background: rgba(var(--gaming-primary-rgb), 0.1);
+    transform: translateX(8px);
+    @include pulse-glow(var(--gaming-primary), 1s);
+  }
+  
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+.player-rank {
+  text-align: center;
+  width: 80px;
+  
+  .rank-badge {
+    @include rank-badge(4);
+    font-size: 1rem;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  
+  .player-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    @include gaming-gradient-bg();
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include gaming-font;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: 2px solid var(--gaming-primary);
+    transition: all var(--transition-normal);
+    
+    &:hover {
+      @include pulse-glow(var(--gaming-primary), 1s);
+      transform: scale(1.1);
+    }
+  }
+  
+  .player-details {
+    .player-nickname {
+      @include gaming-font;
+      font-weight: 600;
+      color: var(--gaming-light);
+      margin-bottom: var(--space-xs);
+      font-size: 1.1rem;
+      @include gaming-text-gradient();
+    }
+    
+    .player-username {
+      font-size: 0.9rem;
+      color: var(--gaming-gray-light);
+      opacity: 0.8;
+    }
+  }
+}
+
+.region-badge {
+  @include glass-card-dark(0.6);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-xl);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gaming-primary);
+  border: 1px solid var(--gaming-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.points-value {
+  @include gaming-font;
+  font-weight: 700;
+  @include gaming-text-gradient();
+  font-size: 1.3rem;
+  @include neon-glow(var(--gaming-success), 0.3);
+}
+
+.player-actions {
+  display: flex;
+  gap: var(--space-sm);
+  
+  button {
+    @include gaming-button();
+    min-width: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    
+    &[color="primary"] {
+      @include gaming-button(var(--gaming-primary));
+    }
+    
+    &[color="warn"] {
+      @include gaming-button(var(--gaming-error));
+    }
+    
+    mat-icon {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+/* Premium Gaming Performance Chart */
+.performance-section {
+  @include premium-card(-8px, var(--gaming-accent));
+  @include fade-in-up(0.4s);
+  margin-bottom: var(--space-2xl);
+  
+  mat-card-header {
+    background: var(--gradient-accent);
+    color: white;
+    padding: var(--space-xl) var(--space-2xl) 0;
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    
+    mat-card-title {
+      @include gaming-title;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      @include neon-glow(white, 0.3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      
+      mat-icon {
+        font-size: 1.8rem;
+      }
+    }
+  }
+  
+  mat-card-content {
+    padding: var(--space-2xl);
+    background: var(--glass-bg-dark);
+    color: var(--gaming-light);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .chart-placeholder {
+      text-align: center;
+      color: var(--gaming-gray-light);
+      
+      mat-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: var(--space-lg);
+        color: var(--gaming-accent);
+        @include neon-glow(var(--gaming-accent), 0.4);
+        @include floating(3s, 8px);
+      }
+      
+      h3 {
+        @include gaming-title;
+        margin-bottom: var(--space-sm);
+        color: var(--gaming-accent);
+      }
+    }
+  }
+}
+
+/* Premium Gaming Loading & Error States */
+.loading-container, .error-container {
+  @include glass-card-dark();
+  @include fade-in-up(0.2s);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  text-align: center;
+  max-width: 500px;
+  margin: var(--space-3xl) auto;
+  
+  &.loading-container {
+    border: 2px solid var(--gaming-primary);
+    @include pulse-glow(var(--gaming-primary), 2s);
+    
+    mat-spinner {
+      @include pulse-glow(var(--gaming-primary), 2s);
+      margin-bottom: var(--space-lg);
+    }
+    
+    p {
+      @include gaming-font;
+      color: var(--gaming-light);
+      font-size: 1.1rem;
+    }
+  }
+  
+  &.error-container {
+    border: 2px solid var(--gaming-error);
+    @include pulse-glow(var(--gaming-error), 2s);
+    
+    mat-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: var(--gaming-error);
+      margin-bottom: var(--space-lg);
+      @include neon-glow(var(--gaming-error), 0.5);
+      @include floating(2s, 8px);
+    }
+    
+    h2 {
+      @include gaming-title;
+      color: var(--gaming-error);
+      margin-bottom: var(--space-sm);
+      @include neon-glow(var(--gaming-error), 0.4);
+    }
+    
+    p {
+      color: var(--gaming-gray-light);
+      margin-bottom: var(--space-lg);
+    }
+    
+    button {
+      @include gaming-button(var(--gaming-error));
+    }
+  }
+}
+
+/* Premium Gaming Responsive Design */
+@media (max-width: 768px) {
+  .team-detail-container {
+    padding: var(--space-md);
+    
+    .team-header {
+      mat-card-header {
+        padding: var(--space-lg);
+        
+        .header-content {
+          flex-direction: column;
+          gap: var(--space-lg);
+          
+          .team-info {
+            text-align: center;
+            
+            mat-card-title {
+              font-size: 2rem;
+            }
+          }
+          
+          .team-actions {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+      
+      mat-card-content {
+        padding: var(--space-lg);
+      }
+    }
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+  
+  .players-section {
+    mat-card-content {
+      padding: var(--space-lg);
+      overflow-x: auto;
+    }
+  }
+  
+  .players-table {
+    min-width: 600px;
+    
+    th, td {
+      padding: var(--space-sm) var(--space-md);
+    }
+  }
+  
+  .player-info {
+    .player-avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .team-detail-container {
+    padding: var(--space-sm);
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .team-header {
+    mat-card-header {
+      .header-content {
+        .team-info {
+          mat-card-title {
+            font-size: 1.8rem;
+            flex-direction: column;
+          }
+        }
+        
+        .team-actions {
+          flex-direction: column;
+          
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+  
+  .performance-section,
+  .players-section {
+    mat-card-header {
+      padding: var(--space-md) var(--space-lg) 0;
+      
+      mat-card-title {
+        font-size: 1.5rem;
+      }
+    }
+    
+    mat-card-content {
+      padding: var(--space-lg);
+    }
+  }
+}
+
+// Premium Gaming Motion Settings
+@include reduced-motion;

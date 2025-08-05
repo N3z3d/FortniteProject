@@ -1,0 +1,355 @@
+package com.fortnite.pronos.config;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.UUID;
+
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.web.filter.CommonsRequestLoggingFilter;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.Tracer;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * SPRINT 4 - ADVANCED MONITORING: DISTRIBUTED TRACING CONFIGURATION
+ *
+ * <p>Configuration pour: - Correlation IDs sur toutes les requêtes HTTP - Distributed tracing avec
+ * Micrometer - Request/Response logging avec contexte complet - Performance tracking détaillé pour
+ * 500+ utilisateurs - Integration Prometheus/Grafana ready
+ *
+ * <p>Note: HttpTraceRepository removed in Spring Boot 3.x - using custom implementation instead
+ */
+@Configuration
+@Slf4j
+public class DistributedTracingConfig {
+
+  private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
+  private static final String TRACE_ID_HEADER = "X-Trace-ID";
+  private static final String REQUEST_ID_ATTRIBUTE = "request.id";
+
+  // HttpTraceRepository removed in Spring Boot 3.x
+  // Using Micrometer tracing and custom correlation tracking instead
+
+  @Bean
+  public CorrelationIdFilter correlationIdFilter(MeterRegistry meterRegistry) {
+    return new CorrelationIdFilter(meterRegistry);
+  }
+
+  @Bean
+  public CommonsRequestLoggingFilter requestLoggingFilter() {
+    CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
+    filter.setIncludeClientInfo(true);
+    filter.setIncludeQueryString(true);
+    filter.setIncludePayload(false); // Security: no payload in logs
+    filter.setIncludeHeaders(true);
+    filter.setMaxPayloadLength(1000);
+    filter.setAfterMessagePrefix("REQUEST DATA : ");
+    return filter;
+  }
+
+  @Bean
+  public DistributedTracingService distributedTracingService(
+      MeterRegistry meterRegistry, Tracer tracer) {
+    return new DistributedTracingService(meterRegistry, tracer);
+  }
+
+  /**
+   * CORRELATION ID FILTER - Sprint 4 Advanced Monitoring Ajoute des correlation IDs uniques à
+   * chaque requête pour tracking distribué
+   */
+  @Order(1)
+  public static class CorrelationIdFilter implements Filter {
+
+    private final Timer requestTimer;
+    private final Counter requestCounter;
+    private final Counter errorCounter;
+
+    public CorrelationIdFilter(MeterRegistry meterRegistry) {
+      this.requestTimer =
+          Timer.builder("http.requests.duration")
+              .description("HTTP request duration with correlation tracking")
+              .register(meterRegistry);
+
+      this.requestCounter =
+          Counter.builder("http.requests.total")
+              .description("Total HTTP requests with correlation tracking")
+              .register(meterRegistry);
+
+      this.errorCounter =
+          Counter.builder("http.requests.errors")
+              .description("HTTP request errors with correlation tracking")
+              .register(meterRegistry);
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+        throws IOException, ServletException {
+
+      HttpServletRequest httpRequest = (HttpServletRequest) request;
+      HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+      // Generate or extract correlation ID
+      String correlationId = extractOrGenerateCorrelationId(httpRequest);
+      String requestId = UUID.randomUUID().toString().substring(0, 8);
+
+      // Set correlation context
+      CorrelationContext.setCorrelationId(correlationId);
+      CorrelationContext.setRequestId(requestId);
+
+      // Add headers to response for distributed tracing
+      httpResponse.setHeader(CORRELATION_ID_HEADER, correlationId);
+      httpResponse.setHeader(TRACE_ID_HEADER, requestId);
+
+      // Start timing
+      Timer.Sample sample = Timer.start();
+      Instant startTime = Instant.now();
+
+      try {
+        // Log request start
+        logRequestStart(httpRequest, correlationId, requestId);
+
+        // Increment request counter
+        requestCounter.increment();
+
+        // Continue filter chain
+        chain.doFilter(request, response);
+
+        // Log successful completion
+        logRequestCompletion(httpRequest, httpResponse, correlationId, requestId, startTime);
+
+      } catch (Exception e) {
+        // Log error and increment error counter
+        errorCounter.increment();
+        logRequestError(httpRequest, correlationId, requestId, e, startTime);
+        throw e;
+
+      } finally {
+        // Stop timing and record
+        sample.stop(requestTimer);
+
+        // Clear correlation context
+        CorrelationContext.clear();
+      }
+    }
+
+    private String extractOrGenerateCorrelationId(HttpServletRequest request) {
+      // Try to extract from header (for distributed tracing)
+      String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+
+      if (correlationId == null || correlationId.trim().isEmpty()) {
+        // Generate new correlation ID
+        correlationId = "FP-" + UUID.randomUUID().toString().substring(0, 12);
+      }
+
+      return correlationId;
+    }
+
+    private void logRequestStart(
+        HttpServletRequest request, String correlationId, String requestId) {
+      String userAgent = request.getHeader("User-Agent");
+      String clientIp = getClientIpAddress(request);
+
+      log.info(
+          "🚀 REQUEST_START [{}|{}] {} {} from {} - Agent: {}",
+          correlationId,
+          requestId,
+          request.getMethod(),
+          request.getRequestURI(),
+          clientIp,
+          userAgent != null ? userAgent.substring(0, Math.min(50, userAgent.length())) : "unknown");
+    }
+
+    private void logRequestCompletion(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        String correlationId,
+        String requestId,
+        Instant startTime) {
+      long durationMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+
+      log.info(
+          "✅ REQUEST_SUCCESS [{}|{}] {} {} → {} ({}ms)",
+          correlationId,
+          requestId,
+          request.getMethod(),
+          request.getRequestURI(),
+          response.getStatus(),
+          durationMs);
+    }
+
+    private void logRequestError(
+        HttpServletRequest request,
+        String correlationId,
+        String requestId,
+        Exception error,
+        Instant startTime) {
+      long durationMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+
+      log.error(
+          "❌ REQUEST_ERROR [{}|{}] {} {} - Error: {} ({}ms)",
+          correlationId,
+          requestId,
+          request.getMethod(),
+          request.getRequestURI(),
+          error.getMessage(),
+          durationMs);
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+      String xForwardedFor = request.getHeader("X-Forwarded-For");
+      if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+        return xForwardedFor.split(",")[0].trim();
+      }
+
+      String xRealIp = request.getHeader("X-Real-IP");
+      if (xRealIp != null && !xRealIp.isEmpty()) {
+        return xRealIp;
+      }
+
+      return request.getRemoteAddr();
+    }
+  }
+
+  /** CORRELATION CONTEXT - Thread-local storage pour correlation IDs */
+  public static class CorrelationContext {
+    private static final ThreadLocal<String> correlationIdContext = new ThreadLocal<>();
+    private static final ThreadLocal<String> requestIdContext = new ThreadLocal<>();
+
+    public static void setCorrelationId(String correlationId) {
+      correlationIdContext.set(correlationId);
+    }
+
+    public static String getCorrelationId() {
+      return correlationIdContext.get();
+    }
+
+    public static void setRequestId(String requestId) {
+      requestIdContext.set(requestId);
+    }
+
+    public static String getRequestId() {
+      return requestIdContext.get();
+    }
+
+    public static void clear() {
+      correlationIdContext.remove();
+      requestIdContext.remove();
+    }
+
+    public static String getFullContext() {
+      String correlationId = getCorrelationId();
+      String requestId = getRequestId();
+
+      if (correlationId != null && requestId != null) {
+        return String.format("[%s|%s]", correlationId, requestId);
+      }
+      return "[no-context]";
+    }
+  }
+
+  /** DISTRIBUTED TRACING SERVICE - Service pour créer et gérer les spans */
+  public static class DistributedTracingService {
+
+    private final MeterRegistry meterRegistry;
+    private final Tracer tracer;
+    private final Timer serviceTimer;
+    private final Counter serviceCounter;
+
+    public DistributedTracingService(MeterRegistry meterRegistry, Tracer tracer) {
+      this.meterRegistry = meterRegistry;
+      this.tracer = tracer;
+
+      this.serviceTimer =
+          Timer.builder("service.operations.duration")
+              .description("Service operation duration with distributed tracing")
+              .register(meterRegistry);
+
+      this.serviceCounter =
+          Counter.builder("service.operations.total")
+              .description("Total service operations with distributed tracing")
+              .register(meterRegistry);
+    }
+
+    /** Crée un span pour une opération de service avec correlation context */
+    public Span startServiceSpan(String operationName, String serviceName) {
+      serviceCounter.increment();
+
+      Span span =
+          tracer
+              .nextSpan()
+              .name(operationName)
+              .tag("service.name", serviceName)
+              .tag(
+                  "correlation.id",
+                  CorrelationContext.getCorrelationId() != null
+                      ? CorrelationContext.getCorrelationId()
+                      : "unknown")
+              .tag(
+                  "request.id",
+                  CorrelationContext.getRequestId() != null
+                      ? CorrelationContext.getRequestId()
+                      : "unknown")
+              .start();
+
+      log.debug(
+          "🔍 SPAN_START {} [{}] - Service: {}",
+          operationName,
+          CorrelationContext.getFullContext(),
+          serviceName);
+
+      return span;
+    }
+
+    /** Termine un span avec des informations de résultat */
+    public void finishServiceSpan(Span span, String result) {
+      if (span != null) {
+        span.tag("operation.result", result);
+        span.end();
+
+        log.debug(
+            "🏁 SPAN_END {} [{}] - Result: {}",
+            span.getRemoteServiceName(),
+            CorrelationContext.getFullContext(),
+            result);
+      }
+    }
+
+    /** Enregistre une erreur dans le span */
+    public void recordSpanError(Span span, Exception error) {
+      if (span != null) {
+        span.tag("error", "true");
+        span.tag("error.message", error.getMessage());
+        span.tag("error.class", error.getClass().getSimpleName());
+
+        log.error(
+            "💥 SPAN_ERROR {} [{}] - Error: {}",
+            span.getRemoteServiceName(),
+            CorrelationContext.getFullContext(),
+            error.getMessage());
+      }
+    }
+
+    /** Timer helper pour mesurer les opérations de service */
+    public Timer.Sample startServiceTimer() {
+      return Timer.start(meterRegistry);
+    }
+
+    public void stopServiceTimer(Timer.Sample sample, String serviceName, String operationName) {
+      sample.stop(
+          Timer.builder("service.specific.duration")
+              .tag("service", serviceName)
+              .tag("operation", operationName)
+              .register(meterRegistry));
+    }
+  }
+}

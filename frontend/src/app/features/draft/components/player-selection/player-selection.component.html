@@ -1,0 +1,149 @@
+<!-- PLAYER SELECTION COMPONENT - OPTIMIZED FOR 149 PLAYERS -->
+<div class="player-selection-container" role="region" aria-label="Sélection de joueur">
+  
+  <!-- Header avec statistiques et filtres -->
+  <div class="selection-header">
+    <div class="player-stats">
+      <span class="stats-badge">
+        {{ getFilteredCount() }} / {{ getTotalCount() }} joueurs
+      </span>
+      <button 
+        mat-stroked-button 
+        color="primary" 
+        (click)="clearFilters()"
+        [disabled]="!hasActiveFilters()"
+        class="clear-filters-btn">
+        <mat-icon>filter_alt_off</mat-icon>
+        Effacer filtres
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtres optimisés -->
+  <div class="filters-container" role="group" aria-label="Filtres de joueurs">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Recherche</mat-label>
+      <input 
+        matInput 
+        [value]="searchTerm"
+        (input)="onSearchChange($event)"
+        placeholder="Nom du joueur..."
+        [attr.aria-describedby]="'search-help'"
+        autocomplete="off">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Région</mat-label>
+      <mat-select [(value)]="selectedRegion">
+        <mat-option value="ALL">Toutes les régions</mat-option>
+        <mat-option 
+          *ngFor="let region of getAvailableRegions()" 
+          [value]="region">
+          {{ getRegionLabel(region) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Tranche</mat-label>
+      <mat-select [(value)]="selectedTranche">
+        <mat-option value="ALL">Toutes les tranches</mat-option>
+        <mat-option 
+          *ngFor="let tranche of getAvailableTranches()" 
+          [value]="tranche">
+          {{ getTrancheLabel(tranche) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- VIRTUAL SCROLLING LIST - OPTIMIZED FOR 149 PLAYERS -->
+  <div class="players-list-container">
+    <div 
+      *ngIf="isLoading" 
+      class="loading-indicator"
+      role="status" 
+      aria-live="polite">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Chargement des joueurs...</span>
+    </div>
+
+    <div 
+      *ngIf="error" 
+      class="error-message"
+      role="alert">
+      <mat-icon color="warn">error</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- VIRTUAL SCROLL VIEWPORT - PERFORMANCE CRITICAL -->
+    <cdk-virtual-scroll-viewport 
+      *ngIf="!isLoading && !error"
+      itemSize="80" 
+      class="players-viewport"
+      [attr.aria-label]="'Liste de ' + getFilteredCount() + ' joueurs'">
+      
+      <div 
+        *cdkVirtualFor="let player of getFilteredPlayers(); trackBy: trackByPlayerId"
+        class="player-item"
+        [class.selectable]="canSelect"
+        [attr.aria-label]="'Joueur ' + player.nickname + ', région ' + getRegionLabel(player.region) + ', tranche ' + player.tranche"
+        (click)="onPlayerSelect(player)"
+        (keydown.enter)="onPlayerSelect(player)"
+        (keydown.space)="onPlayerSelect(player)"
+        [attr.tabindex]="canSelect ? '0' : '-1'"
+        role="button">
+        
+        <div class="player-avatar">
+          <mat-icon>person</mat-icon>
+        </div>
+        
+        <div class="player-info">
+          <div class="player-name">
+            <span class="nickname">{{ player.nickname }}</span>
+            <span class="username" *ngIf="player.username !== player.nickname">
+              ({{ player.username }})
+            </span>
+          </div>
+          
+          <div class="player-details">
+            <mat-chip-set>
+              <mat-chip [style.background-color]="getRegionColor(player.region)">
+                {{ getRegionLabel(player.region) }}
+              </mat-chip>
+              <mat-chip class="tranche-chip">
+                T{{ player.tranche }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+          
+          <div class="player-stats" *ngIf="player.totalPoints !== undefined">
+            <span class="points">{{ player.totalPoints | number }} pts</span>
+          </div>
+        </div>
+
+        <div class="player-actions" *ngIf="canSelect">
+          <mat-icon>add_circle</mat-icon>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div 
+        *ngIf="getFilteredPlayers().length === 0" 
+        class="empty-state"
+        role="status">
+        <mat-icon>search_off</mat-icon>
+        <h3>Aucun joueur trouvé</h3>
+        <p>Essayez de modifier vos critères de recherche</p>
+      </div>
+    </cdk-virtual-scroll-viewport>
+  </div>
+
+  <!-- Footer avec pagination info (si implémentée) -->
+  <div class="selection-footer" *ngIf="showPaginationInfo">
+    <span class="pagination-info">
+      Performance optimisée pour {{ getTotalCount() }} joueurs
+    </span>
+  </div>
+</div>

@@ -1,0 +1,791 @@
+// Premium Gaming UI Mixins
+
+// ===== GLASSMORPHISM EFFECTS =====
+@mixin glass-card($opacity: 0.1, $blur: 20px, $border-opacity: 0.2) {
+  background: rgba(255, 255, 255, $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid rgba(255, 255, 255, $border-opacity);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-large);
+}
+
+@mixin glass-card-dark($opacity: 0.8, $blur: 20px, $border-opacity: 0.2) {
+  background: rgba(var(--gaming-dark-rgb), $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid rgba(255, 255, 255, $border-opacity);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-large);
+}
+
+// ===== GAMING GRADIENTS =====
+@mixin gaming-gradient-bg($direction: 135deg) {
+  background: linear-gradient($direction, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+}
+
+@mixin gaming-text-gradient($direction: 135deg) {
+  background: linear-gradient($direction, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@mixin neon-glow($color: var(--gaming-primary), $intensity: 0.5) {
+  text-shadow: 
+    0 0 5px rgba($color, $intensity),
+    0 0 10px rgba($color, $intensity * 0.8),
+    0 0 15px rgba($color, $intensity * 0.6),
+    0 0 20px rgba($color, $intensity * 0.4);
+}
+
+// ===== PREMIUM BUTTONS =====
+@mixin gaming-button($bg-color: var(--gaming-primary), $hover-lift: -3px) {
+  background: $bg-color;
+  border: none;
+  border-radius: var(--radius-medium);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  padding: var(--space-md) var(--space-lg);
+  text-transform: none;
+  transition: all var(--transition-spring);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transform-origin: center;
+  
+  // Shimmer effect
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease-out;
+  }
+  
+  // Magnetic glow effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    background: $bg-color;
+    opacity: 0;
+    z-index: -1;
+    filter: blur(8px);
+    transition: opacity 0.3s ease-out;
+  }
+  
+  &:hover {
+    transform: translateY($hover-lift) scale(1.02);
+    box-shadow: 
+      0 8px 25px rgba(0, 0, 0, 0.4),
+      0 0 40px rgba(0, 0, 0, 0.2);
+    filter: brightness(1.1);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    &::after {
+      opacity: 0.6;
+    }
+  }
+  
+  &:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease-out;
+  }
+}
+
+// Enhanced magnetic button with proximity effects
+@mixin magnetic-button($bg-color: var(--gaming-primary), $magnetic-distance: 50px) {
+  @include gaming-button($bg-color);
+  
+  // JavaScript will handle the magnetic effect by adding transform styles
+  &.magnetic-active {
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  &.magnetic-hover {
+    &::after {
+      opacity: 0.8;
+      filter: blur(12px);
+    }
+  }
+}
+
+// Advanced ripple effect button
+@mixin ripple-button($bg-color: var(--gaming-primary)) {
+  @include gaming-button($bg-color);
+  overflow: hidden;
+  
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: rippleEffect 0.6s ease-out;
+    pointer-events: none;
+  }
+  
+  @keyframes rippleEffect {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+}
+
+// Spring-bounce button for special actions
+@mixin spring-button($bg-color: var(--gaming-accent)) {
+  @include gaming-button($bg-color);
+  
+  &:hover {
+    animation: springBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  &:active {
+    transform: translateY(-1px) scale(0.95);
+    animation: springPress 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  @keyframes springBounce {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.05); }
+    100% { transform: translateY(-3px) scale(1.02); }
+  }
+  
+  @keyframes springPress {
+    0% { transform: translateY(-3px) scale(1.02); }
+    50% { transform: translateY(1px) scale(0.95); }
+    100% { transform: translateY(-1px) scale(0.95); }
+  }
+}
+
+// Gaming CTA button with enhanced effects
+@mixin gaming-cta-button($primary: var(--gaming-primary), $accent: var(--gaming-accent)) {
+  background: linear-gradient(135deg, $primary 0%, $accent 100%);
+  border: none;
+  border-radius: var(--radius-large);
+  color: white;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: var(--space-lg) var(--space-xl);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  // Animated gradient background
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+  
+  // Glow effect
+  box-shadow: 
+    0 4px 20px rgba($primary, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s ease-out;
+  }
+  
+  &:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 
+      0 8px 30px rgba($primary, 0.5),
+      0 0 60px rgba($accent, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation-play-state: paused;
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(-2px) scale(1.02);
+    transition: all 0.1s ease-out;
+  }
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+// ===== CARD EFFECTS =====
+@mixin premium-card($hover-lift: -5px, $glow-color: var(--gaming-primary)) {
+  @include glass-card-dark();
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent, $glow-color, transparent);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+  
+  &:hover {
+    transform: translateY($hover-lift);
+    
+    &::after {
+      opacity: 0.6;
+    }
+  }
+}
+
+// ===== ANIMATIONS =====
+@mixin fade-in-up($delay: 0s, $duration: 0.6s) {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp $duration ease-out $delay forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@mixin pulse-glow($color: var(--gaming-primary), $duration: 2s) {
+  animation: pulseGlow $duration ease-in-out infinite alternate;
+  
+  @keyframes pulseGlow {
+    from {
+      box-shadow: 0 0 20px rgba($color, 0.3);
+    }
+    to {
+      box-shadow: 0 0 30px rgba($color, 0.6);
+    }
+  }
+}
+
+@mixin floating($duration: 3s, $distance: 10px) {
+  animation: floating $duration ease-in-out infinite;
+  
+  @keyframes floating {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-$distance);
+    }
+  }
+}
+
+// ===== TYPOGRAPHY =====
+@mixin gaming-font {
+  font-family: 'Orbitron', monospace;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+@mixin gaming-title {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// ===== FORTNITE CYBER-TECH UI PATTERNS =====
+
+// Authentic Fortnite-style neon border
+@mixin fortnite-neon-border($color: var(--gaming-primary), $thickness: 2px, $glow-intensity: 0.8) {
+  position: relative;
+  border: $thickness solid transparent;
+  background: linear-gradient(var(--gaming-dark), var(--gaming-dark)) padding-box,
+              linear-gradient(45deg, $color, lighten($color, 20%), $color) border-box;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -#{$thickness * 2};
+    left: -#{$thickness * 2};
+    right: -#{$thickness * 2};
+    bottom: -#{$thickness * 2};
+    border-radius: inherit;
+    background: linear-gradient(45deg, $color, lighten($color, 20%), $color);
+    opacity: 0;
+    filter: blur(8px);
+    transition: opacity 0.3s ease-out;
+    z-index: -1;
+  }
+  
+  &:hover::before {
+    opacity: $glow-intensity;
+    animation: neonPulse 1.5s ease-in-out infinite;
+  }
+}
+
+// Battle Royale energy bar style
+@mixin energy-bar($bg-color: var(--gaming-primary), $height: 8px, $animated: true) {
+  width: 100%;
+  height: $height;
+  background: rgba(var(--gaming-dark-rgb), 0.8);
+  border-radius: calc(#{$height} / 2);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  .energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, 
+      darken($bg-color, 20%) 0%,
+      $bg-color  50%,
+      lighten($bg-color, 20%) 100%);
+    border-radius: inherit;
+    position: relative;
+    transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    @if $animated {
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          transparent,
+          rgba(255, 255, 255, 0.6),
+          transparent);
+        animation: energyShine 2s infinite;
+      }
+    }
+  }
+}
+
+// Cyber-tech panel styling
+@mixin cyber-panel($accent-color: var(--gaming-primary)) {
+  @include glass-card-dark();
+  position: relative;
+  
+  // Corner accent lines
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid $accent-color;
+  }
+  
+  &::before {
+    top: var(--space-sm);
+    left: var(--space-sm);
+    border-right: none;
+    border-bottom: none;
+  }
+  
+  &::after {
+    bottom: var(--space-sm);
+    right: var(--space-sm);
+    border-left: none;
+    border-top: none;
+  }
+  
+  // Data stream effect
+  .data-stream {
+    position: absolute;
+    top: 0;
+    right: var(--space-md);
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      $accent-color  20%,
+      transparent 40%,
+      $accent-color  60%,
+      transparent 80%,
+      $accent-color 100%);
+    animation: dataFlow 3s linear infinite;
+  }
+}
+
+// Shield/armor progress indicator
+@mixin shield-indicator($shield-color: #00bfff, $size: 40px) {
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    $shield-color 0deg,
+    $shield-color var(--shield-percentage, 0deg),
+    rgba(var(--gaming-dark-rgb), 0.8) var(--shield-percentage, 0deg),
+    rgba(var(--gaming-dark-rgb), 0.8) 360deg
+  );
+  padding: 3px;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--gaming-dark);
+  }
+  
+  .shield-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: $shield-color;
+    font-size: calc(#{$size} * 0.4);
+    z-index: 1;
+  }
+}
+
+// Battle royale rank badge
+@mixin battle-rank-badge($rank-color: var(--gaming-warning)) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  height: 50px;
+  background: conic-gradient(
+    from 45deg,
+    $rank-color,
+    lighten($rank-color, 20%),
+    $rank-color,
+    darken($rank-color, 20%),
+    $rank-color
+  );
+  border-radius: 12px;
+  position: relative;
+  font-family: 'Orbitron', monospace;
+  font-weight: 800;
+  color: var(--gaming-dark);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.2),
+      transparent,
+      rgba(255, 255, 255, 0.1));
+    border-radius: 10px;
+  }
+}
+
+// Gaming notification toast
+@mixin gaming-toast($type: 'success') {
+  @include glass-card-dark();
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-medium);
+  position: relative;
+  overflow: hidden;
+  min-width: 300px;
+  
+  @if $type == 'success' {
+    border-left: 4px solid var(--gaming-success);
+    
+    &::before {
+      background: linear-gradient(90deg,
+        rgba(var(--gaming-success-rgb), 0.2),
+        transparent);
+    }
+  } @else if $type == 'warning' {
+    border-left: 4px solid var(--gaming-warning);
+    
+    &::before {
+      background: linear-gradient(90deg,
+        rgba(var(--gaming-warning-rgb), 0.2),
+        transparent);
+    }
+  } @else if $type == 'error' {
+    border-left: 4px solid var(--gaming-error);
+    
+    &::before {
+      background: linear-gradient(90deg,
+        rgba(var(--gaming-error-rgb), 0.2),
+        transparent);
+    }
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  
+  // Slide in animation
+  animation: toastSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+// Fortnite-style input field
+@mixin fortnite-input($accent: var(--gaming-primary)) {
+  background: rgba(var(--gaming-dark-rgb), 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-medium);
+  color: var(--gaming-light);
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 500;
+  padding: var(--space-md) var(--space-lg);
+  transition: all var(--transition-normal);
+  position: relative;
+  
+  &::placeholder {
+    color: var(--gaming-gray-light);
+    font-style: italic;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 
+      0 0 0 3px rgba($accent, 0.2),
+      0 0 20px rgba($accent, 0.3);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, $accent, transparent, $accent);
+    border-radius: inherit;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity var(--transition-normal);
+  }
+}
+
+// Gaming card with holographic effect
+@mixin holographic-card($holo-intensity: 0.3) {
+  @include premium-card();
+  background: linear-gradient(
+    135deg,
+    rgba(var(--gaming-dark-rgb), 0.95) 0%,
+    rgba(var(--gaming-dark-lighter-rgb, 26, 31, 46), 0.9) 100%
+  );
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+      from 0deg,
+      transparent,
+      rgba(var(--gaming-primary-rgb), $holo-intensity),
+      transparent,
+      rgba(var(--gaming-accent-rgb), $holo-intensity),
+      transparent
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+    animation: holoRotate 6s linear infinite;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+// ===== ANIMATION KEYFRAMES =====
+@keyframes neonPulse {
+  0%, 100% { 
+    opacity: 0.8;
+    filter: blur(8px);
+  }
+  50% { 
+    opacity: 1;
+    filter: blur(12px);
+  }
+}
+
+@keyframes energyShine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes dataFlow {
+  0% { 
+    background-position: 0% 0%;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% { 
+    background-position: 0% 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%) rotateZ(5deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotateZ(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes holoRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// ===== GAMING SPECIFIC =====
+@mixin rank-badge($rank: 1) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+  
+  @if $rank == 1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #b8860b;
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  } @else if $rank == 2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%);
+    color: #666;
+    box-shadow: 0 4px 20px rgba(192, 192, 192, 0.4);
+  } @else if $rank == 3 {
+    background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%);
+    color: #8b4513;
+    box-shadow: 0 4px 20px rgba(205, 127, 50, 0.4);
+  } @else {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-gaming);
+  }
+}
+
+@mixin stats-card($icon-color: var(--gaming-primary)) {
+  @include premium-card();
+  padding: var(--space-lg);
+  
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-large);
+    background: rgba($icon-color, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-md);
+    
+    mat-icon {
+      font-size: 2rem;
+      color: $icon-color;
+    }
+  }
+  
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 700;
+    @include gaming-text-gradient();
+    margin-bottom: var(--space-sm);
+  }
+  
+  .stat-label {
+    color: var(--gaming-gray-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+// ===== RESPONSIVE BREAKPOINTS =====
+@mixin mobile {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1025px) {
+    @content;
+  }
+}
+
+// ===== ACCESSIBILITY =====
+@mixin focus-gaming {
+  &:focus {
+    outline: 2px solid var(--gaming-primary);
+    outline-offset: 2px;
+  }
+}
+
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "frontend": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss",
+          "standalone": false
+        },
+        "@schematics/angular:directive": {
+          "standalone": false
+        },
+        "@schematics/angular:pipe": {
+          "standalone": false
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/frontend",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": ["src/polyfills.ts"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              },
+              {
+                "glob": "**/*.{png,jpg,jpeg,gif,svg,webp}",
+                "input": "src/assets",
+                "output": "/assets/"
+              },
+              {
+                "glob": "**/*.{woff,woff2,ttf,eot}",
+                "input": "src/assets/fonts",
+                "output": "/assets/fonts/"
+              }
+            ],
+            "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
+              "src/styles.scss"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": true
+              },
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1.5MB",
+                  "maximumError": "2MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "15kB",
+                  "maximumError": "20kB"
+                },
+                {
+                  "type": "bundle",
+                  "maximumWarning": "1MB",
+                  "maximumError": "1.5MB"
+                }
+              ],
+              "outputHashing": "all",
+              "namedChunks": false,
+              "extractLicenses": true,
+              "crossOrigin": "anonymous",
+              "subresourceIntegrity": true,
+              "deleteOutputPath": true,
+              "preserveSymlinks": false,
+              "statsJson": true
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "hmr": true,
+            "liveReload": true,
+            "poll": 1000
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "frontend:build:development",
+              "hmr": true,
+              "liveReload": true
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "tsConfig": "tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "@angular/material/prebuilt-themes/azure-blue.css",
+              "src/styles.scss"
+            ],
+            "karmaConfig": "karma.conf.js"
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "analytics": "2a9081ca-7ba6-4dbc-bc7b-c73a4101d481"
+  }
+}

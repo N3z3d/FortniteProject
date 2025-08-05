@@ -1,0 +1,116 @@
+package com.fortnite.pronos.service;
+
+import com.fortnite.pronos.dto.GameDto;
+import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.repository.GameRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+/**
+ * Tests TDD pour GameService.getAllGames()
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("GameService - GetAllGames TDD Tests")
+class GameServiceGetAllGamesTest {
+
+    @Mock
+    private GameRepository gameRepository;
+
+    @InjectMocks
+    private RefactoredGameService refactoredGameService;
+
+    private Game game1;
+    private Game game2;
+
+    @BeforeEach
+    void setUp() {
+        // Créer des games de test
+        game1 = createTestGame("Game 1", GameStatus.CREATING);
+        game2 = createTestGame("Game 2", GameStatus.DRAFTING);
+    }
+
+    @Test
+    @DisplayName("Doit retourner toutes les games existantes")
+    void shouldReturnAllExistingGames() {
+        // Given
+        List<Game> expectedGames = Arrays.asList(game1, game2);
+        when(gameRepository.findAll()).thenReturn(expectedGames);
+
+        // When
+        List<GameDto> result = refactoredGameService.getAllGames();
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getName()).isEqualTo("Game 1");
+        assertThat(result.get(1).getName()).isEqualTo("Game 2");
+    }
+
+    @Test
+    @DisplayName("Doit retourner une liste vide quand aucune game n'existe")
+    void shouldReturnEmptyListWhenNoGamesExist() {
+        // Given
+        when(gameRepository.findAll()).thenReturn(Arrays.asList());
+
+        // When
+        List<GameDto> result = refactoredGameService.getAllGames();
+
+        // Then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Doit inclure les informations de base de chaque game")
+    void shouldIncludeBasicGameInformation() {
+        // Given
+        when(gameRepository.findAll()).thenReturn(Arrays.asList(game1));
+
+        // When
+        List<GameDto> result = refactoredGameService.getAllGames();
+
+        // Then
+        assertThat(result).hasSize(1);
+        GameDto gameDto = result.get(0);
+        assertThat(gameDto.getId()).isEqualTo(game1.getId());
+        assertThat(gameDto.getName()).isEqualTo(game1.getName());
+        assertThat(gameDto.getStatus()).isEqualTo(game1.getStatus());
+        assertThat(gameDto.getMaxParticipants()).isEqualTo(game1.getMaxParticipants());
+    }
+
+    private Game createTestGame(String name, GameStatus status) {
+        Game game = new Game();
+        game.setId(UUID.randomUUID());
+        game.setName(name);
+        game.setStatus(status);
+        game.setMaxParticipants(4);
+        game.setCreatedAt(LocalDateTime.now());
+        
+        // Créer un creator mock
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        creator.setUsername("testuser");
+        creator.setEmail("test@example.com");
+        game.setCreator(creator);
+        
+        // Initialiser les listes
+        game.setParticipants(new ArrayList<>());
+        game.setRegionRules(new ArrayList<>());
+        
+        return game;
+    }
+}

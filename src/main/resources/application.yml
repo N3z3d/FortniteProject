@@ -1,0 +1,198 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET:development-jwt-secret-key-change-in-production-this-is-only-for-local-dev-work-32chars-minimum}
+    expiration: ${JWT_EXPIRATION:86400000}  # 24 heures
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 jours
+
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:h2}
+  main:
+    web-application-type: servlet
+    lazy-initialization: true
+    banner-mode: off
+  application:
+    name: fortnite-pronos-api
+  cache:
+    type: caffeine  # Par défaut Caffeine, 'redis' en production si disponible
+    cache-names: 
+      - leaderboard
+      - gamesList
+      - userGames
+      - availableGames
+      - teamsBySeason
+      - teamById
+      - participantTeams
+      - gameStats
+      - playerScores
+      - regionDistribution
+      - draftData
+      - userData
+    caffeine:
+      # PHASE 1C: CACHE OPTIMIZATION FOR 147+ USERS - PRODUCTION SCALE
+      spec: maximumSize=5000,expireAfterWrite=15m,recordStats,maximumWeight=10000
+    redis:
+      # Configuration Redis (optionnelle, activée si Redis disponible)
+      time-to-live: 600000  # 10 minutes par défaut
+      cache-null-values: false
+  datasource:
+    # Configuration H2 par défaut pour démarrage rapide
+    url: jdbc:h2:mem:quickstart_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: quickstart
+    driver-class-name: org.h2.Driver
+    hikari:
+      # PHASE 1B: CRITICAL CONNECTION POOL OPTIMIZATION FOR 147+ CONCURRENT USERS
+      minimum-idle: 15               # Reduced initial connections for stability
+      maximum-pool-size: 30          # Following TODO-ARCHITECTURE requirements (was 50, too aggressive)
+      idle-timeout: 600000           # 10 minutes (balanced for stability)
+      connection-timeout: 20000      # 20 seconds (increased for high load)
+      validation-timeout: 5000       # 5 seconds (more lenient for stability)
+      max-lifetime: 1800000          # 30 minutes (longer for connection stability)
+      leak-detection-threshold: 60000 # 60 seconds as per TODO specs
+      pool-name: "FortnitePronosCP-Stable"
+      # PHASE 1B: PRODUCTION STABILITY SETTINGS
+      initialization-fail-timeout: 1
+      isolate-internal-queries: false
+      allow-pool-suspension: false
+      read-only: false
+      register-mbeans: true
+      # Additional stability settings
+      auto-commit: true
+      connection-init-sql: "SELECT 1"
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    defer-datasource-initialization: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  flyway:
+    enabled: false
+    baseline-on-migrate: false
+    validate-on-migrate: false
+  sql:
+    init:
+      mode: always
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+server:
+  port: 8080
+  # OPTIMISATION CRITIQUES POUR 149 JOUEURS
+  compression:
+    enabled: true
+    mime-types: 
+      - text/html
+      - text/xml
+      - text/plain
+      - text/css
+      - text/javascript
+      - application/javascript
+      - application/json
+      - application/xml
+    min-response-size: 1024  # Compress responses > 1KB (critical pour les listes de joueurs)
+  tomcat:
+    # Connection pool optimization pour gérer plus de trafic
+    threads:
+      max: 200
+      min-spare: 10
+    max-connections: 8192
+    accept-count: 100
+    # Keep-alive optimization pour réduire la latence
+    connection-timeout: 20000
+    keep-alive-timeout: 60000
+    max-keep-alive-requests: 100
+
+logging:
+  level:
+    root: INFO
+    com.fortnite.pronos: INFO
+    com.fortnite.pronos.performance: INFO
+    com.fortnite.pronos.access: INFO
+    com.fortnite.pronos.audit: INFO
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.springframework.boot: WARN
+    org.springframework.boot.autoconfigure: WARN
+    org.springframework.context: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+    org.h2: WARN
+    com.zaxxer.hikari: WARN
+    org.apache.catalina: ERROR
+    org.apache.coyote: ERROR
+    org.apache.tomcat: ERROR
+    org.flywaydb: WARN
+    org.hibernate: WARN
+
+cors:
+  allowed-origins: "http://localhost:4200,http://localhost:4201"
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
+  allow-credentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # PHASE 3A - SPRINT 4: ENHANCED MONITORING FOR 500+ USERS
+        include: health,info,metrics,prometheus,datasource,configprops,env,loggers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+    datasource:
+      enabled: true
+  health:
+    redis:
+      enabled: false
+    db:
+      enabled: true
+    # CUSTOM HEALTH INDICATORS
+    diskspace:
+      enabled: true
+    ping:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 30s
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+        "[spring.data.repository.invocations]": true
+        "[database.query.duration]": true
+    tags:
+      application: fortnite-pronos
+      environment: ${spring.profiles.active:default}
+
+# PHASE 3A: DATABASE MONITORING CONFIGURATION FOR 500+ USERS
+database:
+  monitoring:
+    slow-query-threshold: 500ms      # Alert on queries > 500ms
+    connection-pool-alert-threshold: 80  # Alert when pool usage > 80%
+    read-replica-lag-threshold: 5s   # Alert if replica lag > 5 seconds
+    enable-query-analysis: true
+    enable-connection-monitoring: true
+
+fortnite:
+  api:
+    key: ${FORTNITE_API_KEY:}
+    url: ${FORTNITE_API_URL:https://fortnite-api.com/v2/stats/br/v2} 

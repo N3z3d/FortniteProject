@@ -1,0 +1,540 @@
+/* ===== PREMIUM GAMING TYPOGRAPHY SYSTEM ===== */
+/* Fortnite-Style Typography with Gaming Aesthetics */
+
+// Gaming Font Imports
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ===== TYPOGRAPHY SCALE SYSTEM ===== */
+:root {
+  // Gaming Typography Scale (Major Third - 1.25)
+  --text-xs: 0.75rem;     // 12px
+  --text-sm: 0.875rem;    // 14px  
+  --text-base: 1rem;      // 16px
+  --text-lg: 1.125rem;    // 18px
+  --text-xl: 1.25rem;     // 20px
+  --text-2xl: 1.5rem;     // 24px
+  --text-3xl: 1.875rem;   // 30px
+  --text-4xl: 2.25rem;    // 36px
+  --text-5xl: 3rem;       // 48px
+  --text-6xl: 3.75rem;    // 60px
+  --text-7xl: 4.5rem;     // 72px
+  --text-8xl: 6rem;       // 96px
+  
+  // Gaming Line Heights
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  
+  // Gaming Letter Spacing
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  --tracking-ultra: 0.2em;
+  
+  // Gaming Font Weights
+  --font-thin: 100;
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+}
+
+/* ===== GAMING FONT FAMILIES ===== */
+.font-gaming {
+  font-family: 'Orbitron', 'Exo 2', monospace;
+}
+
+.font-tech {
+  font-family: 'Exo 2', 'Inter', sans-serif;
+}
+
+.font-ui {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== FORTNITE-STYLE HEADINGS ===== */
+@mixin gaming-heading-base {
+  font-family: 'Orbitron', monospace;
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  position: relative;
+  
+  // Subtle text shadow for depth
+  text-shadow: 
+    0 0 10px rgba(var(--gaming-primary-rgb), 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+// H1 - Main Page Titles (Epic Scale)
+.h1, h1 {
+  @include gaming-heading-base;
+  font-size: var(--text-6xl);
+  line-height: var(--leading-tight);
+  font-weight: var(--font-black);
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-2xl);
+  
+  // Gradient text effect
+  background: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  // Enhanced glow for main titles
+  filter: drop-shadow(0 0 20px rgba(var(--gaming-primary-rgb), 0.5));
+  
+  @media (max-width: 768px) {
+    font-size: var(--text-4xl);
+    margin-bottom: var(--space-xl);
+  }
+}
+
+// H2 - Section Headings (Strong Presence)  
+.h2, h2 {
+  @include gaming-heading-base;
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-xl);
+  color: var(--gaming-light);
+  
+  // Cyber accent line
+  &::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--gradient-gaming);
+    margin: var(--space-md) 0 0 0;
+    border-radius: var(--radius-small);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-lg);
+  }
+}
+
+// H3 - Sub-section Headings (Balanced Power)
+.h3, h3 {
+  @include gaming-heading-base;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-normal);
+  margin-bottom: var(--space-lg);
+  color: var(--gaming-gray-lighter);
+  
+  @media (max-width: 768px) {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-md);
+  }
+}
+
+// H4 - Component Headings (Tech Style)
+.h4, h4 {
+  font-family: 'Exo 2', sans-serif;
+  font-size: var(--text-xl);
+  line-height: var(--leading-normal);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-normal);
+  margin-bottom: var(--space-md);
+  color: var(--gaming-light);
+  text-transform: uppercase;
+  
+  @media (max-width: 768px) {
+    font-size: var(--text-lg);
+  }
+}
+
+// H5 & H6 - Minor Headings (UI Elements)
+.h5, h5, .h6, h6 {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-normal);
+  margin-bottom: var(--space-sm);
+  color: var(--gaming-gray-light);
+  
+  @media (max-width: 768px) {
+    font-size: var(--text-base);
+  }
+}
+
+/* ===== FORTNITE-STYLE BODY TEXT ===== */
+.body-text, p {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  font-weight: var(--font-normal);
+  color: var(--gaming-gray-light);
+  margin-bottom: var(--space-md);
+  
+  &.large {
+    font-size: var(--text-lg);
+    line-height: var(--leading-normal);
+    font-weight: var(--font-medium);
+  }
+  
+  &.small {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+  
+  &.tech {
+    font-family: 'Exo 2', sans-serif;
+    letter-spacing: var(--tracking-wide);
+  }
+}
+
+/* ===== SPECIALIZED GAMING TEXT STYLES ===== */
+
+// Gaming Stats Display
+.stat-value {
+  font-family: 'Orbitron', monospace;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-black);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-wide);
+  
+  // Gradient effect for values
+  background: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  
+  &.large {
+    font-size: var(--text-5xl);
+  }
+  
+  &.small {
+    font-size: var(--text-xl);
+  }
+}
+
+// Gaming Labels
+.stat-label {
+  font-family: 'Exo 2', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--gaming-gray-light);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  line-height: var(--leading-tight);
+}
+
+// Cyber Tech Labels
+.tech-label {
+  font-family: 'Orbitron', monospace;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--gaming-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-ultra);
+  background: rgba(var(--gaming-primary-rgb), 0.1);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-small);
+  border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
+}
+
+// Gaming Button Text
+.btn-text {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+// Neon Text Effect
+.neon-text {
+  color: var(--gaming-primary);
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+  animation: neonPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neonPulse {
+  from {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+  }
+  to {
+    text-shadow: 
+      0 0 2px currentColor,
+      0 0 5px currentColor,
+      0 0 8px currentColor,
+      0 0 12px currentColor;
+  }
+}
+
+// Glitch Text Effect
+.glitch-text {
+  position: relative;
+  color: var(--gaming-light);
+  
+  &::before,
+  &::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  &::before {
+    animation: glitch-anim-1 0.2s infinite;
+    color: var(--gaming-primary);
+    z-index: -1;
+  }
+  
+  &::after {
+    animation: glitch-anim-2 0.3s infinite;
+    color: var(--gaming-accent);
+    z-index: -2;
+  }
+}
+
+@keyframes glitch-anim-1 {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes glitch-anim-2 {
+  0% { transform: translate(0); }
+  20% { transform: translate(2px, -2px); }
+  40% { transform: translate(2px, 2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(-2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+/* ===== RESPONSIVE TYPOGRAPHY ===== */
+@media (max-width: 1200px) {
+  :root {
+    --text-6xl: 3rem;     // Reduced from 3.75rem
+    --text-5xl: 2.5rem;   // Reduced from 3rem
+    --text-4xl: 2rem;     // Reduced from 2.25rem
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --text-6xl: 2.5rem;   
+    --text-5xl: 2rem;     
+    --text-4xl: 1.75rem;  
+    --text-3xl: 1.5rem;   
+    --text-2xl: 1.25rem;  
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --text-6xl: 2rem;     
+    --text-5xl: 1.75rem;  
+    --text-4xl: 1.5rem;   
+    --text-3xl: 1.25rem;  
+    --text-2xl: 1.125rem; 
+  }
+}
+
+/* ===== GAMING CONTENT STYLING ===== */
+
+// Player Names
+.player-name {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: var(--font-semibold);
+  color: var(--gaming-light);
+  letter-spacing: var(--tracking-normal);
+}
+
+// Team Names
+.team-name {
+  font-family: 'Orbitron', monospace;
+  font-weight: var(--font-bold);
+  color: var(--gaming-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+// Rank Display
+.rank-display {
+  font-family: 'Orbitron', monospace;
+  font-weight: var(--font-black);
+  font-size: var(--text-2xl);
+  color: var(--gaming-warning);
+  text-align: center;
+}
+
+// Score Values
+.score-value {
+  font-family: 'Orbitron', monospace;
+  font-weight: var(--font-extrabold);
+  font-size: var(--text-xl);
+  color: var(--gaming-success);
+  letter-spacing: var(--tracking-normal);
+}
+
+// Game Status
+.game-status {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  
+  &.active {
+    color: var(--gaming-success);
+  }
+  
+  &.pending {
+    color: var(--gaming-warning);
+  }
+  
+  &.completed {
+    color: var(--gaming-gray-light);
+  }
+}
+
+/* ===== ENHANCED SPACING SYSTEM ===== */
+
+// Systematic spacing for better visual hierarchy
+.spacing-system {
+  
+  // Micro spacing (within components)
+  &.space-micro {
+    margin-bottom: calc(var(--space-xs) * 0.5);
+  }
+  
+  // Component spacing
+  &.space-component {
+    margin-bottom: var(--space-md);
+  }
+  
+  // Section spacing (larger gaps)
+  &.space-section {
+    margin-bottom: var(--space-2xl);
+  }
+  
+  // Page spacing (largest gaps)
+  &.space-page {
+    margin-bottom: var(--space-3xl);
+  }
+}
+
+/* ===== ANIMATED VISUAL SEPARATORS ===== */
+
+// Cyber divider line
+.cyber-divider {
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--gaming-primary) 20%, 
+    var(--gaming-accent) 50%, 
+    var(--gaming-primary) 80%, 
+    transparent 100%);
+  margin: var(--space-xl) 0;
+  border-radius: var(--radius-small);
+  animation: dividerPulse 3s ease-in-out infinite;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: var(--gaming-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--gaming-accent);
+  }
+}
+
+@keyframes dividerPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+// Section break with tech styling
+.tech-break {
+  display: flex;
+  align-items: center;
+  margin: var(--space-2xl) 0;
+  gap: var(--space-md);
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gaming-primary), transparent);
+  }
+  
+  .break-icon {
+    color: var(--gaming-primary);
+    font-size: var(--text-lg);
+    padding: var(--space-sm);
+    background: rgba(var(--gaming-primary-rgb), 0.1);
+    border-radius: 50%;
+    border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
+  }
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .h1, h1, .h2, h2, .h3, h3 {
+    text-shadow: none;
+    filter: none;
+  }
+  
+  .neon-text {
+    text-shadow: none;
+    animation: none;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .neon-text,
+  .cyber-divider,
+  .glitch-text::before,
+  .glitch-text::after {
+    animation: none;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .h1, h1, .h2, h2, .h3, h3 {
+    color: #000 !important;
+    text-shadow: none !important;
+    filter: none !important;
+    background: none !important;
+    -webkit-text-fill-color: #000 !important;
+  }
+}

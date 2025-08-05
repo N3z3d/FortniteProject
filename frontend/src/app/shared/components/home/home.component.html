@@ -1,0 +1,229 @@
+<!-- Navigation Header -->
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-content">
+      <div class="logo">FORTNITE PRO LEAGUE</div>
+      <ul class="nav-links">
+        <li><a href="#home" class="nav-link">Accueil</a></li>
+        <li><a href="#rules" class="nav-link">Règles</a></li>
+        <li><a href="#leaderboard" class="nav-link">Classement</a></li>
+        <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+        <li><a href="#login" class="btn btn-ghost">Connexion</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-text animate-in">
+        <h1 class="hero-title">
+          BÂTIS TON EMPIRE
+          <span class="hero-subtitle">FORTNITE</span>
+        </h1>
+        <p class="hero-description">
+          Région par région, sélectionne les meilleurs joueurs pros et domine le classement mondial. 
+          La fantasy league ultime pour les vrais connaisseurs d'e-sport.
+        </p>
+        <div class="hero-actions">
+          <button 
+            #heroButton
+            class="btn btn-primary animate-in-delay-1"
+            appPremiumInteractions="magnetic"
+            appTooltip="Créez votre équipe de rêve"
+            (click)="onHeroButtonClick('create')">
+            <span>🚀</span> Créer mon équipe
+          </button>
+          <button 
+            #heroButton
+            class="btn btn-secondary animate-in-delay-2"
+            appPremiumInteractions="spring"
+            appTooltip="Découvrez les règles du jeu"
+            (click)="onHeroButtonClick('rules')">
+            <span>📋</span> Voir les règles
+          </button>
+        </div>
+      </div>
+      <div class="hero-visual animate-in-delay-3">
+        <div class="floating-card" appPremiumInteractions="parallax" appPulse>
+          <div class="card-glow"></div>
+          <div class="trophy-icon">🏆</div>
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-value">147</span>
+              <span class="stat-label">Joueurs Pro</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">6</span>
+              <span class="stat-label">Régions</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">∞</span>
+              <span class="stat-label">Possibilités</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Regions Section -->
+<section class="regions" id="regions">
+  <div class="container">
+    <div class="section-header text-center animate-in">
+      <h2>CHOISISSEZ VOTRE TERRAIN DE JEU</h2>
+      <p>Chaque région a ses légendes. Formez votre équipe de rêve en naviguant à travers les continents.</p>
+    </div>
+    
+    <div class="regions-grid grid grid-3" appRevealOnScroll>
+      <div class="region-card card" 
+           #regionCard
+           *ngFor="let region of regions; let i = index"
+           appPremiumInteractions="glow"
+           appTooltip="{{region.description}}"
+           (click)="onRegionCardClick(region)"
+           [class.animate-in-delay-1]="i < 2"
+           [class.animate-in-delay-2]="i >= 2 && i < 4"
+           [class.animate-in-delay-3]="i >= 4">
+        <div class="region-icon">{{region.icon}}</div>
+        <h3 class="region-name">{{region.name}}</h3>
+        <p class="region-description">{{region.description}}</p>
+        <div class="region-stats">
+          <div class="region-stat">
+            <span class="stat-number">{{region.playerCount}}</span>
+            <span class="stat-text">Joueurs</span>
+          </div>
+          <div class="region-stat">
+            <span class="stat-number">{{region.topTeams}}</span>
+            <span class="stat-text">Top Teams</span>
+          </div>
+        </div>
+        <button 
+          class="btn btn-ghost region-btn"
+          appPremiumInteractions="ripple"
+          appTooltip="Explorer la région {{region.name}}">
+          Explorer {{region.code}}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+  <div class="container">
+    <div class="section-header text-center animate-in">
+      <h2>FONCTIONNALITÉS AVANCÉES</h2>
+      <p>Une expérience de fantasy league révolutionnaire avec des outils pros.</p>
+    </div>
+    
+    <div class="features-grid grid grid-2" appRevealOnScroll>
+      <div class="feature-card card" appPremiumInteractions="parallax">
+        <div class="feature-icon">⚡</div>
+        <h3>Suivi Temps Réel</h3>
+        <p>Performances live, notifications instantanées, updates automatiques des scores et classements.</p>
+        <ul class="feature-list">
+          <li>Alertes de performance</li>
+          <li>Mises à jour en direct</li>
+          <li>Statistiques détaillées</li>
+        </ul>
+      </div>
+      
+      <div class="feature-card card" appPremiumInteractions="parallax">
+        <div class="feature-icon">🔄</div>
+        <h3>Système d'Échanges</h3>
+        <p>Négociez avec d'autres managers, remplacez vos joueurs et optimisez votre roster selon les règles.</p>
+        <ul class="feature-list">
+          <li>Échanges entre joueurs</li>
+          <li>Périodes de transfert</li>
+          <li>Système de tranches</li>
+        </ul>
+      </div>
+      
+      <div class="feature-card card" appPremiumInteractions="parallax">
+        <div class="feature-icon">📊</div>
+        <h3>Analytics Avancées</h3>
+        <p>Tableaux de bord complets, prédictions IA et insights stratégiques pour dominer vos rivaux.</p>
+        <ul class="feature-list">
+          <li>Prédictions de performance</li>
+          <li>Analyses historiques</li>
+          <li>Conseils stratégiques</li>
+        </ul>
+      </div>
+      
+      <div class="feature-card card" appPremiumInteractions="parallax">
+        <div class="feature-icon">🏆</div>
+        <h3>Hall of Fame</h3>
+        <p>Immortalisez vos victoires, consultez l'historique des champions et les records de la communauté.</p>
+        <ul class="feature-list">
+          <li>Archive des saisons</li>
+          <li>Records personnels</li>
+          <li>Palmarès communautaire</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content card">
+      <div class="cta-text">
+        <h2>PRÊT À CONQUÉRIR LE MONDE ?</h2>
+        <p>Rejoignez des milliers de managers et prouvez que vous avez l'œil pour repérer les futurs champions.</p>
+      </div>
+      <div class="cta-actions">
+        <button 
+          class="btn btn-primary btn-large"
+          appPremiumInteractions="magnetic"
+          appTooltip="Commencez votre aventure maintenant !">
+          <span>⚡</span> Commencer Maintenant
+        </button>
+        <button 
+          class="btn btn-ghost"
+          appPremiumInteractions="spring"
+          appTooltip="Apprenez les bases du jeu">
+          <span>📖</span> Guide du Débutant
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Fortnite Pro League</h4>
+        <p>La fantasy league nouvelle génération pour les passionnés d'e-sport competitive.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens Rapides</h4>
+        <ul class="footer-links">
+          <li><a href="#rules">Règles du Jeu</a></li>
+          <li><a href="#leaderboard">Classements</a></li>
+          <li><a href="#stats">Statistiques</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Communauté</h4>
+        <ul class="footer-links">
+          <li><a href="#">Discord</a></li>
+          <li><a href="#">Twitter</a></li>
+          <li><a href="#">Twitch</a></li>
+          <li><a href="#">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Fortnite Pro League. Conçu pour les champions de demain.</p>
+    </div>
+  </div>
+</footer> 

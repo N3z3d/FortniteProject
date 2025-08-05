@@ -1,0 +1,63 @@
+# SPRINT 4 - KUBERNETES CONFIGMAP FOR APPLICATION CONFIGURATION
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fortnite-pronos-config
+  namespace: fortnite-pronos
+  labels:
+    app: fortnite-pronos
+    component: configuration
+data:
+  # Application properties
+  SPRING_PROFILES_ACTIVE: "prod"
+  LOGGING_LEVEL_ROOT: "INFO"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  
+  # Database configuration
+  DB_PRIMARY_HOST: "postgres-primary-service"
+  DB_PRIMARY_PORT: "5432"
+  DB_READONLY_HOST: "postgres-readonly-service"
+  DB_READONLY_PORT: "5432"
+  DB_NAME: "fortnite_pronos"
+  DB_PRIMARY_USERNAME: "fortnite_user"
+  DB_READONLY_USERNAME: "fortnite_readonly"
+  
+  # Connection pool optimization for 500+ users
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "100"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "30"
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "6000"
+  SPRING_DATASOURCE_HIKARI_VALIDATION_TIMEOUT: "1500"
+  SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "1800000"
+  SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD: "15000"
+  
+  # Cache configuration
+  SPRING_CACHE_TYPE: "redis"
+  SPRING_DATA_REDIS_HOST: "redis-service"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATA_REDIS_TIMEOUT: "2000ms"
+  
+  # Monitoring configuration
+  DATABASE_MONITORING_SLOW_QUERY_THRESHOLD: "500ms"
+  DATABASE_MONITORING_CONNECTION_POOL_ALERT_THRESHOLD: "80"
+  DATABASE_MONITORING_ENABLE_QUERY_ANALYSIS: "true"
+  DATABASE_MONITORING_ENABLE_CONNECTION_MONITORING: "true"
+  
+  # JVM optimization for containers
+  JAVA_OPTS: >-
+    -server
+    -Xms2g
+    -Xmx4g
+    -XX:+UseG1GC
+    -XX:MaxGCPauseMillis=100
+    -XX:+UseStringDeduplication
+    -XX:+OptimizeStringConcat
+    -XX:+UseCompressedOops
+    -XX:+UseCompressedClassPointers
+    -XX:+AlwaysPreTouch
+    -XX:+UseTLAB
+    -XX:+ResizeTLAB
+    -XX:+PerfDisableSharedMem
+    -Djava.security.egd=file:/dev/./urandom
+    -Djava.awt.headless=true
+    -Dfile.encoding=UTF-8
+    -Duser.timezone=Europe/Paris

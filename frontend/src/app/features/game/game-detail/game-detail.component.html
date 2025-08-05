@@ -1,0 +1,249 @@
+<div class="game-detail-container">
+  <!-- Loading Spinner -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner></mat-spinner>
+    <p>Chargement des détails de la game...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-container" *ngIf="error && !loading">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <mat-icon color="warn">error</mat-icon>
+        <p>{{ error }}</p>
+        <button mat-button color="primary" (click)="loadGameDetails()">
+          Réessayer
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Game Details -->
+  <div class="game-content" *ngIf="game && !loading">
+    <!-- Header -->
+    <div class="game-header">
+      <div class="header-content">
+        <h1>🎮 {{ game.name }}</h1>
+        <p>Créée par {{ game.creatorName }} • {{ getTimeAgo(game.createdAt) }}</p>
+      </div>
+      <button mat-button (click)="onBack()" class="back-button">
+        <mat-icon>arrow_back</mat-icon>
+        Retour
+      </button>
+    </div>
+
+    <!-- Game Status and Actions -->
+    <div class="game-status-section">
+      <mat-card class="status-card">
+        <mat-card-content>
+          <div class="status-info">
+            <div class="status-badge">
+              <mat-chip [color]="getStatusColor(game.status)" selected>
+                {{ getStatusLabel(game.status) }}
+              </mat-chip>
+            </div>
+            <div class="game-stats">
+              <div class="stat-item">
+                <mat-icon>group</mat-icon>
+                <span>{{ game.participantCount }}/{{ game.maxParticipants }} participants</span>
+              </div>
+              <div class="stat-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ getTimeAgo(game.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Participants Progress -->
+          <div class="participants-progress-section">
+            <div class="progress-header">
+              <span>Remplissage de la game</span>
+              <span>{{ getParticipantPercentage() }}%</span>
+            </div>
+            <mat-progress-bar 
+              [value]="getParticipantPercentage()"
+              [color]="getParticipantColor()"
+              class="participants-progress">
+            </mat-progress-bar>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <!-- Join Game Button -->
+            <button mat-raised-button 
+                    color="accent" 
+                    *ngIf="canJoinGame()"
+                    (click)="joinGame()"
+                    matTooltip="Rejoindre cette game">
+              <mat-icon>group_add</mat-icon>
+              Rejoindre
+            </button>
+
+            <!-- Start Draft Button -->
+            <button mat-raised-button 
+                    color="primary" 
+                    *ngIf="canStartDraft()"
+                    (click)="confirmStartDraft()"
+                    matTooltip="Démarrer le draft">
+              <mat-icon>play_arrow</mat-icon>
+              Démarrer le Draft
+            </button>
+
+            <!-- Delete Game Button -->
+            <button mat-raised-button 
+                    color="warn" 
+                    *ngIf="canDeleteGame()"
+                    (click)="confirmDelete()"
+                    matTooltip="Supprimer cette game">
+              <mat-icon>delete</mat-icon>
+              Supprimer
+            </button>
+
+            <!-- Game Full Message -->
+            <div class="game-full-message" *ngIf="!canJoinGame() && game.participantCount >= game.maxParticipants">
+              <mat-icon color="warn">block</mat-icon>
+              <span>Game complète</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Participants Section -->
+    <div class="participants-section">
+      <mat-card class="participants-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>group</mat-icon>
+            Participants ({{ participants.length }})
+          </mat-card-title>
+          <mat-card-subtitle>
+            Liste des joueurs participant à cette game
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <!-- Creator -->
+          <div class="creator-section" *ngIf="getCreator()">
+            <h3>👑 Créateur</h3>
+            <mat-list>
+              <mat-list-item class="creator-item">
+                <mat-icon matListItemIcon [color]="getParticipantStatusColor(getCreator()!)">
+                  {{ getParticipantStatusIcon(getCreator()!) }}
+                </mat-icon>
+                <div matListItemTitle>{{ getCreator()!.username }}</div>
+                <div matListItemLine>{{ getTimeAgo(getCreator()!.joinedAt) }}</div>
+                <mat-chip matListItemMeta [color]="getParticipantStatusColor(getCreator()!)" selected>
+                  {{ getParticipantStatusLabel(getCreator()!) }}
+                </mat-chip>
+              </mat-list-item>
+            </mat-list>
+          </div>
+
+          <!-- Other Participants -->
+          <div class="other-participants-section" *ngIf="getNonCreatorParticipants().length > 0">
+            <h3>👥 Participants</h3>
+            <mat-list>
+              <mat-list-item *ngFor="let participant of getNonCreatorParticipants()" class="participant-item">
+                <mat-icon matListItemIcon [color]="getParticipantStatusColor(participant)">
+                  {{ getParticipantStatusIcon(participant) }}
+                </mat-icon>
+                <div matListItemTitle>{{ participant.username }}</div>
+                <div matListItemLine>{{ getTimeAgo(participant.joinedAt) }}</div>
+                <mat-chip matListItemMeta [color]="getParticipantStatusColor(participant)" selected>
+                  {{ getParticipantStatusLabel(participant) }}
+                </mat-chip>
+              </mat-list-item>
+            </mat-list>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-participants" *ngIf="participants.length === 0">
+            <mat-icon class="empty-icon">group_off</mat-icon>
+            <h3>Aucun participant</h3>
+            <p>Soyez le premier à rejoindre cette game !</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Game Information -->
+    <div class="game-info-section">
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            Informations de la Game
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="info-grid">
+            <div class="info-item">
+              <mat-icon>title</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Nom</span>
+                <span class="info-value">{{ game.name }}</span>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <mat-icon>person</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Créateur</span>
+                <span class="info-value">{{ game.creatorName }}</span>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <mat-icon>group</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Participants</span>
+                <span class="info-value">{{ game.participantCount }}/{{ game.maxParticipants }}</span>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <mat-icon>schedule</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Créée le</span>
+                <span class="info-value">{{ getTimeAgo(game.createdAt) }}</span>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <mat-icon>flag</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Statut</span>
+                <span class="info-value">{{ getStatusLabel(game.status) }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Draft Information (if applicable) -->
+    <div class="draft-section" *ngIf="game.status === 'DRAFTING'">
+      <mat-card class="draft-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>shuffle</mat-icon>
+            Phase de Draft
+          </mat-card-title>
+          <mat-card-subtitle>
+            Les participants sélectionnent leurs joueurs
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <p>Le draft est en cours. Les participants peuvent maintenant sélectionner leurs joueurs.</p>
+          <button mat-raised-button color="primary" routerLink="/draft/{{ game.id }}">
+            <mat-icon>visibility</mat-icon>
+            Voir le Draft
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div> 

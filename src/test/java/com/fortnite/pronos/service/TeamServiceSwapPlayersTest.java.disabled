@@ -1,0 +1,254 @@
+package com.fortnite.pronos.service;
+
+import com.fortnite.pronos.dto.SwapPlayersRequest;
+import com.fortnite.pronos.dto.SwapPlayersResponse;
+import com.fortnite.pronos.exception.InvalidSwapException;
+import com.fortnite.pronos.exception.TeamNotFoundException;
+import com.fortnite.pronos.exception.UnauthorizedAccessException;
+import com.fortnite.pronos.model.*;
+import com.fortnite.pronos.repository.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("TeamService - swapPlayers TDD")
+class TeamServiceSwapPlayersTest {
+
+    @Mock
+    private TeamRepository teamRepository;
+    
+    @Mock
+    private TeamPlayerRepository teamPlayerRepository;
+    
+    @Mock
+    private UserRepository userRepository;
+    
+    @Mock
+    private PlayerRepository playerRepository;
+    
+    @InjectMocks
+    private TeamService teamService;
+    
+    private User user1;
+    private User user2;
+    private Team team1;
+    private Team team2;
+    private Player player1;
+    private Player player2;
+    private TeamPlayer teamPlayer1;
+    private TeamPlayer teamPlayer2;
+    
+    @BeforeEach
+    void setUp() {
+        // Créer les utilisateurs
+        user1 = new User();
+        user1.setId(UUID.randomUUID());
+        user1.setUsername("user1");
+        user1.setPassword("password123");
+        
+        user2 = new User();
+        user2.setId(UUID.randomUUID());
+        user2.setUsername("user2");
+        user2.setPassword("password123");
+        
+        // Créer les équipes
+        team1 = new Team();
+        team1.setId(UUID.randomUUID());
+        team1.setName("Team 1");
+        team1.setOwner(user1);
+        team1.setSeason(2025);
+        
+        team2 = new Team();
+        team2.setId(UUID.randomUUID());
+        team2.setName("Team 2");
+        team2.setOwner(user2);
+        team2.setSeason(2025);
+        
+        // Créer les joueurs
+        player1 = new Player();
+        player1.setId(UUID.randomUUID());
+        player1.setNickname("Player1");
+        player1.setUsername("player1");
+        player1.setRegion(Player.Region.EU);
+        player1.setTranche("1-10");
+        
+        player2 = new Player();
+        player2.setId(UUID.randomUUID());
+        player2.setNickname("Player2");
+        player2.setUsername("player2");
+        player2.setRegion(Player.Region.NAW);
+        player2.setTranche("1-10");
+        
+        // Créer les associations
+        teamPlayer1 = new TeamPlayer();
+        teamPlayer1.setTeam(team1);
+        teamPlayer1.setPlayer(player1);
+        teamPlayer1.setPosition(1);
+        
+        teamPlayer2 = new TeamPlayer();
+        teamPlayer2.setTeam(team2);
+        teamPlayer2.setPlayer(player2);
+        teamPlayer2.setPosition(1);
+    }
+    
+    @Test
+    @DisplayName("devrait échanger deux joueurs entre équipes avec succès")
+    void shouldSwapPlayersBetweenTeamsSuccessfully() {
+        // Given
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(team1.getId());
+        request.setPlayerId1(player1.getId());
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+        when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+        when(playerRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
+        when(playerRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
+        when(teamPlayerRepository.findByTeamAndPlayer(team1, player1)).thenReturn(Optional.of(teamPlayer1));
+        when(teamPlayerRepository.findByTeamAndPlayer(team2, player2)).thenReturn(Optional.of(teamPlayer2));
+        
+        // When
+        SwapPlayersResponse response = teamService.swapPlayers(user1.getId(), request);
+        
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getMessage()).contains("Échange effectué avec succès");
+        
+        verify(teamPlayerRepository, times(2)).save(any(TeamPlayer.class));
+        assertThat(teamPlayer1.getTeam()).isEqualTo(team2);
+        assertThat(teamPlayer2.getTeam()).isEqualTo(team1);
+    }
+    
+    @Test
+    @DisplayName("devrait rejeter l'échange si l'utilisateur n'est pas propriétaire d'une équipe")
+    void shouldRejectSwapIfUserNotOwner() {
+        // Given
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(team1.getId());
+        request.setPlayerId1(player1.getId());
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        User unauthorizedUser = new User();
+        unauthorizedUser.setId(UUID.randomUUID());
+        unauthorizedUser.setUsername("unauthorized");
+        
+        when(userRepository.findById(unauthorizedUser.getId())).thenReturn(Optional.of(unauthorizedUser));
+        when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+        when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+        
+        // When/Then
+        assertThatThrownBy(() -> teamService.swapPlayers(unauthorizedUser.getId(), request))
+            .isInstanceOf(UnauthorizedAccessException.class)
+            .hasMessageContaining("Vous devez être propriétaire d'au moins une des équipes");
+    }
+    
+    @Test
+    @DisplayName("devrait rejeter l'échange si un joueur n'est pas dans l'équipe")
+    void shouldRejectSwapIfPlayerNotInTeam() {
+        // Given
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(team1.getId());
+        request.setPlayerId1(player2.getId()); // Player2 n'est pas dans team1
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+        when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+        when(playerRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
+        when(teamPlayerRepository.findByTeamAndPlayer(team1, player2)).thenReturn(Optional.empty());
+        
+        // When/Then
+        assertThatThrownBy(() -> teamService.swapPlayers(user1.getId(), request))
+            .isInstanceOf(InvalidSwapException.class)
+            .hasMessageContaining("n'est pas dans l'équipe");
+    }
+    
+    @Test
+    @DisplayName("devrait rejeter l'échange si les équipes ne sont pas dans la même saison")
+    void shouldRejectSwapIfTeamsNotInSameSeason() {
+        // Given
+        team2.setSeason(2024); // Saison différente
+        
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(team1.getId());
+        request.setPlayerId1(player1.getId());
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+        when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+        
+        // When/Then
+        assertThatThrownBy(() -> teamService.swapPlayers(user1.getId(), request))
+            .isInstanceOf(InvalidSwapException.class)
+            .hasMessageContaining("Les équipes doivent être dans la même saison");
+    }
+    
+    @Test
+    @DisplayName("devrait rejeter l'échange si une équipe n'existe pas")
+    void shouldRejectSwapIfTeamNotFound() {
+        // Given
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(UUID.randomUUID()); // ID inexistant
+        request.setPlayerId1(player1.getId());
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(teamRepository.findById(request.getTeamId1())).thenReturn(Optional.empty());
+        
+        // When/Then
+        assertThatThrownBy(() -> teamService.swapPlayers(user1.getId(), request))
+            .isInstanceOf(TeamNotFoundException.class)
+            .hasMessageContaining("Équipe non trouvée");
+    }
+    
+    @Test
+    @DisplayName("devrait créer un historique d'échange après le swap")
+    void shouldCreateSwapHistoryAfterSuccessfulSwap() {
+        // Given
+        SwapPlayersRequest request = new SwapPlayersRequest();
+        request.setTeamId1(team1.getId());
+        request.setPlayerId1(player1.getId());
+        request.setTeamId2(team2.getId());
+        request.setPlayerId2(player2.getId());
+        
+        when(userRepository.findById(user1.getId())).thenReturn(Optional.of(user1));
+        when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+        when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+        when(playerRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
+        when(playerRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
+        when(teamPlayerRepository.findByTeamAndPlayer(team1, player1)).thenReturn(Optional.of(teamPlayer1));
+        when(teamPlayerRepository.findByTeamAndPlayer(team2, player2)).thenReturn(Optional.of(teamPlayer2));
+        
+        // When
+        SwapPlayersResponse response = teamService.swapPlayers(user1.getId(), request);
+        
+        // Then
+        assertThat(response.getSwapDetails()).isNotNull();
+        assertThat(response.getSwapDetails().getTeam1Name()).isEqualTo(team1.getName());
+        assertThat(response.getSwapDetails().getTeam2Name()).isEqualTo(team2.getName());
+        assertThat(response.getSwapDetails().getPlayer1Name()).isEqualTo(player1.getNickname());
+        assertThat(response.getSwapDetails().getPlayer2Name()).isEqualTo(player2.getNickname());
+    }
+} 

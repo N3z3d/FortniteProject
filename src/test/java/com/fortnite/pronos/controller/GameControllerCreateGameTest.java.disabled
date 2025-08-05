@@ -1,0 +1,132 @@
+package com.fortnite.pronos.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fortnite.pronos.dto.CreateGameRequest;
+import com.fortnite.pronos.dto.GameDto;
+import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.service.RefactoredGameService;
+import com.fortnite.pronos.service.UserContextService;
+import com.fortnite.pronos.service.ValidationService;
+import com.fortnite.pronos.config.TestSecurityConfig;
+import com.fortnite.pronos.util.TestDataBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+/**
+ * Tests TDD pour la création de games
+ * Clean Code : Tests focalisés sur la création de games
+ */
+@WebMvcTest(GameController.class)
+@Import(TestSecurityConfig.class)
+@DisplayName("GameController - Création de games")
+class GameControllerCreateGameTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
+    private RefactoredGameService refactoredGameService;
+
+    @MockBean
+    private UserContextService userContextService;
+
+    @MockBean
+    private ValidationService validationService;
+
+    private CreateGameRequest validRequest;
+    private GameDto expectedGameDto;
+
+    @BeforeEach
+    void setUp() {
+        // Préparer une requête valide
+        validRequest = CreateGameRequest.builder()
+            .name("Game Thibaut-Teddy-Marcel")
+            .description("Game de test")
+            .maxParticipants(10)
+            .isPrivate(false)
+            .autoStartDraft(false)
+            .draftTimeLimit(300)
+            .autoPickDelay(43200)
+            .currentSeason(2025)
+            .build();
+
+        // Préparer la réponse attendue
+        expectedGameDto = GameDto.builder()
+            .id(UUID.randomUUID())
+            .name("Game Thibaut-Teddy-Marcel")
+            .description("Game de test")
+            .status(GameStatus.CREATING)
+            .creatorId(UUID.randomUUID())
+            .creatorUsername("Thibaut")
+            .maxParticipants(10)
+            .currentParticipantCount(1)
+            .createdAt(LocalDateTime.now())
+            .invitationCode("TEST123")
+            .build();
+    }
+
+    @Test
+    @DisplayName("Devrait créer une game avec succès quand la requête est valide")
+    void shouldCreateGameSuccessfullyWithValidRequest() throws Exception {
+        // Given
+        UUID creatorId = UUID.randomUUID();
+        User mockUser = TestDataBuilder.createThibaut();
+        mockUser.setId(creatorId);
+        when(userContextService.findUserByUsername("Thibaut")).thenReturn(mockUser);
+        when(refactoredGameService.createGame(eq(creatorId), any(CreateGameRequest.class))).thenReturn(expectedGameDto);
+
+        // When & Then
+        mockMvc.perform(post("/api/games")
+                .param("user", "Thibaut")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Game Thibaut-Teddy-Marcel"))
+                .andExpect(jsonPath("$.status").value("CREATING"))
+                .andExpect(jsonPath("$.creatorUsername").value("Thibaut"))
+                .andExpect(jsonPath("$.invitationCode").value("TEST123"));
+
+        // Vérifier les interactions
+        verify(validationService).validateCreateGameRequest(validRequest);
+        verify(userContextService).findUserByUsername("Thibaut");
+        verify(refactoredGameService).createGame(creatorId, validRequest);
+    }
+
+    @Test
+    @DisplayName("Devrait retourner 400 si la requête est invalide")
+    void shouldReturn400ForInvalidRequest() throws Exception {
+        // Given - Requête sans nom
+        CreateGameRequest invalidRequest = CreateGameRequest.builder()
+            .description("Game sans nom")
+            .build();
+
+        doThrow(new IllegalArgumentException("Le nom de la game est obligatoire"))
+            .when(validationService).validateCreateGameRequest(any());
+
+        // When & Then
+        mockMvc.perform(post("/api/games")
+                .param("user", "Thibaut")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+    }
+} 

@@ -1,0 +1,574 @@
+.game-detail-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.error-container {
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.error-card {
+  max-width: 500px;
+  text-align: center;
+}
+
+.error-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.error-card mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.error-card p {
+  margin: 0;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.game-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.header-content h1 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 2.5rem;
+  font-weight: 300;
+}
+
+.header-content p {
+  margin: 0;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-weight: 500;
+}
+
+.game-status-section {
+  margin-bottom: 24px;
+}
+
+.status-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+}
+
+.game-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.stat-item mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #999;
+}
+
+.participants-progress-section {
+  margin-bottom: 24px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-header span:first-child {
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.progress-header span:last-child {
+  color: #666;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.participants-progress {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.action-buttons button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-weight: 500;
+}
+
+.game-full-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f44336;
+  font-weight: 500;
+  padding: 12px 16px;
+  background-color: #ffebee;
+  border-radius: 8px;
+  border: 1px solid #ffcdd2;
+}
+
+.participants-section {
+  margin-bottom: 24px;
+}
+
+.participants-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.participants-card mat-card-header {
+  padding: 20px 20px 0 20px;
+}
+
+.participants-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.participants-card mat-card-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.creator-section,
+.other-participants-section {
+  margin-bottom: 24px;
+}
+
+.creator-section h3,
+.other-participants-section h3 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.creator-item,
+.participant-item {
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.creator-item:hover,
+.participant-item:hover {
+  background-color: #f5f5f5;
+}
+
+.creator-item mat-icon,
+.participant-item mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.empty-participants {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-participants .empty-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.empty-participants h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+.empty-participants p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+.game-info-section {
+  margin-bottom: 24px;
+}
+
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.info-card mat-card-header {
+  padding: 20px 20px 0 20px;
+}
+
+.info-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.info-item:hover {
+  background-color: #e9ecef;
+}
+
+.info-item mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  color: #666;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.draft-section {
+  margin-bottom: 24px;
+}
+
+.draft-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.draft-card mat-card-header {
+  padding: 20px 20px 0 20px;
+}
+
+.draft-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: white;
+}
+
+.draft-card mat-card-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.draft-card mat-card-content {
+  padding: 20px;
+}
+
+.draft-card p {
+  margin: 0 0 16px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.draft-card button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.draft-card button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .game-detail-container {
+    padding: 16px;
+  }
+
+  .game-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .header-content h1 {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  .back-button {
+    justify-content: center;
+  }
+
+  .status-info {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .game-stats {
+    justify-content: center;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .info-item {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-detail-container {
+    padding: 12px;
+  }
+
+  .header-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .game-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-item {
+    justify-content: center;
+  }
+}
+
+/* Animation for cards */
+.status-card,
+.participants-card,
+.info-card,
+.draft-card {
+  transition: all 0.3s ease;
+}
+
+.status-card:hover,
+.participants-card:hover,
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress bar styling */
+.participants-progress {
+  transition: all 0.3s ease;
+}
+
+.participants-progress:hover {
+  transform: scaleY(1.2);
+}
+
+/* Button hover effects */
+.action-buttons button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Status chip animations */
+.status-badge mat-chip {
+  transition: all 0.2s ease;
+}
+
+.status-badge mat-chip:hover {
+  transform: scale(1.05);
+}
+
+/* List item animations */
+.creator-item,
+.participant-item {
+  transition: all 0.2s ease;
+}
+
+.creator-item:hover,
+.participant-item:hover {
+  transform: translateX(4px);
+}
+
+/* Loading animation */
+.loading-container mat-spinner {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Focus states */
+.action-buttons button:focus {
+  outline: 2px solid #3f51b5;
+  outline-offset: 2px;
+}
+
+/* Success state for joinable games */
+.status-card.joinable {
+  border-left: 4px solid #4caf50;
+}
+
+/* Warning state for almost full games */
+.status-card.warning {
+  border-left: 4px solid #ff9800;
+}
+
+/* Danger state for full games */
+.status-card.danger {
+  border-left: 4px solid #f44336;
+}
+
+/* Creator highlight */
+.creator-item {
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+}
+
+.creator-item:hover {
+  background-color: #ffe0b2;
+}
+
+/* Draft section special styling */
+.draft-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.draft-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+} 

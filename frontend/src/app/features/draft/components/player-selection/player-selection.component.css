@@ -1,0 +1,361 @@
+/* PLAYER SELECTION COMPONENT - OPTIMIZED FOR 149 PLAYERS */
+
+.player-selection-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 80vh;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* ===== HEADER & STATS ===== */
+.selection-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.player-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.clear-filters-btn {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.clear-filters-btn:disabled {
+  opacity: 0.5;
+}
+
+/* ===== FILTRES ===== */
+.filters-container {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+}
+
+.filter-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-field .mat-mdc-form-field-subscript-wrapper {
+  display: none; /* Cache les messages d'aide pour économiser l'espace */
+}
+
+/* ===== VIRTUAL SCROLLING LIST (PERFORMANCE CRITICAL) ===== */
+.players-list-container {
+  flex: 1;
+  position: relative;
+  background: white;
+}
+
+.players-viewport {
+  height: 100%;
+  min-height: 400px;
+  max-height: 500px; /* Limite la hauteur pour éviter les problèmes de scroll */
+}
+
+/* Optimisation pour éviter le reflow lors du scroll */
+.players-viewport .cdk-virtual-scroll-content-wrapper {
+  will-change: transform;
+}
+
+/* ===== PLAYER ITEMS ===== */
+.player-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 80px; /* Hauteur fixe pour virtual scrolling */
+  position: relative;
+}
+
+.player-item:hover {
+  background: #f8f9ff;
+  transform: translateX(4px);
+}
+
+.player-item:focus {
+  outline: 2px solid #667eea;
+  outline-offset: -2px;
+  background: #f0f4ff;
+}
+
+.player-item.selectable:hover {
+  background: linear-gradient(90deg, #f8f9ff 0%, #e8f2ff 100%);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.player-item:not(.selectable) {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ===== PLAYER CONTENT ===== */
+.player-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.player-avatar mat-icon {
+  color: white;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.player-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0; /* Permet le text-overflow */
+}
+
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nickname {
+  font-weight: 600;
+  font-size: 16px;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.username {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.player-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-details mat-chip-set {
+  display: flex;
+  gap: 4px;
+}
+
+.player-details mat-chip {
+  font-size: 12px;
+  font-weight: 500;
+  height: 24px;
+  border-radius: 12px;
+  color: white;
+}
+
+.tranche-chip {
+  background: #34495e !important;
+}
+
+.player-stats {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.points {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 14px;
+}
+
+.player-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.player-actions mat-icon {
+  color: #667eea;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.player-item:hover .player-actions mat-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* ===== STATES ===== */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #667eea;
+  gap: 16px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #e74c3c;
+  gap: 12px;
+  text-align: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #7f8c8d;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ===== FOOTER ===== */
+.selection-footer {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.pagination-info {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .filters-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .filter-field {
+    min-width: unset;
+  }
+  
+  .player-item {
+    padding: 12px 16px;
+  }
+  
+  .player-name {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .players-viewport {
+    max-height: 60vh;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* GPU acceleration pour les animations */
+.player-item,
+.player-avatar,
+.player-actions mat-icon {
+  will-change: transform;
+}
+
+/* Optimisation du scrolling */
+.players-viewport {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prévention du layout shift */
+.player-item {
+  contain: layout style paint;
+}
+
+/* Optimisation des transitions */
+.player-item {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== ACCESSIBILITY ===== */
+.player-item:focus-visible {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-item,
+  .player-actions mat-icon {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .player-item {
+    border-bottom: 2px solid #000;
+  }
+  
+  .player-item:hover {
+    background: #000;
+    color: #fff;
+  }
+}

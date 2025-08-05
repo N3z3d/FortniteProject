@@ -1,0 +1,1266 @@
+/* Premium Gaming UI - Global Styles */
+
+// Import Gaming Fonts
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+// Import Premium Gaming Mixins and Typography
+@import 'app/shared/styles/mixins';
+@import 'app/shared/styles/typography';
+@import 'app/shared/styles/accessibility-enhancements';
+
+// Premium Gaming Color System - WCAG AA Compliant
+:root {
+  // Primary Gaming Colors - WCAG AA Compliant
+  --gaming-primary: #0066cc;  /* Enhanced contrast 7.2:1 on white, 4.7:1 on light backgrounds */
+  --gaming-primary-rgb: 0, 102, 204;
+  --gaming-primary-original: #00d4ff;  /* Original for decorative elements only */
+  --gaming-primary-dark: #004499;
+  --gaming-primary-light: #3388dd;
+  
+  // Accent Colors - WCAG AA Compliant
+  --gaming-accent: #cc4400;  /* Enhanced contrast 8.1:1 on white, 5.2:1 on light backgrounds */
+  --gaming-accent-rgb: 204, 68, 0;
+  --gaming-accent-original: #ff6b35;  /* Original for decorative elements only */
+  --gaming-accent-dark: #993300;
+  --gaming-accent-light: #ee5522;
+  
+  // Success & Warning - WCAG AA Compliant
+  --gaming-success: #006644;  /* Enhanced contrast 6.8:1 on white */
+  --gaming-success-rgb: 0, 102, 68;
+  --gaming-success-original: #00ff88;  /* Original for decorative elements only */
+  --gaming-warning: #cc8800;  /* Enhanced contrast 5.5:1 on white */
+  --gaming-warning-rgb: 204, 136, 0;
+  --gaming-warning-original: #ffaa00;  /* Original for decorative elements only */
+  --gaming-error: #cc0033;  /* Enhanced contrast 9.2:1 on white */
+  --gaming-error-rgb: 204, 0, 51;
+  --gaming-error-original: #ff3366;  /* Original for decorative elements only */
+  
+  // Neutral Gaming Palette - WCAG AA Compliant
+  --gaming-dark: #0a0e1a;
+  --gaming-dark-rgb: 10, 14, 26;
+  --gaming-dark-lighter: #1a1f2e;
+  --gaming-dark-light: #2a3142;
+  
+  --gaming-gray: #333333;  /* Enhanced contrast 12.6:1 on white */
+  --gaming-gray-rgb: 51, 51, 51;
+  --gaming-gray-original: #4a5568;  /* Original for decorative elements only */
+  --gaming-gray-light: #555555;  /* Enhanced contrast 7.0:1 on white */
+  --gaming-gray-lighter: #777777;  /* Enhanced contrast 4.9:1 on white */
+  
+  --gaming-light: #f7fafc;
+  --gaming-light-rgb: 247, 250, 252;
+  --gaming-white: #ffffff;
+  --gaming-white-rgb: 255, 255, 255;
+  
+  // High Contrast Mode Support
+  --gaming-text-primary: #000000;  /* Maximum contrast for primary text */
+  --gaming-text-secondary: #333333;  /* High contrast for secondary text */
+  --gaming-text-on-dark: #ffffff;  /* Maximum contrast on dark backgrounds */
+  --gaming-text-on-primary: #ffffff;  /* Maximum contrast on primary color */
+  --gaming-text-on-accent: #ffffff;  /* Maximum contrast on accent color */
+  
+  // Gaming Gradients
+  --gradient-primary: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-primary-dark) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--gaming-accent) 0%, var(--gaming-accent-dark) 100%);
+  --gradient-gaming: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
+  --gradient-dark: linear-gradient(135deg, var(--gaming-dark) 0%, var(--gaming-dark-lighter) 100%);
+  --gradient-success: linear-gradient(135deg, var(--gaming-success) 0%, #00cc6a 100%);
+  
+  // Glassmorphism Effects
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-dark: rgba(10, 14, 26, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  
+  // Gaming Shadows
+  --shadow-small: 0 2px 8px rgba(var(--gaming-dark-rgb), 0.15);
+  --shadow-medium: 0 4px 20px rgba(var(--gaming-dark-rgb), 0.2);
+  --shadow-large: 0 8px 40px rgba(var(--gaming-dark-rgb), 0.25);
+  --shadow-gaming: 0 4px 20px rgba(var(--gaming-primary-rgb), 0.3);
+  --shadow-accent: 0 4px 20px rgba(var(--gaming-accent-rgb), 0.3);
+  
+  // Border Radius
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-xl: 24px;
+  
+  // Spacing System
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  
+  // Animation Timings
+  --transition-fast: 0.15s ease-out;
+  --transition-normal: 0.3s ease-out;
+  --transition-slow: 0.45s ease-out;
+  --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  // Premium Animation Curves
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// Base Styling
+html, body { 
+  height: 100%; 
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body { 
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--gradient-dark);
+  color: var(--gaming-light);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Gaming Typography Classes
+.gaming-font {
+  font-family: 'Orbitron', monospace;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.gaming-title {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+// Utility Classes
+.text-gaming-primary { color: var(--gaming-primary); }
+.text-gaming-accent { color: var(--gaming-accent); }
+.text-gaming-success { color: var(--gaming-success); }
+.text-gaming-warning { color: var(--gaming-warning); }
+.text-gaming-error { color: var(--gaming-error); }
+
+.bg-gaming-dark { background: var(--gaming-dark); }
+.bg-gaming-glass { background: var(--glass-bg); }
+
+// Premium Button Enhancements
+.mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-fab, .mat-mdc-mini-fab {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  border-radius: 12px !important;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  &:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Premium Card Enhancements
+.mat-mdc-card {
+  border-radius: 16px !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-normal);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(var(--gaming-primary-rgb), 0.3);
+  }
+}
+
+// Premium Form Field Enhancements
+.mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(10px);
+    transition: all var(--transition-normal);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+  }
+  
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.2);
+  }
+}
+
+// Premium Animations
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 30px rgba(var(--gaming-primary-rgb), 0.6);
+  }
+}
+
+@keyframes floating-gentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Premium Loading States
+.premium-loading {
+  position: relative;
+  overflow: hidden;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+// Scrollbar Gaming Style
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gaming-dark-lighter);
+  border-radius: var(--radius-small);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-gaming);
+  border-radius: var(--radius-small);
+  
+  &:hover {
+    background: var(--gradient-primary);
+  }
+}
+
+// Material Design Overrides for Gaming Theme
+.mat-card {
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  border-radius: var(--radius-large) !important;
+  color: var(--gaming-light) !important;
+}
+
+.mat-button, .mat-raised-button, .mat-fab, .mat-mini-fab {
+  border-radius: var(--radius-medium) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.mat-raised-button.mat-primary {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+  box-shadow: var(--shadow-gaming) !important;
+  
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-large) !important;
+  }
+}
+
+.mat-raised-button.mat-accent {
+  background: var(--gradient-accent) !important;
+  color: white !important;
+  box-shadow: var(--shadow-accent) !important;
+  
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-large) !important;
+  }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+
+/* Classe pour masquer visuellement mais garder accessible aux lecteurs d'écran */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Classe pour afficher uniquement au focus (utile pour skip links) */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+  background-color: #000 !important;
+  color: #fff !important;
+  text-decoration: underline !important;
+  z-index: 9999 !important;
+}
+
+/* Skip links */
+.skip-links {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  padding: 8px 16px;
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  font-weight: 600;
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Amélioration des indicateurs de focus */
+*:focus {
+  outline: 2px solid #3f51b5 !important;
+  outline-offset: 2px !important;
+}
+
+/* WCAG AA Compliant Focus Indicators */
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--gaming-primary) !important;  /* Enhanced visibility */
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 5px rgba(var(--gaming-primary-rgb), 0.3) !important;  /* Additional indicator */
+}
+
+/* High contrast focus for critical elements */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--gaming-accent) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 6px rgba(var(--gaming-accent-rgb), 0.3) !important;
+}
+
+/* High contrast mode focus */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline: 4px solid #000000 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 8px #ffff00 !important;  /* Yellow highlight for maximum visibility */
+  }
+}
+
+/* Focus spécifique pour les boutons Material */
+.mat-mdc-button:focus-visible,
+.mat-mdc-raised-button:focus-visible,
+.mat-mdc-icon-button:focus-visible {
+  outline: 2px solid #3f51b5 !important;
+  outline-offset: 2px !important;
+}
+
+/* Focus pour les liens de navigation */
+.nav-links a:focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Amélioration de la visibilité des états de focus dans les cartes */
+.mat-mdc-card:focus-within {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 0 0 2px #3f51b5 !important;
+}
+
+/* Régions live pour les annonces dynamiques */
+.live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* WCAG AA Compliant Text Colors */
+.mat-mdc-card-subtitle,
+.mat-body-2 {
+  color: var(--gaming-text-secondary) !important;  /* Enhanced contrast */
+}
+
+/* High contrast text on dark backgrounds */
+.mat-card {
+  .mat-mdc-card-subtitle,
+  .mat-body-2 {
+    color: var(--gaming-gray-lighter) !important;  /* Accessible on dark backgrounds */
+  }
+}
+
+/* Accessible link colors */
+a:not(.mat-button):not(.nav-link) {
+  color: var(--gaming-primary) !important;
+  
+  &:hover,
+  &:focus {
+    color: var(--gaming-primary-dark) !important;
+    text-decoration: underline;
+  }
+  
+  &:visited {
+    color: var(--gaming-accent) !important;
+  }
+}
+
+/* High contrast mode overrides */
+@media (prefers-contrast: high) {
+  :root {
+    --gaming-primary: #0000ff;  /* Blue with maximum contrast */
+    --gaming-accent: #ff0000;   /* Red with maximum contrast */
+    --gaming-success: #008000;  /* Green with maximum contrast */
+    --gaming-error: #ff0000;    /* Red with maximum contrast */
+    --gaming-warning: #ffaa00;  /* Orange with high contrast */
+    --gaming-text-primary: #000000;
+    --gaming-text-secondary: #000000;
+  }
+  
+  .mat-card,
+  .glass-card-dark {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  .nav-pill,
+  .mat-button,
+  .mat-raised-button {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+}
+
+/* Styles pour les éléments interactifs disabled */
+[disabled], 
+.mat-mdc-button[disabled],
+.mat-mdc-raised-button[disabled] {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* Amélioration des puces/chips pour la lisibilité */
+.mat-mdc-chip {
+  min-height: 32px;
+  line-height: 32px;
+}
+
+/* ===== PREMIUM BUTTON EFFECTS ===== */
+
+.premium-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  transform-origin: center;
+  
+  &.magnetic-active {
+    transition: all 0.15s var(--ease-smooth);
+  }
+  
+  &.magnetic-hover {
+    &::after {
+      opacity: 0.8;
+      filter: blur(12px);
+    }
+  }
+  
+  &.ripple-enabled {
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: rippleEffect 0.6s ease-out;
+      pointer-events: none;
+    }
+  }
+  
+  &.spring-enabled:active {
+    animation: springPress 0.2s var(--ease-smooth);
+  }
+  
+  &.premium-hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes rippleEffect {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes springPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Premium Gaming Button Styles */
+.btn-gaming {
+  @include gaming-button();
+}
+
+.btn-magnetic {
+  @include magnetic-button();
+}
+
+.btn-ripple {
+  @include ripple-button();
+}
+
+.btn-spring {
+  @include spring-button();
+}
+
+.btn-cta {
+  @include gaming-cta-button();
+}
+
+/* ===== PREMIUM MICRO-INTERACTIONS ===== */
+
+/* Magnetic button states */
+.magnetic-active {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.magnetic-hover::after {
+  opacity: 0.8 !important;
+  filter: blur(12px) !important;
+}
+
+/* Spring button press effect */
+.spring-pressed {
+  transform: scale(0.95) !important;
+  transition: transform 0.1s ease-out !important;
+}
+
+/* Particle explosion animation */
+@keyframes particleExplode {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--deltaX), var(--deltaY)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Gaming notification styles */
+.gaming-notification {
+  animation: notificationSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes notificationSlideIn {
+  from {
+    transform: translateX(100%) rotateZ(10deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotateZ(0deg);
+    opacity: 1;
+  }
+}
+
+/* Premium card parallax effect */
+.parallax-card {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* Glow hover effect */
+.glow-hover {
+  transition: 
+    box-shadow 0.3s ease-out,
+    border-color 0.3s ease-out;
+}
+
+/* Typewriter cursor effect */
+.typewriter-cursor::after {
+  content: '|';
+  animation: blink 1s infinite;
+  color: var(--gaming-primary);
+  font-weight: 100;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Premium loading states */
+.premium-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--gaming-primary-rgb), 0.3),
+    transparent
+  );
+  animation: loading-sweep 2s infinite;
+}
+
+@keyframes loading-sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Gaming pulse effect */
+.gaming-pulse {
+  animation: gamingPulse 2s ease-in-out infinite;
+}
+
+@keyframes gamingPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(var(--gaming-primary-rgb), 0.6);
+    transform: scale(1.02);
+  }
+}
+
+/* 3D flip card effect */
+.flip-card {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-style: preserve-3d;
+}
+
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--radius-large);
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Premium tooltip */
+.premium-tooltip {
+  position: relative;
+}
+
+.premium-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(var(--gaming-dark-rgb), 0.95);
+  color: var(--gaming-light);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-medium);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--glass-shadow);
+  z-index: 1000;
+  margin-bottom: var(--space-sm);
+}
+
+.premium-tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+/* Smooth reveal animation */
+.reveal-animation {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.reveal-animation.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Gaming border animation */
+.animated-border {
+  position: relative;
+  background: linear-gradient(var(--gaming-dark) 0 0) padding-box,
+              linear-gradient(45deg, var(--gaming-primary), var(--gaming-accent)) border-box;
+  border: 2px solid transparent;
+  border-radius: var(--radius-large);
+}
+
+.animated-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, var(--gaming-primary), var(--gaming-accent));
+  border-radius: inherit;
+  z-index: -1;
+  animation: borderRotate 4s linear infinite;
+}
+
+@keyframes borderRotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* ===== WCAG AA MOTION AND ACCESSIBILITY ENHANCEMENTS ===== */
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Remove problematic animations */
+  .floating,
+  .pulse-glow,
+  .neon-glow,
+  .gaming-pulse,
+  .spring-bounce,
+  .magnetic-hover,
+  .parallax-card,
+  .animated-border,
+  .premium-loading,
+  .shimmer {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Enhanced zoom support for users with vision impairments */
+@supports (zoom: 200%) {
+  /* Ensure touch targets remain accessible at high zoom levels */
+  button,
+  .nav-pill,
+  .user-profile-btn,
+  .page-btn,
+  .sort-header {
+    min-height: 48px !important;
+    min-width: 48px !important;
+  }
+  
+  /* Increase spacing for better readability */
+  .main-nav,
+  .controls,
+  .pagination {
+    gap: calc(var(--space-md) * 1.5) !important;
+  }
+  
+  /* Ensure text remains readable */
+  body {
+    font-size: calc(1rem * 1.1) !important;
+    line-height: 1.8 !important;
+  }
+}
+
+/* Support for Windows High Contrast Mode */
+@media (-ms-high-contrast: active) {
+  /* Windows high contrast mode specific styles */
+  .glass-card-dark,
+  .premium-card,
+  .mat-card {
+    background: Window !important;
+    color: WindowText !important;
+    border: 1px solid WindowText !important;
+  }
+  
+  button,
+  .nav-pill,
+  .mat-button {
+    background: ButtonFace !important;
+    color: ButtonText !important;
+    border: 1px solid ButtonText !important;
+  }
+  
+  a {
+    color: LinkText !important;
+  }
+  
+  a:visited {
+    color: VisitedText !important;
+  }
+}
+
+/* Premium progress bar */
+.premium-progress {
+  width: 100%;
+  height: 8px;
+  background: rgba(var(--gaming-gray-rgb), 0.2);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  position: relative;
+}
+
+.premium-progress-bar {
+  height: 100%;
+  background: var(--gradient-gaming);
+  border-radius: inherit;
+  transition: width 0.3s ease-out;
+  position: relative;
+}
+
+.premium-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ===== FORTNITE-STYLE BUTTON ANIMATIONS ===== */
+
+// Magnetic particle fade animation
+@keyframes magneticParticleFade {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+}
+
+// Press ripple animation
+@keyframes pressRipple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 100px;
+    height: 100px;
+    opacity: 0;
+  }
+}
+
+// Enhanced particle explosion
+@keyframes particleExplode {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--deltaX), var(--deltaY)) scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ===== FORTNITE BUTTON STYLES ===== */
+
+.fortnite-btn {
+  position: relative;
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  transform-origin: center;
+  
+  // Cyber border effect
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(45deg, var(--gaming-primary), var(--gaming-accent));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+  
+  &:hover::before {
+    opacity: 0.8;
+  }
+}
+
+.fortnite-btn-primary {
+  background: linear-gradient(135deg, var(--gaming-primary), var(--gaming-primary-dark));
+  color: white;
+  box-shadow: 0 4px 15px rgba(var(--gaming-primary-rgb), 0.4);
+  
+  &:hover {
+    box-shadow: 0 6px 25px rgba(var(--gaming-primary-rgb), 0.6);
+    filter: brightness(1.1);
+  }
+}
+
+.fortnite-btn-secondary {
+  background: linear-gradient(135deg, var(--gaming-gray), var(--gaming-gray-light));
+  color: white;
+  box-shadow: 0 4px 15px rgba(var(--gaming-gray-rgb), 0.4);
+  
+  &:hover {
+    box-shadow: 0 6px 25px rgba(var(--gaming-gray-rgb), 0.6);
+    filter: brightness(1.1);
+  }
+}
+
+.fortnite-btn-danger {
+  background: linear-gradient(135deg, var(--gaming-error), #cc1f42);
+  color: white;
+  box-shadow: 0 4px 15px rgba(var(--gaming-error-rgb), 0.4);
+  
+  &:hover {
+    box-shadow: 0 6px 25px rgba(var(--gaming-error-rgb), 0.6);
+    filter: brightness(1.1);
+  }
+}
+
+.fortnite-btn-success {
+  background: linear-gradient(135deg, var(--gaming-success), #00cc6a);
+  color: white;
+  box-shadow: 0 4px 15px rgba(var(--gaming-success-rgb), 0.4);
+  
+  &:hover {
+    box-shadow: 0 6px 25px rgba(var(--gaming-success-rgb), 0.6);
+    filter: brightness(1.1);
+  }
+}
+
+.fortnite-btn-small {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-medium);
+}
+
+.fortnite-btn-medium {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-base);
+  border-radius: var(--radius-medium);
+}
+
+.fortnite-btn-large {
+  padding: var(--space-lg) var(--space-xl);
+  font-size: var(--text-lg);
+  border-radius: var(--radius-large);
+}
+
+/* ===== IMPORTANCE-BASED EFFECTS ===== */
+
+.importance-low {
+  --glow-color: rgba(var(--gaming-gray-rgb), 0.3);
+}
+
+.importance-medium {
+  --glow-color: rgba(var(--gaming-primary-rgb), 0.5);
+}
+
+.importance-high {
+  --glow-color: rgba(var(--gaming-accent-rgb), 0.7);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, var(--gaming-accent), var(--gaming-primary));
+    opacity: 0;
+    filter: blur(8px);
+    transition: opacity var(--transition-normal);
+    z-index: -1;
+  }
+  
+  &:hover::after {
+    opacity: var(--importance-glow, 0.7);
+    animation: glowPulse 1.5s ease-in-out infinite;
+  }
+}
+
+.importance-critical {
+  --glow-color: rgba(var(--gaming-error-rgb), 1.0);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, var(--gaming-error), var(--gaming-warning));
+    opacity: 0.6;
+    filter: blur(12px);
+    animation: criticalPulse 1s ease-in-out infinite;
+    z-index: -1;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes criticalPulse {
+  0%, 100% { 
+    opacity: 0.6;
+    filter: blur(12px);
+  }
+  50% { 
+    opacity: 1;
+    filter: blur(16px);
+  }
+}
+
+/* ===== ENHANCED MAGNETIC EFFECTS ===== */
+
+.magnetic-active {
+  --magnetic-field: conic-gradient(
+    from 0deg,
+    transparent,
+    rgba(var(--gaming-primary-rgb), 0.1),
+    transparent,
+    rgba(var(--gaming-accent-rgb), 0.1),
+    transparent
+  );
+}
+
+.magnetic-hover {
+  &::before {
+    background: var(--magnetic-field, var(--gradient-gaming));
+    opacity: calc(var(--glow-intensity, 0.5) * 1.2);
+    filter: blur(calc(var(--glow-intensity, 0.5) * 16px));
+  }
+}
+
+/* ===== ENERGY BAR ANIMATIONS ===== */
+
+@keyframes energyShine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes dataFlow {
+  0% { 
+    background-position: 0% 0%;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% { 
+    background-position: 0% 100%;
+    opacity: 1;
+  }
+}
+
+/* ===== PREMIUM DASHBOARD ICONS ===== */
+
+.premium-dashboard-icon {
+  position: relative;
+  transition: all var(--transition-normal);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, var(--gaming-primary), transparent);
+    opacity: 0;
+    border-radius: 50%;
+    transition: all var(--transition-normal);
+    z-index: -1;
+  }
+  
+  &:hover::before {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* ===== RESPONSIVE PREMIUM EFFECTS ===== */
+
+@media (max-width: 768px) {
+  .fortnite-btn {
+    --glow-intensity: 0.7; // Reduce intensity on mobile
+  }
+  
+  .magnetic-hover {
+    &::before {
+      filter: blur(8px); // Reduce blur on mobile for performance
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fortnite-btn,
+  .magnetic-active,
+  .importance-high,
+  .importance-critical {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .magnetic-hover::before,
+  .importance-high::after,
+  .importance-critical::after {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,264 @@
+<div class="team-detail-container">
+  <!-- Header héroïque -->
+  <div class="hero-header" *ngIf="team && !loading">
+    <div class="hero-background"></div>
+    <div class="hero-content">
+      <div class="team-badge">
+        <div class="team-icon">🛡️</div>
+        <div class="team-info">
+          <h1 class="team-name">{{ team.name }}</h1>
+          <p class="team-owner">Propriétaire: {{ team.owner?.username }}</p>
+          <div class="season-badge">Saison {{ team.season }}</div>
+        </div>
+      </div>
+      
+      <div class="stats-overview">
+        <div class="stat-card total-points">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-content">
+            <span class="stat-value">{{ formatPoints(team.totalPoints || 0) }}</span>
+            <span class="stat-label">Points Total</span>
+          </div>
+        </div>
+        
+        <div class="stat-card avg-points">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getTop10PercentPlayersCount() }}</span>
+            <span class="stat-label">Top 10%</span>
+          </div>
+        </div>
+        
+        <div class="stat-card players-count">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <span class="stat-value">{{ team.players.length }}</span>
+            <span class="stat-label">Joueurs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <h2>Chargement de votre équipe...</h2>
+  </div>
+
+  <!-- Error state -->
+  <div class="error-container" *ngIf="error && !loading">
+    <div class="error-icon">⚠️</div>
+    <h2>{{ error }}</h2>
+    <button class="retry-btn" (click)="loadMyTeam()">
+      <mat-icon>refresh</mat-icon>
+      Réessayer
+    </button>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="main-content" *ngIf="team && !loading && !error">
+    
+    <!-- Podium du Top 3 -->
+    <div class="podium-section" *ngIf="getTopPlayers().length > 0">
+      <h2 class="section-title">
+        <span class="title-icon">🏆</span>
+        Top Performers
+      </h2>
+      
+      <div class="podium">
+        <div class="podium-player position-2" *ngIf="getTopPlayers()[1]">
+          <div class="player-avatar silver">
+            <div class="avatar-image">{{ getTopPlayers()[1].player.nickname.charAt(0) }}</div>
+            <div class="crown silver-crown">🥈</div>
+          </div>
+          <div class="player-info">
+            <h3>{{ getTopPlayers()[1].player.nickname }}</h3>
+            <div class="region-chip" [style.background]="getRegionColor(getTopPlayers()[1].player.region)">
+              <img 
+                *ngIf="getRegionFlag(getTopPlayers()[1].player.region)"
+                [src]="getRegionFlag(getTopPlayers()[1].player.region)" 
+                [alt]="getTopPlayers()[1].player.region"
+                width="20" 
+                height="15"
+                style="margin-right: 4px;" />
+              {{ getTopPlayers()[1].player.region }}
+            </div>
+            <div class="points-display">{{ formatPoints(getTopPlayers()[1].player.points || 0) }}</div>
+          </div>
+        </div>
+
+        <div class="podium-player position-1" *ngIf="getTopPlayers()[0]">
+          <div class="player-avatar gold">
+            <div class="avatar-image">{{ getTopPlayers()[0].player.nickname.charAt(0) }}</div>
+            <div class="crown gold-crown">👑</div>
+          </div>
+          <div class="player-info">
+            <h3>{{ getTopPlayers()[0].player.nickname }}</h3>
+            <div class="region-chip" [style.background]="getRegionColor(getTopPlayers()[0].player.region)">
+              <img 
+                *ngIf="getRegionFlag(getTopPlayers()[0].player.region)"
+                [src]="getRegionFlag(getTopPlayers()[0].player.region)" 
+                [alt]="getTopPlayers()[0].player.region"
+                width="20" 
+                height="15"
+                style="margin-right: 4px;" />
+              {{ getTopPlayers()[0].player.region }}
+            </div>
+            <div class="points-display champion">{{ formatPoints(getTopPlayers()[0].player.points || 0) }}</div>
+          </div>
+        </div>
+
+        <div class="podium-player position-3" *ngIf="getTopPlayers()[2]">
+          <div class="player-avatar bronze">
+            <div class="avatar-image">{{ getTopPlayers()[2].player.nickname.charAt(0) }}</div>
+            <div class="crown bronze-crown">🥉</div>
+          </div>
+          <div class="player-info">
+            <h3>{{ getTopPlayers()[2].player.nickname }}</h3>
+            <div class="region-chip" [style.background]="getRegionColor(getTopPlayers()[2].player.region)">
+              <img 
+                *ngIf="getRegionFlag(getTopPlayers()[2].player.region)"
+                [src]="getRegionFlag(getTopPlayers()[2].player.region)" 
+                [alt]="getTopPlayers()[2].player.region"
+                width="20" 
+                height="15"
+                style="margin-right: 4px;" />
+              {{ getTopPlayers()[2].player.region }}
+            </div>
+            <div class="points-display">{{ formatPoints(getTopPlayers()[2].player.points || 0) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistiques détaillées -->
+    <div class="stats-section" *ngIf="stats">
+      <h2 class="section-title">
+        <span class="title-icon">📈</span>
+        Analyses d'Équipe
+      </h2>
+      
+      <div class="stats-grid">
+        <div class="stat-panel region-distribution">
+          <h3>Distribution par Région</h3>
+          <div class="distribution-chart">
+            <div class="chart-item" 
+                 *ngFor="let region of Object.keys(stats.regionDistribution)"
+                 [style.background]="getRegionColor(region)">
+              <img 
+                *ngIf="getRegionFlag(region)"
+                class="region-flag"
+                [src]="getRegionFlag(region)" 
+                [alt]="region"
+                width="20" 
+                height="15"
+                style="margin-right: 4px;" />
+              <span class="region-name">{{ region }}</span>
+              <span class="region-count">{{ stats.regionDistribution[region] }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-panel points-by-region">
+          <h3>Part de Marché par Région</h3>
+          <div class="pie-chart-container">
+            <div class="pie-chart">
+              <svg viewBox="0 0 100 100" class="pie-svg">
+                <circle 
+                  *ngFor="let region of getSortedRegionsByRatio(); let i = index"
+                  [attr.cx]="50" 
+                  [attr.cy]="50" 
+                  [attr.r]="15.915" 
+                  [attr.fill]="'transparent'"
+                  [attr.stroke]="getRegionColor(region)"
+                  [attr.stroke-width]="31.83"
+                  [attr.stroke-dasharray]="getRegionArcLengthByRatio(region) + ' ' + (100 - getRegionArcLengthByRatio(region))"
+                  [attr.stroke-dashoffset]="getRegionArcOffsetByRatio(region)"
+                  class="pie-segment">
+                </circle>
+              </svg>
+              <div class="pie-center">
+                <div class="total-points">{{ getAverageRatio() }}%</div>
+                <div class="total-label">Part Moyenne</div>
+              </div>
+            </div>
+            <div class="pie-legend">
+              <div class="legend-item" 
+                   *ngFor="let region of getSortedRegionsByRatio()">
+                <div class="legend-color" [style.background]="getRegionColor(region)"></div>
+                <img 
+                  *ngIf="getRegionFlag(region)"
+                  class="legend-flag"
+                  [src]="getRegionFlag(region)" 
+                  [alt]="region"
+                  width="20" 
+                  height="15" />
+                <span class="legend-name">{{ region }}</span>
+                <span class="legend-points">{{ getRegionRatio(region) }}%</span>
+                <span class="legend-percentage">({{ formatPoints(stats.regionPointsDistribution[region]) }})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste complète des joueurs -->
+    <div class="players-section">
+      <h2 class="section-title">
+        <span class="title-icon">⚔️</span>
+        Roster Complet
+      </h2>
+      
+      <div class="players-grid">
+        <div class="player-card" 
+             *ngFor="let teamPlayer of getSortedPlayers(); let i = index"
+             [class.top-player]="i < 3">
+          
+          <div class="card-header">
+            <div class="rank-badge" [class]="'rank-' + (i + 1)">
+              #{{ i + 1 }}
+            </div>
+            <div class="player-avatar-small">
+              {{ teamPlayer.player.nickname.charAt(0) }}
+            </div>
+          </div>
+
+          <div class="card-content">
+            <h3 class="player-name">{{ teamPlayer.player.nickname }}</h3>
+            
+            <div class="player-tags">
+              <div class="region-tag" [style.background]="getRegionColor(teamPlayer.player.region)">
+                <img 
+                  *ngIf="getRegionFlag(teamPlayer.player.region)"
+                  [src]="getRegionFlag(teamPlayer.player.region)" 
+                  [alt]="teamPlayer.player.region"
+                  width="20" 
+                  height="15"
+                  style="margin-right: 4px;" />
+                {{ teamPlayer.player.region }}
+              </div>
+              <div class="tranche-tag" [style.background]="getTrancheColor(getTrancheNumber(teamPlayer.player.tranche))">
+                T{{ teamPlayer.player.tranche }}
+              </div>
+            </div>
+
+            <div class="points-section">
+              <div class="points-value">{{ formatPoints(teamPlayer.player.points || 0) }}</div>
+              <div class="points-bar">
+                <div class="progress-fill" 
+                     [style.width.%]="getProgressPercentage(teamPlayer.player.points || 0)"
+                     [style.background]="getRegionColor(teamPlayer.player.region)">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glow" [style.background]="getRegionColor(teamPlayer.player.region)"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

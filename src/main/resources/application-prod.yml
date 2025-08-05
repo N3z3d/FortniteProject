@@ -1,0 +1,146 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET}  # REQUIRED in production - no fallback
+    expiration: ${JWT_EXPIRATION:86400000}  # 24 heures
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 jours
+
+spring:
+  profiles:
+    active: prod
+  # PHASE 3A: SPRINT 4 - DATABASE SCALING FOR 500+ USERS
+  datasource:
+    # Primary datasource for write operations
+    primary:
+      jdbc-url: jdbc:postgresql://${DB_PRIMARY_HOST:localhost}:${DB_PRIMARY_PORT:5432}/${DB_NAME:fortnite_pronos}
+      username: ${DB_PRIMARY_USERNAME:postgres}
+      password: ${DB_PRIMARY_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        # OPTIMIZED FOR 500+ SIMULTANEOUS USERS - PRIMARY DB
+        minimum-idle: 30               # Higher for primary DB
+        maximum-pool-size: 100         # Scaled for 500+ users
+        idle-timeout: 300000           # 5 minutes
+        connection-timeout: 6000       # Optimized for high load
+        validation-timeout: 1500       # Faster validation
+        max-lifetime: 1800000          # 30 minutes for production
+        leak-detection-threshold: 15000 # Strict leak detection
+        pool-name: "FortnitePronosPrimaryCP"
+        initialization-fail-timeout: 1
+        isolate-internal-queries: false
+        allow-pool-suspension: false
+        read-only: false
+        register-mbeans: true
+    # Read replica for read-only operations
+    read-only:
+      jdbc-url: jdbc:postgresql://${DB_READONLY_HOST:localhost}:${DB_READONLY_PORT:5433}/${DB_NAME:fortnite_pronos}
+      username: ${DB_READONLY_USERNAME:postgres}
+      password: ${DB_READONLY_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        # OPTIMIZED FOR READ QUERIES - 500+ USERS SCALING
+        minimum-idle: 25               # Read-heavy workload
+        maximum-pool-size: 80          # Optimized for read operations
+        idle-timeout: 600000           # 10 minutes for read connections
+        connection-timeout: 8000       # Slightly higher for read ops
+        validation-timeout: 2000       # Standard validation
+        max-lifetime: 1800000          # 30 minutes
+        leak-detection-threshold: 20000
+        pool-name: "FortnitePronosReadOnlyCP"
+        initialization-fail-timeout: 1
+        isolate-internal-queries: false
+        allow-pool-suspension: false
+        read-only: true                # CRITICAL: Mark as read-only
+        register-mbeans: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # PHASE 3A: PERFORMANCE OPTIMIZATION FOR 500+ USERS
+        jdbc:
+          batch_size: 25               # Optimized batch size
+          fetch_size: 50               # Fetch size for large result sets
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true      # Enable for monitoring
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 500  # Log slow queries
+        # Connection and query optimization
+        connection:
+          provider_disables_autocommit: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+  h2:
+    console:
+      enabled: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    clean-disabled: true
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    root: WARN
+    com.fortnite.pronos: INFO
+    org.postgresql: WARN
+    # PHASE 3A: ENHANCED DATABASE MONITORING FOR 500+ USERS
+    org.hibernate.SQL: ${DB_SQL_LOG_LEVEL:WARN}     # Set to DEBUG for slow query monitoring
+    org.hibernate.type.descriptor.sql: TRACE
+    org.hibernate.engine.transaction: INFO
+    com.zaxxer.hikari: INFO                         # Connection pool monitoring
+    # Database performance monitoring
+    com.fortnite.pronos.repository: INFO            # Repository performance
+    com.fortnite.pronos.config.DatabaseMonitoring: INFO
+
+# PHASE 3A: DATABASE MONITORING CONFIGURATION
+database:
+  monitoring:
+    slow-query-threshold: 500ms    # Alert on queries > 500ms
+    connection-pool-alert-threshold: 80  # Alert when pool usage > 80%
+    read-replica-lag-threshold: 5s # Alert if replica lag > 5 seconds
+    enable-query-analysis: true
+    enable-connection-monitoring: true
+
+# ACTUATOR ENHANCEMENTS FOR DATABASE MONITORING
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,datasource
+  endpoint:
+    health:
+      show-details: always
+    datasource:
+      enabled: true
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: false
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 30s
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+        "[spring.data.repository.invocations]": true
+    tags:
+      application: fortnite-pronos
+      environment: production 
