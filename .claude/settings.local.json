@@ -100,7 +100,8 @@
       "Bash(npx ng serve:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }
