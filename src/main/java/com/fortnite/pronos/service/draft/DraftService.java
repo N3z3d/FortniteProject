@@ -158,11 +158,11 @@ public class DraftService {
     // La logique de sauvegarde du pick sera gérée par le service appelant
 
     // Passer au pick suivant
-    nextPick(draft, draft.getGame().getParticipantCount());
+    nextPick(draft, draft.getGame().getMaxParticipants());
   }
 
   private int calculatePickOrder(Draft draft) {
-    return (draft.getCurrentRound() - 1) * draft.getGame().getParticipantCount()
+    return (draft.getCurrentRound() - 1) * draft.getGame().getMaxParticipants()
         + draft.getCurrentPick();
   }
 
