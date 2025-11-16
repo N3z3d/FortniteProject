@@ -24,7 +24,8 @@ public class PlayerDto {
     dto.fortniteId = player.getFortniteId();
     dto.username = player.getUsername();
     dto.nickname = player.getNickname();
-    dto.region = player.getRegion();
+    // Use the enum field directly, not the getRegion() method which returns String
+    dto.region = player.region;
     dto.tranche = player.getTranche();
     dto.currentSeason = player.getCurrentSeason();
     return dto;
@@ -36,7 +37,8 @@ public class PlayerDto {
     dto.fortniteId = player.getFortniteId();
     dto.username = player.getUsername();
     dto.nickname = player.getNickname();
-    dto.region = player.getRegion();
+    // Use the enum field directly, not the getRegion() method which returns String
+    dto.region = player.region;
     dto.tranche = player.getTranche();
     dto.totalPoints = totalPoints;
     dto.currentSeason = player.getCurrentSeason();

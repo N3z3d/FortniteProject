@@ -1,12 +1,16 @@
 package com.fortnite.pronos.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.JoinGameRequest;
+import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.model.Player;
+import com.fortnite.pronos.model.RegionRule;
+import com.fortnite.pronos.model.Team;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,11 +40,11 @@ public class ValidationService {
 
   /** Valide une requête de création de game */
   public void validateCreateGameRequest(CreateGameRequest request) {
-    log.info("Validation de la requête de création de game: {}", request.getName());
-
     if (request == null) {
       throw new IllegalArgumentException("La requête de création de game ne peut pas être null");
     }
+
+    log.info("Validation de la requête de création de game: {}", request.getName());
 
     if (!request.isValid()) {
       String errors = String.join(", ", request.getValidationErrors());
@@ -53,11 +57,11 @@ public class ValidationService {
 
   /** Valide une requête de rejoindre une game */
   public void validateJoinGameRequest(JoinGameRequest request) {
-    log.info("Validation de la requête de rejoindre une game: {}", request.getGameId());
-
     if (request == null) {
       throw new IllegalArgumentException("La requête de rejoindre une game ne peut pas être null");
     }
+
+    log.info("Validation de la requête de rejoindre une game: {}", request.getGameId());
 
     if (!request.isValid()) {
       String errors = String.join(", ", request.getValidationErrors());
@@ -111,5 +115,46 @@ public class ValidationService {
     }
 
     log.info("Règles de région validées avec succès - Total joueurs: {}", totalPlayers);
+  }
+
+  /**
+   * Validate team composition against region rules
+   *
+   * @param team The team to validate
+   * @param regionRules The region rules to validate against
+   * @throws BusinessException if validation fails
+   */
+  public void validateTeamComposition(Team team, List<RegionRule> regionRules) {
+    log.info("Validating team composition for team: {}", team.getName());
+
+    if (regionRules == null || regionRules.isEmpty()) {
+      log.info("No region rules to validate against");
+      return;
+    }
+
+    // Count players by region
+    Map<String, Long> playersByRegion = new java.util.HashMap<>();
+
+    for (Player player : team.getPlayers()) {
+      String region = player.getRegion();
+      playersByRegion.merge(region, 1L, Long::sum);
+    }
+
+    // Check against region rules
+    for (RegionRule rule : regionRules) {
+      String region = rule.getRegion();
+      Integer maxPlayers = rule.getMaxPlayers();
+
+      Long currentCount = playersByRegion.getOrDefault(region, 0L);
+
+      if (currentCount > maxPlayers) {
+        throw new BusinessException(
+            String.format(
+                "Team %s exceeds regional limit for %s: %d > %d",
+                team.getName(), region, currentCount, maxPlayers));
+      }
+    }
+
+    log.info("Team composition validation successful for team: {}", team.getName());
   }
 }

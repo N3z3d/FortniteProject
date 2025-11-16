@@ -5,7 +5,7 @@ export interface Game {
   creatorName: string;
   maxParticipants: number;
   status: GameStatus;
-  createdAt: string;
+  createdAt: string | Date;
   participantCount: number;
   canJoin: boolean;
   invitationCode?: string;
@@ -54,7 +54,7 @@ export interface GameResponse {
   data?: any;
 }
 
-export type GameStatus = 'CREATING' | 'DRAFTING' | 'ACTIVE' | 'FINISHED' | 'CANCELLED' | 'COMPLETED';
+export type GameStatus = 'CREATING' | 'DRAFTING' | 'ACTIVE' | 'FINISHED' | 'CANCELLED' | 'COMPLETED' | 'DRAFT' | 'RECRUITING';
 
 // Interfaces pour les participants
 export interface GameParticipant {

@@ -171,4 +171,26 @@ public class UserContextService {
               return new UserNotFoundException("Utilisateur non trouvé: " + username);
             });
   }
+
+  /**
+   * Récupère l'ID d'un utilisateur par son nom d'utilisateur
+   *
+   * @param username nom d'utilisateur
+   * @return UUID de l'utilisateur
+   * @throws UserNotFoundException si l'utilisateur n'est pas trouvé
+   */
+  public UUID getUserIdFromUsername(String username) {
+    log.debug("Récupération de l'ID utilisateur par nom: {}", username);
+
+    User user =
+        userRepository
+            .findByUsernameIgnoreCase(username)
+            .orElseThrow(
+                () -> {
+                  log.error("Utilisateur non trouvé en base: {}", username);
+                  return new UserNotFoundException("Utilisateur non trouvé: " + username);
+                });
+
+    return user.getId();
+  }
 }

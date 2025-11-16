@@ -31,10 +31,9 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
   @Query("SELECT g FROM Game g WHERE g.status IN ('DRAFTING', 'ACTIVE')")
   List<Game> findActiveGames();
 
-  /** Trouver les games disponibles pour rejoindre */
-  @Query(
-      "SELECT g FROM Game g WHERE g.status = 'CREATING' "
-          + "AND SIZE(g.participants) < g.maxParticipants")
+  /** @deprecated Games publiques supprimées */
+  @Deprecated
+  @Query("SELECT g FROM Game g WHERE 1=0") // Retourne toujours vide
   List<Game> findAvailableGames();
 
   /** Compter les games par statut */
@@ -89,16 +88,9 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
           + "ORDER BY g.createdAt DESC")
   List<Game> findByCreatorWithFetch(@Param("creator") User creator);
 
-  /** OPTIMISÉ: Récupère les games disponibles avec FETCH JOIN */
-  @Query(
-      "SELECT DISTINCT g FROM Game g "
-          + "LEFT JOIN FETCH g.participants p "
-          + "LEFT JOIN FETCH p.user "
-          + "LEFT JOIN FETCH g.creator "
-          + "LEFT JOIN FETCH g.regionRules "
-          + "WHERE g.status = 'CREATING' "
-          + "AND SIZE(g.participants) < g.maxParticipants "
-          + "ORDER BY g.createdAt DESC")
+  /** @deprecated Games publiques supprimées */
+  @Deprecated
+  @Query("SELECT g FROM Game g WHERE 1=0") // Retourne toujours vide
   List<Game> findAvailableGamesWithFetch();
 
   /** OPTIMISÉ: Récupère une game par ID avec toutes les relations */

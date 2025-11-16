@@ -1,0 +1,485 @@
+<div class="trading-dashboard" [@slideInStagger]>
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="dashboard-title">
+          <mat-icon class="title-icon">swap_horiz</mat-icon>
+          Trading Hub
+        </h1>
+        <p class="dashboard-subtitle">Manage your player trades and negotiations</p>
+      </div>
+      
+      <div class="header-actions">
+        <button 
+          mat-fab 
+          color="primary" 
+          class="create-trade-btn"
+          (click)="onCreateTrade()"
+          matTooltip="Create New Trade"
+          [@cardHover]>
+          <mat-icon>add</mat-icon>
+        </button>
+        
+        <button 
+          mat-icon-button 
+          class="refresh-btn"
+          [class.spinning]="isRefreshing | async"
+          (click)="refreshData(true)"
+          matTooltip="Refresh Data">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+      <mat-form-field class="search-field" appearance="outline">
+        <mat-label>Search trades...</mat-label>
+        <input 
+          matInput 
+          #searchInput
+          placeholder="Search by player or user..."
+          (input)="onSearchChange(searchInput.value)">
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-chip-set class="filter-chips" aria-label="Trade filters">
+        <mat-chip 
+          *ngFor="let filter of filterOptions"
+          [class.selected]="(selectedFilter | async) === filter.value"
+          (click)="onFilterChange(filter.value)">
+          <mat-icon>{{ filter.icon }}</mat-icon>
+          {{ filter.label }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading$ | async" class="loading-container">
+    <div class="loading-card">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Loading your trades...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error$ | async as error" class="error-container">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <h3>Something went wrong</h3>
+        <p>{{ error }}</p>
+        <button mat-raised-button color="primary" (click)="refreshData(true)">
+          <mat-icon>refresh</mat-icon>
+          Try Again
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!(loading$ | async) && !(error$ | async)" class="dashboard-content">
+    
+    <!-- Stats Overview -->
+    <div class="stats-overview" *ngIf="dashboardStats$ | async as stats">
+      <div class="stat-card" [@cardHover]>
+        <div class="stat-icon trades-icon">
+          <mat-icon>swap_horiz</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.totalTrades }}</div>
+          <div class="stat-label">Total Trades</div>
+        </div>
+      </div>
+
+      <div class="stat-card" [@cardHover]>
+        <div class="stat-icon pending-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.pendingOffers }}</div>
+          <div class="stat-label">Pending Offers</div>
+          <div *ngIf="stats.pendingOffers > 0" class="stat-badge">
+            {{ stats.pendingOffers }}
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card" [@cardHover]>
+        <div class="stat-icon success-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.successfulTrades }}</div>
+          <div class="stat-label">Successful</div>
+        </div>
+      </div>
+
+      <div class="stat-card" [@cardHover]>
+        <div class="stat-icon value-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatCurrency(stats.averageTradeValue) }}</div>
+          <div class="stat-label">Avg Value</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Trading Content -->
+    <mat-tab-group 
+      class="trading-tabs"
+      [(selectedIndex)]="selectedTab.value"
+      (selectedIndexChange)="onTabChange($event)"
+      animationDuration="400ms">
+      
+      <!-- Pending Trades Tab -->
+      <mat-tab label="Pending">
+        <ng-template matTabContent>
+          <div class="trades-container">
+            <div *ngIf="pendingTrades$ | async as trades">
+              <div *ngIf="trades.length === 0" class="empty-state">
+                <mat-icon class="empty-icon">inbox</mat-icon>
+                <h3>No Pending Trades</h3>
+                <p>You don't have any pending trade offers at the moment.</p>
+                <button mat-raised-button color="primary" (click)="onCreateTrade()">
+                  <mat-icon>add</mat-icon>
+                  Create Trade
+                </button>
+              </div>
+
+              <div class="trades-grid" *ngIf="trades.length > 0">
+                <div 
+                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                  class="trade-card pending-trade"
+                  [@cardHover]
+                  [@statusChange]="trade.status">
+                  
+                  <div class="trade-header">
+                    <div class="trade-participants">
+                      <div class="participant from">
+                        <span class="participant-name">{{ trade.fromUserName }}</span>
+                        <small>Offering</small>
+                      </div>
+                      <mat-icon class="trade-direction">swap_horiz</mat-icon>
+                      <div class="participant to">
+                        <span class="participant-name">{{ trade.toUserName }}</span>
+                        <small>Receiving</small>
+                      </div>
+                    </div>
+                    
+                    <div class="trade-status">
+                      <mat-chip 
+                        class="status-chip"
+                        [class]="getTradeStatusClass(trade.status)">
+                        <mat-icon>{{ getTradeStatusIcon(trade.status) }}</mat-icon>
+                        {{ trade.status | titlecase }}
+                      </mat-chip>
+                    </div>
+                  </div>
+
+                  <div class="trade-content" (click)="onViewTradeDetails(trade)">
+                    <div class="players-section">
+                      <div class="offered-players">
+                        <h4>Offered Players</h4>
+                        <div class="player-chips">
+                          <mat-chip *ngFor="let player of trade.offeredPlayers.slice(0, 3)">
+                            {{ player.name }}
+                          </mat-chip>
+                          <mat-chip *ngIf="trade.offeredPlayers.length > 3" class="more-chip">
+                            +{{ trade.offeredPlayers.length - 3 }} more
+                          </mat-chip>
+                        </div>
+                      </div>
+
+                      <div class="requested-players">
+                        <h4>Requested Players</h4>
+                        <div class="player-chips">
+                          <mat-chip *ngFor="let player of trade.requestedPlayers.slice(0, 3)">
+                            {{ player.name }}
+                          </mat-chip>
+                          <mat-chip *ngIf="trade.requestedPlayers.length > 3" class="more-chip">
+                            +{{ trade.requestedPlayers.length - 3 }} more
+                          </mat-chip>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="trade-value">
+                      <div class="value-balance" [class]="getValueDisplayClass(trade.valueBalance)">
+                        <mat-icon *ngIf="trade.valueBalance > 0">trending_up</mat-icon>
+                        <mat-icon *ngIf="trade.valueBalance < 0">trending_down</mat-icon>
+                        <mat-icon *ngIf="trade.valueBalance === 0">compare_arrows</mat-icon>
+                        <span class="balance-value">{{ formatCurrency(abs(trade.valueBalance)) }}</span>
+                        <span class="balance-label">
+                          <span *ngIf="trade.valueBalance > 0">You get more value</span>
+                          <span *ngIf="trade.valueBalance < 0">You give more value</span>
+                          <span *ngIf="trade.valueBalance === 0">Balanced trade</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="trade-actions">
+                    <div class="trade-meta">
+                      <span class="trade-time">{{ formatDate(trade.createdAt) }}</span>
+                      <span *ngIf="isTradeExpiringSoon(trade)" class="expiry-warning">
+                        <mat-icon>access_time</mat-icon>
+                        Expires soon
+                      </span>
+                    </div>
+
+                    <div class="action-buttons">
+                      <button 
+                        *ngIf="canAcceptTrade(trade)"
+                        mat-raised-button 
+                        color="primary" 
+                        class="accept-btn"
+                        (click)="onAcceptTrade(trade); $event.stopPropagation()">
+                        <mat-icon>check</mat-icon>
+                        Accept
+                      </button>
+
+                      <button 
+                        *ngIf="canRejectTrade(trade)"
+                        mat-stroked-button 
+                        color="warn" 
+                        class="reject-btn"
+                        (click)="onRejectTrade(trade); $event.stopPropagation()">
+                        <mat-icon>close</mat-icon>
+                        Reject
+                      </button>
+
+                      <button 
+                        *ngIf="canWithdrawTrade(trade)"
+                        mat-stroked-button 
+                        class="withdraw-btn"
+                        (click)="onWithdrawTrade(trade); $event.stopPropagation()">
+                        <mat-icon>undo</mat-icon>
+                        Withdraw
+                      </button>
+
+                      <button 
+                        mat-icon-button 
+                        class="details-btn"
+                        (click)="onViewTradeDetails(trade); $event.stopPropagation()"
+                        matTooltip="View Details">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Sent Trades Tab -->
+      <mat-tab label="Sent">
+        <ng-template matTabContent>
+          <div class="trades-container">
+            <div *ngIf="sentTrades$ | async as trades">
+              <div *ngIf="trades.length === 0" class="empty-state">
+                <mat-icon class="empty-icon">send</mat-icon>
+                <h3>No Sent Trades</h3>
+                <p>You haven't sent any trade offers yet.</p>
+                <button mat-raised-button color="primary" (click)="onCreateTrade()">
+                  <mat-icon>add</mat-icon>
+                  Create Trade
+                </button>
+              </div>
+
+              <div class="trades-list" *ngIf="trades.length > 0">
+                <div 
+                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                  class="trade-item sent-trade"
+                  [@cardHover]
+                  (click)="onViewTradeDetails(trade)">
+                  
+                  <div class="trade-summary">
+                    <div class="trade-info">
+                      <div class="trade-title">
+                        <span class="to-user">{{ trade.toUserName }}</span>
+                        <mat-chip class="status-chip" [class]="getTradeStatusClass(trade.status)">
+                          {{ trade.status | titlecase }}
+                        </mat-chip>
+                      </div>
+                      <div class="trade-details">
+                        <span class="player-count">
+                          {{ trade.offeredPlayers.length }} offered, {{ trade.requestedPlayers.length }} requested
+                        </span>
+                        <span class="trade-time">{{ getTimeSince(trade.createdAt) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="trade-value-summary">
+                      <div class="value-indicator" [class]="getValueDisplayClass(trade.valueBalance)">
+                        {{ formatCurrency(abs(trade.valueBalance)) }}
+                        <mat-icon *ngIf="trade.valueBalance !== 0">
+                          {{ trade.valueBalance > 0 ? 'trending_up' : 'trending_down' }}
+                        </mat-icon>
+                      </div>
+                    </div>
+
+                    <div class="trade-actions">
+                      <button 
+                        *ngIf="canWithdrawTrade(trade)"
+                        mat-icon-button 
+                        color="warn"
+                        (click)="onWithdrawTrade(trade); $event.stopPropagation()"
+                        matTooltip="Withdraw Trade">
+                        <mat-icon>undo</mat-icon>
+                      </button>
+                      
+                      <button 
+                        mat-icon-button 
+                        (click)="onViewTradeDetails(trade); $event.stopPropagation()"
+                        matTooltip="View Details">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Received Trades Tab -->
+      <mat-tab label="Received">
+        <ng-template matTabContent>
+          <div class="trades-container">
+            <div *ngIf="receivedTrades$ | async as trades">
+              <div *ngIf="trades.length === 0" class="empty-state">
+                <mat-icon class="empty-icon">inbox</mat-icon>
+                <h3>No Received Trades</h3>
+                <p>You haven't received any trade offers yet.</p>
+              </div>
+
+              <div class="trades-list" *ngIf="trades.length > 0">
+                <div 
+                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                  class="trade-item received-trade"
+                  [@cardHover]
+                  [class.urgent]="isTradeExpiringSoon(trade)"
+                  (click)="onViewTradeDetails(trade)">
+                  
+                  <div class="trade-summary">
+                    <div class="trade-info">
+                      <div class="trade-title">
+                        <span class="from-user">{{ trade.fromUserName }}</span>
+                        <mat-chip class="status-chip" [class]="getTradeStatusClass(trade.status)">
+                          {{ trade.status | titlecase }}
+                        </mat-chip>
+                      </div>
+                      <div class="trade-details">
+                        <span class="player-count">
+                          {{ trade.requestedPlayers.length }} wanted, {{ trade.offeredPlayers.length }} offered
+                        </span>
+                        <span class="trade-time">{{ getTimeSince(trade.createdAt) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="trade-value-summary">
+                      <div class="value-indicator" [class]="getValueDisplayClass(-trade.valueBalance)">
+                        {{ formatCurrency(abs(trade.valueBalance)) }}
+                        <mat-icon *ngIf="trade.valueBalance !== 0">
+                          {{ trade.valueBalance < 0 ? 'trending_up' : 'trending_down' }}
+                        </mat-icon>
+                      </div>
+                    </div>
+
+                    <div class="trade-actions">
+                      <button 
+                        *ngIf="canAcceptTrade(trade)"
+                        mat-mini-fab 
+                        color="primary"
+                        (click)="onAcceptTrade(trade); $event.stopPropagation()"
+                        matTooltip="Accept Trade">
+                        <mat-icon>check</mat-icon>
+                      </button>
+                      
+                      <button 
+                        *ngIf="canRejectTrade(trade)"
+                        mat-mini-fab 
+                        color="warn"
+                        (click)="onRejectTrade(trade); $event.stopPropagation()"
+                        matTooltip="Reject Trade">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                      
+                      <button 
+                        mat-icon-button 
+                        (click)="onViewTradeDetails(trade); $event.stopPropagation()"
+                        matTooltip="View Details">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <!-- Completed Trades Tab -->
+      <mat-tab label="History">
+        <ng-template matTabContent>
+          <div class="trades-container">
+            <div *ngIf="completedTrades$ | async as trades">
+              <div *ngIf="trades.length === 0" class="empty-state">
+                <mat-icon class="empty-icon">history</mat-icon>
+                <h3>No Trade History</h3>
+                <p>Your completed trades will appear here.</p>
+              </div>
+
+              <div class="trades-list" *ngIf="trades.length > 0">
+                <div 
+                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                  class="trade-item completed-trade"
+                  [@cardHover]
+                  [class]="getTradeStatusClass(trade.status)"
+                  (click)="onViewTradeDetails(trade)">
+                  
+                  <div class="trade-summary">
+                    <div class="completion-indicator">
+                      <mat-icon class="status-icon">{{ getTradeStatusIcon(trade.status) }}</mat-icon>
+                    </div>
+                    
+                    <div class="trade-info">
+                      <div class="trade-title">
+                        {{ trade.fromUserId === (userContextService.getCurrentUser()?.id) ? trade.toUserName : trade.fromUserName }}
+                      </div>
+                      <div class="trade-details">
+                        <span class="completion-date">{{ formatDate(trade.updatedAt) }}</span>
+                        <span class="trade-result">{{ trade.status | titlecase }}</span>
+                      </div>
+                    </div>
+
+                    <div class="trade-value-summary">
+                       <span class="final-value">{{ formatCurrency(abs(trade.valueBalance)) }}</span>
+                    </div>
+
+                    <div class="trade-actions">
+                      <button 
+                        mat-icon-button 
+                        (click)="onViewTradeDetails(trade); $event.stopPropagation()"
+                        matTooltip="View Details">
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

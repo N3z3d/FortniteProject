@@ -130,13 +130,11 @@ public class GameQueryService {
     return gameRepository.count();
   }
 
-  /** Gets available games (CREATING status with available slots) */
-  @Cacheable("availableGames")
+  /** @deprecated Games publiques supprimées - utilisez getGamesByUser() */
+  @Deprecated
   public List<GameDto> getAvailableGames() {
-    log.debug("Retrieving available games");
-    return gameRepository.findAvailableGamesWithFetch().stream()
-        .map(GameDto::fromGame)
-        .collect(Collectors.toList());
+    log.debug("Endpoint déprécié - plus de games publiques");
+    return List.of();
   }
 
   /** Gets game count by status */

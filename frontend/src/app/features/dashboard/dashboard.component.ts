@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective } from '../../shared/directives/premium-interactions.directive';
 import { PremiumInteractionsService } from '../../shared/services/premium-interactions.service';
 import { HttpClient } from '@angular/common/http';
@@ -95,7 +95,7 @@ interface CompetitionStats {
     RevealOnScrollDirective
   ],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css'],
+  styleUrls: ['./dashboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -155,6 +155,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private gameSelectionService: GameSelectionService,
     private dashboardDataService: DashboardDataService,
@@ -168,6 +169,23 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     // Charger la liste des games
     this.loadGames();
+    
+    // Get gameId from route params if available
+    this.route.params.subscribe(params => {
+      const gameId = params['id'];
+      if (gameId) {
+        // Load specific game data
+        this.gameService.getGameById(gameId).subscribe({
+          next: (game) => {
+            this.selectedGame = game;
+            this.loadDashboardData();
+          },
+          error: (error) => {
+            console.error('Error loading game:', error);
+          }
+        });
+      }
+    });
     
     // S'abonner aux changements de game sélectionnée
     this.subscriptions.push(

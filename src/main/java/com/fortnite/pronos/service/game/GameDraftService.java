@@ -2,7 +2,6 @@ package com.fortnite.pronos.service.game;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +18,12 @@ import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.DraftPick;
 import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.DraftPickRepository;
 import com.fortnite.pronos.repository.DraftRepository;
+import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.service.draft.DraftService;
@@ -41,6 +42,7 @@ public class GameDraftService {
   private final DraftRepository draftRepository;
   private final DraftPickRepository draftPickRepository;
   private final PlayerRepository playerRepository;
+  private final GameParticipantRepository gameParticipantRepository;
   private final DraftService draftService;
 
   /** Starts draft for a game */
@@ -119,17 +121,22 @@ public class GameDraftService {
 
     validatePlayerSelection(draft, userId, player);
 
-    draftService.selectPlayer(draft, userId, player);
+    // Persistance explicite du pick
+    GameParticipant participant =
+        gameParticipantRepository
+            .findByUserIdAndGameId(userId, gameId)
+            .orElseThrow(() -> new IllegalArgumentException("Participant not found for user"));
 
-    // Récupérer le dernier pick créé pour ce draft
-    List<DraftPick> picks = draftPickRepository.findByDraftOrderByPickNumber(draft);
-    DraftPick pick = picks.isEmpty() ? null : picks.get(picks.size() - 1);
-    if (pick == null) {
-      throw new IllegalStateException("Pick not found after creation");
-    }
+    DraftPick newPick =
+        new DraftPick(draft, participant, player, draft.getCurrentRound(), draft.getCurrentPick());
+
+    DraftPick savedPick = draftPickRepository.save(newPick);
+
+    // Avancer le draft (pas de parallélisme, avance séquentielle)
+    draftService.nextPick(draft, game.getMaxParticipants());
 
     log.info("Player {} selected by user {} in game {}", player.getName(), userId, game.getName());
-    return DraftPickDto.fromDraftPick(pick);
+    return DraftPickDto.fromDraftPick(savedPick);
   }
 
   /** Gets draft for a game */
@@ -148,7 +155,7 @@ public class GameDraftService {
 
     return draftPickRepository.findByDraftOrderByPickNumber(draft).stream()
         .map(DraftPickDto::fromDraftPick)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   // Private helper methods
@@ -184,7 +191,7 @@ public class GameDraftService {
   }
 
   private void validateGameCanStartDraft(Game game) {
-    if (game.getStatus() != GameStatus.WAITING_FOR_PLAYERS) {
+    if (game.getStatus() != Game.Status.fromGameStatus(GameStatus.WAITING_FOR_PLAYERS)) {
       throw new InvalidGameStateException(
           "Game must be in WAITING_FOR_PLAYERS status to start draft");
     }
@@ -214,14 +221,14 @@ public class GameDraftService {
     }
 
     // Check region limits if applicable
-    validateRegionLimits(draft, userId, player);
+    validateRegionLimits(userId, player);
   }
 
   private boolean isPlayerAlreadySelected(Draft draft, Player player) {
     return draftPickRepository.existsByDraftAndPlayer(draft, player);
   }
 
-  private void validateRegionLimits(Draft draft, UUID userId, Player player) {
+  private void validateRegionLimits(UUID userId, Player player) {
     // This would need to check if selecting this player would exceed region limits
     // Implementation depends on your business rules
     log.debug(
@@ -229,7 +236,7 @@ public class GameDraftService {
   }
 
   private void updateGameStatus(Game game, GameStatus status) {
-    game.setStatus(status);
+    game.setStatus(Game.Status.fromGameStatus(status));
     gameRepository.save(game);
   }
 }

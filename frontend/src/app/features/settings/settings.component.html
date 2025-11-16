@@ -1,0 +1,167 @@
+<div class="settings-container">
+  <div class="settings-content">
+    <h1 class="page-title">
+      <mat-icon>settings</mat-icon>
+      Settings
+    </h1>
+
+    <!-- Notifications Settings -->
+    <mat-card class="settings-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>notifications</mat-icon>
+          Notifications
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="settings-group">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Email Notifications</span>
+              <span class="setting-description">Receive updates via email</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="emailNotifications"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Push Notifications</span>
+              <span class="setting-description">Browser push notifications</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="pushNotifications"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Game Reminders</span>
+              <span class="setting-description">Remind me about upcoming games</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="gameReminders"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Draft Alerts</span>
+              <span class="setting-description">Notify when it's my turn to draft</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="draftAlerts"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Trade Notifications</span>
+              <span class="setting-description">Alert me about trade offers</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="tradeNotifications"></mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Display Settings -->
+    <mat-card class="settings-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>palette</mat-icon>
+          Display
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="settings-group">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Theme</span>
+              <span class="setting-description">Choose your preferred theme</span>
+            </div>
+            <mat-form-field appearance="outline">
+              <mat-select [(ngModel)]="theme">
+                <mat-option value="dark">Dark Mode</mat-option>
+                <mat-option value="light">Light Mode</mat-option>
+                <mat-option value="auto">System Default</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Language</span>
+              <span class="setting-description">Select display language</span>
+            </div>
+            <mat-form-field appearance="outline">
+              <mat-select [(ngModel)]="language">
+                <mat-option value="en">English</mat-option>
+                <mat-option value="fr">Français</mat-option>
+                <mat-option value="es">Español</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Game Settings -->
+    <mat-card class="settings-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>sports_esports</mat-icon>
+          Game Preferences
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="settings-group">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Auto-Join Draft</span>
+              <span class="setting-description">Automatically join draft when it starts</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="autoJoinDraft"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Show Online Status</span>
+              <span class="setting-description">Let others see when you're online</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="showOnlineStatus"></mat-slide-toggle>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Privacy & Data -->
+    <mat-card class="settings-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>security</mat-icon>
+          Privacy & Data
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="settings-group">
+          <div class="danger-zone">
+            <button mat-stroked-button (click)="exportData()">
+              <mat-icon>download</mat-icon>
+              Export My Data
+            </button>
+            <button mat-stroked-button color="warn" (click)="deleteAccount()">
+              <mat-icon>delete_forever</mat-icon>
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button mat-raised-button color="primary" (click)="saveSettings()">
+        <mat-icon>save</mat-icon>
+        Save Settings
+      </button>
+      <button mat-stroked-button (click)="resetSettings()">
+        <mat-icon>refresh</mat-icon>
+        Reset to Defaults
+      </button>
+    </div>
+  </div>
+</div>

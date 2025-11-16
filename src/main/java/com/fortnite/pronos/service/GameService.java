@@ -86,9 +86,10 @@ public class GameService {
     return gameQueryService.getActiveGames();
   }
 
-  /** Gets available games (CREATING status with available slots) */
+  /** @deprecated Games publiques supprimées - utilisez getGamesByUser() */
+  @Deprecated
   public List<GameDto> getAvailableGames() {
-    return gameQueryService.getAvailableGames();
+    return List.of(); // Plus de games publiques
   }
 
   /** Gets games with pagination */

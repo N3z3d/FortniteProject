@@ -1,160 +1,165 @@
-# Script de démarrage optimisé pour l'application Fortnite Pronos
-# Auteur: Assistant IA - Optimisé pour performance
-# Date: 2025
+# Fortnite Pronos - Script de lancement unifié
+# Version optimisée et consolidée
 
-Write-Host "🚀 Démarrage rapide de l'application Fortnite Pronos..." -ForegroundColor Green
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host "   FORTNITE PRONOS - Lancement de l'application" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Vérification rapide des prérequis (en parallèle)
-Write-Host "📋 Vérification des prérequis..." -ForegroundColor Yellow
-$javaCheck = Start-Job -ScriptBlock { 
-    try { 
-        $version = java -version 2>&1 | Select-String "version" | Select-Object -First 1
-        return "✅ Java détecté: $version"
-    } catch { 
-        return "❌ Java non trouvé"
-    }
+# Vérification des prérequis
+Write-Host "Vérification des prérequis..." -ForegroundColor Yellow
+
+$hasError = $false
+
+# Vérifier Java
+try {
+    $javaVersion = java -version 2>&1 | Select-String "version" | Select-Object -First 1
+    Write-Host "  ✓ Java installé: $javaVersion" -ForegroundColor Green
+} catch {
+    Write-Host "  ✗ Java n'est pas installé ou n'est pas dans le PATH" -ForegroundColor Red
+    $hasError = $true
 }
 
-$nodeCheck = Start-Job -ScriptBlock {
-    try {
-        $version = node --version
-        return "✅ Node.js détecté: $version"
-    } catch {
-        return "❌ Node.js non trouvé"
-    }
+# Vérifier Node
+try {
+    $nodeVersion = node --version
+    Write-Host "  ✓ Node installé: $nodeVersion" -ForegroundColor Green
+} catch {
+    Write-Host "  ✗ Node n'est pas installé" -ForegroundColor Red
+    $hasError = $true
 }
 
-# Attendre les vérifications
-$javaResult = Receive-Job -Job $javaCheck -Wait
-$nodeResult = Receive-Job -Job $nodeCheck -Wait
+# Vérifier Maven
+try {
+    $mvnVersion = mvn --version | Select-String "Apache Maven" | Select-Object -First 1
+    Write-Host "  ✓ Maven installé" -ForegroundColor Green
+} catch {
+    Write-Host "  ✗ Maven n'est pas installé" -ForegroundColor Red
+    $hasError = $true
+}
 
-Write-Host $javaResult -ForegroundColor $(if($javaResult.StartsWith("❌")) { "Red" } else { "Green" })
-Write-Host $nodeResult -ForegroundColor $(if($nodeResult.StartsWith("❌")) { "Red" } else { "Green" })
-
-if ($javaResult.StartsWith("❌") -or $nodeResult.StartsWith("❌")) {
-    Write-Host "❌ Prérequis manquants. Installation nécessaire." -ForegroundColor Red
+if ($hasError) {
+    Write-Host ""
+    Write-Host "Des prérequis sont manquants. Veuillez les installer avant de continuer." -ForegroundColor Red
     exit 1
 }
 
 Write-Host ""
-Write-Host "⚡ Démarrage parallèle des services..." -ForegroundColor Cyan
 
-# Arrêter les processus qui utilisent les ports 8080 et 8081
-Write-Host "🛑 Vérification des ports 8080 et 8081..." -ForegroundColor Yellow
+# Arrêter les processus existants
+Write-Host "Arrêt des processus existants..." -ForegroundColor Yellow
 try {
     $processes8080 = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
-    $processes8081 = Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
+    $processes4200 = Get-NetTCPConnection -LocalPort 4200 -ErrorAction SilentlyContinue | ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
     
     if ($processes8080) {
-        Write-Host "⚠️  Arrêt des processus sur le port 8080..." -ForegroundColor Yellow
+        Write-Host "  Arrêt des processus sur le port 8080..." -ForegroundColor Yellow
         $processes8080 | Stop-Process -Force -ErrorAction SilentlyContinue
     }
-    if ($processes8081) {
-        Write-Host "⚠️  Arrêt des processus sur le port 8081..." -ForegroundColor Yellow
-        $processes8081 | Stop-Process -Force -ErrorAction SilentlyContinue
+    if ($processes4200) {
+        Write-Host "  Arrêt des processus sur le port 4200..." -ForegroundColor Yellow
+        $processes4200 | Stop-Process -Force -ErrorAction SilentlyContinue
     }
     Start-Sleep -Seconds 2
+    Write-Host "  ✓ Ports libérés" -ForegroundColor Green
 } catch {
-    Write-Host "✅ Ports libres" -ForegroundColor Green
+    Write-Host "  ✓ Ports disponibles" -ForegroundColor Green
 }
 
-# JWT-001: SECURITY CRITICAL - JWT Secret Configuration
-Write-Host "🔐 JWT-001: Configuration sécurisée du JWT..." -ForegroundColor Magenta
+Write-Host ""
+
+# Configuration des variables d'environnement
+Write-Host "Configuration de l'environnement..." -ForegroundColor Yellow
+
+# JWT Secret
 if (-not $env:JWT_SECRET) {
-    Write-Host "⚠️  JWT_SECRET non configuré - génération d'un secret de développement temporaire" -ForegroundColor Yellow
-    # Générer un secret fort pour le développement local (256-bit / 64 caractères minimum)
-    $env:JWT_SECRET = "dev-jwt-secret-$(Get-Random)-$(Get-Date -Format 'yyyyMMddHHmmss')-very-long-secure-key-for-development"
-    Write-Host "🔑 Secret JWT généré pour cette session: ${env:JWT_SECRET}" -ForegroundColor Green
+    $env:JWT_SECRET = "ma_super_cle_jwt_securisee_123456789_vraiment_longue_pour_securite_maximale"
+    Write-Host "  JWT_SECRET configuré pour le développement" -ForegroundColor Yellow
 } else {
-    Write-Host "✅ JWT_SECRET configuré via variable d'environnement" -ForegroundColor Green
+    Write-Host "  JWT_SECRET déjà configuré" -ForegroundColor Green
 }
 
-# PHASE 1A: JVM OPTIMIZATION FOR 147+ USERS - PRODUCTION GRADE (FIXED CRITICAL)
-# Fixed memory allocation to prevent JVM crashes identified in hs_err_pid*.log files
-$env:MAVEN_OPTS = "-Xms4g -Xmx8g -XX:HeapBaseMinAddress=8g -XX:MaxDirectMemorySize=2g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -XX:G1HeapRegionSize=16m -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+OptimizeStringConcat -XX:+UseFastAccessorMethods -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Dspring.main.lazy-initialization=true -Dspring.jpa.defer-datasource-initialization=true -Dfile.encoding=UTF-8 -Djava.awt.headless=true"
-Write-Host "🚀 PHASE 1A: JVM Configuration FIXED pour 147+ utilisateurs (8GB heap stable)" -ForegroundColor Magenta
-Write-Host "⚡ FIX CRITIQUES: Heap size augmenté 4GB→8GB, G1GC optimisé, crash prevention" -ForegroundColor Green
+# Profil Spring
+$env:SPRING_PROFILES_ACTIVE = "dev"
+Write-Host "  Profil Spring: dev (PostgreSQL)" -ForegroundColor Green
 
-# Démarrer backend et frontend en parallèle
-$backendJob = Start-Job -ScriptBlock {
-    Set-Location $using:PWD
-    $env:MAVEN_OPTS = $using:env:MAVEN_OPTS
-    $env:JWT_SECRET = $using:env:JWT_SECRET
-    mvn spring-boot:run -Dserver.port=8080 -q
-}
+# Configuration JVM optimisée
+$env:MAVEN_OPTS = "-Xms2g -Xmx4g -XX:+UseG1GC"
+Write-Host "  JVM configurée pour 147+ utilisateurs" -ForegroundColor Green
 
-$frontendJob = Start-Job -ScriptBlock {
-    Set-Location "$using:PWD\frontend"
-    npm start
-}
-
-Write-Host "🔧 Backend Spring Boot démarrage sur port 8080..." -ForegroundColor Green
-Write-Host "🎨 Frontend Angular démarrage sur port 4200..." -ForegroundColor Green
 Write-Host ""
 
-# Fonction optimisée de vérification de santé
-function Test-ServiceHealth {
-    param($Url, $MaxAttempts = 30, $DelaySeconds = 2)
-    
-    for ($i = 1; $i -le $MaxAttempts; $i++) {
-        try {
-            $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-            if ($response.StatusCode -eq 200) {
-                return $true
-            }
-        } catch {
-            if ($i -eq $MaxAttempts) {
-                return $false
-            }
-        }
-        Start-Sleep -Seconds $DelaySeconds
+# Lancement du backend
+Write-Host "Lancement du backend Spring Boot..." -ForegroundColor Cyan
+Write-Host "  Port: 8080" -ForegroundColor Gray
+Write-Host "  Profil: dev" -ForegroundColor Gray
+
+Start-Process powershell -ArgumentList "-NoExit", "-Command", `
+    "cd '$PWD'; `$env:JWT_SECRET='$env:JWT_SECRET'; `$env:SPRING_PROFILES_ACTIVE='$env:SPRING_PROFILES_ACTIVE'; `$env:MAVEN_OPTS='$env:MAVEN_OPTS'; mvn spring-boot:run" `
+    -PassThru | Out-Null
+
+Write-Host "  Backend en cours de démarrage..." -ForegroundColor Yellow
+Write-Host ""
+
+# Lancement du frontend
+Write-Host "Lancement du frontend Angular..." -ForegroundColor Cyan
+Write-Host "  Port: 4200" -ForegroundColor Gray
+
+# Vérifier les dépendances frontend
+if (-not (Test-Path "frontend/node_modules")) {
+    Write-Host "  Installation des dépendances frontend..." -ForegroundColor Yellow
+    Push-Location frontend
+    npm ci
+    Pop-Location
+}
+
+Start-Process powershell -ArgumentList "-NoExit", "-Command", `
+    "cd '$PWD/frontend'; npm start" `
+    -PassThru | Out-Null
+
+Write-Host "  Frontend en cours de démarrage..." -ForegroundColor Yellow
+Write-Host ""
+
+# Attendre le démarrage des services
+Write-Host "Attente du démarrage des services..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
+
+# Vérifier le backend
+try {
+    $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 5
+    if ($response.StatusCode -eq 200) {
+        Write-Host "  ✓ Backend démarré sur http://localhost:8080" -ForegroundColor Green
     }
-    return $false
+} catch {
+    Write-Host "  ⚠ Backend en cours de démarrage..." -ForegroundColor Yellow
 }
 
-# Vérification intelligente du démarrage
-Write-Host "⏳ Vérification du démarrage des services..." -ForegroundColor Yellow
-
-$backendReady = Test-ServiceHealth "http://localhost:8080/actuator/health"
-$frontendReady = Test-ServiceHealth "http://localhost:4200"
-
-if ($backendReady) {
-    Write-Host "✅ Backend démarré avec succès sur http://localhost:8080" -ForegroundColor Green
-} else {
-    Write-Host "⚠️  Backend en cours de démarrage sur port 8080..." -ForegroundColor Yellow
+# Vérifier le frontend
+try {
+    $response = Invoke-WebRequest -Uri "http://localhost:4200" -UseBasicParsing -TimeoutSec 5
+    if ($response.StatusCode -eq 200) {
+        Write-Host "  ✓ Frontend démarré sur http://localhost:4200" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "  ⚠ Frontend en cours de démarrage..." -ForegroundColor Yellow
 }
 
-if ($frontendReady) {
-    Write-Host "✅ Frontend démarré avec succès sur http://localhost:4200" -ForegroundColor Green
-} else {
-    Write-Host "⚠️  Frontend en cours de démarrage..." -ForegroundColor Yellow
-}
-
-Remove-Job $javaCheck, $nodeCheck -Force -ErrorAction SilentlyContinue
-
 Write-Host ""
-Write-Host "🎉 Application démarrée avec correction du problème de port !" -ForegroundColor Green
+Write-Host "================================================" -ForegroundColor Green
+Write-Host "   APPLICATION LANCÉE AVEC SUCCÈS!" -ForegroundColor Green
+Write-Host "================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "📱 URLs d'accès:" -ForegroundColor White
-Write-Host "   Frontend: http://localhost:4200" -ForegroundColor Cyan
-Write-Host "   Backend API: http://localhost:8080" -ForegroundColor Cyan
-Write-Host "   Health Check: http://localhost:8080/actuator/health" -ForegroundColor Cyan
+Write-Host "Accès à l'application:" -ForegroundColor Cyan
+Write-Host "  Frontend:    http://localhost:4200" -ForegroundColor White
+Write-Host "  Backend API: http://localhost:8080" -ForegroundColor White
+Write-Host "  Actuator:    http://localhost:8080/actuator/health" -ForegroundColor White
 Write-Host ""
-Write-Host "✅ Corrections appliquées:" -ForegroundColor Green
-Write-Host "   🔧 Port backend forcé à 8080" -ForegroundColor White
-Write-Host "   📡 Frontend configuré pour 8080" -ForegroundColor White
-Write-Host "   🛑 Nettoyage des ports avant démarrage" -ForegroundColor White
-Write-Host "   ⚡ Configuration JVM optimisée" -ForegroundColor White
+Write-Host "Pour arrêter l'application:" -ForegroundColor Yellow
+Write-Host "  .\stop-app.ps1" -ForegroundColor White
 Write-Host ""
-Write-Host "🔧 Pour arrêter l'application:" -ForegroundColor Yellow
-Write-Host "   - Utilisez stop-app.ps1" -ForegroundColor White
-Write-Host "   - Ou Ctrl+C dans les terminaux" -ForegroundColor White
+Write-Host "Logs disponibles dans les fenêtres PowerShell ouvertes." -ForegroundColor Gray
 Write-Host ""
 
-# Ouvrir automatiquement le navigateur
-Write-Host "🌐 Ouverture du navigateur..." -ForegroundColor Cyan
+# Ouvrir le navigateur après un délai
+Start-Sleep -Seconds 5
 Start-Process "http://localhost:4200"
-
-# Nettoyage des jobs
-Remove-Job $backendJob, $frontendJob -Force -ErrorAction SilentlyContinue 

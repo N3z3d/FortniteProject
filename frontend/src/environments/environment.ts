@@ -3,7 +3,7 @@ export const environment = {
   apiUrl: 'http://localhost:8080',
   apiBaseUrl: 'http://localhost:8080',
   wsUrl: 'ws://localhost:8080/ws',
-  enableFallbackData: false,
+  enableFallbackData: true,  // Enable fallback data for development without auth
 
   // CDN configuration (disabled in development)
   cdn: {

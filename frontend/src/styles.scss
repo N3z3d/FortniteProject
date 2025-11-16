@@ -79,11 +79,38 @@
   --shadow-gaming: 0 4px 20px rgba(var(--gaming-primary-rgb), 0.3);
   --shadow-accent: 0 4px 20px rgba(var(--gaming-accent-rgb), 0.3);
   
+  // Trading-specific variables
+  --trading-pending: #ffa726;
+  --trading-pending-rgb: 255, 167, 38;
+  --trading-accepted: #00ff7f;
+  --trading-accepted-rgb: 0, 255, 127;
+  --trading-rejected: #ff5252;
+  --trading-rejected-rgb: 255, 82, 82;
+  --trading-expired: #9e9e9e;
+  --trading-expired-rgb: 158, 158, 158;
+  --trading-withdrawn: #ffab00;
+  --trading-withdrawn-rgb: 255, 171, 0;
+  
+  // Value indicators
+  --value-positive: #4caf50;
+  --value-positive-rgb: 76, 175, 80;
+  --value-negative: #f44336;
+  --value-negative-rgb: 244, 67, 54;
+  --value-neutral: #9c27b0;
+  --value-neutral-rgb: 156, 39, 176;
+  
+  // Trading shadows
+  --shadow-trading-card: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --shadow-trading-card-hover: 0 16px 48px rgba(0, 0, 0, 0.3);
+  --shadow-drag-active: 0 20px 60px rgba(var(--gaming-primary-rgb), 0.4);
+  --shadow-drop-zone: inset 0 0 20px rgba(var(--gaming-primary-rgb), 0.2);
+  
   // Border Radius
   --radius-small: 8px;
   --radius-medium: 12px;
   --radius-large: 16px;
   --radius-xl: 24px;
+  --radius-full: 9999px;
   
   // Spacing System
   --space-xs: 4px;

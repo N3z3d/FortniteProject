@@ -1,0 +1,832 @@
+@import '../../styles/trading-theme.scss';
+@import '../../styles/trading-animations.scss';
+@import '../../../../shared/styles/mixins.scss';
+
+// ===== DASHBOARD LAYOUT =====
+.trading-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  min-height: 100vh;
+  background: linear-gradient(135deg, 
+    rgba(var(--gaming-dark-rgb), 0.95) 0%, 
+    rgba(var(--gaming-dark-lighter-rgb, 26, 31, 46), 0.9) 100%);
+
+  @include mobile {
+    padding: var(--space-md);
+  }
+}
+
+// ===== DASHBOARD HEADER =====
+.dashboard-header {
+  margin-bottom: var(--space-xl);
+  
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    
+    @include mobile {
+      flex-direction: column;
+      gap: var(--space-md);
+      align-items: flex-start;
+    }
+  }
+
+  .title-section {
+    .dashboard-title {
+      @include gaming-title;
+      font-size: 2.5rem;
+      margin: 0 0 var(--space-sm) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+
+      .title-icon {
+        font-size: 2.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+      }
+
+      @include mobile {
+        font-size: 2rem;
+        
+        .title-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+    }
+
+    .dashboard-subtitle {
+      color: var(--gaming-gray-light);
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 400;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+
+    .create-trade-btn {
+      @include magnetic-button(var(--gaming-primary));
+      width: 60px;
+      height: 60px;
+      
+      mat-icon {
+        font-size: 1.5rem;
+      }
+
+      @include mobile {
+        width: 50px;
+        height: 50px;
+        
+        mat-icon {
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .refresh-btn {
+      @include gaming-button(rgba(var(--gaming-secondary-rgb), 0.8));
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+
+      &.spinning mat-icon {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    }
+  }
+
+  // Search and Filters
+  .search-filters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    
+    @include tablet {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .search-field {
+      flex: 1;
+      max-width: 400px;
+
+      .mat-mdc-form-field-wrapper {
+        @include fortnite-input(var(--gaming-primary));
+      }
+
+      @include mobile {
+        max-width: 100%;
+      }
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+
+      mat-chip {
+        @include gaming-button(rgba(var(--gaming-primary-rgb), 0.1));
+        border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
+        color: var(--gaming-light);
+        transition: all var(--transition-normal);
+
+        mat-icon {
+          margin-right: var(--space-xs);
+        }
+
+        &.selected {
+          @include gaming-button(var(--gaming-primary));
+        }
+
+        &:hover {
+          transform: translateY(-2px);
+          border-color: var(--gaming-primary);
+        }
+      }
+    }
+  }
+}
+
+// ===== LOADING & ERROR STATES =====
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+
+  .loading-card {
+    @include premium-trading-card();
+    padding: var(--space-xl);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+
+    p {
+      color: var(--gaming-gray-light);
+      margin: 0;
+    }
+  }
+}
+
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+
+  .error-card {
+    @include premium-trading-card();
+    max-width: 400px;
+    
+    mat-card-content {
+      text-align: center;
+      
+      .error-icon {
+        font-size: 4rem;
+        color: var(--gaming-error);
+        margin-bottom: var(--space-md);
+      }
+
+      h3 {
+        color: var(--gaming-light);
+        margin-bottom: var(--space-sm);
+      }
+
+      p {
+        color: var(--gaming-gray-light);
+        margin-bottom: var(--space-lg);
+      }
+
+      button {
+        @include gaming-button(var(--gaming-primary));
+      }
+    }
+  }
+}
+
+// ===== STATS OVERVIEW =====
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+
+  @include mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .stat-card {
+    @include stats-card(var(--gaming-primary));
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-large);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+
+      mat-icon {
+        font-size: 1.8rem;
+        color: white;
+      }
+
+      &.trades-icon {
+        background: linear-gradient(135deg, var(--gaming-primary), var(--gaming-accent));
+      }
+
+      &.pending-icon {
+        background: linear-gradient(135deg, var(--trading-pending), #ffb74d);
+      }
+
+      &.success-icon {
+        background: linear-gradient(135deg, var(--trading-accepted), #81c784);
+      }
+
+      &.value-icon {
+        background: linear-gradient(135deg, var(--gaming-accent), var(--gaming-primary));
+      }
+
+      @include mobile {
+        width: 48px;
+        height: 48px;
+
+        mat-icon {
+          font-size: 1.4rem;
+        }
+      }
+    }
+
+    .stat-content {
+      flex: 1;
+      position: relative;
+
+      .stat-value {
+        @include gaming-font;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--gaming-light);
+        line-height: 1.2;
+
+        @include mobile {
+          font-size: 1.4rem;
+        }
+      }
+
+      .stat-label {
+        color: var(--gaming-gray-light);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--gaming-error);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        animation: badgeNotification 1s infinite;
+      }
+    }
+
+    &:hover {
+      .stat-icon {
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// ===== TRADING TABS =====
+.trading-tabs {
+  .mat-mdc-tab-group {
+    .mat-mdc-tab-header {
+      border-bottom: 2px solid rgba(var(--gaming-primary-rgb), 0.2);
+      background: rgba(var(--gaming-dark-rgb), 0.5);
+      border-radius: var(--radius-large) var(--radius-large) 0 0;
+    }
+
+    .mat-mdc-tab {
+      color: var(--gaming-gray-light);
+      font-weight: 600;
+      
+      &.mdc-tab--active {
+        color: var(--gaming-primary);
+      }
+    }
+
+    .mat-mdc-tab-body-wrapper {
+      background: rgba(var(--gaming-dark-rgb), 0.3);
+      border-radius: 0 0 var(--radius-large) var(--radius-large);
+    }
+  }
+}
+
+// ===== TRADES CONTAINER =====
+.trades-container {
+  padding: var(--space-lg);
+  min-height: 600px;
+
+  @include mobile {
+    padding: var(--space-md);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+  min-height: 400px;
+
+  .empty-icon {
+    font-size: 4rem;
+    color: var(--gaming-gray-light);
+    margin-bottom: var(--space-lg);
+    opacity: 0.6;
+  }
+
+  h3 {
+    color: var(--gaming-light);
+    margin-bottom: var(--space-sm);
+    font-size: 1.5rem;
+  }
+
+  p {
+    color: var(--gaming-gray-light);
+    margin-bottom: var(--space-lg);
+    max-width: 400px;
+  }
+
+  button {
+    @include gaming-cta-button();
+  }
+}
+
+// ===== TRADE CARDS =====
+.trades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: var(--space-lg);
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+}
+
+.trade-card {
+  @include premium-trading-card(0.95, true);
+  padding: var(--space-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+
+  &.pending-trade {
+    border-left: 4px solid var(--trading-pending);
+    
+    &:hover {
+      border-left-color: var(--gaming-primary);
+    }
+  }
+
+  .trade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid rgba(var(--gaming-primary-rgb), 0.1);
+
+    .trade-participants {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      flex: 1;
+
+      .participant {
+        display: flex;
+        flex-direction: column;
+        
+        .participant-name {
+          font-weight: 600;
+          color: var(--gaming-light);
+        }
+
+        small {
+          color: var(--gaming-gray-light);
+          font-size: 0.8rem;
+        }
+      }
+
+      .trade-direction {
+        color: var(--gaming-primary);
+        font-size: 1.5rem;
+      }
+    }
+
+    .trade-status {
+      .status-chip {
+        @include trading-status-badge();
+        
+        &.status-pending {
+          @include trading-status-badge('pending');
+        }
+        
+        &.status-accepted {
+          @include trading-status-badge('accepted');
+        }
+        
+        &.status-rejected {
+          @include trading-status-badge('rejected');
+        }
+      }
+    }
+  }
+
+  .trade-content {
+    margin-bottom: var(--space-lg);
+
+    .players-section {
+      margin-bottom: var(--space-md);
+
+      h4 {
+        color: var(--gaming-light);
+        font-size: 0.9rem;
+        margin-bottom: var(--space-sm);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .player-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-xs);
+        margin-bottom: var(--space-md);
+
+        mat-chip {
+          background: rgba(var(--gaming-primary-rgb), 0.1);
+          color: var(--gaming-light);
+          border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
+          font-size: 0.8rem;
+
+          &.more-chip {
+            background: rgba(var(--gaming-accent-rgb), 0.1);
+            border-color: rgba(var(--gaming-accent-rgb), 0.3);
+            color: var(--gaming-accent);
+          }
+        }
+      }
+    }
+
+    .trade-value {
+      .value-balance {
+        @include value-comparison-display();
+        padding: var(--space-md);
+        border-radius: var(--radius-medium);
+        text-align: center;
+
+        &.value-positive {
+          @include value-comparison-display('positive');
+        }
+
+        &.value-negative {
+          @include value-comparison-display('negative');
+        }
+
+        .balance-value {
+          font-size: 1.2rem;
+          font-weight: 700;
+          margin-right: var(--space-sm);
+        }
+
+        .balance-label {
+          font-size: 0.9rem;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
+  .trade-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+
+    .trade-meta {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+
+      .trade-time {
+        color: var(--gaming-gray-light);
+        font-size: 0.8rem;
+      }
+
+      .expiry-warning {
+        color: var(--gaming-warning);
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        animation: pulseGlow 2s infinite;
+
+        mat-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: var(--space-sm);
+
+      button {
+        &.accept-btn {
+          @include spring-button(var(--trading-accepted));
+        }
+
+        &.reject-btn {
+          @include gaming-button(transparent);
+          border: 2px solid var(--trading-rejected);
+          color: var(--trading-rejected);
+
+          &:hover {
+            background: var(--trading-rejected);
+            color: white;
+          }
+        }
+
+        &.withdraw-btn {
+          @include gaming-button(transparent);
+          border: 2px solid var(--gaming-gray-light);
+          color: var(--gaming-gray-light);
+
+          &:hover {
+            background: var(--gaming-gray-light);
+            color: var(--gaming-dark);
+          }
+        }
+
+        &.details-btn {
+          @include gaming-button(rgba(var(--gaming-primary-rgb), 0.2));
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          min-width: unset;
+          padding: 0;
+
+          &:hover {
+            background: var(--gaming-primary);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===== TRADE LIST (for sent/received/completed tabs) =====
+.trades-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  .trade-item {
+    @include premium-trading-card();
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border-left: 3px solid transparent;
+
+    &.sent-trade {
+      border-left-color: var(--gaming-accent);
+    }
+
+    &.received-trade {
+      border-left-color: var(--gaming-primary);
+
+      &.urgent {
+        border-left-color: var(--gaming-warning);
+        animation: pulseGlow 2s infinite;
+      }
+    }
+
+    &.completed-trade {
+      &.status-accepted {
+        border-left-color: var(--trading-accepted);
+      }
+
+      &.status-rejected {
+        border-left-color: var(--trading-rejected);
+      }
+    }
+
+    .trade-summary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+
+      .completion-indicator {
+        .status-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &.status-accepted {
+            color: var(--trading-accepted);
+          }
+
+          &.status-rejected {
+            color: var(--trading-rejected);
+          }
+        }
+      }
+
+      .trade-info {
+        flex: 1;
+
+        .trade-title {
+          display: flex;
+          align-items: center;
+          gap: var(--space-sm);
+          margin-bottom: var(--space-xs);
+
+          .to-user,
+          .from-user {
+            font-weight: 600;
+            color: var(--gaming-light);
+          }
+
+          .status-chip {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+          }
+        }
+
+        .trade-details {
+          display: flex;
+          gap: var(--space-md);
+          font-size: 0.8rem;
+          color: var(--gaming-gray-light);
+
+          .player-count {
+            opacity: 0.8;
+          }
+
+          .trade-time,
+          .completion-date {
+            opacity: 0.6;
+          }
+        }
+      }
+
+      .trade-value-summary {
+        text-align: right;
+
+        .value-indicator {
+          display: flex;
+          align-items: center;
+          gap: var(--space-xs);
+          font-family: 'Orbitron', monospace;
+          font-weight: 600;
+
+          &.value-positive {
+            color: var(--value-positive);
+          }
+
+          &.value-negative {
+            color: var(--value-negative);
+          }
+
+          &.value-neutral {
+            color: var(--gaming-light);
+          }
+        }
+
+        .final-value {
+          color: var(--gaming-light);
+          font-family: 'Orbitron', monospace;
+          font-weight: 600;
+        }
+      }
+
+      .trade-actions {
+        display: flex;
+        gap: var(--space-sm);
+        
+        button {
+          &[color="primary"] {
+            @include spring-button(var(--trading-accepted));
+          }
+
+          &[color="warn"] {
+            @include gaming-button(var(--trading-rejected));
+          }
+        }
+      }
+    }
+
+    &:hover {
+      border-left-width: 6px;
+      transform: translateX(3px);
+    }
+  }
+}
+
+// ===== RESPONSIVE DESIGN =====
+@include mobile {
+  .trade-card {
+    .trade-header {
+      flex-direction: column;
+      gap: var(--space-sm);
+      align-items: stretch;
+
+      .trade-participants {
+        .participant {
+          text-align: center;
+        }
+      }
+    }
+
+    .trade-actions {
+      flex-direction: column;
+      gap: var(--space-sm);
+
+      .action-buttons {
+        justify-content: center;
+      }
+    }
+  }
+
+  .trade-item .trade-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+
+    .trade-actions {
+      justify-content: center;
+    }
+  }
+}
+
+// ===== ACCESSIBILITY =====
+@media (prefers-reduced-motion: reduce) {
+  .trade-card,
+  .trade-item,
+  .stat-card {
+    transition: none;
+  }
+
+  .expiry-warning {
+    animation: none;
+  }
+}
+
+// Track by function for performance
+.track-by-trade-id {
+  // This will be handled in the component
+}
+
+// Add method to component for tracking
+// trackByTradeId(index: number, trade: TradeOffer): string {
+//   return trade.id;
+// }

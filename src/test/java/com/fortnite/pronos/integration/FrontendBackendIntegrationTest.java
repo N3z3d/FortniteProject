@@ -24,7 +24,7 @@ import com.fortnite.pronos.repository.UserRepository;
 
 /** Test d'intégration TDD pour vérifier que le frontend et le backend communiquent correctement */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 @Transactional
 public class FrontendBackendIntegrationTest {
 

@@ -218,8 +218,9 @@ export class GameDetailComponent implements OnInit {
     return 'primary';
   }
 
-  getTimeAgo(dateString: string): string {
-    return GameApiMapper.formatRelativeTime(dateString);
+  getTimeAgo(date: string | Date): string {
+    const str = typeof date === 'string' ? date : date.toISOString();
+    return GameApiMapper.formatRelativeTime(str);
   }
 
   onBack(): void {

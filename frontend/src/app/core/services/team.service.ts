@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { UserContextService } from './user-context.service';
 
 export interface TeamDto {
   id: string;
@@ -27,7 +28,7 @@ export interface TeamPlayerDto {
 export class TeamService {
   private apiUrl = `${environment.apiUrl}/api/teams`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private userContextService: UserContextService) {}
 
   getTeamForUserAndSeason(userId: string, season: number = 2025): Observable<TeamDto> {
     return this.http.get<TeamDto>(`${this.apiUrl}/user/${userId}/season/${season}`);
@@ -62,11 +63,16 @@ export class TeamService {
   }
 
   getUserTeams(userId?: string, season: number = 2025): Observable<TeamDto[]> {
-    const url = userId 
-      ? `${this.apiUrl}/user/${userId}` 
-      : `${this.apiUrl}/user/current`;
-    
-    const params = new HttpParams().set('season', season.toString());
-    return this.http.get<TeamDto[]>(url, { params });
+    if (userId) {
+      return this.http.get<TeamDto[]>(`${this.apiUrl}/user/${userId}/season/${season}`);
+    }
+
+    const username = this.userContextService.getCurrentUser()?.username || 'Thibaut';
+    const params = new HttpParams().set('user', username).set('year', season.toString());
+    return this.http.get<TeamDto[]>(`${this.apiUrl}/user`, { params });
+  }
+
+  getTeamsByGame(gameId: string): Observable<TeamDto[]> {
+    return this.http.get<TeamDto[]>(`${environment.apiUrl}/api/games/${gameId}/teams`);
   }
 } 

@@ -1,0 +1,545 @@
+// Premium Trading Interface Animations
+// Designed for the Fortnite Pronos App
+
+// ===== TRADING CARD ANIMATIONS =====
+
+@keyframes cardFlip {
+  0% {
+    transform: perspective(600px) rotateY(0deg);
+  }
+  50% {
+    transform: perspective(600px) rotateY(-90deg);
+  }
+  100% {
+    transform: perspective(600px) rotateY(0deg);
+  }
+}
+
+@keyframes tradeAccepted {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(0, 255, 127, 0.2);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 8px 40px rgba(0, 255, 127, 0.4);
+  }
+  50% {
+    transform: scale(1.1) rotateZ(2deg);
+    box-shadow: 0 12px 60px rgba(0, 255, 127, 0.6);
+  }
+  75% {
+    transform: scale(1.05) rotateZ(-1deg);
+    box-shadow: 0 8px 40px rgba(0, 255, 127, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(0, 255, 127, 0.2);
+  }
+}
+
+@keyframes tradeRejected {
+  0% {
+    transform: scale(1) rotateZ(0deg);
+    box-shadow: 0 4px 20px rgba(255, 82, 82, 0.2);
+  }
+  25% {
+    transform: scale(0.95) rotateZ(-2deg);
+    box-shadow: 0 2px 10px rgba(255, 82, 82, 0.4);
+  }
+  50% {
+    transform: scale(1.02) rotateZ(1deg);
+    box-shadow: 0 6px 30px rgba(255, 82, 82, 0.6);
+  }
+  75% {
+    transform: scale(0.98) rotateZ(-1deg);
+    box-shadow: 0 3px 15px rgba(255, 82, 82, 0.4);
+  }
+  100% {
+    transform: scale(1) rotateZ(0deg);
+    box-shadow: 0 4px 20px rgba(255, 82, 82, 0.2);
+  }
+}
+
+// ===== DRAG AND DROP ANIMATIONS =====
+
+@keyframes dragStart {
+  0% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: var(--shadow-gaming);
+  }
+  100% {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 15px 50px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+}
+
+@keyframes dropZoneActive {
+  0% {
+    background: rgba(var(--gaming-primary-rgb), 0.1);
+    border-color: rgba(var(--gaming-primary-rgb), 0.3);
+  }
+  50% {
+    background: rgba(var(--gaming-primary-rgb), 0.2);
+    border-color: rgba(var(--gaming-primary-rgb), 0.6);
+  }
+  100% {
+    background: rgba(var(--gaming-primary-rgb), 0.1);
+    border-color: rgba(var(--gaming-primary-rgb), 0.3);
+  }
+}
+
+@keyframes playerCardDrag {
+  from {
+    transform: scale(1) rotate(0deg);
+    z-index: 1;
+  }
+  to {
+    transform: scale(1.15) rotate(8deg);
+    z-index: 1000;
+  }
+}
+
+@keyframes playerCardDrop {
+  0% {
+    transform: scale(1.15) rotate(8deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2) rotate(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+// ===== CONFETTI AND CELEBRATION =====
+
+@keyframes confettiDrop {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confettiSpin {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+@keyframes celebrationBurst {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.5) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+// ===== LOADING AND TRANSITION EFFECTS =====
+
+@keyframes shimmerLoading {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(var(--gaming-primary-rgb), 0.6);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// ===== VALUE COMPARISON ANIMATIONS =====
+
+@keyframes valueIncrease {
+  0% {
+    color: var(--gaming-light);
+    transform: scale(1);
+  }
+  50% {
+    color: var(--gaming-success);
+    transform: scale(1.1);
+  }
+  100% {
+    color: var(--gaming-success);
+    transform: scale(1);
+  }
+}
+
+@keyframes valueDecrease {
+  0% {
+    color: var(--gaming-light);
+    transform: scale(1);
+  }
+  50% {
+    color: var(--gaming-error);
+    transform: scale(1.1);
+  }
+  100% {
+    color: var(--gaming-error);
+    transform: scale(1);
+  }
+}
+
+@keyframes balanceScale {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(0deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+// ===== NOTIFICATION ANIMATIONS =====
+
+@keyframes notificationSlideIn {
+  from {
+    transform: translateX(400px) rotateZ(10deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotateZ(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes notificationSlideOut {
+  from {
+    transform: translateX(0) rotateZ(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px) rotateZ(-10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes badgeNotification {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ===== CYBER-TECH UI EFFECTS =====
+
+@keyframes scanLine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dataStream {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 0% 100%;
+  }
+}
+
+@keyframes holographicShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes energyCharge {
+  0% {
+    width: 0%;
+    box-shadow: 0 0 10px rgba(var(--gaming-primary-rgb), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(var(--gaming-primary-rgb), 0.8);
+  }
+  100% {
+    width: 100%;
+    box-shadow: 0 0 15px rgba(var(--gaming-primary-rgb), 0.5);
+  }
+}
+
+// ===== TRADING TIMELINE ANIMATIONS =====
+
+@keyframes timelineProgress {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes timelineNode {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// ===== UTILITY ANIMATION CLASSES =====
+
+.trade-card-flip {
+  animation: cardFlip 0.8s ease-in-out;
+}
+
+.trade-accepted {
+  animation: tradeAccepted 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.trade-rejected {
+  animation: tradeRejected 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.dragging {
+  animation: playerCardDrag 0.3s ease-out forwards;
+  z-index: 1000 !important;
+}
+
+.drop-zone-active {
+  animation: dropZoneActive 1.5s ease-in-out infinite;
+}
+
+.dropped {
+  animation: playerCardDrop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.shimmer-loading {
+  background: linear-gradient(to right, 
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.0) 100%);
+  background-size: 468px 100%;
+  animation: shimmerLoading 1.2s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.slide-in-right {
+  animation: slideInFromRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-in-left {
+  animation: slideInFromLeft 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.value-increase {
+  animation: valueIncrease 0.8s ease-out;
+}
+
+.value-decrease {
+  animation: valueDecrease 0.8s ease-out;
+}
+
+.balance-scale {
+  animation: balanceScale 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.notification-slide-in {
+  animation: notificationSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.notification-slide-out {
+  animation: notificationSlideOut 0.3s ease-in;
+}
+
+.badge-notification {
+  animation: badgeNotification 0.6s ease-out;
+}
+
+.scan-line {
+  animation: scanLine 2s linear infinite;
+}
+
+.data-stream {
+  animation: dataStream 3s linear infinite;
+}
+
+.holographic-shimmer {
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(var(--gaming-primary-rgb), 0.3) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: holographicShimmer 3s ease-in-out infinite;
+}
+
+.energy-charge {
+  animation: energyCharge 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.timeline-progress {
+  stroke-dasharray: 100;
+  animation: timelineProgress 2s ease-out forwards;
+}
+
+.timeline-node {
+  animation: timelineNode 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+// ===== CONFETTI SYSTEM =====
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti {
+  position: absolute;
+  animation: confettiDrop 3s linear forwards;
+  
+  &.spin {
+    animation: confettiDrop 3s linear forwards, confettiSpin 0.8s linear infinite;
+  }
+  
+  &.celebration-burst {
+    animation: celebrationBurst 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+}
+
+// ===== RESPONSIVE ANIMATION BEHAVIOR =====
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .confetti,
+  .celebration-burst,
+  .pulse-glow,
+  .data-stream,
+  .holographic-shimmer {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .trade-card-flip,
+  .trade-accepted,
+  .trade-rejected {
+    animation-duration: 0.6s;
+  }
+  
+  .dragging {
+    animation-duration: 0.2s;
+  }
+  
+  .dropped {
+    animation-duration: 0.3s;
+  }
+}
+
+// ===== PERFORMANCE OPTIMIZATIONS =====
+
+.hardware-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.gpu-optimized {
+  will-change: transform, opacity;
+}

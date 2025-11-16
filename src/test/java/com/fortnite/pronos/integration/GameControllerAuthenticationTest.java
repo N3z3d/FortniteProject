@@ -22,7 +22,7 @@ import com.fortnite.pronos.repository.UserRepository;
 
 /** Test d'intégration TDD pour vérifier l'authentification des games */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 @Transactional
 public class GameControllerAuthenticationTest {
 

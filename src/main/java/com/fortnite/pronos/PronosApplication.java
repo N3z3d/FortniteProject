@@ -16,8 +16,7 @@ import com.fortnite.pronos.util.LoggingUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootApplication(
-    exclude = {org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class})
+@SpringBootApplication
 @EnableScheduling
 @EnableCaching
 @RequiredArgsConstructor

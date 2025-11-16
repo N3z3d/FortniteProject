@@ -9,6 +9,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
+import { Clipboard } from '@angular/cdk/clipboard';
 
 import { GameService } from '../services/game.service';
 import { Game, GameStatus } from '../models/game.interface';
@@ -28,16 +31,18 @@ import { FocusManagementService } from '../../../shared/services/focus-managemen
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatMenuModule,
+    MatDividerModule
   ],
   templateUrl: './game-list.component.html',
   styleUrls: ['./game-list.component.scss']
 })
 export class GameListComponent implements OnInit, OnDestroy {
   games: Game[] = [];
-  availableGames: Game[] = [];
   loading = false;
   error: string | null = null;
+  currentUserName = 'Current User'; // TODO: Get from user service
 
   constructor(
     private gameService: GameService,
@@ -45,13 +50,13 @@ export class GameListComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private router: Router,
     private accessibilityAnnouncer: AccessibilityAnnouncerService,
-    private focusManagementService: FocusManagementService
+    private focusManagementService: FocusManagementService,
+    private clipboard: Clipboard
   ) { }
 
   ngOnInit(): void {
     this.accessibilityAnnouncer.announceNavigation('liste des games');
     this.loadGames();
-    this.loadAvailableGames();
   }
 
   ngOnDestroy(): void {
@@ -80,19 +85,9 @@ export class GameListComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadAvailableGames(): void {
-    this.gameService.getAvailableGames().subscribe({
-      next: (games) => {
-        this.availableGames = games;
-      },
-      error: (error) => {
-        console.error('Error loading available games:', error);
-      }
-    });
-  }
 
   joinGame(gameId: string): void {
-    const game = this.availableGames.find(g => g.id === gameId);
+    const game = this.games.find(g => g.id === gameId);
     const gameName = game?.name || 'cette game';
     
     this.gameService.joinGame(gameId).subscribe({
@@ -231,5 +226,92 @@ export class GameListComponent implements OnInit, OnDestroy {
       event.preventDefault();
       this.selectGame(game);
     }
+  }
+
+  /**
+   * Retourne l'icône appropriée pour le statut de la game
+   */
+  getStatusIcon(status: GameStatus): string {
+    switch (status) {
+      case 'CREATING':
+        return 'hourglass_empty';
+      case 'DRAFTING':
+        return 'edit';
+      case 'ACTIVE':
+        return 'play_circle';
+      case 'FINISHED':
+        return 'check_circle';
+      case 'CANCELLED':
+        return 'cancel';
+      default:
+        return 'help_outline';
+    }
+  }
+
+  /**
+   * Copie le code d'invitation dans le presse-papiers
+   */
+  copyInvitationCode(code: string): void {
+    if (this.clipboard.copy(code)) {
+      this.snackBar.open('Code d\'invitation copié !', 'Fermer', { duration: 2000 });
+      this.accessibilityAnnouncer.announceSuccess('Code d\'invitation copié dans le presse-papiers');
+    } else {
+      this.snackBar.open('Impossible de copier le code', 'Fermer', { duration: 2000 });
+    }
+  }
+
+  /**
+   * Partage une game
+   */
+  shareGame(game: Game): void {
+    const shareData = {
+      title: `Game ${game.name}`,
+      text: `Rejoignez la game ${game.name} créée par ${game.creatorName}`,
+      url: `${window.location.origin}/games/${game.id}`
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(() => {
+        this.copyGameUrl(game);
+      });
+    } else {
+      this.copyGameUrl(game);
+    }
+  }
+
+  /**
+   * Copie l'URL de la game
+   */
+  private copyGameUrl(game: Game): void {
+    const url = `${window.location.origin}/games/${game.id}`;
+    if (this.clipboard.copy(url)) {
+      this.snackBar.open('Lien de la game copié !', 'Fermer', { duration: 2000 });
+    }
+  }
+
+  /**
+   * Exporte les données de la game
+   */
+  exportGame(game: Game): void {
+    const gameData = JSON.stringify(game, null, 2);
+    const blob = new Blob([gameData], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `game-${game.name}-${game.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    this.snackBar.open('Game exportée !', 'Fermer', { duration: 2000 });
+  }
+
+  /**
+   * Signale une game
+   */
+  reportGame(game: Game): void {
+    // TODO: Implement game reporting
+    this.snackBar.open('Fonctionnalité de signalement à venir', 'Fermer', { duration: 2000 });
   }
 } 

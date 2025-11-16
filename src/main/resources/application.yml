@@ -6,7 +6,7 @@ app:
 
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:h2}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   main:
     web-application-type: servlet
     lazy-initialization: true
@@ -36,11 +36,11 @@ spring:
       time-to-live: 600000  # 10 minutes par défaut
       cache-null-values: false
   datasource:
-    # Configuration H2 par défaut pour démarrage rapide
-    url: jdbc:h2:mem:quickstart_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
-    username: sa
-    password: quickstart
-    driver-class-name: org.h2.Driver
+    # PostgreSQL configuration by default for dev/prod
+    url: jdbc:postgresql://localhost:5432/fortnite_pronos
+    username: ${DB_USERNAME:fortnite_user}
+    password: ${DB_PASSWORD:fortnite_pass}
+    driver-class-name: org.postgresql.Driver
     hikari:
       # PHASE 1B: CRITICAL CONNECTION POOL OPTIMIZATION FOR 147+ CONCURRENT USERS
       minimum-idle: 15               # Reduced initial connections for stability
@@ -68,24 +68,22 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 20
         order_inserts: true
         order_updates: true
   flyway:
-    enabled: false
-    baseline-on-migrate: false
-    validate-on-migrate: false
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
   sql:
     init:
       mode: always
   h2:
     console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: true
+      enabled: false
 
 server:
   port: 8080

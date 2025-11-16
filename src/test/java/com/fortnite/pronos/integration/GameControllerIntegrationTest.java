@@ -32,7 +32,7 @@ import com.fortnite.pronos.repository.UserRepository;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfig.class
+      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
     })
 @ActiveProfiles("test")
 @Transactional

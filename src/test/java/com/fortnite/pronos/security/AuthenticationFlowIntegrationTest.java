@@ -23,7 +23,10 @@ import com.fortnite.pronos.dto.auth.LoginRequest;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {PronosApplication.class, com.fortnite.pronos.config.TestSecurityConfig.class})
+    classes = {
+      PronosApplication.class,
+      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+    })
 @ActiveProfiles("test")
 @AutoConfigureWebMvc
 @DisplayName("Tests d'intégration - Flux d'authentification")

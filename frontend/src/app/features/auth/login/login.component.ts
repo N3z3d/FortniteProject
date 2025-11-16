@@ -379,7 +379,7 @@ export class LoginComponent implements OnInit {
     const currentUser = this.userContextService.getCurrentUser();
     if (currentUser) {
       // Si déjà connecté, rediriger immédiatement
-      this.router.navigate(['/games']);
+      this.router.navigate(['/games/join']);
       return;
     }
     
@@ -388,9 +388,7 @@ export class LoginComponent implements OnInit {
       const autoLoggedUser = this.userContextService.attemptAutoLogin();
       if (autoLoggedUser) {
         console.log('🔐 Auto-connexion réussie pour:', autoLoggedUser.username);
-        this.router.navigate(['/games'], { 
-          queryParams: { autoLogin: 'true', user: autoLoggedUser.username } 
-        });
+        this.router.navigate(['/games/join'], { queryParams: { autoLogin: 'true', user: autoLoggedUser.username } });
         return;
       }
     }
@@ -417,12 +415,10 @@ export class LoginComponent implements OnInit {
       
       // Announce successful login
       this.accessibilityService.announceSuccess(`Login successful for ${profile.username}`);
-      this.accessibilityService.announceNavigation('Games dashboard');
+      this.accessibilityService.announceNavigation('Sélection de game');
       
-      // Navigate directly to games with success message
-      this.router.navigate(['/games'], { 
-        queryParams: { welcome: 'true', user: profile.username } 
-      });
+      // Naviguer directement vers la sélection de game
+      this.router.navigate(['/games/join'], { queryParams: { welcome: 'true', user: profile.username } });
     }, 800); // Temps suffisant pour voir le feedback
   }
 
@@ -458,8 +454,8 @@ export class LoginComponent implements OnInit {
         this.userContextService.login(matchingProfile);
         this.isLoading = false;
         this.accessibilityService.announceSuccess(`Login successful`);
-        this.accessibilityService.announceNavigation('Games dashboard');
-        this.router.navigate(['/games']);
+        this.accessibilityService.announceNavigation('Sélection de game');
+        this.router.navigate(['/games/join']);
       }, 800);
     } else {
       // Announce form validation errors

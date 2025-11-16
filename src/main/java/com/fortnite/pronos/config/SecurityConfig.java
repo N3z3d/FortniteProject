@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Profile("!test")
+@Profile("prod")
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;

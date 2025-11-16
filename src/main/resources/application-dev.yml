@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/fortnite_pronos_dev
+    url: jdbc:postgresql://localhost:5432/fortnite_pronos
     username: ${DB_USERNAME:fortnite_user}
     password: ${DB_PASSWORD:fortnite_pass}
     driver-class-name: org.postgresql.Driver
@@ -13,8 +13,8 @@ spring:
       max-lifetime: 1800000         # 30 minutes max par connexion
       
       # Pool sizing optimisé pour développement
-      maximum-pool-size: 5          # Petit pool pour dev
-      minimum-idle: 1               # 1 connexion minimum
+      maximum-pool-size: 10         # Reasonable pool for dev
+      minimum-idle: 2               # 2 connexions minimum
       
       # Health checks et retry
       initialization-fail-timeout: 5000  # 5s avant échec d'initialisation
@@ -39,6 +39,9 @@ spring:
     connect-retries-interval: 1     # 1 seconde entre les tentatives
     lock-retry-count: 3             # 3 tentatives pour acquérir le lock
     fail-on-missing-locations: false
+  h2:
+    console:
+      enabled: false                # H2 console disabled in dev - use PostgreSQL tools
   security:
     user:
       name: admin

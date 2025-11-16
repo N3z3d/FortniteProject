@@ -8,6 +8,8 @@ import java.util.Collections;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,22 +27,21 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.JwtService;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Test d'intégration pour la création de games Ce test vérifie le workflow complet de création de
  * game
  */
-@Slf4j
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfig.class
+      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
     })
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @Transactional
 public class CreateGameIntegrationTest {
+
+  private static final Logger log = LoggerFactory.getLogger(CreateGameIntegrationTest.class);
 
   @Autowired private WebApplicationContext webApplicationContext;
 

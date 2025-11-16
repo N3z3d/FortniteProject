@@ -53,7 +53,7 @@ public class TeamDto {
                   TeamPlayerDto playerDto = new TeamPlayerDto();
                   playerDto.playerId = tp.getPlayer().getId();
                   playerDto.nickname = tp.getPlayer().getNickname();
-                  playerDto.region = tp.getPlayer().getRegion().name();
+                  playerDto.region = tp.getPlayer().region.name();
                   playerDto.tranche = tp.getPlayer().getTranche();
                   return playerDto;
                 })

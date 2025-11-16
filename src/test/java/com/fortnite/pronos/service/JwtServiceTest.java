@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import com.fortnite.pronos.PronosApplication;
 
 /** Tests TDD pour JwtService Focus: Sécurité JWT, validation des tokens, gestion des erreurs */
-@SpringBootTest(classes = {PronosApplication.class, JwtServiceTestConfig.class})
+@SpringBootTest(classes = {PronosApplication.class, TestSecurityConfigTestBackup.class})
 @ActiveProfiles("test")
 @DisplayName("Tests TDD - JWT Service Security")
 class JwtServiceTest {

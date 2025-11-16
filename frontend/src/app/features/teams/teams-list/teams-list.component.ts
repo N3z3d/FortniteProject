@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -37,8 +37,8 @@ interface Team {
   template: `
     <div class="teams-list-container">
       <div class="header">
-        <h2>Mes Équipes</h2>
-        <button mat-raised-button color="primary" routerLink="/teams/create">
+        <h2>{{ gameId ? 'Équipes du jeu' : 'Mes Équipes' }}</h2>
+        <button mat-raised-button color="primary" routerLink="/teams/create" *ngIf="!gameId">
           <mat-icon>add</mat-icon>
           Créer une équipe
         </button>
@@ -126,12 +126,20 @@ export class TeamsListComponent implements OnInit, OnDestroy {
   teams: Team[] = [];
   loading = true;
   error: string | null = null;
+  gameId: string | null = null;
   private destroy$ = new Subject<void>();
 
-  constructor(private teamService: TeamService) {}
+  constructor(
+    private teamService: TeamService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    this.loadTeams();
+    // Get gameId from route params if it exists
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      this.gameId = params['id'] || null;
+      this.loadTeams();
+    });
   }
 
   ngOnDestroy(): void {
@@ -143,7 +151,12 @@ export class TeamsListComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    this.teamService.getUserTeams()
+    // If we have a gameId from the route, load teams for that game only
+    const teamsObservable = this.gameId 
+      ? this.teamService.getTeamsByGame(this.gameId)
+      : this.teamService.getUserTeams();
+
+    teamsObservable
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (teams: TeamDto[]) => {

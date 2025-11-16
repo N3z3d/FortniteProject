@@ -59,9 +59,14 @@ public class Player {
   @Builder.Default
   private List<Score> scores = new ArrayList<>();
 
+  @Column(name = "locked")
+  @Builder.Default
+  private Boolean locked = false;
+
   public enum Region {
     EU,
     NAW,
+    NA, // Added for compatibility with tests
     BR,
     ASIA,
     OCE,
@@ -86,5 +91,32 @@ public class Player {
    */
   public String getName() {
     return nickname != null ? nickname : username;
+  }
+
+  /** Convenience method for tests to get region as string */
+  public String getRegion() {
+    return region != null ? region.name() : null;
+  }
+
+  /** Convenience method for tests to set region from string */
+  public void setRegion(String regionName) {
+    if (regionName != null) {
+      this.region = Region.valueOf(regionName);
+    }
+  }
+
+  /** Convenience method for tests to check if player is locked */
+  public boolean isLocked() {
+    return locked != null && locked;
+  }
+
+  /** Convenience method for tests to set locked status */
+  public void setLocked(boolean locked) {
+    this.locked = locked;
+  }
+
+  /** Convenience method for tests to set name (sets nickname) */
+  public void setName(String name) {
+    this.nickname = name;
   }
 }

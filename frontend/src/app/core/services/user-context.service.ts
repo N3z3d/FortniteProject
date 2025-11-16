@@ -55,15 +55,8 @@ export class UserContextService {
   }
 
   logout(): void {
-    console.log('🔐 UserContextService.logout() appelé');
-    console.log('🔐 Avant logout - sessionStorage:', sessionStorage.getItem(this.STORAGE_KEY));
-    
     sessionStorage.removeItem(this.STORAGE_KEY);
-    console.log('🔐 Après removeItem - sessionStorage:', sessionStorage.getItem(this.STORAGE_KEY));
-    
     this.userChangedSubject.next(null);
-    console.log('🔐 userChangedSubject.next(null) appelé');
-    console.log('🔐 Déconnexion terminée');
   }
 
   isLoggedIn(): boolean {

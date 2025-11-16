@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,7 +13,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -31,6 +34,7 @@ import { FocusManagementService } from '../../services/focus-management.service'
     CommonModule,
     RouterOutlet,
     RouterModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -41,7 +45,10 @@ import { FocusManagementService } from '../../services/focus-management.service'
     MatDividerModule,
     MatToolbarModule,
     MatMenuModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSnackBarModule
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
@@ -51,6 +58,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   currentUser: UserProfile | null = null;
   userGames: Game[] = [];
+  showJoinCodeInput = false;
+  invitationCode = '';
+  joiningGame = false;
 
   // Méthode pour vérifier si une route est active
   isRouteActive(routes: string[]): boolean {
@@ -70,7 +80,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     private breakpointObserver: BreakpointObserver,
     private accessibilityService: AccessibilityAnnouncerService,
-    private focusManagementService: FocusManagementService
+    private focusManagementService: FocusManagementService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -99,8 +110,43 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.router.navigate(['/games/create'], { queryParams: { quick: true } });
   }
 
-  joinGame(): void {
-    this.router.navigate(['/games/join']);
+  openJoinDialog(): void {
+    this.showJoinCodeInput = true;
+  }
+
+  joinWithCode(): void {
+    if (!this.invitationCode.trim()) {
+      this.snackBar.open('Please enter an invitation code', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.joiningGame = true;
+    this.gameService.joinGameWithCode(this.invitationCode.trim()).subscribe({
+      next: (game) => {
+        this.snackBar.open(`Successfully joined ${game.name}!`, 'View', {
+          duration: 5000
+        }).onAction().subscribe(() => {
+          this.router.navigate(['/games', game.id]);
+        });
+        this.invitationCode = '';
+        this.showJoinCodeInput = false;
+        this.joiningGame = false;
+        this.loadUserGames(); // Refresh the games list
+      },
+      error: (error) => {
+        this.snackBar.open(
+          error.error?.message || 'Invalid invitation code',
+          'Close',
+          { duration: 5000 }
+        );
+        this.joiningGame = false;
+      }
+    });
+  }
+
+  cancelJoin(): void {
+    this.showJoinCodeInput = false;
+    this.invitationCode = '';
   }
 
   goToHome(): void {
@@ -185,6 +231,16 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       case 'ACTIVE': return 'Active';
       case 'COMPLETED': return 'Terminée';
       default: return status;
+    }
+  }
+
+  getStatusIcon(status: GameStatus): string {
+    switch (status) {
+      case 'CREATING': return 'build';
+      case 'DRAFTING': return 'how_to_vote';
+      case 'ACTIVE': return 'play_arrow';
+      case 'COMPLETED': return 'emoji_events';
+      default: return 'sports_esports';
     }
   }
 

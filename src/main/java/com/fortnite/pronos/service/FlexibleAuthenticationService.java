@@ -41,6 +41,11 @@ public class FlexibleAuthenticationService {
 
     if (authentication == null || !authentication.isAuthenticated()) {
       log.warn("Aucun utilisateur authentifié trouvé");
+      // En environnement de développement, retourner un utilisateur par défaut
+      if (isDevelopmentEnvironment()) {
+        log.info("Environnement de développement détecté: utilisation d'un utilisateur par défaut");
+        return createDefaultUser();
+      }
       throw new RuntimeException("Utilisateur non authentifié");
     }
 

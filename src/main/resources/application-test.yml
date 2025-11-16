@@ -6,7 +6,7 @@ app:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     username: sa
     password: 
     driver-class-name: org.h2.Driver
@@ -17,12 +17,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
   h2:
     console:
-      enabled: true
+      enabled: true                 # H2 console enabled ONLY for tests
       path: /h2-console
+      settings:
+        web-allow-others: false     # Security: only local access for tests
   flyway:
-    enabled: false
+    enabled: false                  # Flyway disabled for tests - use ddl-auto instead
+  sql:
+    init:
+      mode: never                   # Don't run SQL initialization scripts in tests
   security:
     user:
       name: test

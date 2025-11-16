@@ -18,6 +18,16 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatStepperModule } from '@angular/material/stepper';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatDividerModule } from '@angular/material/divider';
 
 const materialModules = [
   MatButtonModule,
@@ -38,7 +48,17 @@ const materialModules = [
   MatBadgeModule,
   MatChipsModule,
   MatDatepickerModule,
-  MatNativeDateModule
+  MatNativeDateModule,
+  DragDropModule,
+  MatTabsModule,
+  MatSlideToggleModule,
+  MatBottomSheetModule,
+  MatExpansionModule,
+  MatTooltipModule,
+  MatStepperModule,
+  MatProgressBarModule,
+  MatGridListModule,
+  MatDividerModule
 ];
 
 @NgModule({

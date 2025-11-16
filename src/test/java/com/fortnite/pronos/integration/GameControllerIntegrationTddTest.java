@@ -27,7 +27,7 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfig.class
+      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
     })
 @AutoConfigureWebMvc
 @ActiveProfiles("test")

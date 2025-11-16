@@ -278,7 +278,9 @@ git add -A && git commit -m "refactor: improve [aspect] implementation"
 
 ### Business Rules
 - Games have maximum participant limits
-- Teams must follow region distribution rules
-- Draft order is automatically managed
-- Scores are calculated from external Fortnite data
-- Users can trade players within games
+- Teams must follow region distribution rules (nombre de joueurs par région paramétrable)
+- Draft order is automatically managed (snake draft: 1-2-3-3-2-1)
+- Le nombre de rounds dépend du nombre total de joueurs configuré par région
+- Scores actuellement calculés depuis fichiers CSV (API Fortnite Tracker prévu)
+- Classement basé sur les points cumulés (pas un système ELO)
+- Système de trading entre utilisateurs prioritaire (à implémenter)

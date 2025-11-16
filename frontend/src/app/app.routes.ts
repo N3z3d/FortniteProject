@@ -22,29 +22,8 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       {
-        path: '',
-        redirectTo: '/games',
-        pathMatch: 'full'
-      },
-      {
         path: 'games',
-        loadComponent: () => import('./features/game/game-home/game-home.component').then(c => c.GameHomeComponent)
-      },
-      {
-        path: 'games/create',
-        loadComponent: () => import('./features/game/create-game/create-game.component').then(c => c.CreateGameComponent)
-      },
-      {
-        path: 'games/join',
-        loadComponent: () => import('./features/game/join-game/join-game.component').then(c => c.JoinGameComponent)
-      },
-      {
-        path: 'games/:id',
-        loadComponent: () => import('./features/game/game-detail/game-detail.component').then(c => c.GameDetailComponent)
-      },
-      {
-        path: 'games/:id/draft',
-        loadComponent: () => import('./features/draft/draft.component').then(c => c.DraftComponent)
+        loadChildren: () => import('./features/game/game.module').then(m => m.GameModule)
       },
       {
         path: 'auth',
@@ -69,6 +48,14 @@ export const routes: Routes = [
       {
         path: 'draft',
         loadComponent: () => import('./features/draft/draft.component').then(c => c.DraftComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(c => c.ProfileComponent)
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent)
       }
     ]
   },

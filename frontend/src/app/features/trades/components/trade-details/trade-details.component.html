@@ -1,0 +1,346 @@
+<div class="trade-details-modal" [@slideInFromBottom]>
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <div class="header-content">
+      <div class="trade-title">
+        <h2>Trade Details</h2>
+        <div class="trade-id">ID: {{ trade.id.substring(0, 8) }}...</div>
+      </div>
+      
+      <div class="trade-status-header">
+        <div class="status-badge" [class]="getStatusClass(trade.status)">
+          <mat-icon>{{ getStatusIcon(trade.status) }}</mat-icon>
+          <span>{{ trade.status | titlecase }}</span>
+        </div>
+        
+        <div class="trade-meta">
+          <div class="created-date">{{ formatDate(trade.createdAt) }}</div>
+          <div class="expiry-info" *ngIf="trade.status === 'pending'" [class.urgent]="isExpiringSoon()">
+            <mat-icon>access_time</mat-icon>
+            <span>Expires in {{ getTimeUntilExpiry() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button mat-icon-button class="close-btn" (click)="onClose()" matTooltip="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Trade Participants -->
+  <div class="trade-participants">
+    <div class="participant sender">
+      <div class="participant-info">
+        <div class="participant-name">{{ trade.fromUserName }}</div>
+        <div class="participant-role">Offering</div>
+        <div class="team-name">{{ trade.fromTeamName }}</div>
+      </div>
+    </div>
+
+    <div class="trade-direction">
+      <mat-icon class="swap-icon">swap_horiz</mat-icon>
+      <div class="trade-balance" [class]="getBalanceDisplayClass(trade.valueBalance)">
+        <div class="balance-amount">{{ formatCurrency(abs(trade.valueBalance)) }}</div>
+        <div class="balance-direction">
+          <span *ngIf="trade.valueBalance > 0">{{ trade.toUserName }} gets more value</span>
+          <span *ngIf="trade.valueBalance < 0">{{ trade.fromUserName }} gets more value</span>
+          <span *ngIf="trade.valueBalance === 0">Balanced trade</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="participant receiver">
+      <div class="participant-info">
+        <div class="participant-name">{{ trade.toUserName }}</div>
+        <div class="participant-role">Receiving</div>
+        <div class="team-name">{{ trade.toTeamName }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trade Content -->
+  <div class="trade-content">
+    
+    <!-- Trade Statistics -->
+    <div class="trade-stats-section" *ngIf="tradeStats$ | async as stats">
+      <h3>Trade Overview</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-icon">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats.totalPlayers }}</div>
+            <div class="stat-label">Total Players</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon">
+            <mat-icon>monetization_on</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatCurrency(stats.totalValue) }}</div>
+            <div class="stat-label">Total Value</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatCurrency(stats.avgPlayerValue) }}</div>
+            <div class="stat-label">Avg per Player</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon" [style.color]="getFairnessColor(stats.fairnessRating)">
+            <mat-icon>balance</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" [style.color]="getFairnessColor(stats.fairnessRating)">
+              {{ stats.fairnessRating | titlecase }}
+            </div>
+            <div class="stat-label">Fairness Rating</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Players Section -->
+    <div class="players-section" [@playerStagger]>
+      <div class="players-column offered-column">
+        <h3>
+          <mat-icon>call_made</mat-icon>
+          Offered Players ({{ trade.offeredPlayers.length }})
+        </h3>
+        
+        <div class="players-list">
+          <div 
+            *ngFor="let player of trade.offeredPlayers; trackBy: trackByPlayerId" 
+            class="player-detail-card offered-player">
+            
+            <div class="player-image">
+              <img [src]="player.imageUrl || '/assets/default-player.png'" [alt]="player.name">
+              <div class="player-rank" *ngIf="player.stats?.placement">
+                #{{ player.stats?.placement }}
+              </div>
+            </div>
+
+            <div class="player-info">
+              <div class="player-name">{{ player.name }}</div>
+              <div class="player-meta">
+                <span class="region">{{ player.region }}</span>
+                <span class="position" *ngIf="player.position">{{ player.position }}</span>
+              </div>
+              <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
+            </div>
+
+            <div class="player-stats">
+              <div class="stat-row">
+                <span class="stat-label">Avg Score</span>
+                <span class="stat-value">{{ player.averageScore | number:'1.1-1' }}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Games</span>
+                <span class="stat-value">{{ player.gamesPlayed }}</span>
+              </div>
+              <div class="stat-row" *ngIf="player.stats?.eliminations">
+                <span class="stat-label">Eliminations</span>
+                <span class="stat-value">{{ player.stats?.eliminations }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="total-value offered-total">
+          <strong>Total Value: {{ formatCurrency(getOfferedTotal()) }}</strong>
+        </div>
+      </div>
+
+      <div class="players-column requested-column">
+        <h3>
+          <mat-icon>call_received</mat-icon>
+          Requested Players ({{ trade.requestedPlayers.length }})
+        </h3>
+        
+        <div class="players-list">
+          <div 
+            *ngFor="let player of trade.requestedPlayers; trackBy: trackByPlayerId" 
+            class="player-detail-card requested-player">
+            
+            <div class="player-image">
+              <img [src]="player.imageUrl || '/assets/default-player.png'" [alt]="player.name">
+              <div class="player-rank" *ngIf="player.stats?.placement">
+                #{{ player.stats?.placement }}
+              </div>
+            </div>
+
+            <div class="player-info">
+              <div class="player-name">{{ player.name }}</div>
+              <div class="player-meta">
+                <span class="region">{{ player.region }}</span>
+                <span class="position" *ngIf="player.position">{{ player.position }}</span>
+              </div>
+              <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
+            </div>
+
+            <div class="player-stats">
+              <div class="stat-row">
+                <span class="stat-label">Avg Score</span>
+                <span class="stat-value">{{ player.averageScore | number:'1.1-1' }}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Games</span>
+                <span class="stat-value">{{ player.gamesPlayed }}</span>
+              </div>
+              <div class="stat-row" *ngIf="player.stats?.eliminations">
+                <span class="stat-label">Eliminations</span>
+                <span class="stat-value">{{ player.stats?.eliminations }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="total-value requested-total">
+          <strong>Total Value: {{ formatCurrency(getRequestedTotal()) }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade Message -->
+    <div class="trade-message-section" *ngIf="trade.message">
+      <h3>
+        <mat-icon>message</mat-icon>
+        Message from {{ trade.fromUserName }}
+      </h3>
+      <div class="message-content">
+        <p>{{ trade.message }}</p>
+      </div>
+    </div>
+
+    <!-- Trade Timeline -->
+    <div class="timeline-section" *ngIf="tradeTimeline$ | async as timeline">
+      <h3>
+        <mat-icon>timeline</mat-icon>
+        Trade Timeline
+      </h3>
+      
+      <div class="timeline-container" [@timelineProgress]>
+        <div class="timeline-connector"></div>
+        <div 
+          *ngFor="let item of timeline; trackBy: trackByTimelineIndex" 
+          class="timeline-item"
+          [class]="'timeline-' + item.status">
+          
+          <div class="timeline-icon">
+            <mat-icon>{{ item.icon }}</mat-icon>
+          </div>
+          
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div class="timeline-action">{{ item.action }}</div>
+              <div class="timeline-date">{{ formatDate(item.date) }}</div>
+            </div>
+            <div class="timeline-description">{{ item.description }}</div>
+            <div class="timeline-actor">by {{ item.actor }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Counter Offer Form -->
+    <div class="counter-offer-section" *ngIf="showCounterForm | async">
+      <h3>
+        <mat-icon>reply</mat-icon>
+        Create Counter Offer
+      </h3>
+      
+      <form [formGroup]="counterOfferForm!" class="counter-form">
+        <mat-form-field appearance="outline" class="message-field">
+          <mat-label>Message (Optional)</mat-label>
+          <textarea 
+            matInput 
+            formControlName="message"
+            rows="3"
+            maxlength="500"
+            placeholder="Explain your counter offer..."></textarea>
+          <mat-hint align="end">{{ counterOfferForm?.get('message')?.value?.length || 0 }}/500</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="expires-field">
+          <mat-label>Expires In</mat-label>
+          <mat-select formControlName="expiresIn">
+            <mat-option [value]="24">24 Hours</mat-option>
+            <mat-option [value]="48">48 Hours</mat-option>
+            <mat-option [value]="72">72 Hours</mat-option>
+            <mat-option [value]="168">1 Week</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="counter-actions">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="onSubmitCounterOffer()"
+            [disabled]="!(counterOfferForm?.valid) || (isProcessing | async)">
+            <mat-spinner *ngIf="isProcessing | async" diameter="20"></mat-spinner>
+            <mat-icon *ngIf="!(isProcessing | async)">send</mat-icon>
+            Send Counter Offer
+          </button>
+
+          <button 
+            mat-stroked-button 
+            (click)="onCancelCounterOffer()"
+            [disabled]="isProcessing | async">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="modal-actions" *ngIf="availableActions$ | async as actions">
+    <div class="actions-grid">
+      <button 
+        *ngFor="let action of actions"
+        mat-raised-button 
+        [color]="action.color"
+        [disabled]="!action.enabled"
+        class="action-btn"
+        [class]="'action-' + action.type"
+        [@actionButtonHover]="buttonHoverState | async"
+        (mouseenter)="onButtonHover('hover')"
+        (mouseleave)="onButtonHover('idle')"
+        (click)="onAction(action.type)">
+        
+        <mat-spinner 
+          *ngIf="(isProcessing | async) && action.enabled" 
+          diameter="20" 
+          class="action-spinner">
+        </mat-spinner>
+        
+        <mat-icon *ngIf="!(isProcessing | async) || !action.enabled">{{ action.icon }}</mat-icon>
+        <span>{{ action.label }}</span>
+      </button>
+    </div>
+
+    <div class="disclaimer" *ngIf="trade.status === 'pending'">
+      <mat-icon>info</mat-icon>
+      <small>Actions cannot be undone once confirmed</small>
+    </div>
+  </div>
+
+  <!-- No Actions State -->
+  <div class="no-actions" *ngIf="(availableActions$ | async)?.length === 0">
+    <div class="no-actions-content">
+      <mat-icon>info</mat-icon>
+      <p>No actions available for this trade</p>
+      <small>Trade status: {{ trade.status | titlecase }}</small>
+    </div>
+  </div>
+</div>

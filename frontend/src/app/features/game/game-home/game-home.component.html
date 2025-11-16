@@ -1,173 +1,301 @@
-<!-- Games Management Page -->
-<div class="games-management-container">
-  <!-- Page Header -->
-  <div class="page-header">
-    <h1>Gestion des Games</h1>
-    <p>Créez, rejoignez et gérez vos parties Fantasy League</p>
-    
-    <div class="header-actions">
-      <button mat-raised-button color="primary" (click)="createGame()">
-        <mat-icon>add</mat-icon>
-        Créer une Game
-      </button>
-      <button mat-stroked-button color="accent" (click)="joinGame()">
-        <mat-icon>group_add</mat-icon>
-        Rejoindre une Game
-      </button>
+<!-- Premium Gaming Dashboard -->
+<div class="gaming-dashboard-container">
+
+  <!-- Animated Background -->
+  <div class="animated-background">
+    <div class="particle-field">
+      <div class="particle" *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]"></div>
     </div>
   </div>
 
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-container">
-    <mat-progress-spinner diameter="50"></mat-progress-spinner>
-    <p>Chargement de vos games...</p>
+
+
+  <!-- Join Game with Code Section -->
+  <div class="join-code-section" *ngIf="showJoinCodeInput">
+    <mat-card class="join-code-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="code-icon">vpn_key</mat-icon>
+        <mat-card-title>Enter Tournament Code</mat-card-title>
+        <mat-card-subtitle>Join an exclusive battle with your invitation code</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="code-input-field">
+          <mat-label>Invitation Code</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="invitationCode" 
+            placeholder="Enter your code here"
+            [disabled]="joiningGame"
+            (keyup.enter)="joinWithCode()"
+            maxlength="10">
+          <mat-icon matSuffix>key</mat-icon>
+          <mat-hint>Enter the code shared by the game creator</mat-hint>
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button 
+          mat-button 
+          (click)="cancelJoin()"
+          [disabled]="joiningGame">
+          Cancel
+        </button>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="joinWithCode()"
+          [disabled]="!invitationCode.trim() || joiningGame">
+          <mat-icon *ngIf="!joiningGame">group_add</mat-icon>
+          <mat-progress-spinner 
+            *ngIf="joiningGame" 
+            diameter="20" 
+            mode="indeterminate">
+          </mat-progress-spinner>
+          {{ joiningGame ? 'Joining...' : 'Join Game' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
   </div>
 
-  <!-- Error State -->
-  <div *ngIf="error && !loading" class="error-container">
-    <mat-icon color="warn" class="error-icon">error</mat-icon>
-    <h3>Erreur de chargement</h3>
-    <p>{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="reloadUserGames()">
-      Réessayer
-    </button>
+  <!-- Premium Gaming Loading State -->
+  <div *ngIf="loading" class="premium-loading">
+    <div class="loading-orb">
+      <mat-progress-spinner 
+        diameter="60" 
+        class="gaming-spinner">
+      </mat-progress-spinner>
+      <div class="orb-glow"></div>
+    </div>
+    <div class="loading-text">
+      <p>Initializing Game Matrix...</p>
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
   </div>
 
-  <!-- My Games Section -->
-  <section class="my-games-section" *ngIf="!loading && !error">
-    <h2>Mes Games ({{ getGameCount() }})</h2>
-    
-    <div class="games-grid" *ngIf="hasGames()">
-      <mat-card 
-        *ngFor="let game of userGames; trackBy: trackByGameId" 
-        class="game-card"
-        [class.selected]="selectedGame?.id === game.id"
-        (click)="selectGame(game)">
-        
-        <mat-card-header>
-          <mat-icon mat-card-avatar>sports_esports</mat-icon>
-          <mat-card-title>{{ game.name }}</mat-card-title>
-          <mat-card-subtitle>
-            {{ game.participantCount }} participants • {{ getTotalFortnitePlayers() }} joueurs Fortnite
-          </mat-card-subtitle>
-        </mat-card-header>
-        
+  <!-- Premium Gaming Error State -->
+  <div *ngIf="error && !loading" class="premium-error">
+    <div class="error-card">
+      <mat-card>
         <mat-card-content>
-          <div class="game-status-info">
-            <mat-chip 
-              [color]="getStatusColor(game.status)" 
-              selected 
-              class="status-chip">
-              {{ getStatusLabel(game.status) }}
-            </mat-chip>
-            
-            <span class="creation-date" *ngIf="game.createdAt">
-              Créée le {{ game.createdAt | date:'dd/MM/yyyy' }}
-            </span>
+          <div class="error-icon-container">
+            <mat-icon class="error-icon">error_outline</mat-icon>
+            <div class="error-pulse"></div>
           </div>
+          <h3>System Malfunction Detected</h3>
+          <p class="error-message">{{ error }}</p>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            class="retry-btn"
+            (click)="reloadUserGames()">
+            <mat-icon>refresh</mat-icon>
+            Reinitialize System
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Gaming Dashboard Content -->
+  <div class="dashboard-content" *ngIf="!loading && !error">
+    
+    <!-- My Active Games Section -->
+    <section class="games-arena">
+      <div class="arena-header">
+        <div class="section-title">
+          <mat-icon class="section-icon">sports_esports</mat-icon>
+          <h2>
+            My Games
+            <span class="games-counter" *ngIf="getGameCount() > 0">({{ getGameCount() }})</span>
+          </h2>
+        </div>
+        
+        <div class="arena-actions">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            class="create-btn"
+            (click)="createGame()">
+            <mat-icon>add_circle</mat-icon>
+            <span>Create New Game</span>
+          </button>
           
-          <div class="game-participants" *ngIf="game.participantCount > 0">
-            <div class="participants-preview">
-              <mat-icon>group</mat-icon>
-              <span>{{ game.participantCount }} participant(s)</span>
+          <button 
+            mat-stroked-button 
+            color="accent" 
+            class="join-btn"
+            (click)="openJoinDialog()">
+            <mat-icon>group_add</mat-icon>
+            <span>Join with Code</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Games Grid -->
+      <div class="premium-games-grid" *ngIf="hasGames()">
+        <div 
+          *ngFor="let game of userGames; trackBy: trackByGameId; let i = index"
+          class="premium-game-card"
+          [class.selected]="selectedGame?.id === game.id"
+          [style.animation-delay.s]="i * 0.1"
+          (click)="selectGame(game)">
+          
+          <!-- Card Background Effects -->
+          <div class="card-bg-effect"></div>
+          <div class="status-glow" [attr.data-status]="game.status"></div>
+          
+          <!-- Game Card Header -->
+          <div class="game-card-header">
+            <div class="game-avatar">
+              <mat-icon class="status-icon" [attr.data-status]="game.status">
+                {{ getStatusIcon(game.status) }}
+              </mat-icon>
+              <div class="avatar-ring"></div>
+            </div>
+            
+            <div class="game-info">
+              <h3 class="game-name">{{ game.name }}</h3>
+              <div class="game-meta">
+                <span class="participants">
+                  <mat-icon>group</mat-icon>
+                  {{ game.participantCount }} Players
+                </span>
+                <span class="creation-date" *ngIf="game.createdAt">
+                  {{ game.createdAt | date:'dd/MM/yyyy' }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="status-badge">
+              <mat-chip [attr.data-status]="game.status" class="premium-status-chip">
+                {{ getStatusLabel(game.status) }}
+              </mat-chip>
             </div>
           </div>
-        </mat-card-content>
-        
-        <mat-card-actions>
-          <button mat-button (click)="viewGame(game.id); $event.stopPropagation()">
-            <mat-icon>visibility</mat-icon>
-            Voir détails
-          </button>
           
-          <button 
-            mat-button 
-            color="primary" 
-            *ngIf="game.status === 'ACTIVE'"
-            (click)="router.navigate(['/dashboard']); $event.stopPropagation()">
-            <mat-icon>dashboard</mat-icon>
-            Dashboard
-          </button>
-          
-          <button 
-            mat-button 
-            color="accent" 
-            *ngIf="game.status === 'DRAFTING'"
-            (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
-            <mat-icon>how_to_vote</mat-icon>
-            Draft
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
-    
-    <!-- No Games Message -->
-    <div class="no-games-message" *ngIf="!hasGames()">
-      <mat-card class="empty-state-card">
-        <mat-card-content>
-          <mat-icon class="empty-icon">sports_esports</mat-icon>
-          <h3>Aucune game trouvée</h3>
-          <p>Vous ne participez à aucune game actuellement. Créez-en une nouvelle ou rejoignez une game existante !</p>
-          
-          <div class="empty-actions">
-            <button mat-raised-button color="primary" (click)="createGame()">
-              <mat-icon>add</mat-icon>
-              Créer ma première game
-            </button>
-            <button mat-button (click)="joinGame()">
-              <mat-icon>search</mat-icon>
-              Chercher des games
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  </section>
-
-  <!-- Available Games Section -->
-  <section class="available-games-section" *ngIf="!loading && !error && availableGames.length > 0">
-    <h2>Games Disponibles</h2>
-    <p>Rejoignez des games créées par d'autres joueurs</p>
-    
-    <div class="games-grid">
-      <mat-card 
-        *ngFor="let game of availableGames; trackBy: trackByGameId" 
-        class="game-card available-game">
-        
-        <mat-card-header>
-          <mat-icon mat-card-avatar color="accent">group_add</mat-icon>
-          <mat-card-title>{{ game.name }}</mat-card-title>
-          <mat-card-subtitle>
-            {{ game.participantCount }} / {{ game.maxParticipants || 'Illimité' }} participants
-          </mat-card-subtitle>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <div class="game-status-info">
-            <mat-chip 
-              [color]="getStatusColor(game.status)" 
-              selected 
-              class="status-chip">
-              {{ getStatusLabel(game.status) }}
-            </mat-chip>
+          <!-- Game Card Content -->
+          <div class="game-card-content">
+            <div class="game-stats">
+              <div class="stat-item">
+                <mat-icon>sports</mat-icon>
+                <span class="stat-label">Fortnite Players</span>
+                <span class="stat-value">{{ getTotalFortnitePlayers() }}</span>
+              </div>
+              
+              <div class="stat-item" *ngIf="game.participantCount > 0">
+                <mat-icon>leaderboard</mat-icon>
+                <span class="stat-label">Tournament Size</span>
+                <span class="stat-value">{{ game.participantCount }}/{{ getMaxParticipants() }}</span>
+              </div>
+            </div>
+            
+            <!-- Progress Indicator for Participants -->
+            <div class="participant-progress" *ngIf="game.participantCount > 0">
+              <div class="progress-track">
+                <div 
+                  class="progress-fill" 
+                  [style.width.%]="(game.participantCount / getMaxParticipants()) * 100">
+                </div>
+              </div>
+              <span class="progress-text">{{ game.participantCount }}/{{ getMaxParticipants() }} Champions</span>
+            </div>
           </div>
           
-          <div class="game-description" *ngIf="game.description">
-            <p>{{ game.description }}</p>
+          <!-- Game Card Actions -->
+          <div class="game-card-actions">
+            <div class="primary-actions">
+              <button 
+                mat-raised-button 
+                color="primary"
+                class="action-btn detail-btn"
+                (click)="viewGame(game.id); $event.stopPropagation()">
+                <mat-icon>visibility</mat-icon>
+                View Details
+              </button>
+              
+              <button 
+                mat-raised-button 
+                color="accent" 
+                class="action-btn draft-btn"
+                *ngIf="game.status === 'DRAFTING'"
+                (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
+                <mat-icon>how_to_vote</mat-icon>
+                Enter Draft
+              </button>
+              
+              <button 
+                mat-raised-button 
+                color="primary" 
+                class="action-btn dashboard-btn"
+                *ngIf="game.status === 'ACTIVE'"
+                (click)="router.navigate(['/games', game.id]); $event.stopPropagation()">
+                <mat-icon>dashboard</mat-icon>
+                Dashboard
+              </button>
+            </div>
           </div>
-        </mat-card-content>
-        
-        <mat-card-actions>
-          <button mat-raised-button color="accent" (click)="joinSpecificGame(game)">
-            <mat-icon>group_add</mat-icon>
-            Rejoindre
-          </button>
-          <button mat-button (click)="viewGame(game.id)">
-            <mat-icon>info</mat-icon>
-            Détails
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
-  </section>
-</div> 
+        </div>
+      </div>
+      
+      <!-- Premium Empty State -->
+      <div class="premium-empty-state" *ngIf="!hasGames()">
+        <div class="empty-state-card">
+          <mat-card>
+            <mat-card-content>
+              <div class="empty-orb">
+                <mat-icon class="empty-icon">sports_esports</mat-icon>
+                <div class="orb-rings">
+                  <div class="ring ring-1"></div>
+                  <div class="ring ring-2"></div>
+                  <div class="ring ring-3"></div>
+                </div>
+              </div>
+              
+              <div class="empty-content">
+                <h3>No Active Battlegrounds</h3>
+                <p>Your gaming empire awaits construction. Forge legendary tournaments and gather elite champions to build your fantasy dynasty.</p>
+                
+                <div class="empty-features">
+                  <div class="feature">
+                    <mat-icon>add_circle</mat-icon>
+                    <span>Create Epic Battles</span>
+                  </div>
+                  <div class="feature">
+                    <mat-icon>group_add</mat-icon>
+                    <span>Join Champions</span>
+                  </div>
+                  <div class="feature">
+                    <mat-icon>emoji_events</mat-icon>
+                    <span>Claim Victory</span>
+                  </div>
+                </div>
+                
+                <div class="empty-actions">
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    class="gaming-cta-btn"
+                    (click)="createGame()">
+                    <mat-icon>add_circle</mat-icon>
+                    Forge First Battle
+                    <div class="btn-glow"></div>
+                  </button>
+                  
+                  <button 
+                    mat-stroked-button 
+                    color="accent" 
+                    class="gaming-secondary-btn"
+                    (click)="openJoinDialog()">
+                    <mat-icon>group_add</mat-icon>
+                    Join with Code
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

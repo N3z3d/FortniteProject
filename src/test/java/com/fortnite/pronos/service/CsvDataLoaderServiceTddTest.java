@@ -25,7 +25,7 @@ import com.fortnite.pronos.repository.ScoreRepository;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfig.class
+      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
     })
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)

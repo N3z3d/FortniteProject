@@ -1,0 +1,75 @@
+<div class="profile-container">
+  <div class="profile-content">
+    <mat-card class="profile-card">
+      <mat-card-header>
+        <div class="profile-header">
+          <div class="avatar-section">
+            <div class="avatar">
+              <mat-icon>account_circle</mat-icon>
+            </div>
+            <div class="user-info">
+              <h1>{{ currentUser?.username }}</h1>
+              <p class="user-role">{{ currentUser?.role }}</p>
+              <p class="user-email">{{ currentUser?.email || 'No email provided' }}</p>
+            </div>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <mat-divider></mat-divider>
+        
+        <div class="profile-section">
+          <h3>
+            <mat-icon>info</mat-icon>
+            Profile Information
+          </h3>
+          <mat-list>
+            <mat-list-item>
+              <mat-icon matListItemIcon>person</mat-icon>
+              <div matListItemTitle>Username</div>
+              <div matListItemLine>{{ currentUser?.username }}</div>
+            </mat-list-item>
+            <mat-list-item>
+              <mat-icon matListItemIcon>security</mat-icon>
+              <div matListItemTitle>Role</div>
+              <div matListItemLine>{{ currentUser?.role }}</div>
+            </mat-list-item>
+            <mat-list-item>
+              <mat-icon matListItemIcon>calendar_today</mat-icon>
+              <div matListItemTitle>Member Since</div>
+              <div matListItemLine>Recently joined</div>
+            </mat-list-item>
+          </mat-list>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="profile-section">
+          <h3>
+            <mat-icon>settings</mat-icon>
+            Account Actions
+          </h3>
+          <div class="action-buttons">
+            <button mat-stroked-button (click)="editProfile()">
+              <mat-icon>edit</mat-icon>
+              Edit Profile
+            </button>
+            <button mat-stroked-button (click)="changePassword()">
+              <mat-icon>lock</mat-icon>
+              Change Password
+            </button>
+            <button mat-stroked-button (click)="viewStatistics()">
+              <mat-icon>bar_chart</mat-icon>
+              View Statistics
+            </button>
+            <button mat-stroked-button color="warn" (click)="logout()">
+              <mat-icon>logout</mat-icon>
+              Logout
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

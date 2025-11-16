@@ -64,13 +64,13 @@ export class JoinGameComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.gameService.getAvailableGames().subscribe({
-      next: (games) => {
+    this.gameService.getUserGames().subscribe({
+      next: (games: Game[]) => {
         this.games = games;
         this.filteredGames = games;
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error = 'Erreur lors du chargement des games';
         this.loading = false;
         console.error('Error loading games:', error);
@@ -220,8 +220,8 @@ export class JoinGameComponent implements OnInit {
     }, 1000);
   }
 
-  getTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
+  getTimeAgo(dateInput: string | Date): string {
+    const date = new Date(typeof dateInput === 'string' ? dateInput : dateInput.toISOString());
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 

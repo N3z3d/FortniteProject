@@ -1,0 +1,845 @@
+@import '../../styles/trading-theme.scss';
+@import '../../styles/trading-animations.scss';
+@import '../../../../shared/styles/mixins.scss';
+
+// ===== CONTAINER =====
+.trade-proposal-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+  min-height: 100vh;
+  background: linear-gradient(135deg, 
+    rgba(var(--gaming-dark-rgb), 0.95) 0%, 
+    rgba(var(--gaming-dark-lighter-rgb, 26, 31, 46), 0.9) 100%);
+
+  @include mobile {
+    padding: var(--space-md);
+  }
+
+  &.trade-submitted {
+    animation: celebrationPulse 2s ease-out;
+  }
+
+  @keyframes celebrationPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+}
+
+// ===== HEADER =====
+.proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 2px solid rgba(var(--gaming-primary-rgb), 0.2);
+
+  @include mobile {
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: flex-start;
+  }
+
+  .header-content {
+    .proposal-title {
+      @include gaming-title;
+      font-size: 2.2rem;
+      margin: 0 0 var(--space-sm) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+
+      .title-icon {
+        font-size: 2.2rem;
+        width: 2.2rem;
+        height: 2.2rem;
+      }
+
+      @include mobile {
+        font-size: 1.8rem;
+        
+        .title-icon {
+          font-size: 1.8rem;
+          width: 1.8rem;
+          height: 1.8rem;
+        }
+      }
+    }
+
+    .proposal-subtitle {
+      color: var(--gaming-gray-light);
+      font-size: 1rem;
+      margin: 0;
+      font-weight: 400;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: var(--space-md);
+
+    .cancel-btn,
+    .clear-btn {
+      @include gaming-button(transparent);
+      border: 2px solid var(--gaming-gray-light);
+      color: var(--gaming-gray-light);
+
+      &:hover {
+        border-color: var(--gaming-primary);
+        color: var(--gaming-primary);
+        background: rgba(var(--gaming-primary-rgb), 0.1);
+      }
+    }
+  }
+}
+
+// ===== LOADING & ERROR =====
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--space-md);
+
+  p {
+    color: var(--gaming-gray-light);
+    margin: 0;
+  }
+}
+
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+
+  .error-card {
+    @include premium-trading-card();
+    max-width: 400px;
+    
+    mat-card-content {
+      text-align: center;
+      
+      .error-icon {
+        font-size: 3rem;
+        color: var(--gaming-error);
+        margin-bottom: var(--space-md);
+      }
+    }
+  }
+}
+
+// ===== FORM =====
+.trade-form {
+  margin-bottom: var(--space-xl);
+
+  .form-card {
+    @include premium-trading-card();
+    
+    mat-card-header {
+      background: rgba(var(--gaming-primary-rgb), 0.05);
+      margin: calc(-1 * var(--space-lg)) calc(-1 * var(--space-lg)) 0;
+      padding: var(--space-lg);
+      border-radius: var(--radius-large) var(--radius-large) 0 0;
+    }
+
+    .form-row {
+      display: flex;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+
+      @include mobile {
+        flex-direction: column;
+        gap: var(--space-sm);
+      }
+
+      .target-team-field {
+        flex: 2;
+      }
+
+      .expires-field {
+        flex: 1;
+      }
+    }
+
+    .message-field {
+      width: 100%;
+    }
+
+    .team-option {
+      display: flex;
+      flex-direction: column;
+      
+      .team-name {
+        font-weight: 600;
+        color: var(--gaming-light);
+      }
+      
+      .owner-name {
+        font-size: 0.8rem;
+        color: var(--gaming-gray-light);
+      }
+    }
+
+    // Custom form field styling
+    ::ng-deep .mat-mdc-form-field {
+      .mat-mdc-form-field-wrapper {
+        @include fortnite-input(var(--gaming-primary));
+      }
+
+      .mat-mdc-select-panel {
+        @include premium-trading-card();
+      }
+    }
+  }
+}
+
+// ===== SEARCH =====
+.search-section {
+  margin-bottom: var(--space-lg);
+
+  .search-field {
+    width: 100%;
+    max-width: 500px;
+
+    ::ng-deep .mat-mdc-form-field-wrapper {
+      @include fortnite-input(var(--gaming-primary));
+    }
+  }
+}
+
+// ===== TRADE BUILDER =====
+.trade-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+// ===== TEAM SECTIONS =====
+.team-section {
+  @include premium-trading-card();
+  padding: var(--space-lg);
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: 2px solid rgba(var(--gaming-primary-rgb), 0.2);
+
+    h2 {
+      @include gaming-font;
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--gaming-light);
+    }
+
+    .player-count {
+      background: rgba(var(--gaming-primary-rgb), 0.2);
+      color: var(--gaming-primary);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+  }
+
+  &.your-team {
+    border-left: 4px solid var(--gaming-accent);
+  }
+
+  &.target-team {
+    border-left: 4px solid var(--gaming-primary);
+  }
+
+  .players-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ===== PLAYER POOLS =====
+.player-pool {
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: var(--space-md);
+    color: var(--gaming-light);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+
+    .count {
+      background: rgba(var(--gaming-primary-rgb), 0.2);
+      color: var(--gaming-primary);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+    }
+  }
+
+  .drop-zone {
+    @include drop-zone-styling();
+    min-height: 300px;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-height: 400px;
+    overflow-y: auto;
+
+    &.offering-zone,
+    &.requesting-zone {
+      border-color: var(--gaming-primary);
+      background: rgba(var(--gaming-primary-rgb), 0.08);
+    }
+
+    &.cdk-drop-list-dragging {
+      @include drop-zone-styling(true);
+    }
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: rgba(var(--gaming-dark-rgb), 0.3);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(var(--gaming-primary-rgb), 0.5);
+      border-radius: 4px;
+    }
+  }
+
+  .empty-drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--gaming-gray-light);
+    opacity: 0.6;
+
+    mat-icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+
+    span {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// ===== PLAYER CARDS =====
+.player-card {
+  @include player-card-premium(small);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  cursor: grab;
+  position: relative;
+  transition: all var(--transition-normal);
+  width: auto;
+  height: auto;
+  min-height: 80px;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.cdk-drag-dragging {
+    opacity: 0.8;
+    transform: rotate(8deg) scale(1.05);
+    z-index: 1000;
+    box-shadow: var(--shadow-drag-active);
+  }
+
+  .player-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(var(--gaming-primary-rgb), 0.3);
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .player-info {
+    flex: 1;
+    min-width: 0;
+
+    .player-name {
+      font-weight: 600;
+      color: var(--gaming-light);
+      font-size: 0.95rem;
+      margin-bottom: var(--space-xs);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-details {
+      display: flex;
+      gap: var(--space-sm);
+      font-size: 0.8rem;
+
+      .region {
+        color: var(--gaming-primary);
+        font-weight: 500;
+      }
+
+      .position {
+        color: var(--gaming-gray-light);
+      }
+    }
+  }
+
+  .player-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-xs);
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+
+      .stat-label {
+        font-size: 0.7rem;
+        color: var(--gaming-gray-light);
+        text-transform: uppercase;
+      }
+
+      .stat-value {
+        font-family: 'Orbitron', monospace;
+        font-weight: 600;
+        color: var(--gaming-light);
+        font-size: 0.9rem;
+      }
+    }
+
+    .market-value {
+      font-family: 'Orbitron', monospace;
+      font-weight: 600;
+      color: var(--gaming-primary);
+      font-size: 0.85rem;
+      background: rgba(var(--gaming-primary-rgb), 0.1);
+      padding: 2px 6px;
+      border-radius: var(--radius-small);
+    }
+  }
+
+  .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    cursor: grab;
+    color: var(--gaming-gray-light);
+    opacity: 0.6;
+    transition: opacity var(--transition-normal);
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-xs);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--gaming-error-rgb), 0.8);
+    color: white;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    cursor: pointer;
+
+    mat-icon {
+      font-size: 16px;
+    }
+  }
+
+  // Player card variants
+  &.available-player {
+    border-left: 3px solid var(--gaming-accent);
+  }
+
+  &.offered-player {
+    border-left: 3px solid var(--gaming-primary);
+    background: rgba(var(--gaming-primary-rgb), 0.05);
+
+    &:hover .remove-btn {
+      opacity: 1;
+    }
+  }
+
+  &.target-player {
+    border-left: 3px solid var(--gaming-secondary);
+  }
+
+  &.requested-player {
+    border-left: 3px solid var(--gaming-warning);
+    background: rgba(var(--gaming-warning-rgb), 0.05);
+
+    &:hover .remove-btn {
+      opacity: 1;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    
+    .player-image {
+      border-color: var(--gaming-primary);
+    }
+  }
+
+  @include mobile {
+    .player-info .player-name {
+      font-size: 0.9rem;
+    }
+
+    .player-stats {
+      .stat-item {
+        .stat-value {
+          font-size: 0.8rem;
+        }
+      }
+
+      .market-value {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+// ===== TRADE BALANCE =====
+.trade-balance-section {
+  margin: var(--space-xl) 0;
+
+  .balance-card {
+    @include value-comparison-display();
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-lg);
+    max-width: 600px;
+    margin: 0 auto;
+
+    &.positive {
+      @include value-comparison-display('positive');
+    }
+
+    &.negative {
+      @include value-comparison-display('negative');
+    }
+
+    &.neutral {
+      @include value-comparison-display('neutral');
+    }
+
+    .balance-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      
+      mat-icon {
+        font-size: 2rem;
+      }
+    }
+
+    .balance-content {
+      flex: 1;
+
+      .balance-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: var(--space-xs);
+      }
+
+      .balance-label {
+        font-size: 1rem;
+        opacity: 0.9;
+      }
+    }
+
+    .balance-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-xs);
+
+      .balance-bar {
+        width: 120px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+
+        .balance-fill {
+          height: 100%;
+          transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          
+          &.positive {
+            background: var(--value-positive);
+          }
+          
+          &.negative {
+            background: var(--value-negative);
+          }
+          
+          &.neutral {
+            background: var(--value-neutral);
+          }
+        }
+      }
+
+      .balance-percentage {
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+    }
+
+    @include mobile {
+      flex-direction: column;
+      text-align: center;
+      gap: var(--space-md);
+
+      .balance-indicator {
+        align-items: center;
+      }
+    }
+  }
+}
+
+// ===== NO TARGET TEAM =====
+.no-target-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+  min-height: 300px;
+  background: rgba(var(--gaming-dark-rgb), 0.3);
+  border-radius: var(--radius-large);
+  border: 2px dashed rgba(var(--gaming-gray-light-rgb), 0.3);
+
+  .large-icon {
+    font-size: 4rem;
+    color: var(--gaming-gray-light);
+    margin-bottom: var(--space-md);
+    opacity: 0.6;
+  }
+
+  h3 {
+    color: var(--gaming-light);
+    margin-bottom: var(--space-sm);
+  }
+
+  p {
+    color: var(--gaming-gray-light);
+    max-width: 400px;
+    margin: 0;
+  }
+}
+
+// ===== SUBMIT SECTION =====
+.submit-section {
+  @include premium-trading-card();
+  padding: var(--space-xl);
+
+  .validation-summary {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+    gap: var(--space-md);
+
+    @include mobile {
+      flex-direction: column;
+    }
+
+    .validation-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--gaming-gray-light);
+      font-size: 0.9rem;
+      transition: color var(--transition-normal);
+
+      mat-icon {
+        font-size: 1.2rem;
+      }
+
+      &.completed {
+        color: var(--trading-accepted);
+
+        mat-icon {
+          color: var(--trading-accepted);
+        }
+      }
+
+      &.warning {
+        color: var(--gaming-warning);
+
+        mat-icon {
+          color: var(--gaming-warning);
+        }
+      }
+    }
+  }
+
+  .submit-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-lg);
+
+    @include mobile {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .submit-btn {
+      @include gaming-cta-button();
+      min-width: 200px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+
+      .submit-spinner {
+        margin-right: var(--space-sm);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        animation: none;
+      }
+    }
+
+    .preview-btn {
+      @include gaming-button(transparent);
+      border: 2px solid var(--gaming-primary);
+      color: var(--gaming-primary);
+      min-width: 150px;
+
+      &:hover:not(:disabled) {
+        background: var(--gaming-primary);
+        color: white;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ===== RESPONSIVE DESIGN =====
+@include tablet {
+  .team-section .players-container {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@include mobile {
+  .proposal-header {
+    .header-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  .player-card {
+    min-height: 70px;
+    padding: var(--space-sm);
+    
+    .player-image {
+      width: 40px;
+      height: 40px;
+    }
+
+    .player-stats {
+      font-size: 0.8rem;
+    }
+  }
+
+  .drop-zone {
+    min-height: 250px !important;
+  }
+}
+
+// ===== ACCESSIBILITY =====
+@media (prefers-reduced-motion: reduce) {
+  .player-card {
+    transition: none;
+  }
+
+  .balance-fill {
+    transition: none;
+  }
+
+  .trade-proposal-container.trade-submitted {
+    animation: none;
+  }
+}
+
+// Focus styles
+.player-card:focus,
+.drop-zone:focus {
+  outline: 2px solid var(--gaming-primary);
+  outline-offset: 2px;
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .player-card {
+    border-width: 2px;
+  }
+
+  .drop-zone {
+    border-width: 3px;
+  }
+}

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
@@ -54,7 +54,7 @@ export class GameService {
   getUserGames(): Observable<Game[]> {
     return this.http.get<Game[]>(`${this.apiUrl}/games/my-games`)
       .pipe(
-        catchError(this.handleError)
+        catchError(error => this.handleErrorWithFallback(error, this.getMockUserGames()))
       );
   }
 
@@ -157,15 +157,6 @@ export class GameService {
       );
   }
 
-  /**
-   * Récupère les games disponibles pour rejoindre
-   */
-  getAvailableGames(): Observable<Game[]> {
-    return this.http.get<Game[]>(`${this.apiUrl}/games/available`)
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
 
   /**
    * Démarre le draft d'une game
@@ -384,5 +375,76 @@ export class GameService {
     
     console.error('GameService error:', error);
     return throwError(() => new Error(errorMessage));
+  }
+
+  /**
+   * Gestion des erreurs avec données de fallback pour le développement
+   */
+  private handleErrorWithFallback<T>(error: HttpErrorResponse, fallbackData: T[]): Observable<T[]> {
+    if (environment.enableFallbackData && !environment.production) {
+      console.warn('API call failed, using fallback data:', error.status);
+      return of(fallbackData);
+    }
+    return this.handleError(error);
+  }
+
+  /**
+   * Données mock pour les games utilisateur
+   */
+  private getMockUserGames(): Game[] {
+    return [
+      {
+        id: 'mock-game-1',
+        name: 'Game Demo de Thibaut',
+        description: 'Partie de démonstration en mode développement',
+        status: 'ACTIVE',
+        maxParticipants: 8,
+        participantCount: 3,
+        createdAt: new Date('2025-08-01'),
+        creatorName: 'Thibaut',
+        canJoin: true
+      },
+      {
+        id: 'mock-game-2',
+        name: 'Tournoi Test',
+        description: 'Tournoi de test avec données de fallback',
+        status: 'DRAFT',
+        maxParticipants: 12,
+        participantCount: 8,
+        createdAt: new Date('2025-08-05'),
+        creatorName: 'System',
+        canJoin: true
+      }
+    ];
+  }
+
+  /**
+   * Données mock pour les games disponibles - DEPRECATED
+   */
+  private getMockAvailableGames(): Game[] {
+    return [
+      {
+        id: 'mock-available-1',
+        name: 'Compétition Ouverte',
+        description: 'Rejoignez cette compétition en cours',
+        status: 'RECRUITING',
+        maxParticipants: 16,
+        participantCount: 12,
+        createdAt: new Date('2025-08-06'),
+        creatorName: 'Admin',
+        canJoin: true
+      },
+      {
+        id: 'mock-available-2',
+        name: 'Liga Noob Friendly',
+        description: 'Parfait pour débuter dans les fantasy leagues',
+        status: 'RECRUITING',
+        maxParticipants: 8,
+        participantCount: 4,
+        createdAt: new Date('2025-08-07'),
+        creatorName: 'Helper',
+        canJoin: true
+      }
+    ];
   }
 } 

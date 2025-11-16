@@ -81,7 +81,7 @@ spring:
             factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
   h2:
     console:
-      enabled: false
+      enabled: false                # H2 console MUST be disabled in production
   flyway:
     enabled: true
     locations: classpath:db/migration

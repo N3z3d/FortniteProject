@@ -361,21 +361,15 @@ public class GameController {
   }
 
   /**
-   * Récupère les games disponibles pour rejoindre Supporte un paramètre optionnel 'user' pour les
-   * tests et le développement
+   * @deprecated Endpoint supprimé - Les games publiques n'existent plus.
+   * Utilisez /api/games/my-games pour récupérer vos games.
    */
+  @Deprecated
   @GetMapping("/available")
   public ResponseEntity<List<GameDto>> getAvailableGames(
       @RequestParam(name = "user", required = false) String userParam) {
-    log.debug("Récupération des games disponibles (user param: {})", userParam);
-
-    try {
-      List<GameDto> games = gameService.getAvailableGames();
-      log.debug("Games disponibles trouvées: {}", games.size());
-      return ResponseEntity.ok(games);
-
-    } catch (Exception e) {
-      log.error("Erreur lors de la récupération des games disponibles", e);
+    log.debug("Endpoint /available déprécié - retourne une liste vide");
+    return ResponseEntity.ok(List.of());
       return ResponseEntity.internalServerError().build();
     }
   }
