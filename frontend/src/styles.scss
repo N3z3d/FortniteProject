@@ -1,4 +1,4 @@
-/* Premium Gaming UI - Global Styles */
+/* Nexus Fortnite UI - Global Styles */
 
 // Import Gaming Fonts
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -8,111 +8,128 @@
 @import 'app/shared/styles/typography';
 @import 'app/shared/styles/accessibility-enhancements';
 
-// Premium Gaming Color System - WCAG AA Compliant
+// ============================================
+// NEXUS FORTNITE COLOR SYSTEM
+// ============================================
 :root {
-  // Primary Gaming Colors - WCAG AA Compliant
-  --gaming-primary: #0066cc;  /* Enhanced contrast 7.2:1 on white, 4.7:1 on light backgrounds */
-  --gaming-primary-rgb: 0, 102, 204;
-  --gaming-primary-original: #00d4ff;  /* Original for decorative elements only */
-  --gaming-primary-dark: #004499;
-  --gaming-primary-light: #3388dd;
+  // === NEXUS BACKGROUNDS ===
+  --nexus-bg-primary: #0d0d0d;
+  --nexus-bg-secondary: #1a1a1a;
+  --nexus-bg-tertiary: #2a2a2a;
+  --nexus-bg-elevated: #242424;
   
-  // Accent Colors - WCAG AA Compliant
-  --gaming-accent: #cc4400;  /* Enhanced contrast 8.1:1 on white, 5.2:1 on light backgrounds */
-  --gaming-accent-rgb: 204, 68, 0;
-  --gaming-accent-original: #ff6b35;  /* Original for decorative elements only */
-  --gaming-accent-dark: #993300;
-  --gaming-accent-light: #ee5522;
+  // === NEXUS GOLD ACCENT ===
+  --nexus-gold: #c9a962;
+  --nexus-gold-rgb: 201, 169, 98;
+  --nexus-gold-light: #e0c88a;
+  --nexus-gold-dark: #a08040;
+  --nexus-gold-muted: rgba(201, 169, 98, 0.3);
   
-  // Success & Warning - WCAG AA Compliant
-  --gaming-success: #006644;  /* Enhanced contrast 6.8:1 on white */
-  --gaming-success-rgb: 0, 102, 68;
-  --gaming-success-original: #00ff88;  /* Original for decorative elements only */
-  --gaming-warning: #cc8800;  /* Enhanced contrast 5.5:1 on white */
-  --gaming-warning-rgb: 204, 136, 0;
-  --gaming-warning-original: #ffaa00;  /* Original for decorative elements only */
-  --gaming-error: #cc0033;  /* Enhanced contrast 9.2:1 on white */
-  --gaming-error-rgb: 204, 0, 51;
-  --gaming-error-original: #ff3366;  /* Original for decorative elements only */
+  // === NEXUS TEXT ===
+  --nexus-text-primary: #ffffff;
+  --nexus-text-secondary: #a0a0a0;
+  --nexus-text-muted: #666666;
   
-  // Neutral Gaming Palette - WCAG AA Compliant
-  --gaming-dark: #0a0e1a;
-  --gaming-dark-rgb: 10, 14, 26;
-  --gaming-dark-lighter: #1a1f2e;
-  --gaming-dark-light: #2a3142;
+  // === NEXUS BORDERS ===
+  --nexus-border: #333333;
+  --nexus-border-light: #444444;
+  --nexus-border-gold: rgba(201, 169, 98, 0.4);
   
-  --gaming-gray: #333333;  /* Enhanced contrast 12.6:1 on white */
-  --gaming-gray-rgb: 51, 51, 51;
-  --gaming-gray-original: #4a5568;  /* Original for decorative elements only */
-  --gaming-gray-light: #555555;  /* Enhanced contrast 7.0:1 on white */
-  --gaming-gray-lighter: #777777;  /* Enhanced contrast 4.9:1 on white */
+  // === LEGACY MAPPINGS (for compatibility) ===
+  --gaming-primary: var(--nexus-gold);
+  --gaming-primary-rgb: var(--nexus-gold-rgb);
+  --gaming-primary-dark: var(--nexus-gold-dark);
+  --gaming-primary-light: var(--nexus-gold-light);
   
-  --gaming-light: #f7fafc;
-  --gaming-light-rgb: 247, 250, 252;
+  --gaming-accent: var(--nexus-gold);
+  --gaming-accent-rgb: var(--nexus-gold-rgb);
+  --gaming-accent-dark: var(--nexus-gold-dark);
+  --gaming-accent-light: var(--nexus-gold-light);
+  
+  --gaming-dark: var(--nexus-bg-primary);
+  --gaming-dark-rgb: 13, 13, 13;
+  --gaming-dark-lighter: var(--nexus-bg-secondary);
+  --gaming-dark-light: var(--nexus-bg-tertiary);
+  
+  --gaming-light: #f0f0f0;
+  --gaming-light-rgb: 240, 240, 240;
   --gaming-white: #ffffff;
   --gaming-white-rgb: 255, 255, 255;
   
-  // High Contrast Mode Support
-  --gaming-text-primary: #000000;  /* Maximum contrast for primary text */
-  --gaming-text-secondary: #333333;  /* High contrast for secondary text */
-  --gaming-text-on-dark: #ffffff;  /* Maximum contrast on dark backgrounds */
-  --gaming-text-on-primary: #ffffff;  /* Maximum contrast on primary color */
-  --gaming-text-on-accent: #ffffff;  /* Maximum contrast on accent color */
+  --gaming-gray: #333333;
+  --gaming-gray-rgb: 51, 51, 51;
+  --gaming-gray-light: #555555;
+  --gaming-gray-lighter: #888888;
   
-  // Gaming Gradients
-  --gradient-primary: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-primary-dark) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--gaming-accent) 0%, var(--gaming-accent-dark) 100%);
-  --gradient-gaming: linear-gradient(135deg, var(--gaming-primary) 0%, var(--gaming-accent) 100%);
-  --gradient-dark: linear-gradient(135deg, var(--gaming-dark) 0%, var(--gaming-dark-lighter) 100%);
-  --gradient-success: linear-gradient(135deg, var(--gaming-success) 0%, #00cc6a 100%);
+  // === STATUS COLORS ===
+  --gaming-success: #4ade80;
+  --gaming-success-rgb: 74, 222, 128;
+  --gaming-warning: #fbbf24;
+  --gaming-warning-rgb: 251, 191, 36;
+  --gaming-error: #f87171;
+  --gaming-error-rgb: 248, 113, 113;
   
-  // Glassmorphism Effects
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-bg-dark: rgba(10, 14, 26, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  --gaming-text-primary: var(--nexus-text-primary);
+  --gaming-text-secondary: var(--nexus-text-secondary);
+  --gaming-text-on-dark: var(--nexus-text-primary);
+  --gaming-text-on-primary: #000000;
+  --gaming-text-on-accent: #000000;
   
-  // Gaming Shadows
-  --shadow-small: 0 2px 8px rgba(var(--gaming-dark-rgb), 0.15);
-  --shadow-medium: 0 4px 20px rgba(var(--gaming-dark-rgb), 0.2);
-  --shadow-large: 0 8px 40px rgba(var(--gaming-dark-rgb), 0.25);
-  --shadow-gaming: 0 4px 20px rgba(var(--gaming-primary-rgb), 0.3);
-  --shadow-accent: 0 4px 20px rgba(var(--gaming-accent-rgb), 0.3);
+  // === GRADIENTS ===
+  --gradient-primary: linear-gradient(135deg, var(--nexus-gold) 0%, var(--nexus-gold-dark) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--nexus-gold-light) 0%, var(--nexus-gold) 100%);
+  --gradient-gaming: linear-gradient(135deg, var(--nexus-gold) 0%, var(--nexus-gold-dark) 100%);
+  --gradient-dark: linear-gradient(180deg, var(--nexus-bg-primary) 0%, var(--nexus-bg-secondary) 100%);
+  --gradient-success: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
   
-  // Trading-specific variables
-  --trading-pending: #ffa726;
-  --trading-pending-rgb: 255, 167, 38;
-  --trading-accepted: #00ff7f;
-  --trading-accepted-rgb: 0, 255, 127;
-  --trading-rejected: #ff5252;
-  --trading-rejected-rgb: 255, 82, 82;
-  --trading-expired: #9e9e9e;
-  --trading-expired-rgb: 158, 158, 158;
-  --trading-withdrawn: #ffab00;
-  --trading-withdrawn-rgb: 255, 171, 0;
+  // === GLASSMORPHISM ===
+  --glass-bg: rgba(26, 26, 26, 0.8);
+  --glass-bg-dark: rgba(13, 13, 13, 0.9);
+  --glass-border: rgba(201, 169, 98, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   
-  // Value indicators
-  --value-positive: #4caf50;
-  --value-positive-rgb: 76, 175, 80;
-  --value-negative: #f44336;
-  --value-negative-rgb: 244, 67, 54;
-  --value-neutral: #9c27b0;
-  --value-neutral-rgb: 156, 39, 176;
+  // === SHADOWS ===
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-large: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-gaming: 0 4px 20px rgba(var(--nexus-gold-rgb), 0.3);
+  --shadow-accent: 0 4px 20px rgba(var(--nexus-gold-rgb), 0.3);
+  --shadow-gold-glow: 0 0 20px rgba(var(--nexus-gold-rgb), 0.4);
   
-  // Trading shadows
-  --shadow-trading-card: 0 8px 32px rgba(0, 0, 0, 0.2);
-  --shadow-trading-card-hover: 0 16px 48px rgba(0, 0, 0, 0.3);
-  --shadow-drag-active: 0 20px 60px rgba(var(--gaming-primary-rgb), 0.4);
-  --shadow-drop-zone: inset 0 0 20px rgba(var(--gaming-primary-rgb), 0.2);
+  // === TRADING ===
+  --trading-pending: var(--nexus-gold);
+  --trading-pending-rgb: var(--nexus-gold-rgb);
+  --trading-accepted: #4ade80;
+  --trading-accepted-rgb: 74, 222, 128;
+  --trading-rejected: #f87171;
+  --trading-rejected-rgb: 248, 113, 113;
+  --trading-expired: #6b7280;
+  --trading-expired-rgb: 107, 114, 128;
+  --trading-withdrawn: #fbbf24;
+  --trading-withdrawn-rgb: 251, 191, 36;
   
-  // Border Radius
+  // === VALUE INDICATORS ===
+  --value-positive: #4ade80;
+  --value-positive-rgb: 74, 222, 128;
+  --value-negative: #f87171;
+  --value-negative-rgb: 248, 113, 113;
+  --value-neutral: var(--nexus-gold);
+  --value-neutral-rgb: var(--nexus-gold-rgb);
+  
+  // === CARD SHADOWS ===
+  --shadow-trading-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-trading-card-hover: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-drag-active: 0 20px 60px rgba(var(--nexus-gold-rgb), 0.4);
+  --shadow-drop-zone: inset 0 0 20px rgba(var(--nexus-gold-rgb), 0.2);
+  
+  // === BORDER RADIUS ===
   --radius-small: 8px;
   --radius-medium: 12px;
   --radius-large: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
   
-  // Spacing System
+  // === SPACING ===
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -121,14 +138,12 @@
   --space-2xl: 48px;
   --space-3xl: 64px;
   
-  // Animation Timings
+  // === ANIMATIONS ===
   --transition-fast: 0.15s ease-out;
   --transition-normal: 0.3s ease-out;
   --transition-slow: 0.45s ease-out;
   --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
-  // Premium Animation Curves
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -181,32 +196,21 @@ body {
   overflow: hidden;
   transition: all var(--transition-normal);
   border-radius: 12px !important;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-  
-  &:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(var(--gaming-primary-rgb), 0.3);
   }
-  
+
   &:active {
     transform: translateY(0);
+  }
+
+  // Disable Material ripple effect
+  .mat-mdc-button-persistent-ripple,
+  .mat-mdc-button-ripple,
+  .mat-ripple {
+    display: none !important;
   }
 }
 
@@ -1284,10 +1288,123 @@ a:not(.mat-button):not(.nav-link) {
     animation: none !important;
     transition: none !important;
   }
-  
+
   .magnetic-hover::before,
   .importance-high::after,
   .importance-critical::after {
     animation: none !important;
+  }
+}
+
+/* ===== PREMIUM SNACKBAR NOTIFICATIONS ===== */
+
+.mat-mdc-snack-bar-container {
+  animation: snackbarSlideIn 0.3s var(--ease-smooth);
+
+  &.custom-snackbar {
+    --mdc-snackbar-container-color: rgba(30, 30, 40, 0.95);
+    --mdc-snackbar-supporting-text-color: var(--nexus-text-primary);
+    border-radius: var(--radius-medium) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    .mdc-snackbar__surface {
+      background: transparent !important;
+      border-radius: inherit !important;
+    }
+
+    .mat-mdc-snack-bar-label {
+      font-weight: 500;
+      font-size: 0.9375rem;
+    }
+
+    .mat-mdc-button.mat-mdc-snack-bar-action {
+      color: var(--nexus-gold) !important;
+      font-weight: 600;
+
+      &:hover {
+        background: rgba(var(--nexus-gold-rgb), 0.1);
+      }
+    }
+  }
+
+  // Success notification
+  &.notification-success {
+    --mdc-snackbar-container-color: rgba(22, 163, 74, 0.95);
+    border-left: 4px solid #4ade80;
+
+    .mat-mdc-button.mat-mdc-snack-bar-action {
+      color: #bbf7d0 !important;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #4ade80, #22c55e);
+    }
+  }
+
+  // Error notification
+  &.notification-error {
+    --mdc-snackbar-container-color: rgba(220, 38, 38, 0.95);
+    border-left: 4px solid #f87171;
+
+    .mat-mdc-button.mat-mdc-snack-bar-action {
+      color: #fecaca !important;
+    }
+  }
+
+  // Warning notification
+  &.notification-warning {
+    --mdc-snackbar-container-color: rgba(217, 119, 6, 0.95);
+    border-left: 4px solid #fbbf24;
+
+    .mat-mdc-button.mat-mdc-snack-bar-action {
+      color: #fef3c7 !important;
+    }
+  }
+
+  // Info notification
+  &.notification-info {
+    --mdc-snackbar-container-color: rgba(37, 99, 235, 0.95);
+    border-left: 4px solid #60a5fa;
+
+    .mat-mdc-button.mat-mdc-snack-bar-action {
+      color: #dbeafe !important;
+    }
+  }
+}
+
+// Snackbar animation
+@keyframes snackbarSlideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== PREMIUM DIALOG STYLES ===== */
+
+.premium-dialog {
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: var(--nexus-bg-secondary);
+    border-radius: var(--radius-large) !important;
+    border: 1px solid rgba(var(--nexus-gold-rgb), 0.2);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+
+    .mdc-dialog__surface {
+      background: transparent !important;
+      border-radius: inherit !important;
+    }
   }
 }

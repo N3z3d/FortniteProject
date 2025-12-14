@@ -1,38 +1,29 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { GameService } from '../services/game.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { Game, GameStatus } from '../models/game.interface';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
 
 @Component({
   selector: 'app-game-home',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     RouterModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSnackBarModule,
     MatTooltipModule
   ],
   templateUrl: './game-home.component.html',
@@ -41,70 +32,44 @@ import { Game, GameStatus } from '../models/game.interface';
 export class GameHomeComponent implements OnInit {
   currentUser: UserProfile | null = null;
   userGames: Game[] = [];
+  availableGames: Game[] = [];
   loading = false;
   error: string | null = null;
   selectedGame: Game | null = null;
   sidebarOpened = false;
-  showJoinCodeInput = false;
-  invitationCode = '';
-  joiningGame = false;
 
   constructor(
-    private gameService: GameService,
-    private userContextService: UserContextService,
-    public router: Router,
-    private cdr: ChangeDetectorRef,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private readonly gameService: GameService,
+    private readonly userContextService: UserContextService,
+    private readonly gameSelectionService: GameSelectionService,
+    public readonly router: Router,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadUserGames();
+    this.loadAvailableGames();
   }
 
   createGame(): void {
     this.router.navigate(['/games/create']);
   }
 
-
-  openJoinDialog(): void {
-    this.showJoinCodeInput = true;
+  joinGame(): void {
+    // Redirection vers la page dédiée de join game
+    this.router.navigate(['/games/join']);
   }
 
-  joinWithCode(): void {
-    if (!this.invitationCode.trim()) {
-      this.snackBar.open('Please enter an invitation code', 'Close', { duration: 3000 });
-      return;
-    }
-
-    this.joiningGame = true;
-    this.gameService.joinGameWithCode(this.invitationCode.trim()).subscribe({
-      next: (game) => {
-        this.snackBar.open(`Successfully joined ${game.name}!`, 'View', {
-          duration: 5000
-        }).onAction().subscribe(() => {
-          this.router.navigate(['/games', game.id]);
-        });
-        this.invitationCode = '';
-        this.showJoinCodeInput = false;
-        this.joiningGame = false;
-        this.loadUserGames(); // Refresh the games list
+  loadAvailableGames(): void {
+    this.gameService.getAvailableGames().subscribe({
+      next: (games) => {
+        this.availableGames = games;
       },
-      error: (error) => {
-        this.snackBar.open(
-          error.error?.message || 'Invalid invitation code',
-          'Close',
-          { duration: 5000 }
-        );
-        this.joiningGame = false;
+      error: () => {
+        // ignore optional errors for available list
       }
     });
-  }
-
-  cancelJoin(): void {
-    this.showJoinCodeInput = false;
-    this.invitationCode = '';
   }
 
   goToProfile(): void {
@@ -116,6 +81,10 @@ export class GameHomeComponent implements OnInit {
   }
 
   viewGame(gameId: string): void {
+    const selected = this.userGames.find(game => game.id === gameId);
+    if (selected) {
+      this.gameSelectionService.setSelectedGame(selected);
+    }
     this.router.navigate(['/games', gameId]);
   }
 
@@ -180,11 +149,18 @@ export class GameHomeComponent implements OnInit {
 
   selectGame(game: Game): void {
     this.selectedGame = game;
+    this.gameSelectionService.setSelectedGame(game);
+
+    // Fermer la sidebar sur mobile pour une meilleure UX
+    if (window.innerWidth <= 768) {
+      this.sidebarOpened = false;
+    }
   }
 
-  getTotalFortnitePlayers(): number {
-    // Default value for Fortnite players across all games
-    return 147;
+  getTotalFortnitePlayers(game: Game): number {
+    // Return actual Fortnite player count from the game object
+    // Fallback to 0 if not available
+    return (game as any).fortnitePlayerCount || 0;
   }
 
   getMaxParticipants(): number {
@@ -221,10 +197,20 @@ export class GameHomeComponent implements OnInit {
     this.gameService.getUserGames().subscribe({
       next: (games) => {
         this.userGames = games;
-        
-        // Sélectionner automatiquement la première game si disponible
-        if (games.length > 0 && !this.selectedGame) {
-          this.selectedGame = games[0];
+
+        if (games.length === 0) {
+          this.selectedGame = null;
+          this.gameSelectionService.setSelectedGame(null);
+        } else {
+          const isSelectedStillAvailable = this.selectedGame
+            ? games.some(game => game.id === this.selectedGame?.id)
+            : false;
+
+          // Sélectionner automatiquement la première game si nécessaire
+          if (!this.selectedGame || !isSelectedStillAvailable) {
+            this.selectedGame = games[0];
+            this.gameSelectionService.setSelectedGame(games[0]);
+          }
         }
         
         this.loading = false;
@@ -239,3 +225,4 @@ export class GameHomeComponent implements OnInit {
   }
 
 } 
+

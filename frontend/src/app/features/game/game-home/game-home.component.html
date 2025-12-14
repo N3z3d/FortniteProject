@@ -9,71 +9,21 @@
   </div>
 
 
-
-  <!-- Join Game with Code Section -->
-  <div class="join-code-section" *ngIf="showJoinCodeInput">
-    <mat-card class="join-code-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar class="code-icon">vpn_key</mat-icon>
-        <mat-card-title>Enter Tournament Code</mat-card-title>
-        <mat-card-subtitle>Join an exclusive battle with your invitation code</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-form-field appearance="outline" class="code-input-field">
-          <mat-label>Invitation Code</mat-label>
-          <input 
-            matInput 
-            [(ngModel)]="invitationCode" 
-            placeholder="Enter your code here"
-            [disabled]="joiningGame"
-            (keyup.enter)="joinWithCode()"
-            maxlength="10">
-          <mat-icon matSuffix>key</mat-icon>
-          <mat-hint>Enter the code shared by the game creator</mat-hint>
-        </mat-form-field>
-      </mat-card-content>
-      <mat-card-actions align="end">
-        <button 
-          mat-button 
-          (click)="cancelJoin()"
-          [disabled]="joiningGame">
-          Cancel
-        </button>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          (click)="joinWithCode()"
-          [disabled]="!invitationCode.trim() || joiningGame">
-          <mat-icon *ngIf="!joiningGame">group_add</mat-icon>
-          <mat-progress-spinner 
-            *ngIf="joiningGame" 
-            diameter="20" 
-            mode="indeterminate">
-          </mat-progress-spinner>
-          {{ joiningGame ? 'Joining...' : 'Join Game' }}
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  </div>
-
-  <!-- Premium Gaming Loading State -->
+  <!-- Premium Loading State -->
   <div *ngIf="loading" class="premium-loading">
     <div class="loading-orb">
-      <mat-progress-spinner 
-        diameter="60" 
+      <mat-progress-spinner
+        diameter="60"
         class="gaming-spinner">
       </mat-progress-spinner>
       <div class="orb-glow"></div>
     </div>
     <div class="loading-text">
-      <p>Initializing Game Matrix...</p>
-      <div class="loading-dots">
-        <span></span><span></span><span></span>
-      </div>
+      <p>Initialisation de la matrice de jeu...</p>
     </div>
   </div>
 
-  <!-- Premium Gaming Error State -->
+  <!-- Premium Error State -->
   <div *ngIf="error && !loading" class="premium-error">
     <div class="error-card">
       <mat-card>
@@ -82,15 +32,15 @@
             <mat-icon class="error-icon">error_outline</mat-icon>
             <div class="error-pulse"></div>
           </div>
-          <h3>System Malfunction Detected</h3>
+          <h3>Dysfonctionnement système détecté</h3>
           <p class="error-message">{{ error }}</p>
-          <button 
-            mat-raised-button 
-            color="primary" 
+          <button
+            mat-raised-button
+            color="primary"
             class="retry-btn"
             (click)="reloadUserGames()">
             <mat-icon>refresh</mat-icon>
-            Reinitialize System
+            Réinitialiser
           </button>
         </mat-card-content>
       </mat-card>
@@ -99,145 +49,144 @@
 
   <!-- Gaming Dashboard Content -->
   <div class="dashboard-content" *ngIf="!loading && !error">
-    
+
     <!-- My Active Games Section -->
     <section class="games-arena">
       <div class="arena-header">
         <div class="section-title">
           <mat-icon class="section-icon">sports_esports</mat-icon>
           <h2>
-            My Games
+            Mes parties
             <span class="games-counter" *ngIf="getGameCount() > 0">({{ getGameCount() }})</span>
           </h2>
         </div>
-        
+
         <div class="arena-actions">
-          <button 
-            mat-raised-button 
-            color="primary" 
+          <button
+            mat-raised-button
+            color="primary"
             class="create-btn"
             (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
-            <span>Create New Game</span>
+            <span>Créer une partie</span>
           </button>
-          
-          <button 
-            mat-stroked-button 
-            color="accent" 
+
+          <button
+            mat-stroked-button
+            color="accent"
             class="join-btn"
-            (click)="openJoinDialog()">
+            (click)="joinGame()">
             <mat-icon>group_add</mat-icon>
-            <span>Join with Code</span>
+            <span>Rejoindre avec un code</span>
           </button>
         </div>
       </div>
 
       <!-- Games Grid -->
       <div class="premium-games-grid" *ngIf="hasGames()">
-        <div 
+        <div
           *ngFor="let game of userGames; trackBy: trackByGameId; let i = index"
           class="premium-game-card"
           [class.selected]="selectedGame?.id === game.id"
           [style.animation-delay.s]="i * 0.1"
           (click)="selectGame(game)">
-          
+
           <!-- Card Background Effects -->
           <div class="card-bg-effect"></div>
           <div class="status-glow" [attr.data-status]="game.status"></div>
-          
+
           <!-- Game Card Header -->
           <div class="game-card-header">
             <div class="game-avatar">
               <mat-icon class="status-icon" [attr.data-status]="game.status">
                 {{ getStatusIcon(game.status) }}
               </mat-icon>
-              <div class="avatar-ring"></div>
             </div>
-            
+
             <div class="game-info">
               <h3 class="game-name">{{ game.name }}</h3>
               <div class="game-meta">
                 <span class="participants">
                   <mat-icon>group</mat-icon>
-                  {{ game.participantCount }} Players
+                  {{ game.participantCount }} Joueurs
                 </span>
                 <span class="creation-date" *ngIf="game.createdAt">
                   {{ game.createdAt | date:'dd/MM/yyyy' }}
                 </span>
               </div>
             </div>
-            
+
             <div class="status-badge">
               <mat-chip [attr.data-status]="game.status" class="premium-status-chip">
                 {{ getStatusLabel(game.status) }}
               </mat-chip>
             </div>
           </div>
-          
+
           <!-- Game Card Content -->
           <div class="game-card-content">
             <div class="game-stats">
               <div class="stat-item">
                 <mat-icon>sports</mat-icon>
-                <span class="stat-label">Fortnite Players</span>
-                <span class="stat-value">{{ getTotalFortnitePlayers() }}</span>
+                <span class="stat-label">Joueurs Fortnite</span>
+                <span class="stat-value">{{ getTotalFortnitePlayers(game) }}</span>
               </div>
-              
+
               <div class="stat-item" *ngIf="game.participantCount > 0">
                 <mat-icon>leaderboard</mat-icon>
-                <span class="stat-label">Tournament Size</span>
+                <span class="stat-label">Taille du tournoi</span>
                 <span class="stat-value">{{ game.participantCount }}/{{ getMaxParticipants() }}</span>
               </div>
             </div>
-            
-            <!-- Progress Indicator for Participants -->
+
+            <!-- Participant Progress Indicator -->
             <div class="participant-progress" *ngIf="game.participantCount > 0">
               <div class="progress-track">
-                <div 
-                  class="progress-fill" 
+                <div
+                  class="progress-fill"
                   [style.width.%]="(game.participantCount / getMaxParticipants()) * 100">
                 </div>
               </div>
-              <span class="progress-text">{{ game.participantCount }}/{{ getMaxParticipants() }} Champions</span>
+              <span class="progress-text">{{ game.participantCount }}/{{ getMaxParticipants() }} Participants</span>
             </div>
           </div>
-          
+
           <!-- Game Card Actions -->
           <div class="game-card-actions">
             <div class="primary-actions">
-              <button 
-                mat-raised-button 
+              <button
+                mat-raised-button
                 color="primary"
                 class="action-btn detail-btn"
                 (click)="viewGame(game.id); $event.stopPropagation()">
                 <mat-icon>visibility</mat-icon>
-                View Details
+                Voir les détails
               </button>
-              
-              <button 
-                mat-raised-button 
-                color="accent" 
+
+              <button
+                mat-raised-button
+                color="accent"
                 class="action-btn draft-btn"
                 *ngIf="game.status === 'DRAFTING'"
                 (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
                 <mat-icon>how_to_vote</mat-icon>
-                Enter Draft
+                Entrer dans la draft
               </button>
-              
-              <button 
-                mat-raised-button 
-                color="primary" 
+
+              <button
+                mat-raised-button
+                color="primary"
                 class="action-btn dashboard-btn"
                 *ngIf="game.status === 'ACTIVE'"
-                (click)="router.navigate(['/games', game.id]); $event.stopPropagation()">
+                (click)="router.navigate(['/games', game.id, 'dashboard']); $event.stopPropagation()">
                 <mat-icon>dashboard</mat-icon>
-                Dashboard
+                Tableau de bord
               </button>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Premium Empty State -->
       <div class="premium-empty-state" *ngIf="!hasGames()">
         <div class="empty-state-card">
@@ -245,50 +194,45 @@
             <mat-card-content>
               <div class="empty-orb">
                 <mat-icon class="empty-icon">sports_esports</mat-icon>
-                <div class="orb-rings">
-                  <div class="ring ring-1"></div>
-                  <div class="ring ring-2"></div>
-                  <div class="ring ring-3"></div>
-                </div>
               </div>
-              
+
               <div class="empty-content">
-                <h3>No Active Battlegrounds</h3>
-                <p>Your gaming empire awaits construction. Forge legendary tournaments and gather elite champions to build your fantasy dynasty.</p>
-                
+                <h3>Aucune partie active</h3>
+                <p>Votre empire gaming vous attend. Créez des tournois légendaires et rassemblez des champions d'élite pour bâtir votre dynastie fantasy.</p>
+
                 <div class="empty-features">
                   <div class="feature">
                     <mat-icon>add_circle</mat-icon>
-                    <span>Create Epic Battles</span>
+                    <span>Créer des batailles épiques</span>
                   </div>
                   <div class="feature">
                     <mat-icon>group_add</mat-icon>
-                    <span>Join Champions</span>
+                    <span>Rejoindre des champions</span>
                   </div>
                   <div class="feature">
                     <mat-icon>emoji_events</mat-icon>
-                    <span>Claim Victory</span>
+                    <span>Remporter la victoire</span>
                   </div>
                 </div>
-                
+
                 <div class="empty-actions">
-                  <button 
-                    mat-raised-button 
-                    color="primary" 
+                  <button
+                    mat-raised-button
+                    color="primary"
                     class="gaming-cta-btn"
                     (click)="createGame()">
                     <mat-icon>add_circle</mat-icon>
-                    Forge First Battle
+                    Créer ma première partie
                     <div class="btn-glow"></div>
                   </button>
-                  
-                  <button 
-                    mat-stroked-button 
-                    color="accent" 
+
+                  <button
+                    mat-stroked-button
+                    color="accent"
                     class="gaming-secondary-btn"
-                    (click)="openJoinDialog()">
+                    (click)="joinGame()">
                     <mat-icon>group_add</mat-icon>
-                    Join with Code
+                    Rejoindre avec un code
                   </button>
                 </div>
               </div>
