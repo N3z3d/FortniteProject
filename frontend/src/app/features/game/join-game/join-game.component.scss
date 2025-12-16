@@ -1,0 +1,269 @@
+@import '../../../shared/styles/mixins';
+
+.join-game-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%);
+}
+
+.join-game-card-wrapper {
+  width: 100%;
+  max-width: 600px;
+}
+
+.join-game-card {
+  background-color: var(--card-bg, rgba(30, 30, 40, 0.95));
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+
+  ::ng-deep .mat-mdc-card-header {
+    padding: var(--space-lg);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  }
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+
+  .header-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--accent-gold, #ffd700);
+  }
+
+  ::ng-deep .mat-mdc-card-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+  }
+
+  ::ng-deep .mat-mdc-card-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+  }
+}
+
+::ng-deep .mat-mdc-card-content {
+  padding: var(--space-xl);
+}
+
+.join-instructions {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid rgba(59, 130, 246, 0.6);
+  border-radius: 4px;
+  margin-bottom: var(--space-xl);
+
+  .info-icon {
+    color: rgba(59, 130, 246, 0.8);
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.code-input {
+  width: 100%;
+
+  ::ng-deep .mat-mdc-form-field-wrapper {
+    padding-bottom: 0;
+  }
+
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  ::ng-deep input {
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  ::ng-deep .mat-mdc-form-field-hint {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  button {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all var(--transition-normal);
+
+    mat-icon {
+      margin-right: var(--space-xs);
+    }
+
+    mat-spinner {
+      margin-right: var(--space-xs);
+    }
+  }
+
+  .join-button {
+    background: linear-gradient(135deg, var(--primary-color, #3f51b5) 0%, var(--accent-gold, #ffd700) 100%);
+    color: #000;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+
+  .cancel-button {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-secondary);
+
+    &:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+.help-section {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  margin-top: var(--space-xl);
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+
+  .help-icon {
+    color: var(--accent-gold, #ffd700);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .help-text {
+    flex: 1;
+
+    .help-title {
+      margin: 0 0 var(--space-xs) 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .help-description {
+      margin: 0 0 var(--space-md) 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    button {
+      mat-icon {
+        margin-right: var(--space-xs);
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .join-game-container {
+    padding: var(--space-md);
+  }
+
+  .header-content {
+    .header-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+
+    ::ng-deep .mat-mdc-card-title {
+      font-size: 1.5rem;
+    }
+
+    ::ng-deep .mat-mdc-card-subtitle {
+      font-size: 0.875rem;
+    }
+  }
+
+  ::ng-deep .mat-mdc-card-content {
+    padding: var(--space-lg);
+  }
+
+  .code-input {
+    ::ng-deep input {
+      font-size: 1rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .join-game-container {
+    padding: var(--space-sm);
+  }
+
+  ::ng-deep .mat-mdc-card-header {
+    padding: var(--space-md) !important;
+  }
+
+  ::ng-deep .mat-mdc-card-content {
+    padding: var(--space-md) !important;
+  }
+
+  .header-content {
+    gap: var(--space-sm);
+
+    .header-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    ::ng-deep .mat-mdc-card-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .join-instructions,
+  .help-section {
+    padding: var(--space-md);
+  }
+
+  .action-buttons button {
+    padding: 10px 20px;
+    font-size: 0.9375rem;
+  }
+}

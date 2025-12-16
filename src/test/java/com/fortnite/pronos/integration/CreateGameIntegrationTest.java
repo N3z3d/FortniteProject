@@ -34,7 +34,7 @@ import com.fortnite.pronos.service.JwtService;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+      com.fortnite.pronos.config.TestSecurityConfig.class
     })
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
@@ -54,6 +54,7 @@ public class CreateGameIntegrationTest {
   private MockMvc mockMvc;
   private User testUser;
   private String jwtToken;
+  private static final String TEST_USERNAME = "testuser";
 
   @BeforeEach
   void setUp() {
@@ -61,10 +62,10 @@ public class CreateGameIntegrationTest {
 
     // Créer un utilisateur de test
     testUser = new User();
-    testUser.setUsername("testuser");
+    testUser.setUsername(TEST_USERNAME);
     testUser.setEmail("test@example.com");
     testUser.setPassword("password123");
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.ADMIN);
     testUser.setCurrentSeason(2025);
     testUser = userRepository.save(testUser);
 
@@ -99,6 +100,7 @@ public class CreateGameIntegrationTest {
     mockMvc
         .perform(
             post("/api/games")
+                .header("X-Test-User", TEST_USERNAME)
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -127,6 +129,7 @@ public class CreateGameIntegrationTest {
     mockMvc
         .perform(
             post("/api/games")
+                .header("X-Test-User", TEST_USERNAME)
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))

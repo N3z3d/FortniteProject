@@ -106,7 +106,15 @@
       "Bash(npm run:*)",
       "Bash(JWT_SECRET=\"ma_super_cle_jwt_securisee_123456789_vraiment_longue_pour_securite_maximale\" timeout 20 mvn spring-boot:run -Dspring.profiles.active=dev -Dmaven.test.skip=true)",
       "Bash(./launch.bat)",
-      "Bash(move game-home.component.css game-home.component.scss)"
+      "Bash(move game-home.component.css game-home.component.scss)",
+      "Bash(cat:*)",
+      "Bash(xargs sed:*)",
+      "Bash(ping:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(TASKKILL /PID 25712 /F)",
+      "Bash(exit 0)",
+      "Bash(TASKKILL /F /PID 10376)"
     ],
     "deny": []
   }

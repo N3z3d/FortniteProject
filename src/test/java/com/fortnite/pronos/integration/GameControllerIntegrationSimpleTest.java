@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,13 +22,13 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
-/** Tests d'intégration TDD simplifiés pour GameController */
+/** Tests d'integration TDD simplifies pour GameController */
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+      com.fortnite.pronos.config.TestSecurityConfig.class
     })
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("GameController Integration - Simple Tests")
@@ -40,24 +40,25 @@ class GameControllerIntegrationSimpleTest {
 
   @Autowired private UserRepository userRepository;
 
+  @Autowired private com.fortnite.pronos.repository.TeamRepository teamRepository;
+
   private User testUser;
   private Game testGame;
+  private static final String TEST_USERNAME = "testuser";
 
   @BeforeEach
   void setUp() {
-    // Nettoyer les données
+    teamRepository.deleteAll();
     gameRepository.deleteAll();
     userRepository.deleteAll();
 
-    // Créer un utilisateur de test
     testUser = new User();
-    testUser.setUsername("testuser");
+    testUser.setUsername(TEST_USERNAME);
     testUser.setEmail("test@example.com");
     testUser.setPassword("password");
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.USER);
     testUser = userRepository.save(testUser);
 
-    // Créer une game de test
     testGame = new Game();
     testGame.setName("Game Test");
     testGame.setDescription("Game de test");
@@ -72,8 +73,7 @@ class GameControllerIntegrationSimpleTest {
   @Test
   @DisplayName("GET /api/games doit retourner toutes les games")
   void shouldReturnAllGames() throws Exception {
-    mockMvc
-        .perform(get("/api/games"))
+    performWithUser(get("/api/games"))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$").isArray())
@@ -86,11 +86,9 @@ class GameControllerIntegrationSimpleTest {
   @Test
   @DisplayName("GET /api/games doit retourner une liste vide quand aucune game n'existe")
   void shouldReturnEmptyListWhenNoGames() throws Exception {
-    // Supprimer la game de test
     gameRepository.delete(testGame);
 
-    mockMvc
-        .perform(get("/api/games"))
+    performWithUser(get("/api/games"))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$").isArray())
@@ -98,10 +96,9 @@ class GameControllerIntegrationSimpleTest {
   }
 
   @Test
-  @DisplayName("GET /api/games/{id} doit retourner une game spécifique")
+  @DisplayName("GET /api/games/{id} doit retourner une game specifique")
   void shouldReturnSpecificGame() throws Exception {
-    mockMvc
-        .perform(get("/api/games/" + testGame.getId()))
+    performWithUser(get("/api/games/" + testGame.getId()))
         .andExpect(status().isOk())
         .andExpect(content().contentType("application/json"))
         .andExpect(jsonPath("$.name").value("Game Test"))
@@ -113,6 +110,29 @@ class GameControllerIntegrationSimpleTest {
   void shouldReturn404ForNonExistentGame() throws Exception {
     UUID nonExistentId = UUID.randomUUID();
 
-    mockMvc.perform(get("/api/games/" + nonExistentId)).andExpect(status().isNotFound());
+    performWithUser(get("/api/games/" + nonExistentId)).andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("GET /api/games/my-games doit retourner les games de l'utilisateur")
+  void shouldReturnUserGamesFromMyGamesEndpoint() throws Exception {
+    performWithUser(get("/api/games/my-games"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("application/json"))
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$.length()").value(1))
+        .andExpect(jsonPath("$[0].id").value(testGame.getId().toString()));
+  }
+
+  @Test
+  @DisplayName("GET /api/games/{id} doit retourner 404 quand l'id n'est pas un UUID")
+  void shouldReturn404ForNonUuidGameId() throws Exception {
+    performWithUser(get("/api/games/mock-game-1")).andExpect(status().isNotFound());
+  }
+
+  private org.springframework.test.web.servlet.ResultActions performWithUser(
+      org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
+      throws Exception {
+    return mockMvc.perform(builder.header("X-Test-User", TEST_USERNAME));
   }
 }

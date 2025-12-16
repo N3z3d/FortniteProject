@@ -27,10 +27,10 @@ export class UserContextService {
 
   getAvailableProfiles(): UserProfile[] {
     return [
-      { id: '1', username: 'Thibaut', email: 'thibaut@test.com' },
-      { id: '2', username: 'Marcel', email: 'marcel@test.com' },
-      { id: '3', username: 'Teddy', email: 'teddy@test.com' },
-      { id: '4', username: 'Sarah', email: 'sarah@test.com' }
+      { id: '1', username: 'Thibaut', email: 'thibaut@test.com', role: 'Administrateur' },
+      { id: '2', username: 'Marcel', email: 'marcel@test.com', role: 'Joueur' },
+      { id: '3', username: 'Teddy', email: 'teddy@test.com', role: 'Joueur' },
+      { id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur' }
     ];
   }
 
@@ -55,8 +55,17 @@ export class UserContextService {
   }
 
   logout(): void {
-    sessionStorage.removeItem(this.STORAGE_KEY);
+    this.clearAllStorage();
     this.userChangedSubject.next(null);
+  }
+
+  private clearAllStorage(): void {
+    // Clear session storage
+    sessionStorage.removeItem(this.STORAGE_KEY);
+
+    // Clear local storage to prevent auto-login
+    localStorage.removeItem(this.LAST_USER_KEY);
+    localStorage.removeItem(this.AUTO_LOGIN_KEY);
   }
 
   isLoggedIn(): boolean {
@@ -109,9 +118,6 @@ export class UserContextService {
     return null;
   }
 
-  disableAutoLogin(): void {
-    localStorage.removeItem(this.AUTO_LOGIN_KEY);
-  }
 
   // Browser fingerprinting (simple implementation)
   private generateBrowserFingerprint(): string {

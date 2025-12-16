@@ -8,6 +8,10 @@ describe('GameService', () => {
   let service: GameService;
   let httpMock: HttpTestingController;
   const apiUrl = environment.apiUrl;
+  const apiBaseUrl = `${apiUrl}/api`;
+  const gamesUrl = `${apiBaseUrl}/games`;
+  const userGamesUrl = `${gamesUrl}/my-games`;
+  const joinGameUrl = `${gamesUrl}/join`;
 
   const mockGame: Game = {
     id: '1',
@@ -41,21 +45,30 @@ describe('GameService', () => {
         expect(games).toEqual(expectedGames);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       expect(req.request.method).toBe('GET');
       req.flush(expectedGames);
     });
 
     it('should handle network errors', () => {
+      service.getUserGames().subscribe(games => {
+        expect(games.length).toBeGreaterThan(0);
+      });
+
+      const req = httpMock.expectOne(userGamesUrl);
+      req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+    });
+
+    it('should not fallback on 403 (should surface access errors)', () => {
       service.getUserGames().subscribe({
-        next: () => fail('should have failed'),
+        next: () => fail('should not return fallback data on 403'),
         error: (error) => {
-          expect(error.status).toBe(500);
+          expect(error).toBeTruthy();
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
-      req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+      const req = httpMock.expectOne(userGamesUrl);
+      req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
     });
 
     it('should return empty array when no games (not an error)', () => {
@@ -63,7 +76,7 @@ describe('GameService', () => {
         expect(games).toEqual([]);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush([]);
     });
 
@@ -77,12 +90,23 @@ describe('GameService', () => {
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush([]);
     });
   });
 
   describe('getUserGames - Empty Array Handling', () => {
+    let originalFallbackEnabled: boolean;
+
+    beforeEach(() => {
+      originalFallbackEnabled = environment.enableFallbackData;
+      environment.enableFallbackData = false;
+    });
+
+    afterEach(() => {
+      environment.enableFallbackData = originalFallbackEnabled;
+    });
+
     it('should handle empty array response as success, not error', () => {
       // Arrange
       const emptyGames: Game[] = [];
@@ -98,7 +122,7 @@ describe('GameService', () => {
         }
       });
       
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush(emptyGames);
     });
 
@@ -113,7 +137,7 @@ describe('GameService', () => {
         expect(games.length).toBe(0);
       });
       
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush(emptyResponse, { status: 200, statusText: 'OK' });
     });
 
@@ -129,7 +153,7 @@ describe('GameService', () => {
         }
       });
       
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
     });
 
@@ -145,7 +169,7 @@ describe('GameService', () => {
         }
       });
       
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(userGamesUrl);
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
@@ -158,7 +182,7 @@ describe('GameService', () => {
         expect(games).toEqual(expectedGames);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games/available`);
+      const req = httpMock.expectOne(gamesUrl);
       expect(req.request.method).toBe('GET');
       req.flush(expectedGames);
     });
@@ -168,7 +192,7 @@ describe('GameService', () => {
         expect(games).toEqual([]);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games/available`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush([]);
     });
   });
@@ -181,7 +205,7 @@ describe('GameService', () => {
         expect(games).toEqual(expectedGames);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       expect(req.request.method).toBe('GET');
       req.flush(expectedGames);
     });
@@ -191,7 +215,7 @@ describe('GameService', () => {
         expect(games).toEqual([]);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush([]);
     });
   });
@@ -205,7 +229,7 @@ describe('GameService', () => {
         expect(success).toBe(true);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games/join`);
+      const req = httpMock.expectOne(joinGameUrl);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(joinRequest);
       req.flush({ success: true, message: 'Joined successfully' });
@@ -217,11 +241,11 @@ describe('GameService', () => {
       service.joinGame(gameId).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          expect(error.status).toBe(404);
+          expect(error.message).toContain('Ressource non trouv');
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games/join`);
+      const req = httpMock.expectOne(joinGameUrl);
       req.flush('Game not found', { status: 404, statusText: 'Not Found' });
     });
   });
@@ -234,7 +258,7 @@ describe('GameService', () => {
         expect(game).toEqual(mockGame);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games/${gameId}`);
+      const req = httpMock.expectOne(`${gamesUrl}/${gameId}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockGame);
     });
@@ -256,7 +280,7 @@ describe('GameService', () => {
         expect(game).toBeDefined();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(createRequest);
       req.flush(mockGame);
@@ -265,50 +289,50 @@ describe('GameService', () => {
 
   describe('Error Handling', () => {
     it('should handle 401 unauthorized errors', () => {
-      service.getUserGames().subscribe({
+      service.getAllGames().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBe('Non autorisé');
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
     });
 
     it('should handle 403 forbidden errors', () => {
-      service.getUserGames().subscribe({
+      service.getAllGames().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBe('Accès refusé');
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
     });
 
     it('should handle 404 not found errors', () => {
-      service.getUserGames().subscribe({
+      service.getAllGames().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBe('Ressource non trouvée');
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush('Not Found', { status: 404, statusText: 'Not Found' });
     });
 
     it('should handle 500 server errors', () => {
-      service.getUserGames().subscribe({
+      service.getAllGames().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBe('Erreur serveur');
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/games`);
+      const req = httpMock.expectOne(gamesUrl);
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });

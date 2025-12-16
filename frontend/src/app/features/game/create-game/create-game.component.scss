@@ -338,13 +338,13 @@
       }
       
       .mat-mdc-form-field-label {
-        color: var(--gaming-gray-light);
+        color: rgba(255, 255, 255, 0.9) !important; // Blanc/gris très clair
         @include gaming-font;
       }
-      
+
       .mat-mdc-input-element,
       .mat-mdc-select-value {
-        color: var(--gaming-light);
+        color: rgba(255, 255, 255, 0.95) !important; // Blanc quasi-pur
         @include gaming-font;
       }
     }

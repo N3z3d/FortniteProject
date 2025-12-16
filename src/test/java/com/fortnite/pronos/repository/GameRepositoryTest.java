@@ -40,7 +40,7 @@ class GameRepositoryTest {
     testCreator.setUsername("TestCreator");
     testCreator.setEmail("creator@test.com");
     testCreator.setPassword("password123"); // Ajout du mot de passe requis
-    testCreator.setRole(User.UserRole.PARTICIPANT);
+    testCreator.setRole(User.UserRole.USER);
     testCreator.setCurrentSeason(2025);
     testCreator = entityManager.persistAndFlush(testCreator);
 
@@ -169,7 +169,7 @@ class GameRepositoryTest {
     newUser.setUsername("NewUser");
     newUser.setEmail("newuser@test.com");
     newUser.setPassword("testpassword123");
-    newUser.setRole(User.UserRole.PARTICIPANT);
+    newUser.setRole(User.UserRole.USER);
     newUser.setCurrentSeason(2025);
     newUser = entityManager.persistAndFlush(newUser);
 

@@ -27,9 +27,9 @@ describe('CsvDataService', () => {
     const championship = service.parseChampionshipData();
     
     // Vérifier les comptes exacts
-    expect(championship.marcel.playerCount).toBe(50);
+    expect(championship.marcel.playerCount).toBe(49);
     expect(championship.teddy.playerCount).toBe(49);
-    expect(championship.thibaut.playerCount).toBe(48);
+    expect(championship.thibaut.playerCount).toBe(49);
     
     // Vérifier le total
     const totalPlayers = championship.marcel.playerCount + 

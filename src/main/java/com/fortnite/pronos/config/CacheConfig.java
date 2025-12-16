@@ -62,6 +62,15 @@ public class CacheConfig {
     // LEADERBOARD STATS - Moins critiques, peuvent être mises en cache plus longtemps
     cacheConfigurations.put("leaderboard-stats", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
+    // GAME STATS - Statistiques du leaderboard (utilisé par LeaderboardService)
+    cacheConfigurations.put("gameStats", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+
+    // REGION DISTRIBUTION - Répartition par région (utilisé par LeaderboardService)
+    cacheConfigurations.put("regionDistribution", defaultConfig.entryTtl(Duration.ofHours(12)));
+
+    // PLAYER SCORES - Scores des joueurs (utilisé par LeaderboardService)
+    cacheConfigurations.put("playerScores", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+
     // GAMES - Données moyennement dynamiques
     cacheConfigurations.put(
         "games", defaultConfig.entryTtl(Duration.ofMinutes(60))); // 1h pour les games
@@ -116,6 +125,9 @@ public class CacheConfig {
         java.util.Arrays.asList(
             "leaderboard",
             "leaderboard-stats",
+            "gameStats",
+            "regionDistribution",
+            "playerScores",
             "games",
             "players",
             "playerPages",
@@ -134,6 +146,9 @@ public class CacheConfig {
     return new ConcurrentMapCacheManager(
         "leaderboard",
         "leaderboard-stats",
+        "gameStats",
+        "regionDistribution",
+        "playerScores",
         "games",
         "players",
         "playerPages",

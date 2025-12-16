@@ -116,7 +116,7 @@ public class TradingService {
 
     // Validate player ownership
     for (Player player : offeredPlayers) {
-      if (!fromTeam.getPlayers().contains(player)) {
+      if (!teamOwnsPlayer(fromTeam, player)) {
         throw new BusinessException("Team does not own offered player: " + player.getName());
       }
       if (player.isLocked()) {
@@ -125,7 +125,7 @@ public class TradingService {
     }
 
     for (Player player : requestedPlayers) {
-      if (!toTeam.getPlayers().contains(player)) {
+      if (!teamOwnsPlayer(toTeam, player)) {
         throw new BusinessException(
             "Target team does not own requested player: " + player.getName());
       }
@@ -183,35 +183,39 @@ public class TradingService {
     Team toTeam = trade.getToTeam();
 
     // Create copies of player lists to simulate the trade
-    List<Player> fromTeamPlayersAfterTrade = new ArrayList<>(fromTeam.getPlayers());
+    List<Player> fromTeamPlayersAfterTrade = new ArrayList<>(getActivePlayers(fromTeam));
     fromTeamPlayersAfterTrade.removeAll(trade.getOfferedPlayers());
     fromTeamPlayersAfterTrade.addAll(trade.getRequestedPlayers());
 
-    List<Player> toTeamPlayersAfterTrade = new ArrayList<>(toTeam.getPlayers());
+    List<Player> toTeamPlayersAfterTrade = new ArrayList<>(getActivePlayers(toTeam));
     toTeamPlayersAfterTrade.removeAll(trade.getRequestedPlayers());
     toTeamPlayersAfterTrade.addAll(trade.getOfferedPlayers());
 
     // Create temporary team objects for validation
     Team tempFromTeam = new Team();
     tempFromTeam.setName(fromTeam.getName());
-    tempFromTeam.setPlayers(fromTeamPlayersAfterTrade);
+    tempFromTeam.setPlayers(asTeamPlayers(tempFromTeam, fromTeamPlayersAfterTrade));
 
     Team tempToTeam = new Team();
     tempToTeam.setName(toTeam.getName());
-    tempToTeam.setPlayers(toTeamPlayersAfterTrade);
+    tempToTeam.setPlayers(asTeamPlayers(tempToTeam, toTeamPlayersAfterTrade));
 
     // Validate team compositions with simulated state
     validationService.validateTeamComposition(tempFromTeam, fromTeam.getGame().getRegionRules());
     validationService.validateTeamComposition(tempToTeam, toTeam.getGame().getRegionRules());
 
     // Execute the actual trade
-    // Remove offered players from fromTeam and add requested players
-    fromTeam.getPlayers().removeAll(trade.getOfferedPlayers());
-    fromTeam.getPlayers().addAll(trade.getRequestedPlayers());
+    // Step 1: Remove offered players from fromTeam
+    trade.getOfferedPlayers().forEach(p -> removePlayerFromTeam(fromTeam, p));
 
-    // Remove requested players from toTeam and add offered players
-    toTeam.getPlayers().removeAll(trade.getRequestedPlayers());
-    toTeam.getPlayers().addAll(trade.getOfferedPlayers());
+    // Step 2: Remove requested players from toTeam
+    trade.getRequestedPlayers().forEach(p -> removePlayerFromTeam(toTeam, p));
+
+    // Step 3: Add requested players to fromTeam
+    trade.getRequestedPlayers().forEach(p -> addPlayerToTeam(fromTeam, p));
+
+    // Step 4: Add offered players to toTeam
+    trade.getOfferedPlayers().forEach(p -> addPlayerToTeam(toTeam, p));
 
     trade.setStatus(Trade.Status.ACCEPTED);
     trade.setAcceptedAt(LocalDateTime.now());
@@ -455,5 +459,50 @@ public class TradingService {
   public List<Trade> getAllGameTrades(UUID gameId) {
     log.debug("Getting all trades for game {}", gameId);
     return tradeRepository.findByGameId(gameId);
+  }
+
+  // Helpers to work with TeamPlayer mapping
+  private List<Player> getActivePlayers(Team team) {
+    return team.getPlayers().stream()
+        .filter(
+            tp -> tp != null && tp.getPlayer() != null && (tp.getUntil() == null || tp.isActive()))
+        .map(TeamPlayer::getPlayer)
+        .toList();
+  }
+
+  private boolean teamOwnsPlayer(Team team, Player player) {
+    return team.getPlayers().stream()
+        .anyMatch(
+            tp ->
+                tp != null
+                    && tp.getPlayer() != null
+                    && tp.getPlayer().equals(player)
+                    && (tp.getUntil() == null || tp.isActive()));
+  }
+
+  private List<TeamPlayer> asTeamPlayers(Team team, List<Player> players) {
+    List<TeamPlayer> result = new ArrayList<>();
+    int position = 1;
+    for (Player p : players) {
+      TeamPlayer tp = new TeamPlayer();
+      tp.setTeam(team);
+      tp.setPlayer(p);
+      tp.setPosition(position++);
+      result.add(tp);
+    }
+    return result;
+  }
+
+  private void removePlayerFromTeam(Team team, Player player) {
+    team.getPlayers()
+        .removeIf(tp -> tp != null && tp.getPlayer() != null && tp.getPlayer().equals(player));
+  }
+
+  private void addPlayerToTeam(Team team, Player player) {
+    TeamPlayer tp = new TeamPlayer();
+    tp.setTeam(team);
+    tp.setPlayer(player);
+    tp.setPosition(team.getPlayers().size() + 1);
+    team.getPlayers().add(tp);
   }
 }

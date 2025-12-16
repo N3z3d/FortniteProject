@@ -27,7 +27,7 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+      com.fortnite.pronos.config.TestSecurityConfig.class
     })
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
@@ -42,6 +42,7 @@ class GameControllerIntegrationTddTest {
   private ObjectMapper objectMapper;
   private User testUser;
   private CreateGameRequest validGameRequest;
+  private static final String TEST_USERNAME = "ThibautTest";
 
   @BeforeEach
   void setUp() {
@@ -50,10 +51,10 @@ class GameControllerIntegrationTddTest {
 
     // Créer un utilisateur de test en base
     testUser = new User();
-    testUser.setUsername("ThibautTest");
+    testUser.setUsername(TEST_USERNAME);
     testUser.setEmail("thibaut.test@fortnite-pronos.com");
     testUser.setPassword("$2a$10$dummy.password.hash.for.testing");
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
     testUser = userRepository.save(testUser);
 
@@ -76,10 +77,9 @@ class GameControllerIntegrationTddTest {
     // Given - L'utilisateur existe déjà en base (créé dans setUp)
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
-                .param("user", "ThibautTest")
+                .param("user", TEST_USERNAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validGameRequest)))
         .andExpect(status().isCreated())
@@ -110,8 +110,7 @@ class GameControllerIntegrationTddTest {
     // Given - L'utilisateur Thibaut doit exister en base (créé par data.sql)
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validGameRequest)))
@@ -135,10 +134,9 @@ class GameControllerIntegrationTddTest {
             2025);
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
-                .param("user", "ThibautTest")
+                .param("user", TEST_USERNAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
         .andExpect(status().isBadRequest());
@@ -162,10 +160,9 @@ class GameControllerIntegrationTddTest {
     requestWithRegions.addRegionRule(com.fortnite.pronos.model.Player.Region.NAC, 2);
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
-                .param("user", "ThibautTest")
+                .param("user", TEST_USERNAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestWithRegions)))
         .andExpect(status().isCreated())
@@ -182,7 +179,7 @@ class GameControllerIntegrationTddTest {
     assertThat(foundUser).isNotNull();
     assertThat(foundUser.getUsername()).isEqualTo("ThibautTest");
     assertThat(foundUser.getEmail()).isEqualTo("thibaut.test@fortnite-pronos.com");
-    assertThat(foundUser.getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(foundUser.getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test
@@ -194,7 +191,7 @@ class GameControllerIntegrationTddTest {
     // Then
     assertThat(thibautUser).isNotNull();
     assertThat(thibautUser.getUsername()).isEqualTo("Thibaut");
-    assertThat(thibautUser.getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(thibautUser.getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test
@@ -209,23 +206,27 @@ class GameControllerIntegrationTddTest {
             "Game 2 - Multi", 10, "Deuxième game", false, false, 300, 43200, 2025);
 
     // When & Then - Première game
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
-                .param("user", "ThibautTest")
+                .param("user", TEST_USERNAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game1)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.name").value("Game 1 - Multi"));
 
     // When & Then - Deuxième game
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
-                .param("user", "ThibautTest")
+                .param("user", TEST_USERNAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(game2)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.name").value("Game 2 - Multi"));
+  }
+
+  private org.springframework.test.web.servlet.ResultActions performWithUser(
+      org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
+      throws Exception {
+    return mockMvc.perform(builder.header("X-Test-User", TEST_USERNAME));
   }
 }

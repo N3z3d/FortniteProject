@@ -6,43 +6,51 @@
 export interface Draft {
   id: string;
   gameId: string;
-  status: DraftStatus;
+  status: DraftStatus | string;
   currentRound: number;
-  currentTurn: number;
-  totalRounds: number;
-  timePerPick: number; // en secondes
-  createdAt: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-  rules: DraftRules;
-  participants: DraftParticipant[];
-  picks: DraftPick[];
+  currentTurn?: number;
+  totalRounds?: number;
+  timePerPick?: number; // en secondes
+  currentPick?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  startedAt?: Date | string;
+  completedAt?: Date | string | null;
+  finishedAt?: Date | string | null;
+  rules?: DraftRules;
+  participants?: DraftParticipant[];
+  picks?: DraftPick[];
   currentPickId?: string;
-  isReversed: boolean; // Snake draft - direction change each round
+  isReversed?: boolean; // Snake draft - direction change each round
 }
 
 export interface DraftRules {
-  maxPlayersPerTeam: number;
-  regionLimits: { [region: string]: number };
-  timePerPick: number; // en secondes
-  allowTrades: boolean;
-  snakeDraft: boolean; // true = snake draft, false = linear
-  autopickEnabled: boolean;
-  autopickTimeLimit: number; // temps avant autopick en secondes
+  maxPlayersPerTeam?: number;
+  regionLimits?: { [region: string]: number };
+  regionQuotas?: { [region: string]: number };
+  timePerPick?: number; // en secondes
+  timeLimitPerPick?: number; // alternative nomenclature
+  allowTrades?: boolean;
+  snakeDraft?: boolean; // true = snake draft, false = linear
+  autopickEnabled?: boolean;
+  autoPickEnabled?: boolean;
+  autopickTimeLimit?: number; // temps avant autopick en secondes
+  autoPickDelay?: number;
 }
 
 export interface DraftParticipant {
   id: string;
-  userId: string;
+  userId?: string;
+  gameId?: string;
   username: string;
-  teamName: string;
-  draftOrder: number;
-  isCreator: boolean;
-  isActive: boolean;
-  selectedPlayers: DraftedPlayer[];
+  teamName?: string;
+  draftOrder?: number;
+  isCreator?: boolean;
+  isActive?: boolean;
+  selectedPlayers?: DraftedPlayer[];
   timeRemaining?: number; // temps restant pour le pick actuel
   lastPickTime?: Date;
-  isCurrentTurn: boolean;
+  isCurrentTurn?: boolean;
   autopickPreferences?: AutopickPreference[];
 }
 
@@ -51,15 +59,18 @@ export interface DraftPick {
   draftId: string;
   participantId: string;
   playerId: string;
-  playerName: string;
-  playerRegion: string;
+  playerName?: string;
+  playerRegion?: string;
   round: number;
   pickNumber: number; // Position globale dans la draft (1, 2, 3...)
-  turnNumber: number; // Position dans le tour (1-n participants)
-  pickedAt: Date;
-  timeToDecide: number; // temps pris pour prendre la décision en secondes
-  isAutopick: boolean;
+  turnNumber?: number; // Position dans le tour (1-n participants)
+  pickedAt?: Date | string;
+  timeToDecide?: number; // temps pris pour prendre la décision en secondes
+  timeTakenSeconds?: number;
+  isAutopick?: boolean;
   previousOwner?: string; // Si c'est un trade
+  selectionTime?: string | Date;
+  autoPick?: boolean;
 }
 
 export interface DraftedPlayer {
@@ -115,11 +126,14 @@ export interface AvailablePlayer {
   nickname: string; // Alias pour username pour compatibilité
   region: any; // Simplifié pour éviter les erreurs de types
   tranche: any; // Niveau de jeu (débutant, intermédiaire, expert, etc.)
-  stats: PlayerStats | any;
+  stats?: PlayerStats | any;
   totalPoints?: number; // Points totaux calculés
-  isRecommended: boolean;
+  isRecommended?: boolean;
   recommendationReason?: string;
   conflictsWith?: string[]; // Liste des joueurs avec qui il y a conflit (région, etc.)
+  currentSeason: number;
+  selected?: boolean;
+  available?: boolean;
 }
 
 export interface DraftHistory {
@@ -133,20 +147,22 @@ export interface DraftHistory {
 
 export interface DraftStatistics {
   totalPicks: number;
-  averagePickTime: number;
-  fastestPick: {
+  averagePickTime?: number;
+  averageSelectionTime?: number;
+  fastestPick?: number | {
     playerId: string;
     time: number;
     participant: string;
   };
-  slowestPick: {
+  slowestPick?: number | {
     playerId: string;
     time: number;
     participant: string;
   };
-  autopicks: number;
-  regionDistribution: { [region: string]: number };
-  participantStats: ParticipantDraftStats[];
+  autoPicks?: number;
+  autopicks?: number;
+  regionDistribution?: { [region: string]: number };
+  participantStats?: ParticipantDraftStats[];
 }
 
 export interface ParticipantDraftStats {
@@ -247,15 +263,111 @@ export interface DraftPickResponse {
   message?: string;
 }
 
+// Types complémentaires utilisés par les tests et services
+export interface DraftStatusInfo {
+  status: DraftStatus | string;
+  currentRound?: number;
+  currentPick?: number;
+  totalRounds?: number;
+  totalParticipants?: number;
+}
+
+export interface DraftProgress {
+  currentRound: number;
+  currentPick: number;
+  totalRounds: number;
+  totalPicks?: number;
+  completedPicks?: number;
+  progressPercentage?: number;
+  estimatedTimeRemaining?: number | null;
+}
+
+export interface DraftHistoryEntry {
+  pick: DraftPick;
+  player: Player;
+  participant: GameParticipant;
+  round: number;
+  pickNumber: number;
+  selectionTime: string | Date;
+  timeTakenSeconds?: number;
+  autoPick?: boolean;
+}
+
+export interface PlayerSelectionRequest {
+  playerId: string;
+}
+
+export interface DraftInitializeRequest {
+  gameId: string;
+}
+
+export interface DraftActionResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface DraftParticipantInfo {
+  participant: GameParticipant;
+  selections: DraftPick[];
+  isCurrentTurn?: boolean;
+  timeRemaining?: number | null;
+  hasTimedOut?: boolean;
+}
+
 // Aliases pour compatibilité avec les composants existants
 export type Player = AvailablePlayer;
 
-export enum PlayerRegion {
-  NAE = 'NAE',
-  NAW = 'NAW',
-  EU = 'EU',
-  ASIA = 'ASIA',
-  OCE = 'OCE',
-  BRAZIL = 'BRAZIL',
-  MENA = 'MENA'
+export type PlayerRegion = string;
+
+// Aliases attendus par certains tests legacy
+export interface GameParticipant {
+  id: string;
+  gameId?: string;
+  userId?: string;
+  username: string;
+  joinedAt?: string | Date;
+  isCreator?: boolean;
+  draftOrder?: number;
+  selections?: DraftPick[];
+  lastSelectionTime?: string | Date;
+  timeRemaining?: number | null;
+  selectedPlayers?: Player[];
+  isCurrentTurn?: boolean;
+}
+
+export interface DraftBoardState {
+  draft: {
+    id: string;
+    gameId: string;
+    status: DraftStatus | string;
+    currentRound: number;
+    currentPick?: number;
+    totalRounds?: number;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    startedAt?: string | Date;
+    finishedAt?: string | null | Date;
+  };
+  // Forme aplatie acceptée par certains tests legacy
+  gameId?: string;
+  status?: DraftStatus | string;
+  currentRound?: number;
+  currentPick?: number;
+  totalRounds?: number;
+  lastUpdated?: string | Date;
+  participants: (
+    {
+      participant: GameParticipant;
+      selections: DraftPick[];
+      isCurrentTurn?: boolean;
+      timeRemaining?: number | null;
+      hasTimedOut?: boolean;
+    } | GameParticipant
+  )[];
+  availablePlayers: AvailablePlayer[];
+  picks?: DraftPick[];
+  selectedPlayers?: Player[];
+  currentParticipant?: GameParticipant;
+  progress?: DraftProgress;
+  rules?: DraftRules;
 }

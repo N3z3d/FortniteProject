@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
+import { GameSelectionService } from '../../core/services/game-selection.service';
+import { Subscription } from 'rxjs';
+import { LeaderboardService } from '../../core/services/leaderboard.service';
 
 interface Player {
   playerId: string;
@@ -17,12 +18,12 @@ interface Player {
 @Component({
   selector: 'app-simple-leaderboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './simple-leaderboard.component.html',
   styleUrls: ['./simple-leaderboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SimpleLeaderboardComponent implements OnInit {
+export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
   allPlayers: Player[] = [];
   filteredPlayers: Player[] = [];
   loading = false;
@@ -33,82 +34,85 @@ export class SimpleLeaderboardComponent implements OnInit {
   itemsPerPage = 20;
   currentSort = 'points';
   sortDirection: 'asc' | 'desc' = 'desc';
+  private gameSubscription?: Subscription;
+  selectedGameId: string | null = null;
 
   constructor(
-    private http: HttpClient,
+    private leaderboardService: LeaderboardService,
     private cdr: ChangeDetectorRef,
-    private accessibilityService: AccessibilityAnnouncerService
+    private accessibilityService: AccessibilityAnnouncerService,
+    private gameSelectionService: GameSelectionService
   ) {}
 
   ngOnInit() {
     this.loadData();
+    this.gameSubscription = this.gameSelectionService.selectedGame$.subscribe(() => {
+      this.loadData();
+    });
   }
 
-  async loadData() {
+  ngOnDestroy() {
+    this.gameSubscription?.unsubscribe();
+  }
+
+  loadData() {
     this.loading = true;
     this.error = '';
+    this.selectedGameId = this.gameSelectionService.getSelectedGame()?.id || this.selectedGameId || 'global';
 
-    try {
-      // Charger les données des équipes depuis l'API leaderboard
-      const response = await this.http.get<any[]>(`${environment.apiUrl}/api/leaderboard?user=Thibaut`).toPromise();
-      
-      if (response && response.length > 0) {
-        console.log('📊 Données équipes reçues:', response);
-        
-        // Convertir les équipes en joueurs individuels pour l'affichage
-        const allPlayersFromTeams: Player[] = [];
-        
-        response.forEach((team, teamIndex) => {
-          // Ajouter le propriétaire de l'équipe comme "joueur spécial"
-          allPlayersFromTeams.push({
-            playerId: `team-owner-${team.ownerId}`,
-            nickname: `🏆 ${team.ownerUsername} (Chef d'équipe)`,
-            username: team.ownerUsername,
-            region: 'TEAM',
-            totalPoints: team.totalPoints,
-            rank: team.rank
-          });
-          
-          // Ajouter tous les joueurs de l'équipe
-          if (team.players && team.players.length > 0) {
-            team.players.forEach((player: any) => {
-              allPlayersFromTeams.push({
-                playerId: player.playerId,
-                nickname: player.nickname,
-                username: player.username,
-                region: player.region,
-                totalPoints: player.points,
-                rank: 0 // Sera recalculé lors du tri
-              });
-            });
-          }
-        });
-        
-        // Trier tous les joueurs par points et assigner les rangs
-        allPlayersFromTeams.sort((a, b) => b.totalPoints - a.totalPoints);
-        allPlayersFromTeams.forEach((player, index) => {
-          player.rank = index + 1;
-        });
-        
-        this.allPlayers = allPlayersFromTeams;
-        console.log(`✅ ${this.allPlayers.length} joueurs extraits des équipes`);
-      } else {
-        console.warn('⚠️ Aucune équipe reçue de l\'API');
+    this.leaderboardService.getTeamLeaderboard().subscribe({
+      next: (entries) => {
+        if (!entries || entries.length === 0) {
+          this.allPlayers = [];
+          this.filteredPlayers = [];
+          return;
+        }
+
+        this.allPlayers = this.flattenLeaderboard(entries);
+        this.filterPlayers();
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement du leaderboard:', err);
+        this.error = 'Impossible de charger les données du classement.';
         this.allPlayers = [];
+        this.filteredPlayers = [];
+      },
+      complete: () => {
+        this.loading = false;
+        this.cdr.markForCheck();
       }
-      
-      this.filterPlayers();
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement du leaderboard:', error);
-      this.allPlayers = [];
-      this.error = 'Impossible de charger les données. Vérifiez que le backend est démarré.';
-      this.filterPlayers();
-    } finally {
-      this.loading = false;
-      this.cdr.markForCheck();
-    }
+    });
   }
 
+  private flattenLeaderboard(entries: any[]): Player[] {
+    const players: Player[] = [];
+
+    entries.forEach((entry: any, index: number) => {
+      players.push({
+        playerId: entry.teamId || entry.id || `team-${index}`,
+        nickname: entry.teamName || entry.name || 'Équipe',
+        username: entry.ownerName || entry.ownerUsername || 'Inconnu',
+        region: 'TEAM',
+        totalPoints: entry.totalPoints || 0,
+        rank: index + 1
+      });
+
+      if (Array.isArray(entry.players)) {
+        entry.players.forEach((player: any) => {
+          players.push({
+            playerId: player.playerId || player.id,
+            nickname: player.nickname || player.username || 'Joueur',
+            username: player.username || entry.ownerName || 'Inconnu',
+            region: player.region || 'N/A',
+            totalPoints: player.totalPoints || player.points || 0,
+            rank: players.length + 1
+          });
+        });
+      }
+    });
+
+    return players;
+  }
 
   getPaginatedPlayers(): Player[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
@@ -118,7 +122,6 @@ export class SimpleLeaderboardComponent implements OnInit {
   getTotalPages(): number {
     return Math.ceil(this.filteredPlayers.length / this.itemsPerPage);
   }
-
 
   getTotalPoints(): number {
     return this.filteredPlayers.reduce((sum, p) => sum + p.totalPoints, 0);
@@ -132,34 +135,18 @@ export class SimpleLeaderboardComponent implements OnInit {
     return '@';
   }
 
-  // ============== OPTIMISATIONS PERFORMANCE ANGULAR ==============
-  
-  /**
-   * TrackBy function pour optimiser *ngFor des joueurs
-   */
   trackByPlayerId(index: number, player: Player): string {
     return player.playerId || `player-${index}`;
   }
 
-  /**
-   * TrackBy function pour les pages de pagination
-   */
   trackByPageNumber(index: number, page: number): number {
     return page;
   }
 
-  /**
-   * TrackBy function compatible with template trackByPlayer
-   */
   trackByPlayer(index: number, player: Player): string {
     return this.trackByPlayerId(index, player);
   }
 
-  // ============== ACCESSIBILITY ENHANCEMENTS ==============
-  
-  /**
-   * Sort table by column with accessibility announcements
-   */
   sortBy(column: 'rank' | 'region' | 'points'): void {
     if (this.currentSort === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -168,7 +155,6 @@ export class SimpleLeaderboardComponent implements OnInit {
       this.sortDirection = column === 'points' ? 'desc' : 'asc';
     }
 
-    // Sort the filtered players
     this.filteredPlayers.sort((a, b) => {
       let aVal: any;
       let bVal: any;
@@ -195,12 +181,10 @@ export class SimpleLeaderboardComponent implements OnInit {
       }
     });
 
-    // Update ranks after sorting
     this.filteredPlayers.forEach((player, index) => {
       player.rank = index + 1;
     });
 
-    // Announce the sort change to screen readers
     const sortLabel = this.getSortLabel(column);
     const directionLabel = this.sortDirection === 'asc' ? 'ascending' : 'descending';
     this.accessibilityService.announce(`Table sorted by ${sortLabel} in ${directionLabel} order`);
@@ -209,9 +193,6 @@ export class SimpleLeaderboardComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  /**
-   * Get human-readable sort label
-   */
   private getSortLabel(column: string): string {
     switch (column) {
       case 'rank': return 'rank';
@@ -221,9 +202,6 @@ export class SimpleLeaderboardComponent implements OnInit {
     }
   }
 
-  /**
-   * Enhanced filter with accessibility announcements
-   */
   filterPlayers() {
     let filtered = [...this.allPlayers];
 
@@ -233,33 +211,28 @@ export class SimpleLeaderboardComponent implements OnInit {
 
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.nickname.toLowerCase().includes(term) ||
         p.username.toLowerCase().includes(term)
       );
     }
 
-    // Apply current sort
     this.filteredPlayers = filtered;
     if (this.currentSort) {
       this.sortBy(this.currentSort as any);
     }
 
-    // Announce filter results
     this.announceFilterResults();
   }
 
-  /**
-   * Announce filter and search results to screen readers
-   */
   private announceFilterResults(): void {
     const resultCount = this.filteredPlayers.length;
     let message = `${resultCount} player${resultCount !== 1 ? 's' : ''} found`;
-    
+
     if (this.searchTerm) {
       message += ` for search term "${this.searchTerm}"`;
     }
-    
+
     if (this.selectedRegion) {
       message += ` in ${this.selectedRegion} region`;
     }
@@ -267,9 +240,6 @@ export class SimpleLeaderboardComponent implements OnInit {
     this.accessibilityService.announce(message);
   }
 
-  /**
-   * Enhanced pagination with announcements
-   */
   goToPage(page: number) {
     if (page >= 1 && page <= this.getTotalPages()) {
       this.currentPage = page;
@@ -278,13 +248,10 @@ export class SimpleLeaderboardComponent implements OnInit {
     }
   }
 
-  /**
-   * Enhanced reset with announcements
-   */
   resetFilters() {
     this.searchTerm = '';
     this.selectedRegion = '';
     this.filterPlayers();
     this.accessibilityService.announce('All filters have been reset');
   }
-} 
+}

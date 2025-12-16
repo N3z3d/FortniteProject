@@ -4,12 +4,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AuthSwitchService } from '../../../core/services/auth-switch.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
-import { HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-dev-user-switch',
   standalone: true,
-  imports: [CommonModule, MatSelectModule, MatFormFieldModule, HttpClientModule],
+  imports: [CommonModule, MatSelectModule, MatFormFieldModule],
   template: `
     <mat-form-field appearance="fill" class="dev-switch">
       <mat-label>Profil</mat-label>

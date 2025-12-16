@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { DashboardDataService } from './dashboard-data.service';
 import { environment } from '../../../../environments/environment';
+import { StatsApiMapper } from '../mappers/stats-api.mapper';
 
 /**
  * Tests TDD pour DashboardDataService
@@ -38,11 +39,12 @@ describe('DashboardDataService - TDD', () => {
         mostActiveTeam: 'Équipe Thibaut',
         seasonProgress: 57.5
       };
+      const expectedStats = StatsApiMapper.mapApiStatsToDisplayStats(mockStatsResponse);
 
       // ACT
       service.getGameStatistics(gameId).subscribe(stats => {
         // ASSERT
-        expect(stats).toEqual(mockStatsResponse);
+        expect(stats).toEqual(expectedStats);
         expect(stats.totalPlayers).toBe(147); // Doit être 147, pas 12
         expect(stats.totalTeams).toBe(3);
         done();

@@ -1,10 +1,12 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     username: sa
-    password: 
+    password:
     driver-class-name: org.h2.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -13,39 +15,28 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
-        
+
   h2:
     console:
-      enabled: true                 # H2 console enabled ONLY for tests
+      enabled: true
       path: /h2-console
       settings:
-        web-allow-others: false     # Security: only local access for tests
+        web-allow-others: false
+
   flyway:
-    enabled: false                  # Flyway disabled for tests - use ddl-auto instead
-  
+    enabled: false
+
   sql:
     init:
       mode: never
-  
-  # Configuration de sécurité pour les tests
+
+  # Sécurité activée en test (pas de bypass, fallback utilisateur)
   security:
-    user:
-      name: test
-      password: test
     basic:
       enabled: false
     oauth2:
       enabled: false
-  # Désactiver complètement la sécurité pour les tests
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
 
-# Configuration des endpoints pour les tests
 management:
   endpoints:
     web:
@@ -60,18 +51,16 @@ management:
     prometheus:
       enabled: true
 
-# Désactiver complètement la sécurité pour les tests
 fortnite:
   security:
-    enabled: false
+    enabled: true
     jwt:
-      enabled: false
+      enabled: true
     basic:
-      enabled: false
+      enabled: true
     oauth2:
       enabled: false
-
-
+    test-fallback-user: "Thibaut"
 
 logging:
   level:
@@ -81,11 +70,10 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: DEBUG
 
-# Configuration pour les tests
 fortnite-api:
   key: "test-api-key"
   url: "https://test-api.com"
 
 jwt:
   secret: "test_jwt_secret_key_123456"
-  expiration: 3600000 
+  expiration: 3600000

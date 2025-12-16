@@ -106,7 +106,6 @@ public class ApiControllerTest {
     // Given
     String username = "NonExistentUser";
     when(userRepository.findByUsernameIgnoreCase(username)).thenReturn(Optional.empty());
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(new ArrayList<>());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(username, request, null);

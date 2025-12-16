@@ -13,12 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
+import com.fortnite.pronos.config.TestSecurityConfig;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 @ActiveProfiles("test")
-@Import(TestSecurityConfigTestBackup.class)
+@Import(TestSecurityConfig.class)
 public class ApiControllerRealTest {
 
   @LocalServerPort private int port;

@@ -8,25 +8,33 @@
   <!-- Navigation Header -->
   <header class="nav-header">
     <div class="nav-header-content">
-      <!-- Logo/Brand -->
-      <div class="brand-section">
+      <!-- Logo/Brand - Cliquable pour retour accueil -->
+      <button class="brand-section" (click)="goToHome()"
+              [matTooltip]="selectedGame ? 'Back to Home' : 'Home'"
+              mat-button
+              disableRipple>
         <mat-icon class="brand-icon">sports_esports</mat-icon>
-        <span class="brand-text">Fortnite Pronos</span>
+        <span class="brand-text brand-title">Fortnite Fantasy</span>
+        <mat-icon *ngIf="selectedGame" class="home-indicator">home</mat-icon>
+      </button>
+
+      <div class="toolbar-title" *ngIf="currentUser">
+        Bienvenue, {{ currentUser.username }} !
       </div>
 
       <!-- Navigation Links -->
       <nav class="main-navigation" *ngIf="selectedGame">
         <button mat-button [routerLink]="['/games', selectedGame.id, 'dashboard']" routerLinkActive="active">
           <mat-icon>dashboard</mat-icon>
-          <span>Dashboard</span>
+          <span>Tableau de bord</span>
         </button>
         <button mat-button [routerLink]="['/games', selectedGame.id, 'teams']" routerLinkActive="active">
           <mat-icon>groups</mat-icon>
-          <span>Teams</span>
+          <span>Équipes</span>
         </button>
         <button mat-button [routerLink]="['/games', selectedGame.id, 'leaderboard']" routerLinkActive="active">
           <mat-icon>leaderboard</mat-icon>
-          <span>Leaderboard</span>
+          <span>Classement</span>
         </button>
         <button mat-button *ngIf="selectedGame.status === 'DRAFTING'" [routerLink]="['/games', selectedGame.id, 'draft']" routerLinkActive="active">
           <mat-icon>how_to_vote</mat-icon>
@@ -36,15 +44,15 @@
 
       <!-- User Actions -->
       <div class="user-section">
-        <button mat-icon-button [matTooltip]="'Profile'" routerLink="/profile">
+        <button mat-icon-button [matTooltip]="'Profil'" routerLink="/profile">
           <mat-icon>account_circle</mat-icon>
         </button>
-        <button mat-icon-button [matTooltip]="'Settings'" routerLink="/settings">
+        <button mat-icon-button [matTooltip]="'Paramètres'" routerLink="/settings">
           <mat-icon>settings</mat-icon>
         </button>
-        <button mat-stroked-button class="logout-btn" (click)="logout()">
+        <button mat-stroked-button class="logout-btn logout-button" matTooltip="Se déconnecter" (click)="logout()">
           <mat-icon>logout</mat-icon>
-          <span>Logout</span>
+          <span>Déconnexion</span>
         </button>
       </div>
     </div>
@@ -53,18 +61,22 @@
   <!-- Main Layout with Sidebar -->
   <div class="main-layout-container">
     <!-- Games Sidebar -->
-    <aside class="games-sidebar">
+    <aside class="games-sidebar" [class.collapsed]="sidebarCollapsed" [class.closed]="!sidebarOpen">
       <div class="sidebar-header">
         <h3>
           <mat-icon>sports_esports</mat-icon>
-          My Games
+          Mes games ({{ getGameCount() }})
+          <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? 'Expand' : 'Collapse'">
+            <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+          </button>
         </h3>
-        <div class="sidebar-actions">
-          <button mat-icon-button [matTooltip]="'Create Game'" (click)="createGame()">
+        <div class="sidebar-actions" *ngIf="!sidebarCollapsed">
+          <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="'Créer une game'" (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
           </button>
-          <button mat-icon-button [matTooltip]="'Join with Code'" (click)="openJoinDialog()">
+          <button mat-button class="join-game-btn" [matTooltip]="'Rejoindre une game'" (click)="openJoinDialog()">
             <mat-icon>group_add</mat-icon>
+            <span>Rejoindre une game</span>
           </button>
         </div>
       </div>
@@ -73,32 +85,37 @@
       <div class="join-code-section" *ngIf="showJoinCodeInput">
         <mat-form-field appearance="outline">
           <mat-label>Code</mat-label>
-          <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" placeholder="Enter code">
+          <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" placeholder="Entrez le code">
           <mat-icon matSuffix>key</mat-icon>
         </mat-form-field>
         <div class="join-actions">
-          <button mat-button (click)="cancelJoin()">Cancel</button>
+          <button mat-button (click)="cancelJoin()">Annuler</button>
           <button mat-raised-button color="primary" (click)="joinWithCode()" [disabled]="!invitationCode.trim()">
-            Join
+            Rejoindre
           </button>
         </div>
       </div>
 
       <!-- Games List -->
-      <div class="games-list">
+      <div class="games-list" *ngIf="!sidebarCollapsed">
         <div class="loading-state" *ngIf="loading">
-          <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
+          <mat-spinner diameter="40"></mat-spinner>
         </div>
 
-        <div class="empty-state" *ngIf="!loading && userGames.length === 0">
+        <div class="sidebar-error" *ngIf="!loading && error">
+          <mat-icon color="warn">error_outline</mat-icon>
+          <p>{{ error }}</p>
+        </div>
+
+        <div class="empty-state sidebar-empty" *ngIf="!loading && !error && userGames.length === 0">
           <mat-icon>sports_esports</mat-icon>
-          <p>No games yet</p>
+          <p>Aucune game</p>
           <button mat-stroked-button (click)="createGame()">
-            Create First Game
+            Créer une game
           </button>
         </div>
 
-        <div class="game-item" 
+        <div class="game-item game-list-item" 
              *ngFor="let game of userGames" 
              [class.selected]="selectedGame?.id === game.id"
              (click)="selectGame(game)">
@@ -113,7 +130,7 @@
               <mat-chip [attr.data-status]="game.status">
                 {{ getStatusLabel(game.status) }}
               </mat-chip>
-              <span class="participants">{{ game.participantCount }} players</span>
+              <span class="participants participant-badge">{{ game.participantCount }}/{{ game.maxParticipants }}</span>
             </div>
           </div>
         </div>
@@ -121,8 +138,8 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="ultra-main-content" id="main-content" role="main">
-      <router-outlet></router-outlet>
+    <main class="ultra-main-content" id="main-content" role="main" [@routeAnimations]="prepareRoute(outlet)">
+      <router-outlet #outlet="outlet"></router-outlet>
     </main>
   </div>
 </div> 

@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameRepository;
@@ -38,12 +38,14 @@ public class FrontendBackendIntegrationTest {
 
   @Autowired private GameRepository gameRepository;
 
+  private static final String TEST_USERNAME = "Thibaut";
+
   @Test
   @DisplayName("Devrait retourner la liste des joueurs via l'API REST")
   void shouldReturnPlayersListViaRestApi() {
     // When
     ResponseEntity<Player[]> response =
-        restTemplate.getForEntity("http://localhost:" + port + "/api/players", Player[].class);
+        getWithUser("http://localhost:" + port + "/api/players", Player[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -63,7 +65,7 @@ public class FrontendBackendIntegrationTest {
   void shouldReturnUsersListViaRestApi() {
     // When
     ResponseEntity<User[]> response =
-        restTemplate.getForEntity("http://localhost:" + port + "/api/users", User[].class);
+        getWithUser("http://localhost:" + port + "/api/users", User[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -80,9 +82,9 @@ public class FrontendBackendIntegrationTest {
   @Test
   @DisplayName("Devrait retourner la liste des games via l'API REST")
   void shouldReturnGamesListViaRestApi() {
-    // When
-    ResponseEntity<Game[]> response =
-        restTemplate.getForEntity("http://localhost:" + port + "/api/games", Game[].class);
+    // When - Use GameDto[] since API returns DTOs, not entities
+    ResponseEntity<GameDto[]> response =
+        getWithUser("http://localhost:" + port + "/api/games", GameDto[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -101,7 +103,7 @@ public class FrontendBackendIntegrationTest {
 
     // When
     ResponseEntity<Player> response =
-        restTemplate.getForEntity(
+        getWithUser(
             "http://localhost:" + port + "/api/players/" + firstPlayer.getId(), Player.class);
 
     // Then
@@ -116,8 +118,7 @@ public class FrontendBackendIntegrationTest {
   void shouldReturnPlayersByRegionViaRestApi() {
     // When
     ResponseEntity<Player[]> response =
-        restTemplate.getForEntity(
-            "http://localhost:" + port + "/api/players?region=EU", Player[].class);
+        getWithUser("http://localhost:" + port + "/api/players?region=EU", Player[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -127,5 +128,15 @@ public class FrontendBackendIntegrationTest {
     for (Player player : response.getBody()) {
       assertThat(player.getRegion()).isEqualTo(Player.Region.EU);
     }
+  }
+
+  private <T> ResponseEntity<T> getWithUser(String url, Class<T> type) {
+    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+    headers.add("X-Test-User", TEST_USERNAME);
+    return restTemplate.exchange(
+        url,
+        org.springframework.http.HttpMethod.GET,
+        new org.springframework.http.HttpEntity<>(headers),
+        type);
   }
 }

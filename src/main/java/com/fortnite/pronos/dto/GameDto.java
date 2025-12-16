@@ -36,6 +36,7 @@ public class GameDto {
   private Boolean autoStartDraft;
   private Integer draftTimeLimit;
   private Integer autoPickDelay;
+  private String creatorName;
   private Map<Player.Region, Integer> regionRules;
   private Map<UUID, String> participants;
   private Map<String, Object> statistics;
@@ -248,23 +249,31 @@ public class GameDto {
     if (game.getCreator() != null) {
       dto.setCreatorId(game.getCreator().getId());
       dto.setCreatorUsername(game.getCreator().getUsername());
+      dto.setCreatorName(game.getCreator().getUsername());
     }
 
     dto.setMaxParticipants(game.getMaxParticipants());
     dto.setCurrentParticipantCount(
         game.getParticipants() != null ? game.getParticipants().size() : 0);
     dto.setStatus(game.getStatus());
-    dto.setCreatedAt(game.getCreatedAt());
     dto.setInvitationCode(game.getInvitationCode());
 
     // Initialiser les collections
     dto.initializeCollections();
 
-    // Ajouter les règles régionales
+    // Ajouter les r?gles r?gionales
     if (game.getRegionRules() != null) {
       for (var rule : game.getRegionRules()) {
         if (rule != null) {
-          dto.addRegionRule(rule.getRegion(), rule.getMaxPlayers());
+          try {
+            Player.Region region =
+                rule.getRegion() instanceof Player.Region
+                    ? (Player.Region) rule.getRegion()
+                    : Player.Region.valueOf(String.valueOf(rule.getRegion()));
+            dto.addRegionRule(region, rule.getMaxPlayers());
+          } catch (IllegalArgumentException ex) {
+            // Ignore les r?gles invalides pour compatibilit?
+          }
         }
       }
     }

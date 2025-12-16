@@ -2,17 +2,25 @@ package com.fortnite.pronos.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fortnite.pronos.dto.FortniteTrackerPlayerStats;
 import com.fortnite.pronos.dto.FortniteTrackerResponse;
@@ -37,41 +45,39 @@ public class FortniteTrackerService {
   @Value("${fortnite.tracker.rate.limit:30}")
   private int rateLimitPerMinute;
 
-  // Cache simple pour éviter les appels excessifs
   private final Map<String, CachedPlayerStats> playerStatsCache = new ConcurrentHashMap<>();
   private static final Duration CACHE_DURATION = Duration.ofMinutes(5);
 
-  // Rate limiting simple
   private final Queue<LocalDateTime> requestTimestamps = new LinkedList<>();
 
-  /**
-   * Récupère les statistiques d'un joueur depuis FortniteTracker Utilise un cache et gère le rate
-   * limiting
-   */
   @Retryable(
       value = {HttpClientErrorException.class},
       maxAttempts = 3,
       backoff = @Backoff(delay = 2000, multiplier = 2))
   public FortniteTrackerPlayerStats getPlayerStats(String epicId, String platform) {
+    return getPlayerStats(epicId, platform, true);
+  }
+
+  public FortniteTrackerPlayerStats getPlayerStats(
+      String epicId, String platform, boolean useCache) {
     String cacheKey = epicId + "_" + platform;
 
-    // Vérifier le cache
-    CachedPlayerStats cached = playerStatsCache.get(cacheKey);
-    if (cached != null && !cached.isExpired()) {
-      log.debug("Statistiques trouvées dans le cache pour {}", epicId);
-      return cached.stats;
+    if (useCache) {
+      CachedPlayerStats cached = playerStatsCache.get(cacheKey);
+      if (cached != null && !cached.isExpired()) {
+        log.debug("Statistiques trouvées dans le cache pour {}", epicId);
+        return cached.stats;
+      }
     }
 
-    // Rate limiting
     enforceRateLimit();
 
     try {
       log.info("Récupération des statistiques FortniteTracker pour {}", epicId);
 
-      String url =
-          UriComponentsBuilder.fromHttpUrl(baseUrl)
-              .pathSegment("profile", platform, epicId)
-              .toUriString();
+      String normalizedBaseUrl =
+          baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+      String url = normalizedBaseUrl + "/profile/" + platform + "/" + epicId;
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("TRN-Api-Key", apiKey);
@@ -85,16 +91,43 @@ public class FortniteTrackerService {
       if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
         FortniteTrackerPlayerStats stats = parseResponse(response.getBody());
 
-        // Mettre en cache
-        playerStatsCache.put(cacheKey, new CachedPlayerStats(stats));
+        if (useCache) {
+          playerStatsCache.put(cacheKey, new CachedPlayerStats(stats));
+        }
 
         return stats;
-      } else {
-        throw new FortniteTrackerException("Réponse invalide de FortniteTracker");
       }
 
+      throw new FortniteTrackerException("Réponse invalide de FortniteTracker");
+
     } catch (HttpClientErrorException e) {
-      if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+      if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
+        log.warn("Service FortniteTracker indisponible, nouvelle tentative immédiate");
+        try {
+          String normalizedBaseUrl =
+              baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+          String retryUrl = normalizedBaseUrl + "/profile/" + platform + "/" + epicId;
+          HttpHeaders headers = new HttpHeaders();
+          headers.set("TRN-Api-Key", apiKey);
+          headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+          HttpEntity<String> entity = new HttpEntity<>(headers);
+
+          ResponseEntity<FortniteTrackerResponse> retryResponse =
+              restTemplate.exchange(
+                  retryUrl, HttpMethod.GET, entity, FortniteTrackerResponse.class);
+
+          if (retryResponse.getStatusCode() == HttpStatus.OK && retryResponse.getBody() != null) {
+            FortniteTrackerPlayerStats stats = parseResponse(retryResponse.getBody());
+            if (useCache) {
+              playerStatsCache.put(cacheKey, new CachedPlayerStats(stats));
+            }
+            return stats;
+          }
+          throw new FortniteTrackerException("Réponse invalide de FortniteTracker après retry", e);
+        } catch (Exception retryEx) {
+          throw new FortniteTrackerException("Erreur lors de la récupération des stats", retryEx);
+        }
+      } else if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
         log.error("Rate limit atteint pour FortniteTracker API");
         throw new FortniteTrackerException("Rate limit dépassé, réessayez plus tard", e);
       } else if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
@@ -104,20 +137,18 @@ public class FortniteTrackerService {
         log.error("Erreur HTTP lors de l'appel à FortniteTracker : {}", e.getMessage());
         throw new FortniteTrackerException("Erreur lors de la récupération des stats", e);
       }
+    } catch (FortniteTrackerException e) {
+      throw e;
     } catch (Exception e) {
       log.error("Erreur inattendue lors de l'appel à FortniteTracker : {}", e.getMessage());
       throw new FortniteTrackerException("Erreur inattendue", e);
     }
   }
 
-  /** Récupère les statistiques de tournoi/compétition pour un joueur */
   public FortniteTrackerPlayerStats getCompetitiveStats(String epicId, String region) {
-    // Pour l'instant, on utilise la même méthode mais on pourrait
-    // filtrer spécifiquement les stats compétitives
     String platform = mapRegionToPlatform(region);
-    FortniteTrackerPlayerStats stats = getPlayerStats(epicId, platform);
+    FortniteTrackerPlayerStats stats = getPlayerStats(epicId, platform, false);
 
-    // Filtrer uniquement les stats compétitives si disponibles
     if (stats != null && stats.getCompetitiveStats() != null) {
       return stats;
     }
@@ -125,14 +156,12 @@ public class FortniteTrackerService {
     return stats;
   }
 
-  /** Parse la réponse de FortniteTracker */
   private FortniteTrackerPlayerStats parseResponse(FortniteTrackerResponse response) {
     FortniteTrackerPlayerStats stats = new FortniteTrackerPlayerStats();
 
     stats.setEpicUserHandle(response.getEpicUserHandle());
     stats.setPlatformName(response.getPlatformName());
 
-    // Parser les statistiques globales
     if (response.getLifeTimeStats() != null) {
       Map<String, String> lifeTimeStats = new HashMap<>();
       response
@@ -144,39 +173,28 @@ public class FortniteTrackerService {
       stats.setLifeTimeStats(lifeTimeStats);
     }
 
-    // Parser les statistiques compétitives (si disponibles)
     if (response.getStats() != null && response.getStats().getCurr_p2() != null) {
-      // TODO: Mapper correctement les stats competitive
       FortniteTrackerPlayerStats.CompetitiveStats competitiveStats =
           new FortniteTrackerPlayerStats.CompetitiveStats();
-      // Temporairement, on ne mappe pas les stats
       stats.setCompetitiveStats(competitiveStats);
     }
 
     return stats;
   }
 
-  /** Mappe une région Fortnite vers une plateforme FortniteTracker */
   private String mapRegionToPlatform(String region) {
-    // FortniteTracker utilise des plateformes, pas des régions
-    // On peut mapper ou utiliser une plateforme par défaut
     return switch (region.toUpperCase()) {
-      case "EU", "NAC", "NAW" -> "pc";
-      case "BR", "ASIA" -> "pc";
-      case "OCE", "ME" -> "pc";
+      case "EU", "NAC", "NAW", "BR", "ASIA", "OCE", "ME" -> "pc";
       default -> "pc";
     };
   }
 
-  /** Applique le rate limiting */
   private void enforceRateLimit() {
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime oneMinuteAgo = now.minusMinutes(1);
 
-    // Nettoyer les anciennes timestamps
     requestTimestamps.removeIf(timestamp -> timestamp.isBefore(oneMinuteAgo));
 
-    // Vérifier si on a atteint la limite
     if (requestTimestamps.size() >= rateLimitPerMinute) {
       LocalDateTime oldestRequest = requestTimestamps.peek();
       if (oldestRequest != null) {
@@ -196,13 +214,11 @@ public class FortniteTrackerService {
     requestTimestamps.offer(now);
   }
 
-  /** Vide le cache */
   public void clearCache() {
     playerStatsCache.clear();
     log.info("Cache FortniteTracker vidé");
   }
 
-  /** Classe interne pour le cache avec expiration */
   private static class CachedPlayerStats {
     final FortniteTrackerPlayerStats stats;
     final LocalDateTime timestamp;

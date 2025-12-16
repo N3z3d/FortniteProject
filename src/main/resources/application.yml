@@ -62,7 +62,7 @@ spring:
       connection-init-sql: "SELECT 1"
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     defer-datasource-initialization: false
     properties:
@@ -80,7 +80,7 @@ spring:
     validate-on-migrate: true
   sql:
     init:
-      mode: always
+      mode: never
   h2:
     console:
       enabled: false

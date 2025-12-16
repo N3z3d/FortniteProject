@@ -40,7 +40,7 @@ public class TeamDto {
             .mapToInt(
                 tp ->
                     tp.getPlayer().getScores().stream()
-                        .filter(s -> s.getSeason() == team.getSeason())
+                        .filter(s -> java.util.Objects.equals(s.getSeason(), team.getSeason()))
                         .mapToInt(s -> s.getPoints())
                         .sum())
             .sum();
@@ -53,7 +53,8 @@ public class TeamDto {
                   TeamPlayerDto playerDto = new TeamPlayerDto();
                   playerDto.playerId = tp.getPlayer().getId();
                   playerDto.nickname = tp.getPlayer().getNickname();
-                  playerDto.region = tp.getPlayer().region.name();
+                  playerDto.region =
+                      tp.getPlayer().getRegion() != null ? tp.getPlayer().getRegion().name() : null;
                   playerDto.tranche = tp.getPlayer().getTranche();
                   return playerDto;
                 })

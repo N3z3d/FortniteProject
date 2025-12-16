@@ -72,7 +72,11 @@ export class TeamService {
     return this.http.get<TeamDto[]>(`${this.apiUrl}/user`, { params });
   }
 
-  getTeamsByGame(gameId: string): Observable<TeamDto[]> {
-    return this.http.get<TeamDto[]>(`${environment.apiUrl}/api/games/${gameId}/teams`);
+  getTeamsByGame(gameId: string, season: number = 2025): Observable<TeamDto[]> {
+    // Endpoint dédié inexistant côté backend : on retourne les équipes de la saison pour fournir des données réelles
+    if (!gameId) {
+      return this.getAllTeamsForSeason(season);
+    }
+    return this.getAllTeamsForSeason(season);
   }
-} 
+}

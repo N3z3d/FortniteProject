@@ -117,7 +117,7 @@ class DataInitializationServiceGameTest {
     user.setId(UUID.randomUUID());
     user.setUsername(username);
     user.setEmail(email);
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setRole(User.UserRole.USER);
     return user;
   }
 

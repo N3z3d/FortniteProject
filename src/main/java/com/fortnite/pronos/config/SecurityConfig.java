@@ -3,9 +3,9 @@ package com.fortnite.pronos.config;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -29,11 +29,17 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Profile("prod")
+@ConditionalOnProperty(
+    value = "fortnite.security.enabled",
+    havingValue = "true",
+    matchIfMissing = true)
+@org.springframework.context.annotation.Profile("!test")
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final UserDetailsService userDetailsService;
+  private final org.springframework.beans.factory.ObjectProvider<TestFallbackAuthenticationFilter>
+      testFallbackAuthenticationFilter;
 
   /** Configuration du filtre de sécurité */
   @Bean
@@ -76,7 +82,7 @@ public class SecurityConfig {
         // Fournisseur d'authentification
         .authenticationProvider(authenticationProvider())
 
-        // Ajouter le filtre JWT
+        // Ajouter le filtre JWT (le fallback de test est injecté plus bas si présent)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
         // PHASE 1A: ENHANCED SECURITY HEADERS for production hardening
@@ -98,6 +104,12 @@ public class SecurityConfig {
                             .ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                     .and()
                     .httpPublicKeyPinning(hpkp -> hpkp.includeSubDomains(true)));
+
+    TestFallbackAuthenticationFilter fallbackFilter =
+        testFallbackAuthenticationFilter.getIfAvailable();
+    if (fallbackFilter != null) {
+      http.addFilterBefore(fallbackFilter, JwtAuthenticationFilter.class);
+    }
 
     return http.build();
   }
@@ -134,6 +146,7 @@ public class SecurityConfig {
             "Accept",
             "Origin",
             "X-Requested-With",
+            "X-Test-User",
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers"));
 

@@ -14,8 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
@@ -23,7 +23,7 @@ import com.fortnite.pronos.repository.UserRepository;
 /** Test d'intégration TDD pour vérifier l'authentification des games */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class GameControllerAuthenticationTest {
 
   @LocalServerPort private int port;
@@ -36,12 +36,20 @@ public class GameControllerAuthenticationTest {
 
   @BeforeEach
   void setUp() {
-    // Créer un utilisateur de test
-    testUser = new User();
-    testUser.setUsername("Thibaut");
-    testUser.setEmail("thibaut@test.com");
-    testUser.setPassword("password123");
-    testUser = userRepository.save(testUser);
+    // Réutilise l'utilisateur seedé ou crée-le si absent
+    testUser =
+        userRepository
+            .findByUsernameIgnoreCase("Thibaut")
+            .orElseGet(
+                () -> {
+                  User u = new User();
+                  u.setUsername("Thibaut");
+                  u.setEmail("thibaut@test.com");
+                  u.setPassword("password123");
+                  u.setRole(User.UserRole.USER);
+                  u.setCurrentSeason(2025);
+                  return userRepository.save(u);
+                });
   }
 
   @Test
@@ -61,7 +69,9 @@ public class GameControllerAuthenticationTest {
     // When
     ResponseEntity<Map> response =
         restTemplate.postForEntity(
-            "http://localhost:" + port + "/api/games?user=Thibaut", gameRequest, Map.class);
+            "http://localhost:" + port + "/api/games?user=Thibaut",
+            new org.springframework.http.HttpEntity<>(gameRequest, withTestUserHeader("Thibaut")),
+            Map.class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -121,12 +131,17 @@ public class GameControllerAuthenticationTest {
     gameRequest.put("regionRules", regionRules);
 
     restTemplate.postForEntity(
-        "http://localhost:" + port + "/api/games?user=Thibaut", gameRequest, Map.class);
+        "http://localhost:" + port + "/api/games?user=Thibaut",
+        new org.springframework.http.HttpEntity<>(gameRequest, withTestUserHeader("Thibaut")),
+        Map.class);
 
     // When
     ResponseEntity<Object[]> response =
-        restTemplate.getForEntity(
-            "http://localhost:" + port + "/api/games?user=Thibaut", Object[].class);
+        restTemplate.exchange(
+            "http://localhost:" + port + "/api/games?user=Thibaut",
+            org.springframework.http.HttpMethod.GET,
+            new org.springframework.http.HttpEntity<>(withTestUserHeader("Thibaut")),
+            Object[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -137,14 +152,31 @@ public class GameControllerAuthenticationTest {
   @Test
   @DisplayName("Devrait retourner un tableau vide pour un utilisateur sans games")
   void shouldReturnEmptyArrayForUserWithoutGames() {
+    User noGameUser = new User();
+    noGameUser.setUsername("NoGameUser");
+    noGameUser.setEmail("nogame@test.com");
+    noGameUser.setPassword("password123");
+    noGameUser.setRole(User.UserRole.USER);
+    noGameUser.setCurrentSeason(2025);
+    userRepository.save(noGameUser);
+
     // When
     ResponseEntity<Object[]> response =
-        restTemplate.getForEntity(
-            "http://localhost:" + port + "/api/games?user=Thibaut", Object[].class);
+        restTemplate.exchange(
+            "http://localhost:" + port + "/api/games?user=NoGameUser",
+            org.springframework.http.HttpMethod.GET,
+            new org.springframework.http.HttpEntity<>(withTestUserHeader("NoGameUser")),
+            Object[].class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().length).isEqualTo(0);
+  }
+
+  private org.springframework.http.HttpHeaders withTestUserHeader(String username) {
+    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+    headers.add("X-Test-User", username);
+    return headers;
   }
 }

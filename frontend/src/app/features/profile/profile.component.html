@@ -9,8 +9,11 @@
             </div>
             <div class="user-info">
               <h1>{{ currentUser?.username }}</h1>
-              <p class="user-role">{{ currentUser?.role }}</p>
-              <p class="user-email">{{ currentUser?.email || 'No email provided' }}</p>
+              <div class="role-badge" [attr.data-role]="getRoleBadgeClass()">
+                <mat-icon>{{ getRoleIcon() }}</mat-icon>
+                <span>{{ currentUser?.role || 'Utilisateur' }}</span>
+              </div>
+              <p class="user-email">{{ currentUser?.email || t.translate('profile.noEmailProvided') }}</p>
             </div>
           </div>
         </div>
@@ -18,27 +21,31 @@
 
       <mat-card-content>
         <mat-divider></mat-divider>
-        
+
         <div class="profile-section">
           <h3>
             <mat-icon>info</mat-icon>
-            Profile Information
+            {{ t.translate('profile.profileInformation') }}
           </h3>
           <mat-list>
             <mat-list-item>
               <mat-icon matListItemIcon>person</mat-icon>
-              <div matListItemTitle>Username</div>
+              <div matListItemTitle>{{ t.translate('profile.username') }}</div>
               <div matListItemLine>{{ currentUser?.username }}</div>
             </mat-list-item>
             <mat-list-item>
-              <mat-icon matListItemIcon>security</mat-icon>
-              <div matListItemTitle>Role</div>
-              <div matListItemLine>{{ currentUser?.role }}</div>
+              <mat-icon matListItemIcon>{{ getRoleIcon() }}</mat-icon>
+              <div matListItemTitle>{{ t.translate('profile.role') }}</div>
+              <div matListItemLine class="role-line">
+                <span class="role-badge-inline" [attr.data-role]="getRoleBadgeClass()">
+                  {{ currentUser?.role || 'Utilisateur' }}
+                </span>
+              </div>
             </mat-list-item>
             <mat-list-item>
               <mat-icon matListItemIcon>calendar_today</mat-icon>
-              <div matListItemTitle>Member Since</div>
-              <div matListItemLine>Recently joined</div>
+              <div matListItemTitle>{{ t.translate('profile.memberSince') }}</div>
+              <div matListItemLine>{{ t.translate('profile.recentlyJoined') }}</div>
             </mat-list-item>
           </mat-list>
         </div>
@@ -48,24 +55,24 @@
         <div class="profile-section">
           <h3>
             <mat-icon>settings</mat-icon>
-            Account Actions
+            {{ t.translate('profile.accountActions') }}
           </h3>
           <div class="action-buttons">
             <button mat-stroked-button (click)="editProfile()">
               <mat-icon>edit</mat-icon>
-              Edit Profile
+              {{ t.translate('profile.editProfile') }}
             </button>
             <button mat-stroked-button (click)="changePassword()">
               <mat-icon>lock</mat-icon>
-              Change Password
+              {{ t.translate('profile.changePassword') }}
             </button>
             <button mat-stroked-button (click)="viewStatistics()">
               <mat-icon>bar_chart</mat-icon>
-              View Statistics
+              {{ t.translate('profile.viewStatistics') }}
             </button>
             <button mat-stroked-button color="warn" (click)="logout()">
               <mat-icon>logout</mat-icon>
-              Logout
+              {{ t.translate('auth.logout') }}
             </button>
           </div>
         </div>

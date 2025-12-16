@@ -53,7 +53,7 @@ public class GameDraftService {
     validateUserCanStartDraft(game, creatorId);
     validateGameCanStartDraft(game);
 
-    updateGameStatus(game, GameStatus.DRAFT_IN_PROGRESS);
+    updateGameStatus(game, GameStatus.DRAFTING);
     Draft draft = draftService.startDraft(game);
 
     log.info("Draft started for game {}", game.getName());
@@ -191,16 +191,13 @@ public class GameDraftService {
   }
 
   private void validateGameCanStartDraft(Game game) {
-    if (game.getStatus() != Game.Status.fromGameStatus(GameStatus.WAITING_FOR_PLAYERS)) {
-      throw new InvalidGameStateException(
-          "Game must be in WAITING_FOR_PLAYERS status to start draft");
+    if (game.getTotalParticipantCount() < 2) {
+      throw new InvalidGameStateException("Not enough participants to start draft");
     }
 
-    // Check minimum participants
-    // This would need to be implemented based on your business rules
-    // For now, assuming minimum 2 participants
-    // You might want to inject GameParticipantService here to check
-    log.debug("Validating participant count for game {}", game.getId());
+    if (game.getStatus() != GameStatus.CREATING) {
+      throw new InvalidGameStateException("Game must be ready for draft (CREATING)");
+    }
   }
 
   private void validateDraftCanBeFinished(Draft draft) {
@@ -236,7 +233,7 @@ public class GameDraftService {
   }
 
   private void updateGameStatus(Game game, GameStatus status) {
-    game.setStatus(Game.Status.fromGameStatus(status));
+    game.setStatus(status);
     gameRepository.save(game);
   }
 }

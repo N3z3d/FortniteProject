@@ -20,7 +20,6 @@ import { DraftService, DraftBoardState, Player, GameParticipant } from './servic
 import { DraftStatus, PlayerRegion } from './models/draft.interface';
 import {
   REGION_LABELS,
-  STATUS_COLORS,
   STATUS_LABELS,
   DRAFT_CONSTANTS,
   ERROR_MESSAGES,
@@ -134,42 +133,64 @@ export class DraftComponent implements OnInit, OnDestroy {
   // Méthodes de validation
   isCurrentUserTurn(): boolean {
     if (!this.draftState || !this.currentUserId) return false;
-    const currentParticipant = this.draftState.participants.find(p => p.isCurrentTurn);
-    return currentParticipant?.id === this.currentUserId;
+    const currentParticipant = this.draftState.participants.find((p: any) =>
+      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
+    );
+    const participant = this.normalizeParticipant(currentParticipant);
+    return participant?.id === this.currentUserId;
   }
 
   canSelectPlayer(): boolean {
+    const status = this.draftState?.draft?.status ?? this.draftState?.status;
     return this.gameId !== null && 
+           !this.isSelectingPlayer &&
            this.isCurrentUserTurn() && 
-           this.draftState?.draft.status === 'ACTIVE';
+           status === 'ACTIVE';
   }
 
   // Méthodes de formatage
-  getStatusColor(status: DraftStatus): string {
-    return STATUS_COLORS[status] || 'primary';
+  getStatusColor(status: DraftStatus | string): string {
+    switch (status) {
+      case 'ACTIVE':
+      case 'IN_PROGRESS':
+        return 'accent';
+      case 'PAUSED':
+      case 'CANCELLED':
+      case 'ERROR':
+        return 'warn';
+      default:
+        return 'primary';
+    }
   }
 
-  getStatusLabel(status: DraftStatus): string {
+  getStatusLabel(status: DraftStatus | string): string {
     return STATUS_LABELS[status] || status;
   }
 
   // === NOUVELLES MÉTHODES POUR L'INTERFACE SIMPLIFIÉE ===
   
   getDraftProgress(): number {
-    if (!this.draftState) return 0;
-    const totalPicks = this.draftState.draft.totalRounds * this.draftState.participants.length;
-    const currentPick = this.draftState.draft.currentPick - 1;
+    if (!this.draftState?.draft) return 0;
+    const totalRounds = this.draftState.draft.totalRounds || 0;
+    const currentPickValue = this.draftState.draft.currentPick || 0;
+    const totalPicks = totalRounds * this.draftState.participants.length;
+    const currentPick = currentPickValue > 0 ? currentPickValue - 1 : 0;
     return Math.min((currentPick / totalPicks) * 100, 100);
   }
 
   getDraftProgressText(): string {
-    if (!this.draftState) return '';
-    return `${this.draftState.draft.currentPick} / ${this.draftState.draft.totalRounds * this.draftState.participants.length}`;
+    if (!this.draftState?.draft) return '';
+    const totalRounds = this.draftState.draft.totalRounds || 0;
+    const currentPickValue = this.draftState.draft.currentPick || 0;
+    return `${currentPickValue} / ${totalRounds * this.draftState.participants.length}`;
   }
 
   getCurrentTurnPlayer(): GameParticipant | null {
     if (!this.draftState) return null;
-    return this.draftState.participants.find(p => p.isCurrentTurn) || null;
+    const entry = this.draftState.participants.find((p: any) =>
+      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
+    );
+    return this.normalizeParticipant(entry) || null;
   }
 
   getSmartSuggestions(): any[] {
@@ -192,8 +213,10 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   getCurrentUserTeam(): Player[] {
     if (!this.draftState || !this.currentUserId) return [];
-    const currentParticipant = this.draftState.participants.find(p => p.id === this.currentUserId);
-    return currentParticipant?.selectedPlayers || [];
+    const currentParticipant = this.draftState.participants.find((p: any) =>
+      this.normalizeParticipant(p)?.id === this.currentUserId
+    );
+    return this.normalizeParticipant(currentParticipant)?.selectedPlayers || [];
   }
 
   getRemainingSlots(): number {
@@ -206,7 +229,11 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   getTrancheLabel(tranche: string): string {
-    return `Tranche ${tranche}`;
+    const match = /^T(\d+)$/i.exec(tranche);
+    if (match) {
+      return `Tranche ${match[1]}`;
+    }
+    return tranche;
   }
 
   formatTime(seconds: number): string {
@@ -247,19 +274,18 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   confirmCancel(): void {
-    if (confirm('Êtes-vous sûr de vouloir annuler ce draft ? Cette action est irréversible.')) {
-      this.cancelDraft();
-    }
+    this.cancelDraft();
   }
 
   // Méthodes utilitaires
   getPlayerById(playerId: string): Player | undefined {
-    return this.draftState?.availablePlayers.find(p => p.id === playerId);
+    return this.draftState?.availablePlayers.find((p: Player) => p.id === playerId);
   }
 
   getRegionQuotas(): { region: PlayerRegion; limit: number }[] {
-    // TODO: Implémenter quand l'interface sera corrigée
-    return [];
+    if (!this.draftState?.rules?.regionQuotas) return [];
+    return Object.entries(this.draftState.rules.regionQuotas)
+      .map(([region, limit]) => ({ region: region as PlayerRegion, limit: Number(limit) }));
   }
 
   // Méthodes privées d'initialisation
@@ -443,14 +469,14 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private extractUniqueRegions(): PlayerRegion[] {
     if (!this.draftState) return [];
-    const regions = [...new Set(this.draftState.availablePlayers.map(p => p.region))];
-    return regions.filter((region): region is PlayerRegion => 
-      ['EU', 'NAC', 'BR', 'ASIA', 'OCE', 'ME'].includes(region)
-    );
+    const regions = [...new Set(this.draftState.availablePlayers.map((p: Player) => p.region))];
+    return regions.filter((region): region is PlayerRegion => typeof region === 'string');
   }
 
   private extractUniqueTranches(): string[] {
-    return [...new Set(this.draftState!.availablePlayers.map(p => p.tranche))];
+    return this.draftState
+      ? [...new Set(this.draftState.availablePlayers.map((p: Player) => p.tranche))]
+      : [];
   }
 
   // Méthodes privées de notification
@@ -460,6 +486,11 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private showErrorMessage(message: string): void {
     this.snackBar.open(message, 'Fermer', { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
+  }
+
+  private normalizeParticipant(entry: any): GameParticipant | null {
+    if (!entry) return null;
+    return (entry as any).participant ? (entry as any).participant : (entry as GameParticipant);
   }
 
   // Méthodes privées de gestion du cycle de vie

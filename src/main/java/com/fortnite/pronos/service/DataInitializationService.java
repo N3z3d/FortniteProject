@@ -39,6 +39,7 @@ public class DataInitializationService {
   private final GameRepository gameRepository;
   private final Environment environment;
   private final CsvDataLoaderService csvDataLoaderService;
+  private final MockDataGeneratorService mockDataGeneratorService;
   private final PasswordEncoder passwordEncoder;
 
   /** Initialise les données de test au démarrage de l'application */
@@ -81,9 +82,32 @@ public class DataInitializationService {
       List<User> allUsers = userRepository.findAll();
       log.info("📊 Total utilisateurs en base: {}", allUsers.size());
 
-      // Charger TOUS les joueurs réels du CSV avec leurs scores complets
-      log.info("🎮 Chargement de TOUS les joueurs réels du CSV (149 joueurs)...");
-      csvDataLoaderService.loadAllCsvData();
+      // OPTION 1: Charger les données réelles du CSV avec CsvDataLoaderService
+      // OPTION 2: Charger les données mock avec MockDataGeneratorService (nouveau)
+      log.info("🎮 Chargement des données depuis le CSV...");
+
+      // Utiliser le nouveau service de mock data
+      MockDataGeneratorService.MockDataSet mockData =
+          mockDataGeneratorService.loadMockDataFromCsv();
+
+      if (mockData.total() == 0) {
+        log.warn("⚠️ Aucune donnée mock chargée, fallback vers CsvDataLoaderService");
+        csvDataLoaderService.loadAllCsvData();
+      } else {
+        // Sauvegarder les players et scores depuis le mock
+        List<Player> mockPlayers = mockData.getAllPlayers();
+        List<Player> savedMockPlayers = playerRepository.saveAll(mockPlayers);
+
+        // Lier les scores aux players sauvegardés
+        List<Score> mockScores = mockData.getAllScores();
+        for (int i = 0; i < savedMockPlayers.size() && i < mockScores.size(); i++) {
+          mockScores.get(i).setPlayer(savedMockPlayers.get(i));
+        }
+        scoreRepository.saveAll(mockScores);
+
+        log.info("✅ {} joueurs mock chargés depuis le CSV", savedMockPlayers.size());
+      }
+
       List<Player> savedPlayers = playerRepository.findAll();
       log.info(
           "✅ {} joueurs réels chargés depuis le CSV avec leurs scores complets",
@@ -142,7 +166,7 @@ public class DataInitializationService {
     // Créer seulement les utilisateurs essentiels
     if (userRepository.count() == 0) {
       User admin = createUser("admin", "admin@test.com", User.UserRole.ADMIN);
-      User testUser = createUser("testuser", "test@test.com", User.UserRole.PARTICIPANT);
+      User testUser = createUser("testuser", "test@test.com", User.UserRole.USER);
 
       validateUser(admin);
       validateUser(testUser);
@@ -154,6 +178,7 @@ public class DataInitializationService {
 
   private boolean isDevProfile() {
     return Arrays.asList(environment.getActiveProfiles()).contains("dev")
+        || Arrays.asList(environment.getActiveProfiles()).contains("local")
         || Arrays.asList(environment.getActiveProfiles()).contains("quickstart")
         || Arrays.asList(environment.getActiveProfiles()).contains("h2")
         || Arrays.asList(environment.getActiveProfiles()).contains("fast-startup");
@@ -171,13 +196,13 @@ public class DataInitializationService {
       users.add(createUser("admin", "admin@fortnite-pronos.com", User.UserRole.ADMIN));
     }
     if (!userRepository.existsByUsername("Thibaut")) {
-      users.add(createUser("Thibaut", "thibaut@test.com", User.UserRole.PARTICIPANT));
+      users.add(createUser("Thibaut", "thibaut@test.com", User.UserRole.USER));
     }
     if (!userRepository.existsByUsername("Teddy")) {
-      users.add(createUser("Teddy", "teddy@test.com", User.UserRole.PARTICIPANT));
+      users.add(createUser("Teddy", "teddy@test.com", User.UserRole.USER));
     }
     if (!userRepository.existsByUsername("Marcel")) {
-      users.add(createUser("Marcel", "marcel@test.com", User.UserRole.PARTICIPANT));
+      users.add(createUser("Marcel", "marcel@test.com", User.UserRole.USER));
     }
 
     return users;
@@ -263,20 +288,26 @@ public class DataInitializationService {
   private List<Team> createTeamsFromCsvAssignments(List<User> users) {
     log.info("🏗️ Création d'équipes avec les assignations CSV réelles");
 
-    // Récupérer les assignations du CSV
-    Map<String, List<Player>> assignments = csvDataLoaderService.getAllPlayerAssignments();
+    // Charger les données mock pour obtenir les assignations
+    MockDataGeneratorService.MockDataSet mockData = mockDataGeneratorService.loadMockDataFromCsv();
 
-    if (assignments.isEmpty()) {
-      log.warn("⚠️ Aucune assignation trouvée dans le CSV, utilisation de la méthode de fallback");
+    if (mockData.total() == 0) {
+      log.warn("⚠️ Aucune donnée mock disponible, utilisation de la méthode de fallback");
       return createFallbackTeams(users);
     }
 
     List<Team> teams = new ArrayList<>();
+    List<String> pronosticators = mockData.getPronosticators();
 
     // Créer une équipe pour chaque pronostiqueur du CSV
-    for (Map.Entry<String, List<Player>> entry : assignments.entrySet()) {
-      String pronostiqueur = entry.getKey();
-      List<Player> assignedPlayers = entry.getValue();
+    for (String pronostiqueur : pronosticators) {
+      List<MockDataGeneratorService.PlayerWithScore> playerDataList =
+          mockData.getPlayersFor(pronostiqueur);
+
+      if (playerDataList.isEmpty()) {
+        log.warn("⚠️ Aucun joueur assigné pour {}, équipe ignorée", pronostiqueur);
+        continue;
+      }
 
       // Chercher l'utilisateur correspondant au pronostiqueur
       User owner =
@@ -291,8 +322,23 @@ public class DataInitializationService {
         continue;
       }
 
+      // Extraire les players et les récupérer depuis la base de données (entités attachées)
+      List<Player> assignedPlayers = new ArrayList<>();
+      for (MockDataGeneratorService.PlayerWithScore playerData : playerDataList) {
+        String username = playerData.player().getUsername();
+        // Utiliser findAll + filter pour gérer les éventuels doublons
+        List<Player> matchingPlayers =
+            playerRepository.findAll().stream()
+                .filter(p -> p.getUsername().equals(username))
+                .limit(1)
+                .toList();
+        if (!matchingPlayers.isEmpty()) {
+          assignedPlayers.add(matchingPlayers.get(0));
+        }
+      }
+
       if (assignedPlayers.isEmpty()) {
-        log.warn("⚠️ Aucun joueur assigné pour {}, équipe ignorée", pronostiqueur);
+        log.warn("⚠️ Aucun joueur trouvé en base pour {}, équipe ignorée", pronostiqueur);
         continue;
       }
 
@@ -321,7 +367,7 @@ public class DataInitializationService {
 
     // Récupérer les utilisateurs participants (pas admin)
     List<User> participants =
-        users.stream().filter(u -> u.getRole() == User.UserRole.PARTICIPANT).toList();
+        users.stream().filter(u -> u.getRole() == User.UserRole.USER).toList();
 
     if (participants.size() < 3) {
       log.warn("Pas assez d'utilisateurs participants pour créer des équipes");
@@ -375,7 +421,12 @@ public class DataInitializationService {
 
     // Ajouter les joueurs à l'équipe
     for (int i = 0; i < players.size(); i++) {
-      team.addPlayer(players.get(i), i + 1);
+      Player player = players.get(i);
+      // S'assurer que le player est attaché au contexte de persistance
+      if (player.getId() != null) {
+        player = playerRepository.findById(player.getId()).orElse(player);
+      }
+      team.addPlayer(player, i + 1);
     }
 
     return team;
@@ -398,7 +449,7 @@ public class DataInitializationService {
   /** Crée des games de test avec les équipes réelles créées depuis le CSV */
   private void createTestGamesWithRealTeams(List<User> users, List<Team> realTeams) {
     List<User> participants =
-        users.stream().filter(u -> u.getRole() == User.UserRole.PARTICIPANT).toList();
+        users.stream().filter(u -> u.getRole() == User.UserRole.USER).toList();
 
     if (participants.size() < 3 || realTeams.size() < 3) {
       log.warn(
@@ -475,7 +526,7 @@ public class DataInitializationService {
    */
   private void createTestGames(List<User> users) {
     List<User> participants =
-        users.stream().filter(u -> u.getRole() == User.UserRole.PARTICIPANT).toList();
+        users.stream().filter(u -> u.getRole() == User.UserRole.USER).toList();
 
     if (participants.size() < 3) {
       log.warn("Pas assez d'utilisateurs participants trouvés pour créer des games complètes");

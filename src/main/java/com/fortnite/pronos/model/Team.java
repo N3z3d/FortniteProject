@@ -93,15 +93,37 @@ public class Team {
     this.owner = user;
   }
 
+  /**
+   * Legacy-friendly setter: accepts either TeamPlayer or Player lists and normalizes to TeamPlayer.
+   */
+  public void setPlayers(List<?> players) {
+    this.players = new ArrayList<>();
+    if (players == null) {
+      return;
+    }
+    int position = 1;
+    for (Object obj : players) {
+      if (obj instanceof TeamPlayer tp) {
+        this.players.add(tp);
+      } else if (obj instanceof Player p) {
+        TeamPlayer tp = new TeamPlayer();
+        tp.setTeam(this);
+        tp.setPlayer(p);
+        tp.setPosition(position++);
+        this.players.add(tp);
+      }
+    }
+  }
+
   // Convenience methods for tests that work with simple Player lists
+  @Transient // not persisted; test-only helper
   private List<Player> simplePlayersList = new ArrayList<>();
 
-  public List<Player> getPlayers() {
-    // Return the simple list for tests
+  public List<Player> getLegacyPlayers() {
     return simplePlayersList;
   }
 
-  public void setPlayers(List<Player> players) {
+  public void setLegacyPlayers(List<Player> players) {
     this.simplePlayersList = players != null ? players : new ArrayList<>();
   }
 }

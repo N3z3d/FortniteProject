@@ -35,8 +35,8 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
 
       <!-- User Selection Login -->
       <div class="user-selection-login">
-        <h2>{{ isSwitchingUser ? 'Changer d\'utilisateur' : 'Choisissez votre profil' }}</h2>
-        <p class="login-subtitle">{{ isSwitchingUser ? 'Sélectionnez un autre utilisateur' : 'Sélectionnez votre utilisateur pour commencer' }}</p>
+        <h2>{{ isSwitchingUser ? "Changer d'utilisateur" : "Choisissez votre profil" }}</h2>
+        <p class="login-subtitle">{{ isSwitchingUser ? "Sélectionnez un autre utilisateur" : "Sélectionnez votre utilisateur pour commencer" }}</p>
         
         <!-- User Profile Selection -->
         <fieldset class="user-selection-section" *ngIf="!isLoading">
@@ -120,7 +120,7 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
   styles: [`
     .user-controlled-login {
       min-height: 100vh;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: #0d0d0d;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -137,7 +137,7 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
       left: 0;
       right: 0;
       bottom: 0;
-      background-image: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
+      background-image: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23c9a962" fill-opacity="0.03"><circle cx="30" cy="30" r="2"/></g></g></svg>');
       animation: float 20s infinite linear;
     }
 
@@ -155,14 +155,12 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
     .game-title {
       font-size: 3.5rem;
       font-weight: 800;
-      background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-      background-size: 200% 200%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: gradientShift 3s ease-in-out infinite alternate;
+      color: #c9a962;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 4px;
       margin: 0 0 1rem 0;
-      text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
+      text-shadow: 0 0 30px rgba(201, 169, 98, 0.3);
     }
 
     @keyframes gradientShift {
@@ -178,13 +176,12 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
     }
 
     .user-selection-login {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
+      background: #1a1a1a;
+      border-radius: 16px;
       padding: 2.5rem;
       text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid #333333;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       z-index: 1;
       min-width: 450px;
       min-height: 300px;
@@ -232,7 +229,7 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
 
     .user-profile-btn:hover {
       transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 12px 25px rgba(33, 150, 243, 0.4);
+      box-shadow: 0 12px 25px rgba(201, 169, 98, 0.4);
     }
 
     .user-profile-btn:active {
@@ -240,9 +237,9 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
     }
 
     .user-profile-btn:focus-visible {
-      outline: 3px solid #4ecdc4 !important;
+      outline: 3px solid #c9a962 !important;
       outline-offset: 2px !important;
-      box-shadow: 0 0 0 5px rgba(78, 205, 196, 0.2) !important;
+      box-shadow: 0 0 0 5px rgba(201, 169, 98, 0.2) !important;
     }
 
     .user-profile-btn:focus:not(:focus-visible) {
@@ -313,7 +310,7 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
       display: block;
       font-size: 1.5rem;
       font-weight: 700;
-      color: #4ecdc4;
+      color: #c9a962;
     }
 
     .stat-label {
@@ -369,30 +366,30 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAvailableProfiles();
-    
+
     // Check if this is a user switch operation
     this.route.queryParams.subscribe(params => {
       this.isSwitchingUser = params['switchUser'] === 'true';
     });
-    
+
     // Vérifier si l'utilisateur est déjà connecté
     const currentUser = this.userContextService.getCurrentUser();
     if (currentUser) {
       // Si déjà connecté, rediriger immédiatement
-      this.router.navigate(['/games/join']);
+      this.router.navigate(['/games']);
       return;
     }
-    
+
     // Tentative d'auto-connexion pour les utilisateurs récurrents (uniquement si pas en mode switch)
     if (!this.isSwitchingUser) {
       const autoLoggedUser = this.userContextService.attemptAutoLogin();
       if (autoLoggedUser) {
         console.log('🔐 Auto-connexion réussie pour:', autoLoggedUser.username);
-        this.router.navigate(['/games/join'], { queryParams: { autoLogin: 'true', user: autoLoggedUser.username } });
+        this.router.navigate(['/games'], { queryParams: { autoLogin: 'true', user: autoLoggedUser.username } });
         return;
       }
     }
-    
+
     console.log('🔐 Page de login chargée - attente du choix utilisateur');
   }
 
@@ -403,22 +400,22 @@ export class LoginComponent implements OnInit {
   selectUser(profile: UserProfile): void {
     console.log('🔐 Utilisateur sélectionné:', profile.username);
     this.isLoading = true;
-    
+
     // Announce the login attempt
     this.accessibilityService.announceLoading(true, `authentication for ${profile.username}`);
-    
+
     // Connexion avec feedback visuel approprié
     setTimeout(() => {
       this.userContextService.login(profile);
       console.log('🔐 Connexion réussie pour:', profile.username);
       this.isLoading = false;
-      
+
       // Announce successful login
       this.accessibilityService.announceSuccess(`Login successful for ${profile.username}`);
       this.accessibilityService.announceNavigation('Sélection de game');
-      
+
       // Naviguer directement vers la sélection de game
-      this.router.navigate(['/games/join'], { queryParams: { welcome: 'true', user: profile.username } });
+      this.router.navigate(['/games'], { queryParams: { welcome: 'true', user: profile.username } });
     }, 800); // Temps suffisant pour voir le feedback
   }
 
@@ -441,21 +438,21 @@ export class LoginComponent implements OnInit {
     if (this.quickForm.valid) {
       this.isLoading = true;
       const identifier = this.quickForm.get('identifier')?.value;
-      
+
       // Announce login attempt
       this.accessibilityService.announceLoading(true, `login attempt for ${identifier}`);
-      
+
       // Try to find matching profile or create default
-      const matchingProfile = this.availableProfiles.find(p => 
+      const matchingProfile = this.availableProfiles.find(p =>
         p.username.toLowerCase().includes(identifier.toLowerCase())
       ) || this.availableProfiles[0];
-      
+
       setTimeout(() => {
         this.userContextService.login(matchingProfile);
         this.isLoading = false;
         this.accessibilityService.announceSuccess(`Login successful`);
         this.accessibilityService.announceNavigation('Sélection de game');
-        this.router.navigate(['/games/join']);
+        this.router.navigate(['/games']);
       }, 800);
     } else {
       // Announce form validation errors

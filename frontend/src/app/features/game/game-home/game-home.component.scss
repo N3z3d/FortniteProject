@@ -316,25 +316,7 @@
       font-size: 1.2rem;
       font-weight: 600;
       color: var(--gaming-light);
-      margin: 0 0 var(--space-md) 0;
-    }
-    
-    .loading-dots {
-      display: flex;
-      justify-content: center;
-      gap: var(--space-xs);
-      
-      span {
-        width: 8px;
-        height: 8px;
-        background: var(--gaming-primary);
-        border-radius: 50%;
-        animation: loadingBounce 1.4s ease-in-out infinite both;
-        
-        &:nth-child(1) { animation-delay: -0.32s; }
-        &:nth-child(2) { animation-delay: -0.16s; }
-        &:nth-child(3) { animation-delay: 0s; }
-      }
+      margin: 0;
     }
   }
 }
@@ -552,6 +534,8 @@
       inset: 0;
       background: var(--glass-bg-dark);
       opacity: 0.8;
+      pointer-events: none;
+      z-index: 0;
       transition: opacity var(--transition-medium);
     }
     
@@ -562,6 +546,8 @@
       right: 0;
       height: 4px;
       opacity: 0.8;
+      pointer-events: none;
+      z-index: 2;
       
       &[data-status="CREATING"] {
         background: linear-gradient(90deg, #6a1b9a, #9c27b0);
@@ -623,6 +609,14 @@
     &:nth-child(6) { animation-delay: 0.6s; }
     &:nth-child(7) { animation-delay: 0.7s; }
     &:nth-child(8) { animation-delay: 0.8s; }
+
+    // Ensure interactive content remains clickable above decorative layers
+    .game-card-header,
+    .game-card-content,
+    .game-card-actions {
+      position: relative;
+      z-index: 1;
+    }
   }
 }
 
@@ -659,22 +653,6 @@
       &[data-status="CANCELLED"] { color: var(--gaming-error); }
     }
     
-    .avatar-ring {
-      position: absolute;
-      inset: -4px;
-      border: 2px solid var(--gaming-primary);
-      border-radius: 50%;
-      opacity: 0.5;
-      transition: all var(--transition-spring);
-      
-      &::before {
-        content: '';
-        position: absolute;
-        inset: -6px;
-        border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
-        border-radius: 50%;
-      }
-    }
   }
   
   .game-info {

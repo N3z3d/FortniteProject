@@ -14,6 +14,7 @@ import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.game.GameCreationService;
 import com.fortnite.pronos.service.game.GameDraftService;
 import com.fortnite.pronos.service.game.GameParticipantService;
@@ -36,6 +37,7 @@ public class GameService {
   private final GameQueryService gameQueryService;
   private final GameParticipantService gameParticipantService;
   private final GameDraftService gameDraftService;
+  private final TeamRepository teamRepository;
 
   // Game Creation Operations
 
@@ -86,10 +88,18 @@ public class GameService {
     return gameQueryService.getActiveGames();
   }
 
-  /** @deprecated Games publiques supprimées - utilisez getGamesByUser() */
+  /**
+   * @deprecated Games publiques supprimées - utilisez getGamesByUser()
+   */
   @Deprecated
   public List<GameDto> getAvailableGames() {
-    return List.of(); // Plus de games publiques
+    return gameQueryService.getAllGames().stream()
+        .filter(
+            game ->
+                game.getStatus() == GameStatus.CREATING
+                    || game.getStatus() == GameStatus.DRAFTING
+                    || game.getStatus() == GameStatus.ACTIVE)
+        .toList();
   }
 
   /** Gets games with pagination */
@@ -120,8 +130,8 @@ public class GameService {
   // Game Participant Operations
 
   /** Adds a user to a game */
-  public void joinGame(UUID userId, JoinGameRequest request) {
-    gameParticipantService.joinGame(userId, request);
+  public boolean joinGame(UUID userId, JoinGameRequest request) {
+    return gameParticipantService.joinGame(userId, request);
   }
 
   /** Removes a user from a game */
@@ -174,5 +184,18 @@ public class GameService {
   /** Gets draft picks for a game */
   public List<DraftPickDto> getDraftPicks(UUID gameId) {
     return gameDraftService.getDraftPicks(gameId);
+  }
+
+  // Team Operations
+
+  /** Gets all teams for a specific game */
+  public List<?> getGameTeams(UUID gameId) {
+    log.debug("Getting teams for game: {}", gameId);
+
+    // Vérifier que le jeu existe
+    gameQueryService.getGameByIdOrThrow(gameId);
+
+    // Récupérer les équipes du jeu avec fetch optimisé
+    return teamRepository.findByGameIdWithFetch(gameId);
   }
 }

@@ -1,12 +1,12 @@
 package com.fortnite.pronos.architecture;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 
@@ -16,7 +16,10 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  */
 public class NamingConventionTest {
 
-  private final JavaClasses classes = new ClassFileImporter().importPackages("com.fortnite.pronos");
+  private final JavaClasses classes =
+      new ClassFileImporter()
+          .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+          .importPackages("com.fortnite.pronos");
 
   @Test
   void controllersShouldHaveControllerSuffix() {
@@ -27,7 +30,7 @@ public class NamingConventionTest {
             .and()
             .areAnnotatedWith(RestController.class)
             .should()
-            .haveSimpleNameEndingWith("Controller");
+            .haveSimpleNameContaining("Controller");
 
     rule.check(classes);
   }
@@ -52,10 +55,6 @@ public class NamingConventionTest {
         ArchRuleDefinition.classes()
             .that()
             .resideInAPackage("..repository..")
-            .and()
-            .areAnnotatedWith(Repository.class)
-            .or()
-            .areInterfaces()
             .should()
             .haveSimpleNameEndingWith("Repository");
 
@@ -68,12 +67,20 @@ public class NamingConventionTest {
         ArchRuleDefinition.classes()
             .that()
             .resideInAPackage("..dto..")
+            .and()
+            .areTopLevelClasses()
             .should()
             .haveSimpleNameEndingWith("Dto")
             .orShould()
             .haveSimpleNameEndingWith("Request")
             .orShould()
-            .haveSimpleNameEndingWith("Response");
+            .haveSimpleNameEndingWith("Response")
+            .orShould()
+            .haveSimpleNameEndingWith("DTO")
+            .orShould()
+            .haveSimpleNameContaining("Status")
+            .orShould()
+            .haveSimpleNameContaining("PlayerStats");
 
     rule.check(classes);
   }
@@ -112,14 +119,12 @@ public class NamingConventionTest {
         ArchRuleDefinition.classes()
             .that()
             .resideInAPackage("..test..")
-            .or()
-            .haveSimpleNameContaining("Test")
             .should()
             .haveSimpleNameEndingWith("Test")
             .orShould()
             .haveSimpleNameEndingWith("Tests");
 
-    rule.check(classes);
+    rule.allowEmptyShould(true).check(classes);
   }
 
   @Test

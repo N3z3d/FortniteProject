@@ -27,7 +27,7 @@ public class GameDomainService {
 
   /** Calculate if a game can be started based on domain rules */
   public boolean canStartGame(Game game, int currentParticipants) {
-    if (game.getStatus() != GameStatus.DRAFT_PENDING) {
+    if (game.getStatus() != GameStatus.CREATING && game.getStatus() != GameStatus.DRAFTING) {
       log.debug("Game {} cannot start - wrong status: {}", game.getId(), game.getStatus());
       return false;
     }
@@ -89,12 +89,7 @@ public class GameDomainService {
     switch (game.getStatus()) {
       case CREATING:
         int minParticipants = calculateMinimumParticipants(game);
-        return participantCount >= minParticipants ? GameStatus.DRAFT_PENDING : GameStatus.CREATING;
-
-      case DRAFT_PENDING:
-        return canStartGame(game, participantCount)
-            ? GameStatus.DRAFTING
-            : GameStatus.DRAFT_PENDING;
+        return participantCount >= minParticipants ? GameStatus.CREATING : GameStatus.CREATING;
 
       case DRAFTING:
         // This would be determined by draft completion logic

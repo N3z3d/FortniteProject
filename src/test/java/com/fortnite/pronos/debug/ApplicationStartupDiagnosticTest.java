@@ -20,10 +20,7 @@ import com.fortnite.pronos.PronosApplication;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {
-      PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
-    })
+    classes = {PronosApplication.class, com.fortnite.pronos.config.TestSecurityConfig.class})
 @ActiveProfiles("test")
 @TestPropertySource(
     properties = {

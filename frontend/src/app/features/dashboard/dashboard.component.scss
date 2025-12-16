@@ -263,20 +263,18 @@
         }
       }
     }
-  }
 
-      mat-card-actions {
-        padding: 16px 24px;
-        border-top: 1px solid var(--border-color);
+    mat-card-actions {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
 
-        button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: var(--primary-color);
-          text-transform: none;
-          font-weight: 500;
-        }
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--primary-color);
+        text-transform: none;
+        font-weight: 500;
       }
     }
   }

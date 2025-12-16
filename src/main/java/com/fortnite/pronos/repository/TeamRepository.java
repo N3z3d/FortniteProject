@@ -25,7 +25,7 @@ public interface TeamRepository extends JpaRepository<Team, UUID> {
   List<Team> findIncompleteTeams(@Param("season") int season);
 
   @Query(
-      "SELECT t FROM Team t WHERE t.season = :season AND t.owner.role = com.fortnite.pronos.model.User$UserRole.PARTICIPANT")
+      "SELECT t FROM Team t WHERE t.season = :season AND t.owner.role = com.fortnite.pronos.model.User$UserRole.USER")
   List<Team> findParticipantTeams(@Param("season") int season);
 
   // Méthode obsolète - Marcel n'est plus un rôle spécial
@@ -96,7 +96,17 @@ public interface TeamRepository extends JpaRepository<Team, UUID> {
           + "LEFT JOIN FETCH t.players tp "
           + "LEFT JOIN FETCH tp.player p "
           + "LEFT JOIN FETCH t.owner o "
-          + "WHERE t.season = :season AND t.owner.role = com.fortnite.pronos.model.User$UserRole.PARTICIPANT "
+          + "WHERE t.season = :season AND t.owner.role = com.fortnite.pronos.model.User$UserRole.USER "
           + "ORDER BY t.name")
   List<Team> findParticipantTeamsWithFetch(@Param("season") int season);
+
+  /** OPTIMISÉ: Récupère les équipes d'un jeu spécifique avec FETCH JOIN */
+  @Query(
+      "SELECT DISTINCT t FROM Team t "
+          + "LEFT JOIN FETCH t.players tp "
+          + "LEFT JOIN FETCH tp.player p "
+          + "LEFT JOIN FETCH t.owner o "
+          + "WHERE t.game.id = :gameId "
+          + "ORDER BY t.name")
+  List<Team> findByGameIdWithFetch(@Param("gameId") UUID gameId);
 }

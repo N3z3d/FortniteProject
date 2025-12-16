@@ -13,8 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.fortnite.pronos.PronosApplication;
+import com.fortnite.pronos.config.TestSecurityConfig;
 import com.fortnite.pronos.service.JwtService;
-import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
 
 /**
  * Tests TDD pour diagnostiquer les problèmes de démarrage Principe : Red (tests qui échouent) →
@@ -22,7 +22,7 @@ import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {PronosApplication.class, TestSecurityConfigTestBackup.class})
+    classes = {PronosApplication.class, TestSecurityConfig.class})
 @ActiveProfiles("test")
 @DisplayName("Tests TDD - Diagnostic des Problèmes de Démarrage")
 class ApplicationStartupTest {

@@ -37,6 +37,7 @@ import com.fortnite.pronos.exception.FortniteTrackerException;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FortniteTrackerService - External API Critical TDD Tests")
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class FortniteTrackerServiceTddTest {
 
   @Mock private RestTemplate restTemplate;

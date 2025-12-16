@@ -18,7 +18,7 @@ public class TestDataBuilderTest {
     user.setUsername(username);
     user.setEmail(username.toLowerCase() + "@test.com");
     user.setPassword("$2a$10$dummy.hashed.password"); // BCrypt dummy hash
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
     return user;
   }

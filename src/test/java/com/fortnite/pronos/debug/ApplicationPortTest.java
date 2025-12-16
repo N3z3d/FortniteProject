@@ -13,7 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import com.fortnite.pronos.PronosApplication;
-import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
+import com.fortnite.pronos.config.TestSecurityConfig;
 
 /**
  * Test TDD pour forcer l'application à démarrer sur le port 8080 Principe : Red (tests qui
@@ -21,7 +21,7 @@ import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {PronosApplication.class, TestSecurityConfigTestBackup.class})
+    classes = {PronosApplication.class, TestSecurityConfig.class})
 @ActiveProfiles("test")
 @TestPropertySource(
     properties = {

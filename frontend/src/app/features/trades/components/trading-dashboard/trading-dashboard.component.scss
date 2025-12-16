@@ -516,10 +516,10 @@
 
     .trade-value {
       .value-balance {
-        @include value-comparison-display();
         padding: var(--space-md);
         border-radius: var(--radius-medium);
         text-align: center;
+        @include value-comparison-display();
 
         &.value-positive {
           @include value-comparison-display('positive');

@@ -27,20 +27,22 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+      com.fortnite.pronos.config.TestSecurityConfig.class
     })
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @Sql(
     executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
     statements = {
+      "SET REFERENTIAL_INTEGRITY FALSE",
       "DELETE FROM scores",
       "DELETE FROM team_players",
       "DELETE FROM teams",
       "DELETE FROM game_participants",
       "DELETE FROM games",
       "DELETE FROM players",
-      "DELETE FROM users"
+      "DELETE FROM users",
+      "SET REFERENTIAL_INTEGRITY TRUE"
     })
 @DisplayName("DataInitializationService - TDD Tests")
 class DataInitializationServiceTddTest {
@@ -178,7 +180,7 @@ class DataInitializationServiceTddTest {
     user.setUsername(username);
     user.setEmail(email);
     user.setPassword("test");
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
     return user;
   }

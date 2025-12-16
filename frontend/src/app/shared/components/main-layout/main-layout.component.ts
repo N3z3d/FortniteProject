@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, RouterModule } from '@angular/router';
+import { Router, RouterOutlet, RouterModule, ChildrenOutletContexts } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { fadeSlideAnimation } from '../../animations/route.animations';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatBadgeModule } from '@angular/material/badge';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -48,12 +50,15 @@ import { FocusManagementService } from '../../services/focus-management.service'
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatBadgeModule
   ],
   templateUrl: './main-layout.component.html',
-  styleUrls: ['./main-layout.component.scss']
+  styleUrls: ['./main-layout.component.scss'],
+  animations: [fadeSlideAnimation]
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {
+  private readonly contexts: ChildrenOutletContexts;
   @ViewChild('gamesSidenav') gamesSidenav!: MatSidenav;
 
   currentUser: UserProfile | null = null;
@@ -70,29 +75,43 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   error: string | null = null;
   selectedGame: Game | null = null;
   isMobile = false;
-  
-  private destroy$ = new Subject<void>();
+  sidebarCollapsed = false;
+  sidebarOpen = true; // Sidebar ouverte par défaut
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private gameService: GameService,
-    private userContextService: UserContextService,
-    private gameSelectionService: GameSelectionService,
-    private router: Router,
-    private breakpointObserver: BreakpointObserver,
-    private accessibilityService: AccessibilityAnnouncerService,
-    private focusManagementService: FocusManagementService,
-    private snackBar: MatSnackBar
-  ) {}
+    private readonly gameService: GameService,
+    private readonly userContextService: UserContextService,
+    private readonly gameSelectionService: GameSelectionService,
+    private readonly router: Router,
+    private readonly breakpointObserver: BreakpointObserver,
+    private readonly accessibilityService: AccessibilityAnnouncerService,
+    private readonly focusManagementService: FocusManagementService,
+    private readonly snackBar: MatSnackBar,
+    contexts: ChildrenOutletContexts
+  ) {
+    this.contexts = contexts;
+    // Restaurer l'état de la sidebar depuis localStorage
+    const savedState = localStorage.getItem('sidebarOpen');
+    if (savedState !== null) {
+      this.sidebarOpen = savedState === 'true';
+    }
+  }
+
+  // Méthode pour les animations de route
+  prepareRoute(outlet: RouterOutlet): string {
+    return outlet?.activatedRouteData?.['animation'] ?? '*';
+  }
 
   ngOnInit(): void {
     this.loadCurrentUser();
     this.setupResponsive();
     this.subscribeToGameSelection();
-    
+    this.subscribeToRouteChanges();
+
     // Charger les games après un petit délai pour s'assurer que l'utilisateur est connecté
-    setTimeout(() => {
-      this.loadUserGames();
-    }, 100);
+    this.loadUserGames();
   }
 
   ngOnDestroy(): void {
@@ -151,6 +170,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   goToHome(): void {
     this.accessibilityService.announceNavigation('Home dashboard');
+    // Désélectionner la partie pour revenir à la vue d'ensemble
+    this.gameSelectionService.setSelectedGame(null);
+    this.selectedGame = null;
     this.router.navigate(['/games']);
   }
 
@@ -187,6 +209,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Responsive & UI controls
   toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+    // Sauvegarder l'état dans localStorage
+    localStorage.setItem('sidebarOpen', this.sidebarOpen.toString());
+
     if (this.gamesSidenav) {
       this.gamesSidenav.toggle();
     }
@@ -196,15 +222,29 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   switchProfile(): void {
     // Direct logout and redirect to login for user switching
     this.userContextService.logout();
-    this.userContextService.disableAutoLogin(); // Disable auto-login when switching
-    this.router.navigate(['/login'], { 
-      queryParams: { switchUser: 'true' } 
+    this.router.navigate(['/login'], {
+      queryParams: { switchUser: 'true' }
     });
   }
 
   logout(): void {
-    this.userContextService.logout();
+    try {
+      this.userContextService.logout();
+    } catch (error) {
+      console.error('Erreur de déconnexion', error);
+    }
+
+    this.clearLocalSession();
     this.router.navigate(['/login']);
+  }
+
+  private clearLocalSession(): void {
+    this.currentUser = null;
+    this.userGames = [];
+    this.selectedGame = null;
+    this.loading = false;
+    this.error = null;
+    this.gameSelectionService.setSelectedGame(null);
   }
 
   // Permissions
@@ -216,21 +256,29 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   // Status helpers
   getStatusColor(status: GameStatus): string {
     switch (status) {
-      case 'CREATING': return 'warn';
+      case 'CREATING': return 'primary';
       case 'DRAFTING': return 'accent';
       case 'ACTIVE': return 'primary';
-      case 'COMPLETED': return 'warn';
+      case 'FINISHED':
+      case 'CANCELLED':
+      case 'COMPLETED':
+        return 'warn';
       default: return 'primary';
     }
   }
 
   getStatusLabel(status: GameStatus): string {
     switch (status) {
-      case 'CREATING': return 'Création';
-      case 'DRAFTING': return 'Draft';
+      case 'CREATING': return 'En création';
+      case 'DRAFTING': return 'Draft en cours';
       case 'ACTIVE': return 'Active';
-      case 'COMPLETED': return 'Terminée';
-      default: return status;
+      case 'FINISHED':
+      case 'COMPLETED':
+        return 'Terminée';
+      case 'CANCELLED':
+        return 'Annulée';
+      default:
+        return status;
     }
   }
 
@@ -291,6 +339,20 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       });
   }
 
+  private subscribeToRouteChanges(): void {
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if (event.constructor.name === 'NavigationEnd') {
+          // Désélectionner la game si on navigue vers /games (liste)
+          if (this.router.url === '/games' || this.router.url === '/') {
+            this.selectedGame = null;
+            this.gameSelectionService.setSelectedGame(null);
+          }
+        }
+      });
+  }
+
   private loadCurrentUser(): void {
     this.currentUser = this.userContextService.getCurrentUser();
   }
@@ -299,7 +361,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    this.gameService.getUserGames().subscribe({
+    this.gameService.getUserGames().pipe(takeUntil(this.destroy$)).subscribe({
       next: (games) => {
         this.userGames = games;
         this.loading = false;
@@ -311,4 +373,14 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       }
     });
   }
-} 
+
+  // Compatibilité tests : action rapide pour rejoindre une game
+  public joinGame(): void {
+    this.router.navigate(['/games/join']);
+  }
+
+  // Toggle sidebar collapse
+  toggleSidebarCollapse(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+}

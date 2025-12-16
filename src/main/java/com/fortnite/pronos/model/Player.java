@@ -66,12 +66,12 @@ public class Player {
   public enum Region {
     EU,
     NAW,
-    NA, // Added for compatibility with tests
     BR,
     ASIA,
     OCE,
     NAC,
-    ME
+    ME,
+    NA
   }
 
   @PrePersist
@@ -94,7 +94,7 @@ public class Player {
   }
 
   /** Convenience method for tests to get region as string */
-  public String getRegion() {
+  public String getRegionName() {
     return region != null ? region.name() : null;
   }
 
@@ -103,6 +103,11 @@ public class Player {
     if (regionName != null) {
       this.region = Region.valueOf(regionName);
     }
+  }
+
+  /** Convenience setter for enum */
+  public void setRegion(Region region) {
+    this.region = region;
   }
 
   /** Convenience method for tests to check if player is locked */

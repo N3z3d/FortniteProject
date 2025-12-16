@@ -21,7 +21,7 @@ import { of, throwError } from 'rxjs';
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let router: Router;
   let mockUserContextService: jasmine.SpyObj<UserContextService>;
   let mockGameService: jasmine.SpyObj<GameService>;
 
@@ -83,7 +83,6 @@ describe('MainLayoutComponent', () => {
   ];
 
   beforeEach(async () => {
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
     mockUserContextService = jasmine.createSpyObj('UserContextService', [
       'getCurrentUser',
       'logout'
@@ -106,11 +105,13 @@ describe('MainLayoutComponent', () => {
         MatCardModule
       ],
       providers: [
-        { provide: Router, useValue: mockRouter },
         { provide: UserContextService, useValue: mockUserContextService },
         { provide: GameService, useValue: mockGameService }
       ]
     }).compileComponents();
+
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
 
     fixture = TestBed.createComponent(MainLayoutComponent);
     component = fixture.componentInstance;
@@ -164,7 +165,7 @@ describe('MainLayoutComponent', () => {
 
       // Assert
       expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
 
     it('should clear local data when logging out', () => {
@@ -200,9 +201,9 @@ describe('MainLayoutComponent', () => {
 
       // Assert
       expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
       // Vérifier que la navigation se fait même en cas d'erreur
-      expect(mockRouter.navigate).toHaveBeenCalledTimes(1);
+      expect(router.navigate).toHaveBeenCalledTimes(1);
     });
 
     it('should display logout button in toolbar', () => {
@@ -248,7 +249,7 @@ describe('MainLayoutComponent', () => {
 
       // Assert
       expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
   });
 
@@ -268,7 +269,7 @@ describe('MainLayoutComponent', () => {
 
       // Assert
       expect(component.selectedGame).toEqual(draftingGame);
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games', draftingGame.id, 'draft']);
+      expect(router.navigate).toHaveBeenCalledWith(['/games', draftingGame.id, 'draft']);
     });
 
     it('should navigate to game details when selecting a non-drafting game', () => {
@@ -280,7 +281,7 @@ describe('MainLayoutComponent', () => {
 
       // Assert
       expect(component.selectedGame).toEqual(creatingGame);
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games', creatingGame.id]);
+      expect(router.navigate).toHaveBeenCalledWith(['/games', creatingGame.id]);
     });
   });
 
@@ -290,7 +291,7 @@ describe('MainLayoutComponent', () => {
       component.createGame();
 
       // Assert
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games/create']);
+      expect(router.navigate).toHaveBeenCalledWith(['/games/create']);
     });
 
     it('should navigate to join game page', () => {
@@ -298,7 +299,7 @@ describe('MainLayoutComponent', () => {
       component.joinGame();
 
       // Assert
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games/join']);
+      expect(router.navigate).toHaveBeenCalledWith(['/games/join']);
     });
   });
 
@@ -436,7 +437,8 @@ describe('MainLayoutComponent', () => {
     it('should show loading spinner when loading games', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      spyOn(component as any, 'loadUserGames').and.stub();
+      component.sidebarCollapsed = false;
       component.loading = true;
 
       // Act
@@ -450,6 +452,8 @@ describe('MainLayoutComponent', () => {
     it('should show error message when loading fails', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
+      spyOn(component as any, 'loadUserGames').and.stub();
+      component.sidebarCollapsed = false;
       component.error = 'Erreur de chargement';
 
       // Act

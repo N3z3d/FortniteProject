@@ -60,7 +60,7 @@ class UnifiedAuthServiceTddTest {
     testUser = new User();
     testUser.setUsername(testUsername);
     testUser.setEmail(testEmail);
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
 
     // Test login request setup
@@ -229,7 +229,7 @@ class UnifiedAuthServiceTddTest {
                 assertThat(ud.getAuthorities()).hasSize(1);
                 GrantedAuthority authority = ud.getAuthorities().iterator().next();
                 assertThat(authority).isInstanceOf(SimpleGrantedAuthority.class);
-                assertThat(authority.getAuthority()).isEqualTo("ROLE_PARTICIPANT");
+                assertThat(authority.getAuthority()).isEqualTo("ROLE_USER");
 
                 return validToken;
               });
@@ -355,7 +355,7 @@ class UnifiedAuthServiceTddTest {
 
       User spectatorUser = new User();
       spectatorUser.setUsername("spec_user");
-      spectatorUser.setRole(User.UserRole.SPECTATEUR);
+      spectatorUser.setRole(User.UserRole.SPECTATOR);
 
       LoginRequest adminRequest = new LoginRequest();
       adminRequest.setUsername("admin_user");
@@ -378,7 +378,7 @@ class UnifiedAuthServiceTddTest {
 
       LoginResponse specResult = unifiedAuthService.login(specRequest);
       assertThat(specResult).isNotNull();
-      assertThat(specResult.getUser().getRole()).isEqualTo(User.UserRole.SPECTATEUR);
+      assertThat(specResult.getUser().getRole()).isEqualTo(User.UserRole.SPECTATOR);
 
       // Verify JWT service was called for both users
       verify(jwtService, times(2)).generateToken(any());

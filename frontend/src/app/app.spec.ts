@@ -1,18 +1,29 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { RouterModule } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
+import { UserContextService } from './core/services/user-context.service';
 
 describe('App', () => {
+  let userContextService: jasmine.SpyObj<UserContextService>;
+
   beforeEach(async () => {
+    userContextService = jasmine.createSpyObj('UserContextService', [
+      'getCurrentUser',
+      'getAvailableProfiles',
+      'login',
+      'logout'
+    ]);
+
     await TestBed.configureTestingModule({
       imports: [
-        RouterModule.forRoot([])
-      ],
-      declarations: [
+        RouterTestingModule,
         AppComponent
       ],
-      providers: [provideZonelessChangeDetection()]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: UserContextService, useValue: userContextService }
+      ]
     }).compileComponents();
   });
 
@@ -22,10 +33,11 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', () => {
+  it('should render router outlet', () => {
     const fixture = TestBed.createComponent(AppComponent);
+    spyOn(fixture.componentInstance, 'isDevelopment').and.returnValue(false);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

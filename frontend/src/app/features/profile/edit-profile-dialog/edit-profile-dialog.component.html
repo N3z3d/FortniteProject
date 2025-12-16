@@ -1,0 +1,61 @@
+<div class="edit-profile-dialog">
+  <div class="dialog-header">
+    <mat-icon class="header-icon">edit</mat-icon>
+    <h2 mat-dialog-title>Modifier le profil</h2>
+    <button mat-icon-button class="close-button" (click)="onCancel()" aria-label="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <form [formGroup]="profileForm" class="profile-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nom d'utilisateur</mat-label>
+        <input
+          matInput
+          formControlName="username"
+          placeholder="Votre nom d'utilisateur"
+          required
+          autocomplete="username">
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-error *ngIf="usernameError">{{ usernameError }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input
+          matInput
+          formControlName="email"
+          type="email"
+          placeholder="votre.email@exemple.com"
+          required
+          autocomplete="email">
+        <mat-icon matPrefix>email</mat-icon>
+        <mat-error *ngIf="emailError">{{ emailError }}</mat-error>
+      </mat-form-field>
+
+      <div class="info-box">
+        <mat-icon class="info-icon">info</mat-icon>
+        <p>Les modifications seront enregistrées immédiatement après validation.</p>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button
+      mat-stroked-button
+      (click)="onCancel()"
+      [disabled]="saving">
+      Annuler
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onSave()"
+      [disabled]="profileForm.invalid || saving"
+      class="save-button">
+      <mat-icon *ngIf="!saving">save</mat-icon>
+      <span>{{ saving ? 'Enregistrement...' : 'Enregistrer' }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

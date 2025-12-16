@@ -34,6 +34,7 @@ import { DashboardDataService } from './services/dashboard-data.service';
 import { Game } from '../game/models/game.interface';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { FocusManagementService } from '../../shared/services/focus-management.service';
+import { TranslationService } from '../../core/services/translation.service';
 
 // PERFORMANCE: Register only necessary components (reduces bundle size by ~100KB)
 Chart.register(
@@ -163,12 +164,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private interactionsService: PremiumInteractionsService,
     private gameService: GameService,
     private accessibilityService: AccessibilityAnnouncerService,
-    private focusManagementService: FocusManagementService
+    private focusManagementService: FocusManagementService,
+    public t: TranslationService
   ) {}
 
   ngOnInit() {
     // Charger la liste des games
     this.loadGames();
+
+    this.subscriptions.push(
+      this.t.language$.subscribe(() => {
+        this.cdr.markForCheck();
+      })
+    );
     
     // Get gameId from route params if available
     this.route.params.subscribe(params => {
@@ -239,15 +247,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async loadDashboardData(showLoading = true) {
     if (!this.selectedGame?.id) {
-      this.error = 'Aucune game sélectionnée';
-      this.updateLiveRegion('No game selected for dashboard', 'assertive');
+      this.error = this.t.t('dashboard.live.noGameSelected');
+      this.updateLiveRegion(this.t.t('dashboard.live.noGameSelected'), 'assertive');
       return;
     }
 
     if (showLoading) {
       this.isLoading = true;
       this.isLoadingProgress = 0;
-      this.accessibilityService.announceLoading(true, 'dashboard data');
+      this.accessibilityService.announceLoading(true, this.t.t('navigation.dashboard'));
     }
     this.error = null;
 
@@ -292,8 +300,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           console.log('📊 Final stats after update:', this.stats);
 
           // Announce successful data load
-          this.accessibilityService.announceLoading(false, 'dashboard data');
-          this.updateLiveRegion(`Dashboard updated with ${this.stats.totalTeams} teams and ${this.stats.totalPlayers} players`, 'polite');
+          this.accessibilityService.announceLoading(false, this.t.t('navigation.dashboard'));
+
+          const formattedTeams = this.formatNumber(this.stats.totalTeams);
+          const formattedPlayers = this.formatNumber(this.stats.totalPlayers);
+          this.updateLiveRegion(
+            `${this.t.t('dashboard.live.updatedPrefix')} ${formattedTeams} ${this.t.t('dashboard.live.teams')} ${this.t.t('common.and')} ${formattedPlayers} ${this.t.t('dashboard.live.players')}`,
+            'polite'
+          );
 
           // Trigger change detection
           this.cdr.markForCheck();
@@ -304,9 +318,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (error) => {
           console.error('Erreur lors du chargement des données dashboard:', error);
           this.error = error?.message || 'Erreur lors du chargement des données';
-          this.accessibilityService.announceError('Failed to load dashboard data');
-          this.updateLiveRegion('Error loading dashboard data. Please try again.', 'assertive');
-          this.snackBar.open(this.error || 'Erreur inconnue', 'Fermer', { duration: 5000 });
+          this.accessibilityService.announceError(this.t.t('dashboard.live.errorLoading'));
+          this.updateLiveRegion(this.t.t('dashboard.live.errorLoading'), 'assertive');
+          this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
         },
         complete: () => {
           if (showLoading) {
@@ -318,7 +332,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       this.error = error instanceof Error ? error.message : 'Erreur lors du chargement des données';
-      this.snackBar.open(this.error || 'Erreur inconnue', 'Fermer', { duration: 5000 });
+      this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
       if (showLoading) {
         this.isLoading = false;
       }
@@ -505,7 +519,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         plugins: {
           title: {
             display: true,
-            text: 'Répartition par Région',
+            text: this.t.t('dashboard.charts.regionTitle'),
             font: { size: 14, weight: 'bold' }
           },
           legend: {
@@ -529,7 +543,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Prendre les 10 meilleures équipes
     const topTeams = this.leaderboardEntries.slice(0, 10);
-    const labels = topTeams.map(entry => this.displayTeamName(entry.teamName) || entry.ownerName || `Équipe ${entry.rank}`);
+    const labels = topTeams.map(entry => this.displayTeamName(entry.teamName) || entry.ownerName || `${this.t.t('dashboard.labels.team')} ${entry.rank}`);
     const data = topTeams.map(entry => entry.totalPoints);
 
     this.pointsChart = new Chart(ctx, {
@@ -537,7 +551,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       data: {
         labels: labels,
         datasets: [{
-          label: 'Points',
+          label: this.t.t('dashboard.charts.pointsAxis'),
           data: data,
           backgroundColor: '#667eea',
           borderColor: '#764ba2',
@@ -553,7 +567,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         plugins: {
           title: {
             display: true,
-            text: 'Top 10 Équipes par Points',
+            text: this.t.t('dashboard.charts.top10Title'),
             font: { size: 14, weight: 'bold' }
           },
           legend: { display: false }
@@ -561,7 +575,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         scales: {
           y: {
             beginAtZero: true,
-            title: { display: true, text: 'Points' }
+            title: { display: true, text: this.t.t('dashboard.charts.pointsAxis') }
           },
           x: {
             ticks: { maxRotation: 45 }
@@ -572,36 +586,50 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Méthodes utilitaires
+  private getNumberLocale(): string {
+    return this.t.currentLanguage === 'en' ? 'en-US' : 'fr-FR';
+  }
+
   getTotalFormattedPoints(): string {
     const points = this.stats.totalPoints || 0;
-    return points.toLocaleString('fr-FR');
+    return points.toLocaleString(this.getNumberLocale());
   }
 
   getAverageFormattedPoints(): string {
     const points = this.stats.averagePointsPerTeam || 0;
-    return points.toLocaleString('fr-FR');
+    return points.toLocaleString(this.getNumberLocale());
   }
 
   getTopTeams(): LeaderboardEntryDTO[] {
     return this.leaderboardEntries.slice(0, 5);
   }
 
+  private getRouteLabel(route: string): string {
+    switch (route) {
+      case '/games':
+        return this.t.t('navigation.games');
+      case '/leaderboard':
+        return this.t.t('navigation.leaderboard');
+      case '/teams':
+        return this.t.t('navigation.teams');
+      case '/trades':
+        return this.t.t('navigation.trades');
+      case '/draft':
+        return this.t.t('navigation.draft');
+      case '/games/create':
+        return this.t.t('games.createGame');
+      default:
+        return route;
+    }
+  }
+
   navigateTo(route: string) {
     // Announce navigation intent to screen readers
-    const routeLabels: { [key: string]: string } = {
-      '/games': 'Games Management',
-      '/leaderboard': 'Leaderboard and Rankings',
-      '/teams': 'Team Management',
-      '/trades': 'Player Trading',
-      '/draft': 'Player Draft',
-      '/games/create': 'Create New Game'
-    };
-    
-    const label = routeLabels[route] || route;
+    const label = this.getRouteLabel(route);
     this.accessibilityService.announceNavigation(label);
     
     // Update live region with navigation announcement
-    this.updateLiveRegion(`Navigating to ${label}`, 'polite');
+    this.updateLiveRegion(`${this.t.t('dashboard.live.navigatingTo')} ${label}`, 'polite');
     
     this.router.navigate([route]);
   }
@@ -668,7 +696,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     
     const topTeams = this.leaderboardEntries.slice(0, 10);
     this.pointsChart.data.labels = topTeams.map(entry => 
-      this.displayTeamName(entry.teamName) || entry.ownerName || `Équipe ${entry.rank}`);
+      this.displayTeamName(entry.teamName) || entry.ownerName || `${this.t.t('dashboard.labels.team')} ${entry.rank}`);
     this.pointsChart.data.datasets[0].data = topTeams.map(entry => entry.totalPoints);
     this.pointsChart.update('none'); // Skip animations for performance
   }
@@ -690,7 +718,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Méthode utilitaire pour le formatage rapide dans le template
   formatNumber(n: number | undefined | null): string {
     if (n === undefined || n === null) return '0';
-    return n.toLocaleString('fr-FR');
+    return n.toLocaleString(this.getNumberLocale());
   }
 
   displayTeamName(rawName: string | undefined | null): string {

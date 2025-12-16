@@ -5,7 +5,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,7 +29,6 @@ public class GameQueryService {
   private final GameRepository gameRepository;
 
   /** Gets all games - PHASE 1B: OPTIMIZED with EntityGraph to prevent N+1 */
-  @Cacheable("games")
   public List<GameDto> getAllGames() {
     log.debug("Retrieving all games with optimized fetch strategy");
     return gameRepository
@@ -51,9 +49,7 @@ public class GameQueryService {
   /** Gets a game by ID - PHASE 1B: OPTIMIZED with full details EntityGraph */
   public Optional<GameDto> getGameById(UUID gameId) {
     log.debug("Retrieving game {} with full details fetch strategy", gameId);
-    return gameRepository
-        .findWithFullDetailsById(gameId) // Uses full EntityGraph
-        .map(GameDto::fromGame);
+    return gameRepository.findById(gameId).map(GameDto::fromGame);
   }
 
   /** Gets a game by ID or throws exception */
@@ -84,7 +80,6 @@ public class GameQueryService {
   }
 
   /** Gets active games (games that are not finished) */
-  @Cacheable("activeGames")
   public List<GameDto> getActiveGames() {
     log.debug("Retrieving active games");
     return gameRepository.findByStatusNot(GameStatus.FINISHED).stream()
@@ -125,12 +120,13 @@ public class GameQueryService {
   }
 
   /** Gets game count */
-  @Cacheable("gameCount")
   public long getGameCount() {
     return gameRepository.count();
   }
 
-  /** @deprecated Games publiques supprimées - utilisez getGamesByUser() */
+  /**
+   * @deprecated Games publiques supprimées - utilisez getGamesByUser()
+   */
   @Deprecated
   public List<GameDto> getAvailableGames() {
     log.debug("Endpoint déprécié - plus de games publiques");

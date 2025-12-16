@@ -48,7 +48,7 @@ class UserContextServiceTddTest {
     testUser.setId(testUserId);
     testUser.setUsername("Thibaut");
     testUser.setEmail("thibaut@fortnite-pronos.com");
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
   }
 

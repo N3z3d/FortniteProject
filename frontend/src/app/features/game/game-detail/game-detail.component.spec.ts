@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
+import { GameDataService } from '../services/game-data.service';
 import { Game, GameParticipant } from '../models/game.interface';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
@@ -28,6 +29,7 @@ describe('GameDetailComponent', () => {
   let component: GameDetailComponent;
   let fixture: ComponentFixture<GameDetailComponent>;
   let gameServiceSpy: jasmine.SpyObj<GameService>;
+  let gameDataServiceSpy: jasmine.SpyObj<GameDataService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
   let activatedRouteStub: any;
@@ -36,20 +38,41 @@ describe('GameDetailComponent', () => {
     gameServiceSpy = jasmine.createSpyObj('GameService', [
       'getGameById', 'getGameParticipants', 'deleteGame', 'startDraft', 'joinGame', 'generateInvitationCode', 'getDraftState'
     ]);
+    gameDataServiceSpy = jasmine.createSpyObj('GameDataService', [
+      'getGameById',
+      'getGameParticipants',
+      'validateGameData',
+      'calculateGameStatistics'
+    ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
-    activatedRouteStub = { snapshot: { paramMap: { get: () => '1' } } };
+    activatedRouteStub = { params: of({ id: '1' }) };
 
-    await TestBed.configureTestingModule({
-      declarations: [GameDetailComponent],
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.validateGameData.and.returnValue({ isValid: true, errors: [] });
+    gameDataServiceSpy.calculateGameStatistics.and.callFake((game: Game) => ({
+      fillPercentage: game.maxParticipants ? Math.round((game.participantCount / game.maxParticipants) * 100) : 0,
+      availableSlots: game.maxParticipants - game.participantCount,
+      isNearlyFull: false,
+      canAcceptMoreParticipants: game.canJoin && game.participantCount < game.maxParticipants
+    }));
+
+    TestBed.configureTestingModule({
+      imports: [GameDetailComponent],
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
+        { provide: GameDataService, useValue: gameDataServiceSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
-        { provide: ActivatedRoute, useValue: activatedRouteStub },
+        { provide: ActivatedRoute, useValue: activatedRouteStub }
       ],
-      schemas: [NO_ERRORS_SCHEMA],
-    }).compileComponents();
+      schemas: [NO_ERRORS_SCHEMA]
+    });
+
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+    TestBed.overrideComponent(GameDetailComponent, { set: { template: '' } });
+
+    await TestBed.compileComponents();
   });
 
   beforeEach(() => {
@@ -62,27 +85,38 @@ describe('GameDetailComponent', () => {
   });
 
   it('should load game details on init', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     fixture.detectChanges();
     tick();
     expect(component.game).toEqual(mockGame);
     expect(component.participants).toEqual(mockParticipants);
-    expect(gameServiceSpy.getGameById).toHaveBeenCalledWith('1');
-    expect(gameServiceSpy.getGameParticipants).toHaveBeenCalledWith('1');
+    expect(gameDataServiceSpy.getGameById).toHaveBeenCalledWith('1');
+    expect(gameDataServiceSpy.getGameParticipants).toHaveBeenCalledWith('1');
   }));
 
   it('should handle error when loading game details', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(throwError(() => new Error('Erreur')));
+    gameDataServiceSpy.getGameById.and.returnValue(throwError(() => new Error('Erreur')));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
     tick();
     expect(component.error).toBeTruthy();
+    expect(component.participantsError).toBeNull();
     expect(snackBarSpy.open).toHaveBeenCalled();
   }));
 
+  it('should not load participants when loading game details fails', fakeAsync(() => {
+    gameDataServiceSpy.getGameById.and.returnValue(throwError(() => new Error('Erreur')));
+
+    fixture.detectChanges();
+    tick();
+
+    expect(gameDataServiceSpy.getGameParticipants).not.toHaveBeenCalled();
+  }));
+
   it('should allow joining a game', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.joinGame.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
@@ -93,20 +127,20 @@ describe('GameDetailComponent', () => {
   }));
 
   it('should handle error when joining a game', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.joinGame.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
     tick();
     component.joinGame();
     tick();
-    expect(component.error).toBeTruthy();
+    expect(component.error).toBeNull();
     expect(snackBarSpy.open).toHaveBeenCalled();
   }));
 
   it('should allow deleting a game', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.deleteGame.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
@@ -118,20 +152,20 @@ describe('GameDetailComponent', () => {
   }));
 
   it('should handle error when deleting a game', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.deleteGame.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
     tick();
     component.deleteGame();
     tick();
-    expect(component.error).toBeTruthy();
+    expect(component.error).toBeNull();
     expect(snackBarSpy.open).toHaveBeenCalled();
   }));
 
   it('should allow starting a draft', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.startDraft.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
@@ -142,20 +176,20 @@ describe('GameDetailComponent', () => {
   }));
 
   it('should handle error when starting a draft', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     gameServiceSpy.startDraft.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
     tick();
     component.startDraft();
     tick();
-    expect(component.error).toBeTruthy();
+    expect(component.error).toBeNull();
     expect(snackBarSpy.open).toHaveBeenCalled();
   }));
 
   it('should display participants with correct status', fakeAsync(() => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
     fixture.detectChanges();
     tick();
     expect(component.participants.length).toBe(2);
@@ -209,9 +243,8 @@ describe('GameDetailComponent', () => {
   });
 
   it('should navigate back to games list', () => {
-    spyOn(component['router'], 'navigate');
     component.onBack();
-    expect(component['router'].navigate).toHaveBeenCalledWith(['/games']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
   });
 
   it('should return creator from participants', () => {
@@ -241,12 +274,37 @@ describe('GameDetailComponent', () => {
     expect(nonCreators[0].isCreator).toBeFalse();
   });
 
-  it('should handle error when loading participants', () => {
-    gameServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameServiceSpy.getGameParticipants.and.returnValue(throwError(() => new Error('Erreur')));
+  it('should not set page error when loading participants fails', fakeAsync(() => {
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
-    expect(component.error).toBeTruthy();
-  });
+    tick();
+
+    expect(component.game).toEqual(mockGame);
+    expect(component.error).toBeNull();
+  }));
+
+  it('should retry loading details and participants when retryLoad is called', fakeAsync(() => {
+    gameDataServiceSpy.getGameById.and.returnValues(of(mockGame), of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValues(
+      throwError(() => new Error('Accès interdit')),
+      of(mockParticipants)
+    );
+
+    fixture.detectChanges();
+    tick();
+    expect(component.error).toBeNull();
+    expect(component.participantsError).toBeTruthy();
+
+    component.retryLoad();
+    tick();
+
+    expect(gameDataServiceSpy.getGameById).toHaveBeenCalledTimes(2);
+    expect(gameDataServiceSpy.getGameParticipants).toHaveBeenCalledTimes(2);
+    expect(component.error).toBeNull();
+    expect(component.participantsError).toBeNull();
+    expect(component.participants).toEqual(mockParticipants);
+  }));
 
   it('should call deleteGame if confirmDelete is confirmed', () => {
     spyOn(window, 'confirm').and.returnValue(true);

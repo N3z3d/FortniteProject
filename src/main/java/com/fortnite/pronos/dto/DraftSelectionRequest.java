@@ -5,10 +5,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-/** DTO pour les requêtes de sélection de joueurs dans un draft */
+/** DTO pour les requêtes de sélection de joueurs dans un draft. */
 public class DraftSelectionRequest {
 
-  // Constantes de validation
   private static final int MIN_ROUND = 1;
   private static final int MAX_ROUND = 100;
   private static final int MIN_PICK = 1;
@@ -17,7 +16,6 @@ public class DraftSelectionRequest {
   private static final String MANUAL_SELECTION_TYPE = "MANUAL";
   private static final String AUTO_PICK_SELECTION_TYPE = "AUTO_PICK";
 
-  // Champs principaux
   private UUID gameId;
   private UUID userId;
   private UUID playerId;
@@ -26,15 +24,12 @@ public class DraftSelectionRequest {
   private Boolean isAutoPick;
   private Long selectionTime;
 
-  // Gestion des erreurs de validation
   private final List<String> validationErrors = new ArrayList<>();
 
-  /** Constructeur par défaut */
   public DraftSelectionRequest() {
     this.isAutoPick = false;
   }
 
-  /** Constructeur minimal avec les champs essentiels */
   public DraftSelectionRequest(UUID gameId, UUID userId, UUID playerId) {
     this();
     this.gameId = gameId;
@@ -44,7 +39,6 @@ public class DraftSelectionRequest {
     this.pick = 1;
   }
 
-  /** Constructeur complet */
   public DraftSelectionRequest(
       UUID gameId,
       UUID userId,
@@ -62,7 +56,6 @@ public class DraftSelectionRequest {
     this.selectionTime = selectionTime;
   }
 
-  // Getters et Setters
   public UUID getGameId() {
     return gameId;
   }
@@ -119,7 +112,6 @@ public class DraftSelectionRequest {
     this.selectionTime = selectionTime;
   }
 
-  /** Valide la requête de sélection */
   public boolean isValid() {
     clearValidationErrors();
 
@@ -133,17 +125,14 @@ public class DraftSelectionRequest {
     return validationErrors.isEmpty();
   }
 
-  /** Vérifie si la sélection est un auto-pick */
   public boolean isAutoPickSelection() {
     return Boolean.TRUE.equals(isAutoPick);
   }
 
-  /** Vérifie si la sélection a un temps de sélection */
   public boolean hasSelectionTime() {
     return selectionTime != null;
   }
 
-  /** Obtient le temps de sélection en secondes */
   public int getSelectionTimeInSeconds() {
     if (selectionTime == null) {
       return 0;
@@ -151,7 +140,6 @@ public class DraftSelectionRequest {
     return (int) (selectionTime / 1000);
   }
 
-  /** Obtient le temps de sélection en minutes */
   public int getSelectionTimeInMinutes() {
     if (selectionTime == null) {
       return 0;
@@ -159,7 +147,6 @@ public class DraftSelectionRequest {
     return (int) (selectionTime / (1000 * 60));
   }
 
-  /** Méthodes de compatibilité pour les tests */
   public int getSelectionTimeSeconds() {
     return getSelectionTimeInSeconds();
   }
@@ -168,17 +155,14 @@ public class DraftSelectionRequest {
     return getSelectionTimeInMinutes();
   }
 
-  /** Obtient le numéro de sélection complet (ex: "R1P3") */
   public String getFullSelectionNumber() {
     return String.format("R%dP%d", round, pick);
   }
 
-  /** Obtient le type de sélection */
   public String getSelectionType() {
     return isAutoPickSelection() ? AUTO_PICK_SELECTION_TYPE : MANUAL_SELECTION_TYPE;
   }
 
-  /** Obtient un résumé de la sélection */
   public String getSelectionSummary() {
     StringBuilder summary = new StringBuilder();
     summary.append(getFullSelectionNumber());
@@ -191,22 +175,18 @@ public class DraftSelectionRequest {
     return summary.toString();
   }
 
-  /** Ajoute une erreur de validation */
   public void addValidationError(String error) {
     validationErrors.add(error);
   }
 
-  /** Efface les erreurs de validation */
   public void clearValidationErrors() {
     validationErrors.clear();
   }
 
-  /** Obtient la liste des erreurs de validation */
   public List<String> getValidationErrors() {
     return new ArrayList<>(validationErrors);
   }
 
-  // Méthodes de validation privées
   private void validateGameId() {
     if (gameId == null) {
       addValidationError("L'ID de la game est requis");
@@ -231,8 +211,10 @@ public class DraftSelectionRequest {
       return;
     }
 
-    if (round < MIN_ROUND || round > MAX_ROUND) {
-      addValidationError("Le numéro de round doit être entre " + MIN_ROUND + " et " + MAX_ROUND);
+    if (round < MIN_ROUND) {
+      addValidationError("Le numéro de round doit être positif");
+    } else if (round > MAX_ROUND) {
+      addValidationError("Le numéro de round ne peut pas dépasser " + MAX_ROUND);
     }
   }
 
@@ -242,8 +224,10 @@ public class DraftSelectionRequest {
       return;
     }
 
-    if (pick < MIN_PICK || pick > MAX_PICK) {
-      addValidationError("Le numéro de pick doit être entre " + MIN_PICK + " et " + MAX_PICK);
+    if (pick < MIN_PICK) {
+      addValidationError("Le numéro de pick doit être positif");
+    } else if (pick > MAX_PICK) {
+      addValidationError("Le numéro de pick ne peut pas dépasser " + MAX_PICK);
     }
   }
 
@@ -253,7 +237,6 @@ public class DraftSelectionRequest {
     }
   }
 
-  // Égalité et hashCode
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

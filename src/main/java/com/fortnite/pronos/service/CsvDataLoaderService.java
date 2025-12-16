@@ -43,6 +43,9 @@ public class CsvDataLoaderService {
     try {
       log.info("🎮 Début du chargement des données CSV...");
 
+      // Réinitialise les assignations en mémoire pour éviter de réutiliser des entités détachées
+      playersByPronosticator.clear();
+
       ClassPathResource resource = new ClassPathResource("data/fortnite_data.csv");
 
       if (!resource.exists()) {

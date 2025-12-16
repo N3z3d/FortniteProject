@@ -25,7 +25,7 @@ class GameTest {
     creator.setId(UUID.randomUUID());
     creator.setUsername("TestCreator");
     creator.setEmail("creator@test.com");
-    creator.setRole(User.UserRole.PARTICIPANT);
+    creator.setRole(User.UserRole.USER);
 
     // Création d'une game de test
     game = new Game();
@@ -47,7 +47,7 @@ class GameTest {
     participantUser.setId(UUID.randomUUID());
     participantUser.setUsername("TestParticipant");
     participantUser.setEmail("participant@test.com");
-    participantUser.setRole(User.UserRole.PARTICIPANT);
+    participantUser.setRole(User.UserRole.USER);
 
     participant = new GameParticipant();
     participant.setId(UUID.randomUUID());

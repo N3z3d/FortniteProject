@@ -1,4 +1,5 @@
 // Premium Gaming UI Mixins
+@use 'sass:color';
 
 // ===== GLASSMORPHISM EFFECTS =====
 @mixin glass-card($opacity: 0.1, $blur: 20px, $border-opacity: 0.2) {
@@ -255,6 +256,7 @@
     background: linear-gradient(135deg, transparent, $glow-color, transparent);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
+    pointer-events: none;
     opacity: 0;
     transition: opacity var(--transition-normal);
   }
@@ -330,10 +332,16 @@
 
 // Authentic Fortnite-style neon border
 @mixin fortnite-neon-border($color: var(--gaming-primary), $thickness: 2px, $glow-intensity: 0.8) {
+  $highlight: if(
+    type-of($color) == 'color',
+    color.adjust($color, $lightness: 20%),
+    color-mix(in srgb, $color 80%, white 20%)
+  );
+
   position: relative;
   border: $thickness solid transparent;
   background: linear-gradient(var(--gaming-dark), var(--gaming-dark)) padding-box,
-              linear-gradient(45deg, $color, lighten($color, 20%), $color) border-box;
+              linear-gradient(45deg, $color, $highlight, $color) border-box;
   
   &::before {
     content: '';
@@ -343,7 +351,7 @@
     right: -#{$thickness * 2};
     bottom: -#{$thickness * 2};
     border-radius: inherit;
-    background: linear-gradient(45deg, $color, lighten($color, 20%), $color);
+    background: linear-gradient(45deg, $color, $highlight, $color);
     opacity: 0;
     filter: blur(8px);
     transition: opacity 0.3s ease-out;
@@ -366,12 +374,23 @@
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.2);
   
+  $shadow: if(
+    type-of($bg-color) == 'color',
+    color.adjust($bg-color, $lightness: -20%),
+    color-mix(in srgb, $bg-color 80%, black 20%)
+  );
+  $highlight: if(
+    type-of($bg-color) == 'color',
+    color.adjust($bg-color, $lightness: 20%),
+    color-mix(in srgb, $bg-color 80%, white 20%)
+  );
+
   .energy-fill {
     height: 100%;
     background: linear-gradient(90deg, 
-      darken($bg-color, 20%) 0%,
-      $bg-color  50%,
-      lighten($bg-color, 20%) 100%);
+      $shadow 0%,
+      $bg-color 50%,
+      $highlight 100%);
     border-radius: inherit;
     position: relative;
     transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -760,8 +779,20 @@
   }
 }
 
+@mixin mobile-small {
+  @media (max-width: 480px) {
+    @content;
+  }
+}
+
 @mixin tablet {
   @media (max-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin tablet-only {
+  @media (min-width: 769px) and (max-width: 1024px) {
     @content;
   }
 }
@@ -770,6 +801,114 @@
   @media (min-width: 1025px) {
     @content;
   }
+}
+
+@mixin desktop-large {
+  @media (min-width: 1440px) {
+    @content;
+  }
+}
+
+// ===== RESPONSIVE CONTAINER =====
+@mixin responsive-container($max-width: 1400px) {
+  width: 100%;
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+
+  @include tablet {
+    padding: 0 var(--space-md);
+  }
+
+  @include mobile {
+    padding: 0 var(--space-sm);
+  }
+}
+
+// ===== RESPONSIVE GRID =====
+@mixin responsive-grid($columns-desktop: 3, $columns-tablet: 2, $columns-mobile: 1, $gap: var(--space-lg)) {
+  display: grid;
+  grid-template-columns: repeat($columns-desktop, 1fr);
+  gap: $gap;
+
+  @include tablet {
+    grid-template-columns: repeat($columns-tablet, 1fr);
+    gap: calc(#{$gap} * 0.75);
+  }
+
+  @include mobile {
+    grid-template-columns: repeat($columns-mobile, 1fr);
+    gap: calc(#{$gap} * 0.5);
+  }
+}
+
+// ===== RESPONSIVE TYPOGRAPHY =====
+@mixin responsive-font($size-desktop, $size-tablet: null, $size-mobile: null) {
+  font-size: $size-desktop;
+
+  @if $size-tablet {
+    @include tablet {
+      font-size: $size-tablet;
+    }
+  }
+
+  @if $size-mobile {
+    @include mobile {
+      font-size: $size-mobile;
+    }
+  }
+}
+
+// ===== TOUCH-FRIENDLY TARGETS =====
+@mixin touch-target($min-size: 44px) {
+  min-width: $min-size;
+  min-height: $min-size;
+
+  @include mobile {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+// ===== HIDE ON BREAKPOINTS =====
+@mixin hide-on-mobile {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+@mixin hide-on-tablet {
+  @include tablet {
+    display: none !important;
+  }
+}
+
+@mixin show-on-mobile {
+  display: none !important;
+
+  @include mobile {
+    display: block !important;
+  }
+}
+
+@mixin show-on-tablet {
+  display: none !important;
+
+  @include tablet {
+    display: block !important;
+  }
+}
+
+// ===== SAFE AREA INSETS (for mobile notches) =====
+@mixin safe-area-padding {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@mixin safe-area-bottom {
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
 }
 
 // ===== ACCESSIBILITY =====

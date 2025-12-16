@@ -102,22 +102,14 @@ public class JoinGameUseCase {
 
   /** Check if game status allows joining */
   private boolean isGameJoinable(GameStatus status) {
-    return status == GameStatus.CREATING || status == GameStatus.DRAFT_PENDING;
+    return status == GameStatus.CREATING || status == GameStatus.DRAFTING;
   }
 
   /** Update game state when conditions are met */
   private void updateGameStateIfReady(Game game) {
     long participantCount = gameParticipantRepository.countByGame(game);
 
-    // Business rule: Auto-advance to DRAFT_PENDING when minimum participants reached
-    int minParticipants =
-        Math.max(2, game.getMaxParticipants() / 2); // Example: at least half capacity
-
-    if (participantCount >= minParticipants && game.getStatus() == GameStatus.CREATING) {
-      game.setStatus(GameStatus.DRAFT_PENDING);
-      gameRepository.save(game);
-      log.info(
-          "Game {} advanced to DRAFT_PENDING with {} participants", game.getId(), participantCount);
-    }
+    // Ready flag: keep status as CREATING; draft will explicitly switch to DRAFTING
+    gameRepository.save(game);
   }
 }

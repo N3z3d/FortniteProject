@@ -1,207 +1,88 @@
-<div class="instant-join">
-  <!-- Header Ultra-Simple -->
-  <div class="join-header">
-    <h1>🎯 Rejoindre une Game</h1>
-    <p class="header-subtitle">Trouvez votre prochaine aventure</p>
-  </div>
-
-  <!-- Quick Search (Primary Action) -->
-  <div class="quick-search-section">
-    <div class="search-container">
-      <mat-form-field appearance="outline" class="mega-search">
-        <mat-label>Rechercher une game</mat-label>
-        <input 
-          matInput 
-          [(ngModel)]="searchTerm" 
-          (input)="onQuickSearch()"
-          placeholder="Nom de la game, créateur..."
-          autocomplete="off"
-          autofocus>
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-    </div>
-  </div>
-
-  <!-- Instant Results (As You Type) -->
-  <div class="instant-results" *ngIf="searchTerm && filteredGames.length > 0">
-    <h3>Résultats instantanés</h3>
-    <div class="results-grid">
-      <div 
-        *ngFor="let game of filteredGames | slice:0:6" 
-        class="game-instant-card"
-        [class.joinable]="canJoinGame(game)"
-        (click)="instantJoin(game)">
-        <div class="game-header">
-          <h4>{{ game.name }}</h4>
-          <mat-chip 
-            [color]="getStatusColor(game.status)" 
-            class="status-chip">
-            {{ getStatusLabel(game.status) }}
-          </mat-chip>
-        </div>
-        <div class="game-details">
-          <div class="detail-row">
-            <mat-icon>person</mat-icon>
-            <span>{{ game.participantCount }}/{{ game.maxParticipants }}</span>
-          </div>
-          <div class="detail-row">
-            <mat-icon>account_circle</mat-icon>
-            <span>{{ game.creatorName }}</span>
+<div class="join-game-container">
+  <div class="join-game-card-wrapper">
+    <mat-card class="join-game-card">
+      <mat-card-header>
+        <div class="header-content">
+          <mat-icon class="header-icon">vpn_key</mat-icon>
+          <div>
+            <mat-card-title>Rejoindre une partie</mat-card-title>
+            <mat-card-subtitle>Entrez le code d'invitation reçu</mat-card-subtitle>
           </div>
         </div>
-        <div class="join-action">
-          <button 
-            *ngIf="canJoinGame(game)"
-            mat-fab mini 
-            color="primary"
-            [disabled]="isJoining"
-            class="join-fab">
-            <mat-icon>add</mat-icon>
-          </button>
-          <span *ngIf="!canJoinGame(game)" class="unavailable">Complète</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Show More Button -->
-    <button 
-      *ngIf="filteredGames.length > 6"
-      mat-button 
-      (click)="showAllResults = true"
-      class="show-more">
-      Voir {{ filteredGames.length - 6 }} autres résultats
-    </button>
-  </div>
+      </mat-card-header>
 
-  <!-- All Results (Extended View) -->
-  <div class="all-results" *ngIf="showAllResults && searchTerm">
-    <div class="results-header">
-      <h3>Tous les résultats ({{ filteredGames.length }})</h3>
-      <button mat-icon-button (click)="showAllResults = false">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-    <div class="extended-results">
-      <div 
-        *ngFor="let game of filteredGames" 
-        class="game-row"
-        [class.joinable]="canJoinGame(game)"
-        (click)="instantJoin(game)">
-        <div class="row-info">
-          <span class="game-name">{{ game.name }}</span>
-          <span class="game-meta">{{ game.creatorName }} • {{ getTimeAgo(game.createdAt) }}</span>
+      <mat-card-content>
+        <div class="join-instructions">
+          <mat-icon class="info-icon">info</mat-icon>
+          <p>
+            Pour rejoindre une partie existante, demandez le code d'invitation
+            au créateur de la partie et saisissez-le ci-dessous.
+          </p>
         </div>
-        <div class="row-status">
-          <span class="participants">{{ game.participantCount }}/{{ game.maxParticipants }}</span>
-          <mat-chip [color]="getStatusColor(game.status)" class="status-mini">
-            {{ getStatusLabel(game.status) }}
-          </mat-chip>
-        </div>
-        <button 
-          *ngIf="canJoinGame(game)"
-          mat-button 
-          color="primary"
-          [disabled]="isJoining">
-          Rejoindre
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Popular Games (When no search) -->
-  <div class="popular-games" *ngIf="!searchTerm && games.length > 0">
-    <h3>🔥 Games populaires</h3>
-    <div class="popular-grid">
-      <div 
-        *ngFor="let game of getPopularGames()" 
-        class="popular-card"
-        [class.joinable]="canJoinGame(game)"
-        (click)="instantJoin(game)">
-        <div class="popular-header">
-          <h4>{{ game.name }}</h4>
-          <div class="popular-badge" *ngIf="isPopular(game)">HOT</div>
-        </div>
-        <div class="popular-info">
-          <div class="info-item">
-            <mat-icon>group</mat-icon>
-            <span>{{ game.participantCount }}/{{ game.maxParticipants }}</span>
+        <form (ngSubmit)="joinWithCode()" class="join-form">
+          <mat-form-field appearance="outline" class="code-input">
+            <mat-label>Code d'invitation</mat-label>
+            <input
+              matInput
+              [(ngModel)]="invitationCode"
+              name="invitationCode"
+              placeholder="Ex: FORTNITE2024"
+              [disabled]="joiningGame"
+              maxlength="20"
+              required
+              autocomplete="off"
+            />
+            <mat-icon matPrefix>confirmation_number</mat-icon>
+            <mat-hint>Le code est sensible à la casse</mat-hint>
+          </mat-form-field>
+
+          <div class="action-buttons">
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="!invitationCode.trim() || joiningGame"
+              class="join-button"
+            >
+              <mat-icon *ngIf="!joiningGame">login</mat-icon>
+              <mat-spinner *ngIf="joiningGame" diameter="20"></mat-spinner>
+              {{ joiningGame ? 'Connexion en cours...' : 'Rejoindre la partie' }}
+            </button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="cancel()"
+              [disabled]="joiningGame"
+              class="cancel-button"
+            >
+              <mat-icon>cancel</mat-icon>
+              Annuler
+            </button>
           </div>
-          <div class="info-item">
-            <mat-icon>schedule</mat-icon>
-            <span>{{ getTimeAgo(game.createdAt) }}</span>
+        </form>
+
+        <div class="help-section">
+          <mat-icon class="help-icon">help_outline</mat-icon>
+          <div class="help-text">
+            <p class="help-title">Vous n'avez pas de code ?</p>
+            <p class="help-description">
+              Demandez au créateur de la partie de vous partager le code d'invitation,
+              ou créez votre propre partie.
+            </p>
+            <button
+              mat-button
+              color="accent"
+              (click)="router.navigate(['/games/create'])"
+              [disabled]="joiningGame"
+            >
+              <mat-icon>add_circle</mat-icon>
+              Créer une nouvelle partie
+            </button>
           </div>
         </div>
-        <div class="popular-action">
-          <button 
-            *ngIf="canJoinGame(game)"
-            mat-raised-button 
-            color="primary"
-            [disabled]="isJoining"
-            class="join-btn-popular">
-            <mat-icon>add</mat-icon>
-            Rejoindre
-          </button>
-          <span *ngIf="!canJoinGame(game)" class="full-badge">Complète</span>
-        </div>
-      </div>
-    </div>
+      </mat-card-content>
+    </mat-card>
   </div>
-
-  <!-- Empty States -->
-  <div class="empty-state" *ngIf="searchTerm && filteredGames.length === 0">
-    <mat-icon class="empty-icon">search_off</mat-icon>
-    <h3>Aucune game trouvée</h3>
-    <p>Essayez avec un autre terme de recherche</p>
-    <button mat-button color="primary" (click)="searchTerm = ''">
-      Effacer la recherche
-    </button>
-  </div>
-
-  <div class="empty-state" *ngIf="!searchTerm && games.length === 0 && !loading">
-    <mat-icon class="empty-icon">games</mat-icon>
-    <h3>Aucune game disponible</h3>
-    <p>Soyez le premier à créer une game !</p>
-    <button mat-raised-button color="primary" routerLink="/games/create">
-      <mat-icon>add</mat-icon>
-      Créer la première game
-    </button>
-  </div>
-
-  <!-- Loading State -->
-  <div class="loading-state" *ngIf="loading">
-    <mat-spinner diameter="60"></mat-spinner>
-    <p>Recherche des games disponibles...</p>
-  </div>
-
-  <!-- Error State -->
-  <div class="error-state" *ngIf="error && !loading">
-    <mat-icon color="warn">error_outline</mat-icon>
-    <h3>Problème de connexion</h3>
-    <p>{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="loadGames()">
-      Réessayer
-    </button>
-  </div>
-
-  <!-- Joining Overlay -->
-  <div class="joining-overlay" *ngIf="isJoining">
-    <div class="joining-content">
-      <mat-spinner diameter="40"></mat-spinner>
-      <h3>Rejoindre la game...</h3>
-      <p>Préparation de votre participation</p>
-    </div>
-  </div>
-
-  <!-- Quick Actions Footer -->
-  <div class="quick-actions-footer">
-    <button mat-button (click)="onBack()" class="back-btn">
-      <mat-icon>arrow_back</mat-icon>
-      Retour
-    </button>
-    <button mat-raised-button color="accent" routerLink="/games/create" class="create-alternative">
-      <mat-icon>add</mat-icon>
-      Créer ma game
-    </button>
-  </div>
-
 </div>

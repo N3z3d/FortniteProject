@@ -302,7 +302,7 @@ class GameRichDomainTest {
     user.setUsername(username);
     user.setEmail(email);
     user.setPassword("testpassword123");
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
     return user;
   }

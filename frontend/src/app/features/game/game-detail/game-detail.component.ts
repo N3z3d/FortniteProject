@@ -44,6 +44,7 @@ export class GameDetailComponent implements OnInit {
   participants: GameParticipant[] = [];
   loading = false;
   error: string | null = null;
+  participantsError: string | null = null;
   gameId: string = '';
 
   constructor(
@@ -59,7 +60,6 @@ export class GameDetailComponent implements OnInit {
       this.gameId = params['id'];
       if (this.gameId) {
         this.loadGameDetails();
-        this.loadParticipants();
       }
     });
   }
@@ -67,6 +67,7 @@ export class GameDetailComponent implements OnInit {
   loadGameDetails(): void {
     this.loading = true;
     this.error = null;
+    this.participantsError = null;
 
     this.gameDataService.getGameById(this.gameId).subscribe({
       next: (game: Game) => {
@@ -78,25 +79,41 @@ export class GameDetailComponent implements OnInit {
         if (!validation.isValid) {
           console.warn('Game data validation failed:', validation.errors);
         }
+
+        this.loadParticipants();
       },
       error: (error: Error) => {
         this.error = error.message;
         this.loading = false;
         console.error('Error loading game details:', error);
+        this.snackBar.open(
+          error.message || 'Erreur lors du chargement de la game',
+          'Fermer',
+          { duration: 4000 }
+        );
       }
     });
   }
 
   loadParticipants(): void {
+    this.participantsError = null;
     this.gameDataService.getGameParticipants(this.gameId).subscribe({
       next: (participants: GameParticipant[]) => {
         this.participants = participants;
+        this.participantsError = null;
       },
       error: (error: Error) => {
-        this.error = 'Erreur lors du chargement des participants';
+        const message = error.message || 'Erreur lors du chargement des participants';
+        this.participantsError = message;
         console.error('Error loading participants:', error);
       }
     });
+  }
+
+  retryLoad(): void {
+    this.error = null;
+    this.participantsError = null;
+    this.loadGameDetails();
   }
 
   startDraft(): void {
@@ -218,9 +235,13 @@ export class GameDetailComponent implements OnInit {
     return 'primary';
   }
 
-  getTimeAgo(date: string | Date): string {
-    const str = typeof date === 'string' ? date : date.toISOString();
-    return GameApiMapper.formatRelativeTime(str);
+  getTimeAgo(date: string | Date | null | undefined): string {
+    if (!date) {
+      return 'Date invalide';
+    }
+
+    const dateString = typeof date === 'string' ? date : date.toISOString();
+    return GameApiMapper.formatRelativeTime(dateString);
   }
 
   onBack(): void {

@@ -96,13 +96,13 @@ class GamePlayerLinkIntegrationTest {
   void shouldHavePronostiqueursWithCorrectRoles() {
     // Then: Rôles corrects
     assertThat(thibaut).isNotNull();
-    assertThat(thibaut.getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(thibaut.getRole()).isEqualTo(User.UserRole.USER);
 
     assertThat(marcel).isNotNull();
-    assertThat(marcel.getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(marcel.getRole()).isEqualTo(User.UserRole.USER);
 
     assertThat(teddy).isNotNull();
-    assertThat(teddy.getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(teddy.getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test

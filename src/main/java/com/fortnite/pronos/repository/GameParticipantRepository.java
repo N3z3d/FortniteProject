@@ -195,4 +195,12 @@ public interface GameParticipantRepository extends JpaRepository<GameParticipant
   boolean existsByGameIdAndUserId(@Param("gameId") UUID gameId, @Param("userId") UUID userId);
 
   // PHASE 2A: CLEAN ARCHITECTURE - Methods for use cases
+
+  /** Find participants by game ID ordered by draft order */
+  @Query(
+      "SELECT gp FROM GameParticipant gp "
+          + "JOIN FETCH gp.user "
+          + "WHERE gp.game.id = :gameId "
+          + "ORDER BY gp.draftOrder ASC")
+  List<GameParticipant> findByGameIdOrderByDraftOrderAsc(@Param("gameId") UUID gameId);
 }

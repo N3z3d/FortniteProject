@@ -45,7 +45,7 @@ class AuthServiceSimpleTddTest {
     testUser.setUsername("Thibaut");
     testUser.setEmail("thibaut@test.com");
     testUser.setPassword("$2a$10$encodedPassword");
-    testUser.setRole(User.UserRole.PARTICIPANT);
+    testUser.setRole(User.UserRole.USER);
 
     userDetails =
         org.springframework.security.core.userdetails.User.builder()

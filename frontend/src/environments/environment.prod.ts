@@ -4,6 +4,7 @@ export const environment = {
   apiBaseUrl: 'http://localhost:8081',
   wsUrl: 'ws://localhost:8081/ws',
   enableFallbackData: false,
+  defaultDevUser: null,
 
   // CDN configuration (basic production setup)
   cdn: {

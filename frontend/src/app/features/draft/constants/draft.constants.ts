@@ -310,5 +310,5 @@ export const STATUS_LABELS = {
   CANCELLED: 'Annulé',
   ERROR: 'Erreur',
   CREATED: 'Créé',
-  ACTIVE: 'Actif'
+  ACTIVE: 'En cours'
 } as any;

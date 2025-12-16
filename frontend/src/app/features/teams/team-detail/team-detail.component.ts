@@ -7,13 +7,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
 import { UserContextService } from '../../../core/services/user-context.service';
 import { TeamService, TeamDto } from '../../../core/services/team.service';
 import { ActivatedRoute } from '@angular/router';
-import { map, switchMap, of } from 'rxjs';
 import { LeaderboardService } from '../../../core/services/leaderboard.service';
-import { StatsCalculationService } from '../../../core/services/stats-calculation.service';
+import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
 
 interface Player {
   id: string;
@@ -77,12 +75,11 @@ interface TeamWithOwner extends Team {
   styleUrls: ['./team-detail.scss']
 })
 export class TeamDetailComponent implements OnInit {
-  private http = inject(HttpClient);
-  private userContext = inject(UserContextService);
-  private route = inject(ActivatedRoute);
-  private teamService = inject(TeamService);
-  private leaderboardService = inject(LeaderboardService);
-  private statsService = inject(StatsCalculationService);
+  private readonly http = inject(HttpClient);
+  private readonly userContext = inject(UserContextService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly teamService = inject(TeamService);
+  private readonly leaderboardService = inject(LeaderboardService);
   
   team: Team | null = null;
   loading = true;
@@ -324,11 +321,11 @@ export class TeamDetailComponent implements OnInit {
     if (tranche.toLowerCase() === "new") {
       return 1; // Valeur par défaut pour les nouveaux joueurs
     }
-    
+
     // Convertit "T1", "T2", etc. en nombre
-    const numericPart = tranche.replace(/[Tt]/g, '');
-    const parsed = parseInt(numericPart, 10);
-    return isNaN(parsed) ? 1 : parsed;
+    const numericPart = tranche.replaceAll(/[Tt]/g, '');
+    const parsed = Number.parseInt(numericPart, 10);
+    return Number.isNaN(parsed) ? 1 : parsed;
   }
 
   getPlayerRank(player: Player): number {
@@ -339,7 +336,7 @@ export class TeamDetailComponent implements OnInit {
   }
 
   formatPoints(points: number): string {
-    return this.statsService.formatPoints(points);
+    return formatPointsUtil(points);
   }
 
   getTopPlayers(): TeamPlayer[] {
@@ -411,8 +408,41 @@ export class TeamDetailComponent implements OnInit {
       }))
     }));
     
-    // Utiliser le service centralisé pour un calcul cohérent
-    return this.statsService.getTopPercentileCount(teamWithPlayers, allTeamsAdapted, 10);
+    // Calcul local du top percentile
+    return this.calculateTopPercentileCount(teamWithPlayers, allTeamsAdapted, 10);
+  }
+
+  private calculateTopPercentileCount(team: any, allTeams: any[], percentile: number): number {
+    // Collecter tous les joueurs de toutes les équipes avec leurs points
+    const allPlayers: { points: number }[] = [];
+    allTeams.forEach(t => {
+      if (t.players) {
+        t.players.forEach((p: any) => {
+          allPlayers.push({ points: p.points || 0 });
+        });
+      }
+    });
+
+    if (allPlayers.length === 0) return 0;
+
+    // Trier par points décroissants
+    allPlayers.sort((a, b) => b.points - a.points);
+
+    // Calculer le seuil du top X%
+    const thresholdIndex = Math.ceil(allPlayers.length * (percentile / 100)) - 1;
+    const threshold = allPlayers[Math.max(0, thresholdIndex)]?.points || 0;
+
+    // Compter les joueurs de l'équipe au-dessus du seuil
+    let count = 0;
+    if (team.players) {
+      team.players.forEach((p: any) => {
+        if ((p.points || 0) >= threshold) {
+          count++;
+        }
+      });
+    }
+
+    return count;
   }
 
   private convertTeamDtoToTeam(teamDto: TeamDto): Team {

@@ -18,8 +18,18 @@
     <button (click)="loadData()" aria-label="Réessayer le chargement des données" aria-describedby="error-message">Réessayer</button>
   </div>
   
+  <!-- Empty Leaderboard State -->
+  <div *ngIf="!loading && !error && filteredPlayers.length === 0" class="no-game-selected" role="status" aria-live="polite">
+    <div class="empty-state-icon">Δ</div>
+    <h2>Aucune donnée de classement</h2>
+    <p>Aucune équipe ou joueur n'est disponible pour le moment. Vérifiez que le backend est démarré ou réessayez plus tard.</p>
+    <button class="cta-button" (click)="loadData()" aria-label="Recharger le classement">
+      <span>Recharger</span>
+      <span aria-hidden="true">↻</span>
+    </button>
+  </div>
   <!-- Main Content -->
-  <main id="main-content" *ngIf="!loading && !error" class="main-content">
+  <main id="main-content" *ngIf="!loading && !error && filteredPlayers.length > 0" class="main-content">
     
     <!-- Search and Filters -->
     <section class="controls" aria-labelledby="filters-heading">
@@ -184,3 +194,4 @@
     
   </main>
 </div>
+

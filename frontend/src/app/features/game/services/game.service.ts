@@ -59,6 +59,13 @@ export class GameService {
   }
 
   /**
+   * Récupère les games disponibles (alias pour getAllGames pour compatibilité tests)
+   */
+  getAvailableGames(): Observable<Game[]> {
+    return this.getAllGames();
+  }
+
+  /**
    * Récupère une game par son ID
    */
   getGameById(id: string): Observable<Game> {
@@ -381,7 +388,10 @@ export class GameService {
    * Gestion des erreurs avec données de fallback pour le développement
    */
   private handleErrorWithFallback<T>(error: HttpErrorResponse, fallbackData: T[]): Observable<T[]> {
-    if (environment.enableFallbackData && !environment.production) {
+    const fallbackEnabled = environment.enableFallbackData && !environment.production;
+    const isNetworkOrServerError = error.status === 0 || (error.status >= 500 && error.status < 600);
+
+    if (fallbackEnabled && isNetworkOrServerError) {
       console.warn('API call failed, using fallback data:', error.status);
       return of(fallbackData);
     }

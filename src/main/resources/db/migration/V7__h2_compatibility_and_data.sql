@@ -2,7 +2,7 @@
 -- Adaptation du schéma pour H2
 
 -- Création des enums pour H2 (différent de PostgreSQL)
-CREATE DOMAIN IF NOT EXISTS user_role AS VARCHAR(20) CHECK (VALUE IN ('ADMIN', 'PARTICIPANT', 'SPECTATEUR'));
+CREATE DOMAIN IF NOT EXISTS user_role AS VARCHAR(20) CHECK (VALUE IN ('USER', 'ADMIN', 'PARTICIPANT', 'SPECTATEUR'));
 CREATE DOMAIN IF NOT EXISTS region_enum AS VARCHAR(10) CHECK (VALUE IN ('EU', 'NAW', 'BR', 'ASIA', 'OCE', 'NAC', 'ME'));
 
 -- Insertion des 4 utilisateurs

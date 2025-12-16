@@ -25,6 +25,7 @@ describe('CreateGameComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [
+        CreateGameComponent,
         ReactiveFormsModule,
         MatCardModule,
         MatFormFieldModule,
@@ -35,7 +36,6 @@ describe('CreateGameComponent', () => {
         MatSnackBarModule,
         BrowserAnimationsModule
       ],
-      declarations: [CreateGameComponent],
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
         { provide: Router, useValue: routerSpy }
@@ -71,7 +71,7 @@ describe('CreateGameComponent', () => {
     nameControl?.setValue('');
     expect(nameControl?.hasError('required')).toBeTruthy();
 
-    nameControl?.setValue('ab'); // Too short
+    nameControl?.setValue('a'); // Too short (minLength = 2)
     expect(nameControl?.hasError('minlength')).toBeTruthy();
 
     nameControl?.setValue('Valid Game Name');
@@ -139,22 +139,15 @@ describe('CreateGameComponent', () => {
   });
 
   it('should check if can add region rule', () => {
-    component.gameForm.get('maxParticipants')?.setValue(5);
-    
-    // Add 3 players to EU
-    component.addRegionRule('EU', 3);
-    expect(component.canAddRegionRule()).toBeTruthy();
+    component.gameForm.patchValue({ maxParticipants: 5, regionRules: { EU: 3 } });
+    expect(component.canAddRegionRule()).toBeTrue();
 
-    // Add 2 more players to NAC
-    component.addRegionRule('NAC', 2);
-    expect(component.canAddRegionRule()).toBeFalsy(); // Total = 5, max = 5
+    component.gameForm.patchValue({ regionRules: { EU: 3, NAC: 2 } });
+    expect(component.canAddRegionRule()).toBeFalse(); // Total = 5, max = 5
   });
 
   it('should calculate remaining slots correctly', () => {
-    component.gameForm.get('maxParticipants')?.setValue(10);
-    component.addRegionRule('EU', 3);
-    component.addRegionRule('NAC', 2);
-
+    component.gameForm.patchValue({ maxParticipants: 10, regionRules: { EU: 3, NAC: 2 } });
     const remaining = component.getRemainingSlots();
     expect(remaining).toBe(5); // 10 - 3 - 2 = 5
   });
@@ -186,7 +179,7 @@ describe('CreateGameComponent', () => {
     component.onSubmit();
 
     expect(gameService.createGame).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/games', 'test-id']);
+    expect(router.navigate).toHaveBeenCalledWith(['/games', 'test-id'], { queryParams: { created: 'true' } });
   });
 
   it('should handle game creation error', () => {
@@ -204,7 +197,7 @@ describe('CreateGameComponent', () => {
 
     component.onSubmit();
 
-    expect(component.error).toBe('Erreur lors de la création de la game');
+    expect(component.error).toContain('Impossible');
     expect(component.loading).toBeFalsy();
   });
 

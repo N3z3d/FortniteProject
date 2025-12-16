@@ -24,7 +24,7 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(
     classes = {
       com.fortnite.pronos.PronosApplication.class,
-      com.fortnite.pronos.config.TestSecurityConfigTestBackup.class
+      com.fortnite.pronos.config.TestSecurityConfig.class
     })
 @ActiveProfiles("test")
 @Transactional
@@ -62,7 +62,8 @@ public class DatabaseIntegrationTest {
     assertThat(players)
         .allSatisfy(
             player ->
-                assertThat(player.getRegion()).isIn("EU", "NAC", "BR", "ASIA", "OCE", "NAW", "ME"));
+                assertThat(player.getRegionName())
+                    .isIn("EU", "NAC", "BR", "ASIA", "OCE", "NAW", "ME"));
   }
 
   @Test
@@ -93,7 +94,7 @@ public class DatabaseIntegrationTest {
     // Then
     assertThat(thibaut).isPresent();
     assertThat(thibaut.get().getUsername()).isEqualTo("Thibaut");
-    assertThat(thibaut.get().getRole()).isEqualTo(User.UserRole.PARTICIPANT);
+    assertThat(thibaut.get().getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test

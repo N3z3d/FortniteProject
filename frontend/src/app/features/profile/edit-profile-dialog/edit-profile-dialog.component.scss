@@ -1,0 +1,188 @@
+@import '../../../shared/styles/mixins';
+
+.edit-profile-dialog {
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: linear-gradient(135deg, var(--gaming-primary), var(--gaming-accent));
+    border-radius: 8px 8px 0 0;
+    position: relative;
+
+    .header-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: white;
+    }
+
+    h2 {
+      flex: 1;
+      margin: 0;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .close-button {
+      color: white;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  ::ng-deep .mat-mdc-dialog-content {
+    padding: var(--space-xl) var(--space-lg);
+    background: var(--gradient-dark);
+  }
+
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+
+    .full-width {
+      width: 100%;
+
+      ::ng-deep .mat-mdc-text-field-wrapper {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      ::ng-deep input {
+        color: var(--text-primary);
+      }
+
+      ::ng-deep .mat-mdc-form-field-icon-prefix {
+        color: var(--gaming-primary);
+        margin-right: var(--space-sm);
+      }
+
+      ::ng-deep .mdc-text-field--outlined:not(.mdc-text-field--disabled) {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: rgba(147, 51, 234, 0.3);
+        }
+
+        &:hover {
+          .mdc-notched-outline__leading,
+          .mdc-notched-outline__notch,
+          .mdc-notched-outline__trailing {
+            border-color: var(--gaming-primary);
+          }
+        }
+
+        &.mdc-text-field--focused {
+          .mdc-notched-outline__leading,
+          .mdc-notched-outline__notch,
+          .mdc-notched-outline__trailing {
+            border-color: var(--gaming-primary);
+            border-width: 2px;
+          }
+        }
+      }
+    }
+  }
+
+  .info-box {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background-color: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid rgba(59, 130, 246, 0.6);
+    border-radius: 4px;
+
+    .info-icon {
+      color: rgba(59, 130, 246, 0.8);
+      flex-shrink: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+  }
+
+  ::ng-deep .mat-mdc-dialog-actions {
+    padding: var(--space-lg);
+    background: var(--gradient-dark);
+    border-top: 1px solid rgba(147, 51, 234, 0.2);
+
+    button {
+      padding: 10px 24px;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all var(--transition-normal);
+
+      &[mat-stroked-button] {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: var(--text-secondary);
+
+        &:hover:not(:disabled) {
+          background-color: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+      }
+
+      &.save-button {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+
+        mat-icon {
+          font-size: 1.125rem;
+          width: 1.125rem;
+          height: 1.125rem;
+        }
+
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+        }
+      }
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .edit-profile-dialog {
+    .dialog-header {
+      padding: var(--space-md);
+
+      h2 {
+        font-size: 1.25rem;
+      }
+
+      .header-icon {
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+    }
+
+    ::ng-deep .mat-mdc-dialog-content {
+      padding: var(--space-lg) var(--space-md);
+    }
+
+    ::ng-deep .mat-mdc-dialog-actions {
+      padding: var(--space-md);
+      flex-direction: column;
+      gap: var(--space-sm);
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

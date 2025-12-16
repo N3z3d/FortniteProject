@@ -14,20 +14,20 @@
   <!-- Dashboard Header -->
   <div class="dashboard-header">
     <h1 id="main-heading">
-      <span class="sr-only">Dashboard de</span>
+      <span class="sr-only">Tableau de bord</span>
       Fortnite Fantasy
     </h1>
     <div class="header-actions" *ngIf="selectedGame">
-      <span class="selected-game-info" aria-label="Game actuellement sélectionnée">
-        Game: {{ selectedGame.name }}
+      <span class="selected-game-info" aria-label="Partie sélectionnée">
+        Partie : {{ selectedGame.name }}
       </span>
     </div>
   </div>
 
   <!-- Loading State -->
   <div class="loading-container" *ngIf="isLoading" role="status" aria-live="polite" aria-labelledby="loading-text">
-    <mat-progress-spinner mode="indeterminate" diameter="50" aria-label="Chargement en cours"></mat-progress-spinner>
-    <p id="loading-text">Chargement du dashboard...</p>
+    <mat-progress-spinner mode="indeterminate" diameter="50" aria-label="Chargement"></mat-progress-spinner>
+    <p id="loading-text">Chargement du tableau de bord...</p>
   </div>
 
   <!-- Error State -->
@@ -35,47 +35,47 @@
     <mat-icon class="error-icon" aria-hidden="true">error</mat-icon>
     <h2 id="error-heading">Erreur de chargement</h2>
     <p id="error-message">{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="loadDashboardData()" 
-            aria-label="Réessayer le chargement du dashboard" aria-describedby="error-message">
+    <button mat-raised-button color="primary" (click)="loadDashboardData()"
+            aria-label="Relancer le chargement du tableau de bord" aria-describedby="error-message">
       Réessayer
     </button>
   </div>
 
   <!-- Premium Stats Overview -->
   <div class="stats-overview" *ngIf="!isLoading && !error" appRevealOnScroll>
-    <div class="stat-card premium-stat-card score-card" 
-         appPremiumInteractions="magnetic" 
-         appTooltip="Votre score total actuel">
-      <div class="stat-icon fortnite-icon">⚡</div>
+    <div class="stat-card premium-stat-card score-card"
+         appPremiumInteractions="magnetic"
+         appTooltip="Points cumulés">
+      <mat-icon class="stat-icon">military_tech</mat-icon>
       <div class="stat-value">{{ totalScore || 0 }}</div>
-      <div class="stat-label">XP Points</div>
+      <div class="stat-label">Points XP</div>
       <div class="stat-trend positive">+15%</div>
     </div>
-    
-    <div class="stat-card premium-stat-card ranking-card" 
-         appPremiumInteractions="magnetic" 
-         appTooltip="Votre position dans le classement">
-      <div class="stat-icon fortnite-icon">👑</div>
+
+    <div class="stat-card premium-stat-card ranking-card"
+         appPremiumInteractions="magnetic"
+         appTooltip="Votre position au classement">
+      <mat-icon class="stat-icon">leaderboard</mat-icon>
       <div class="stat-value">#{{ ranking || '-' }}</div>
-      <div class="stat-label">Battle Rank</div>
-      <div class="stat-trend positive">↗ 3</div>
+      <div class="stat-label">Classement</div>
+      <div class="stat-trend positive">+3</div>
     </div>
-    
-    <div class="stat-card premium-stat-card games-card" 
-         appPremiumInteractions="magnetic" 
-         appTooltip="Nombre de games actives">
-      <div class="stat-icon fortnite-icon">🔥</div>
+
+    <div class="stat-card premium-stat-card games-card"
+         appPremiumInteractions="magnetic"
+         appTooltip="Nombre de parties actives">
+      <mat-icon class="stat-icon">sports_esports</mat-icon>
       <div class="stat-value">{{ activeGames || 0 }}</div>
-      <div class="stat-label">Active Matches</div>
-      <div class="stat-trend neutral">→</div>
+      <div class="stat-label">Parties actives</div>
+      <div class="stat-trend neutral">--</div>
     </div>
-    
-    <div class="stat-card premium-stat-card weekly-card" 
-         appPremiumInteractions="magnetic" 
+
+    <div class="stat-card premium-stat-card weekly-card"
+         appPremiumInteractions="magnetic"
          appTooltip="Meilleur score de la semaine">
-      <div class="stat-icon fortnite-icon">💎</div>
+      <mat-icon class="stat-icon">emoji_events</mat-icon>
       <div class="stat-value">{{ weeklyBest || 0 }}</div>
-      <div class="stat-label">Victory Royales</div>
+      <div class="stat-label">Meilleur score hebdo</div>
       <div class="stat-trend positive">+8%</div>
     </div>
   </div>
@@ -85,7 +85,7 @@
     <mat-card class="selected-game-card">
       <mat-card-header>
         <mat-icon mat-card-avatar>sports_esports</mat-icon>
-        <mat-card-title>Game Actuelle</mat-card-title>
+        <mat-card-title>Partie actuelle</mat-card-title>
         <mat-card-subtitle>{{ selectedGame.name }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
@@ -101,18 +101,17 @@
         </div>
       </mat-card-content>
       <mat-card-actions>
-        <button mat-button (click)="navigateTo('/games')" aria-label="Gérer toutes les games">
+        <button mat-button (click)="navigateTo('/games')" aria-label="Gérer mes parties">
           <mat-icon>settings</mat-icon>
-          Gérer mes games
+          Gérer mes parties
         </button>
-        <button mat-raised-button color="primary" (click)="viewGameDetails(selectedGame)" aria-label="Voir détails de la game">
+        <button mat-raised-button color="primary" (click)="viewGameDetails(selectedGame)" aria-label="Voir les détails de la partie">
           <mat-icon>visibility</mat-icon>
-          Voir détails
+          Voir les détails
         </button>
       </mat-card-actions>
     </mat-card>
   </div>
-
   <!-- Quick Actions for No Games -->
   <div class="quick-actions-no-games" *ngIf="!isLoading && !error && !selectedGame" appRevealOnScroll>
     <mat-card class="quick-actions-card">
@@ -122,7 +121,7 @@
         <mat-card-subtitle>Vous n'avez pas encore de game active</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <p>Créez ou rejoignez une game pour commencer votre aventure Fantasy League !</p>
+        <p>Créez ou rejoignez une game pour démarrer votre Fantasy League !</p>
       </mat-card-content>
       <mat-card-actions>
         <button mat-raised-button color="primary" (click)="navigateTo('/games/create')" aria-label="Créer une nouvelle game">
@@ -141,20 +140,20 @@
   <div class="dashboard-content" *ngIf="selectedGame && !isLoading && !error">
     <!-- Stats Cards -->
     <section class="stats-grid" aria-labelledby="stats-heading">
-      <h2 id="stats-heading">Statistiques générales</h2>
-      
+      <h2 id="stats-heading">{{ t.t('dashboard.headings.generalStatistics') }}</h2>
+
       <mat-card class="stat-card total-teams" role="group" aria-labelledby="teams-stat">
         <mat-card-header>
           <mat-icon mat-card-avatar aria-hidden="true">groups</mat-icon>
           <mat-card-title>
-            <h3 id="teams-stat">Équipes</h3>
+            <h3 id="teams-stat">{{ t.t('dashboard.labels.teams') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalTeams) + ' équipes actives'">
+          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalTeams) + ' ' + t.t('dashboard.aria.activeTeamsSuffix')">
             {{ formatNumber(stats.totalTeams) }}
           </div>
-          <div class="stat-label">Équipes actives</div>
+          <div class="stat-label">{{ t.t('dashboard.labels.activeTeams') }}</div>
         </mat-card-content>
       </mat-card>
 
@@ -162,14 +161,14 @@
         <mat-card-header>
           <mat-icon mat-card-avatar aria-hidden="true">person</mat-icon>
           <mat-card-title>
-            <h3 id="players-stat">Joueurs</h3>
+            <h3 id="players-stat">{{ t.t('dashboard.labels.players') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalPlayers) + ' joueurs professionnels'">
+          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalPlayers) + ' ' + t.t('dashboard.aria.proPlayersSuffix')">
             {{ formatNumber(stats.totalPlayers) }}
           </div>
-          <div class="stat-label">Joueurs pro</div>
+          <div class="stat-label">{{ t.t('dashboard.labels.proPlayers') }}</div>
         </mat-card-content>
       </mat-card>
 
@@ -177,14 +176,14 @@
         <mat-card-header>
           <mat-icon mat-card-avatar aria-hidden="true">emoji_events</mat-icon>
           <mat-card-title>
-            <h3 id="points-stat">Points</h3>
+            <h3 id="points-stat">{{ t.t('dashboard.labels.points') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="getTotalFormattedPoints() + ' points totaux'">
+          <div class="stat-value" [attr.aria-label]="getTotalFormattedPoints() + ' ' + t.t('dashboard.aria.totalPointsSuffix')">
             {{ getTotalFormattedPoints() }}
           </div>
-          <div class="stat-label">Points totaux</div>
+          <div class="stat-label">{{ t.t('dashboard.labels.totalPoints') }}</div>
         </mat-card-content>
       </mat-card>
 
@@ -192,19 +191,19 @@
         <mat-card-header>
           <mat-icon mat-card-avatar aria-hidden="true">timeline</mat-icon>
           <mat-card-title>
-            <h3 id="season-stat">Saison</h3>
+            <h3 id="season-stat">{{ t.t('dashboard.labels.season') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="getSeasonProgress() + ' pourcent de progression pour la saison 2025'">
+          <div class="stat-value" [attr.aria-label]="getSeasonProgress() + t.t('dashboard.aria.seasonProgressSuffix')">
             {{ getSeasonProgress() }}%
           </div>
-          <div class="stat-label">Progression 2025</div>
-          <mat-progress-bar 
-            mode="determinate" 
+          <div class="stat-label">{{ t.t('dashboard.labels.progress2025') }}</div>
+          <mat-progress-bar
+            mode="determinate"
             [value]="getSeasonProgress()"
             class="progress-bar"
-            [attr.aria-label]="'Barre de progression de la saison, ' + getSeasonProgress() + '% complété'">
+            [attr.aria-label]="t.t('dashboard.aria.seasonProgressBarPrefix') + getSeasonProgress() + t.t('dashboard.aria.seasonProgressBarSuffix')">
           </mat-progress-bar>
         </mat-card-content>
       </mat-card>
@@ -212,23 +211,23 @@
 
     <!-- Charts Section -->
     <section class="charts-section" aria-labelledby="charts-heading">
-      <h2 id="charts-heading">Graphiques et analyses</h2>
-      
+      <h2 id="charts-heading">{{ t.t('dashboard.headings.chartsAndAnalytics') }}</h2>
+
       <mat-card class="chart-card" role="region" aria-labelledby="region-chart-title" aria-describedby="region-chart-desc">
         <mat-card-header>
           <mat-card-title>
-            <h3 id="region-chart-title">Répartition des Joueurs par Région</h3>
+            <h3 id="region-chart-title">{{ t.t('dashboard.charts.regionTitle') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="chart-container">
-            <canvas #regionChart 
-                    role="img" 
-                    aria-label="Graphique circulaire montrant la répartition des joueurs par région"
+            <canvas #regionChart
+                    role="img"
+                    [attr.aria-label]="t.t('dashboard.aria.pieChart')"
                     aria-describedby="region-chart-desc">
             </canvas>
             <div id="region-chart-desc" class="sr-only">
-              Graphique circulaire présentant la distribution des joueurs professionnels par région géographique
+              {{ t.t('dashboard.aria.pieChartDescription') }}
             </div>
           </div>
         </mat-card-content>
@@ -237,18 +236,18 @@
       <mat-card class="chart-card" role="region" aria-labelledby="performance-chart-title" aria-describedby="performance-chart-desc">
         <mat-card-header>
           <mat-card-title>
-            <h3 id="performance-chart-title">Top 10 Équipes - Performance</h3>
+            <h3 id="performance-chart-title">{{ t.t('dashboard.charts.top10Title') }}</h3>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="chart-container">
-            <canvas #pointsChart 
-                    role="img" 
-                    aria-label="Graphique en barres montrant les performances des 10 meilleures équipes"
+            <canvas #pointsChart
+                    role="img"
+                    [attr.aria-label]="t.t('dashboard.aria.barChart')"
                     aria-describedby="performance-chart-desc">
             </canvas>
             <div id="performance-chart-desc" class="sr-only">
-              Graphique en barres comparant les scores des 10 équipes les mieux classées
+              {{ t.t('dashboard.aria.barChartDescription') }}
             </div>
           </div>
         </mat-card-content>
@@ -261,20 +260,20 @@
         <mat-card-header>
           <mat-card-title>
             <h2 id="leaderboard-heading">
-              Top 5 Équipes - Classement
+              {{ t.t('dashboard.headings.leaderboardPreview') }}
             </h2>
           </mat-card-title>
-          <mat-card-subtitle>Classement actuel</mat-card-subtitle>
+          <mat-card-subtitle>{{ t.t('dashboard.labels.currentRanking') }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <div class="top-teams" *ngIf="getTopTeams().length > 0" 
-               role="list" aria-label="Classement des 5 meilleures équipes">
-            <div class="team-row" *ngFor="let team of getTopTeams(); let i = index; trackBy: trackByTeamId" 
-                 role="listitem" 
-                 [attr.aria-label]="'Position ' + (i + 1) + ': ' + (displayTeamName(team.teamName) || team.ownerName) + ' avec ' + formatNumber(team.totalPoints) + ' points'">
+          <div class="top-teams" *ngIf="getTopTeams().length > 0"
+               role="list" [attr.aria-label]="t.t('dashboard.aria.top5TeamsRanking')">
+            <div class="team-row" *ngFor="let team of getTopTeams(); let i = index; trackBy: trackByTeamId"
+                 role="listitem"
+                 [attr.aria-label]="t.t('dashboard.aria.position') + ' ' + (i + 1) + ': ' + (displayTeamName(team.teamName) || team.ownerName) + ' ' + t.t('dashboard.aria.with') + ' ' + formatNumber(team.totalPoints) + ' ' + t.t('dashboard.aria.points')">
               <div class="team-rank">
-                <span class="rank-badge" [class]="'rank-' + (i + 1)" 
-                      [attr.aria-label]="'Position ' + (i + 1)">
+                <span class="rank-badge" [class]="'rank-' + (i + 1)"
+                      [attr.aria-label]="t.t('dashboard.aria.position') + ' ' + (i + 1)">
                   {{ i + 1 }}
                 </span>
               </div>
@@ -285,13 +284,13 @@
             </div>
           </div>
           <div class="no-teams" *ngIf="getTopTeams().length === 0" role="status">
-            <p>Aucune équipe trouvée</p>
+            <p>{{ t.t('dashboard.labels.noTeamsFound') }}</p>
           </div>
         </mat-card-content>
         <mat-card-actions>
           <button mat-button (click)="navigateTo('/leaderboard')"
-                  aria-label="Naviguer vers le classement complet">
-            Voir le classement complet
+                  [attr.aria-label]="t.t('dashboard.aria.navigateToFullLeaderboard')">
+            {{ t.t('dashboard.labels.viewFullLeaderboard') }}
           </button>
         </mat-card-actions>
       </mat-card>
@@ -300,21 +299,21 @@
     <!-- Gaming Navigation Cards -->
     <section class="gaming-navigation" aria-labelledby="navigation-heading">
       <div class="section-header">
-        <h2 id="navigation-heading">Navigation Centrale</h2>
-        <p>Accédez rapidement aux fonctionnalités principales</p>
+        <h2 id="navigation-heading">{{ t.t('dashboard.headings.centralNavigation') }}</h2>
+        <p>{{ t.t('dashboard.headings.navigationHint') }}</p>
       </div>
-      
-      <div class="navigation-grid" role="group" aria-label="Navigation principale de l'application">
+
+      <div class="navigation-grid" role="group" [attr.aria-label]="t.t('dashboard.aria.navigationGroup')">
         <!-- Games Management Card -->
-        <div class="nav-card games-card premium-nav-card" 
+        <div class="nav-card games-card premium-nav-card"
              (click)="navigateTo('/games')"
              (keydown.enter)="navigateTo('/games')"
              (keydown.space)="navigateTo('/games')"
              appPremiumInteractions="magnetic"
-             appTooltip="Gérez vos games et rejoignez de nouvelles parties"
+             [appTooltip]="t.t('dashboard.navCards.gamesTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Navigate to games management section"
+             [attr.aria-label]="t.t('dashboard.navCards.gamesAria')"
              aria-describedby="games-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -327,10 +326,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Mes Games</h3>
-            <p class="nav-card-desc">Battle Arena</p>
+            <h3 class="nav-card-title">{{ t.t('games.myGames') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.gamesDesc') }}</p>
             <div id="games-card-description" class="sr-only">
-              Manage your fantasy games, create new matches, and join existing competitions
+              {{ t.t('dashboard.navCards.gamesDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -342,10 +341,10 @@
              (keydown.enter)="navigateTo('/leaderboard')"
              (keydown.space)="navigateTo('/leaderboard')"
              appPremiumInteractions="magnetic"
-             appTooltip="Consultez le classement des joueurs"
+             [appTooltip]="t.t('dashboard.navCards.leaderboardTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Navigate to leaderboard and rankings"
+             [attr.aria-label]="t.t('dashboard.navCards.leaderboardAria')"
              aria-describedby="leaderboard-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -357,10 +356,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Classement</h3>
-            <p class="nav-card-desc">Victory Royale</p>
+            <h3 class="nav-card-title">{{ t.t('navigation.leaderboard') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.leaderboardDesc') }}</p>
             <div id="leaderboard-card-description" class="sr-only">
-              View player rankings, team standings, and competition statistics
+              {{ t.t('dashboard.navCards.leaderboardDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -372,10 +371,10 @@
              (keydown.enter)="navigateTo('/teams')"
              (keydown.space)="navigateTo('/teams')"
              appPremiumInteractions="magnetic"
-             appTooltip="Gérez vos équipes et joueurs"
+             [appTooltip]="t.t('dashboard.navCards.teamsTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Navigate to team management"
+             [attr.aria-label]="t.t('dashboard.navCards.teamsAria')"
              aria-describedby="teams-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -389,10 +388,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Équipes</h3>
-            <p class="nav-card-desc">Squad Builder</p>
+            <h3 class="nav-card-title">{{ t.t('navigation.teams') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.teamsDesc') }}</p>
             <div id="teams-card-description" class="sr-only">
-              Build and manage your fantasy teams, recruit players, and optimize your squad
+              {{ t.t('dashboard.navCards.teamsDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -404,10 +403,10 @@
              (keydown.enter)="navigateTo('/trades')"
              (keydown.space)="navigateTo('/trades')"
              appPremiumInteractions="magnetic"
-             appTooltip="Effectuez des échanges de joueurs"
+             [appTooltip]="t.t('dashboard.navCards.tradesTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Navigate to player trading"
+             [attr.aria-label]="t.t('dashboard.navCards.tradesAria')"
              aria-describedby="trades-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -420,10 +419,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Échanges</h3>
-            <p class="nav-card-desc">Item Shop</p>
+            <h3 class="nav-card-title">{{ t.t('navigation.trades') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.tradesDesc') }}</p>
             <div id="trades-card-description" class="sr-only">
-              Trade players with other teams, negotiate deals, and improve your roster
+              {{ t.t('dashboard.navCards.tradesDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -435,10 +434,10 @@
              (keydown.enter)="navigateTo('/draft')"
              (keydown.space)="navigateTo('/draft')"
              appPremiumInteractions="magnetic"
-             appTooltip="Participez au draft de joueurs"
+             [appTooltip]="t.t('dashboard.navCards.draftTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Navigate to player draft"
+             [attr.aria-label]="t.t('dashboard.navCards.draftAria')"
              aria-describedby="draft-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -453,10 +452,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Draft</h3>
-            <p class="nav-card-desc">Battle Pass</p>
+            <h3 class="nav-card-title">{{ t.t('navigation.draft') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.draftDesc') }}</p>
             <div id="draft-card-description" class="sr-only">
-              Participate in player drafts, select your team members, and compete for top picks
+              {{ t.t('dashboard.navCards.draftDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -468,10 +467,10 @@
              (keydown.enter)="navigateTo('/games/create')"
              (keydown.space)="navigateTo('/games/create')"
              appPremiumInteractions="magnetic"
-             appTooltip="Créez une nouvelle partie"
+             [appTooltip]="t.t('dashboard.navCards.newGameTooltip')"
              role="button"
              tabindex="0"
-             aria-label="Create a new fantasy game"
+             [attr.aria-label]="t.t('dashboard.navCards.newGameAria')"
              aria-describedby="new-game-card-description">
           <div class="nav-card-icon premium-dashboard-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -487,10 +486,10 @@
             </svg>
           </div>
           <div class="nav-card-content">
-            <h3 class="nav-card-title">Nouvelle Game</h3>
-            <p class="nav-card-desc">Drop Zone</p>
+            <h3 class="nav-card-title">{{ t.t('games.createGame') }}</h3>
+            <p class="nav-card-desc">{{ t.t('dashboard.navCards.newGameDesc') }}</p>
             <div id="new-game-card-description" class="sr-only">
-              Create and configure a new fantasy league game with custom rules and settings
+              {{ t.t('dashboard.navCards.newGameDescription') }}
             </div>
           </div>
           <div class="nav-card-glow"></div>
@@ -506,7 +505,10 @@
 
     <!-- Footer Info -->
     <div class="dashboard-footer" *ngIf="lastUpdate">
-      <p>Dernière mise à jour : {{ lastUpdate | date:'dd/MM/yyyy HH:mm' }}</p>
+      <p>
+        {{ t.t('dashboard.labels.lastUpdated') }}
+        {{ lastUpdate | date:(t.currentLanguage === 'fr' ? 'dd/MM/yyyy HH:mm' : 'MM/dd/yyyy HH:mm') }}
+      </p>
     </div>
   </div>
 </div>

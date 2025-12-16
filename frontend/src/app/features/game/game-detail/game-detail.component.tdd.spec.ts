@@ -5,12 +5,15 @@ import { of, throwError } from 'rxjs';
 
 import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
+import { GameDataService } from '../services/game-data.service';
 import { Game, GameParticipant, GameStatus } from '../models/game.interface';
+import { GameApiMapper } from '../mappers/game-api.mapper';
 
 describe('GameDetailComponent - TDD Tests', () => {
   let component: GameDetailComponent;
   let fixture: ComponentFixture<GameDetailComponent>;
   let mockGameService: jasmine.SpyObj<GameService>;
+  let mockGameDataService: jasmine.SpyObj<GameDataService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockSnackBar: jasmine.SpyObj<MatSnackBar>;
   let mockActivatedRoute: any;
@@ -51,12 +54,12 @@ describe('GameDetailComponent - TDD Tests', () => {
   ];
 
   beforeEach(async () => {
-    const gameServiceSpy = jasmine.createSpyObj('GameService', [
+    const gameServiceSpy = jasmine.createSpyObj('GameService', ['startDraft', 'deleteGame', 'joinGame']);
+    const gameDataServiceSpy = jasmine.createSpyObj('GameDataService', [
       'getGameById',
-      'getGameParticipants', 
-      'startDraft',
-      'deleteGame',
-      'joinGame'
+      'getGameParticipants',
+      'calculateGameStatistics',
+      'validateGameData'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
@@ -65,19 +68,25 @@ describe('GameDetailComponent - TDD Tests', () => {
       params: of({ id: 'test-game-id' })
     };
 
-    await TestBed.configureTestingModule({
+    gameDataServiceSpy.validateGameData.and.returnValue({ isValid: true, errors: [] });
+
+    TestBed.configureTestingModule({
       imports: [GameDetailComponent],
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
+        { provide: GameDataService, useValue: gameDataServiceSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
-    }).compileComponents();
+    });
+
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+    await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(GameDetailComponent);
     component = fixture.componentInstance;
     mockGameService = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
+    mockGameDataService = TestBed.inject(GameDataService) as jasmine.SpyObj<GameDataService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
   });
@@ -85,8 +94,9 @@ describe('GameDetailComponent - TDD Tests', () => {
   describe('Data Mapping from API', () => {
     it('should correctly map API response to Game interface', () => {
       // Arrange
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(of(mockParticipants));
+      const mappedGame = GameApiMapper.mapApiResponseToGame(mockGameFromApi as any);
+      mockGameDataService.getGameById.and.returnValue(of(mappedGame));
+      mockGameDataService.getGameParticipants.and.returnValue(of(mockParticipants));
 
       // Act
       component.ngOnInit();
@@ -101,8 +111,9 @@ describe('GameDetailComponent - TDD Tests', () => {
 
     it('should load participants from API', () => {
       // Arrange
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(of(mockParticipants));
+      const mappedGame = GameApiMapper.mapApiResponseToGame(mockGameFromApi as any);
+      mockGameDataService.getGameById.and.returnValue(of(mappedGame));
+      mockGameDataService.getGameParticipants.and.returnValue(of(mockParticipants));
 
       // Act
       component.ngOnInit();
@@ -115,8 +126,15 @@ describe('GameDetailComponent - TDD Tests', () => {
 
   describe('Participant Percentage Calculation', () => {
     beforeEach(() => {
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(of(mockParticipants));
+      const mappedGame = GameApiMapper.mapApiResponseToGame(mockGameFromApi as any);
+      mockGameDataService.getGameById.and.returnValue(of(mappedGame));
+      mockGameDataService.getGameParticipants.and.returnValue(of(mockParticipants));
+      mockGameDataService.calculateGameStatistics.and.callFake((game: Game) => ({
+        fillPercentage: GameApiMapper.calculateFillPercentage(game),
+        availableSlots: game.maxParticipants - game.participantCount,
+        isNearlyFull: false,
+        canAcceptMoreParticipants: game.canJoin && game.participantCount < game.maxParticipants
+      }));
       component.ngOnInit();
     });
 
@@ -152,11 +170,6 @@ describe('GameDetailComponent - TDD Tests', () => {
   });
 
   describe('Date Handling', () => {
-    beforeEach(() => {
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(of(mockParticipants));
-    });
-
     it('should handle valid ISO date strings', () => {
       // Arrange
       const validDate = '2025-01-15T10:30:00Z';
@@ -166,14 +179,13 @@ describe('GameDetailComponent - TDD Tests', () => {
 
       // Assert
       expect(result).toBeTruthy();
-      expect(result).not.toBe('Invalid Date');
+      expect(result).not.toBe('Date invalide');
     });
 
     it('should handle null or undefined dates gracefully', () => {
-      // Act & Assert
-      expect(() => component.getTimeAgo(null as any)).not.toThrow();
-      expect(() => component.getTimeAgo(undefined as any)).not.toThrow();
-      expect(() => component.getTimeAgo('')).not.toThrow();
+      expect(component.getTimeAgo(null)).toBe('Date invalide');
+      expect(component.getTimeAgo(undefined)).toBe('Date invalide');
+      expect(component.getTimeAgo('')).toBe('Date invalide');
     });
 
     it('should handle invalid date strings gracefully', () => {
@@ -187,8 +199,9 @@ describe('GameDetailComponent - TDD Tests', () => {
 
   describe('Game Actions', () => {
     beforeEach(() => {
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(of(mockParticipants));
+      const mappedGame = GameApiMapper.mapApiResponseToGame(mockGameFromApi as any);
+      mockGameDataService.getGameById.and.returnValue(of(mappedGame));
+      mockGameDataService.getGameParticipants.and.returnValue(of(mockParticipants));
       component.ngOnInit();
     });
 
@@ -234,27 +247,29 @@ describe('GameDetailComponent - TDD Tests', () => {
     it('should handle game loading errors gracefully', () => {
       // Arrange
       const errorMessage = 'Game not found';
-      mockGameService.getGameById.and.returnValue(throwError(() => new Error(errorMessage)));
-      mockGameService.getGameParticipants.and.returnValue(of([]));
+      mockGameDataService.getGameById.and.returnValue(throwError(() => new Error(errorMessage)));
+      mockGameDataService.getGameParticipants.and.returnValue(of([]));
 
       // Act
       component.ngOnInit();
 
       // Assert
-      expect(component.error).toBe('Erreur lors du chargement des détails de la game');
+      expect(component.error).toBe(errorMessage);
       expect(component.loading).toBe(false);
     });
 
     it('should handle participants loading errors gracefully', () => {
       // Arrange
-      mockGameService.getGameById.and.returnValue(of(mockGameFromApi as any));
-      mockGameService.getGameParticipants.and.returnValue(throwError(() => new Error('Participants not found')));
+      const mappedGame = GameApiMapper.mapApiResponseToGame(mockGameFromApi as any);
+      mockGameDataService.getGameById.and.returnValue(of(mappedGame));
+      mockGameDataService.getGameParticipants.and.returnValue(throwError(() => new Error('Participants not found')));
 
       // Act
       component.ngOnInit();
 
       // Assert
-      expect(component.error).toBe('Erreur lors du chargement des participants');
+      expect(component.error).toBeNull();
+      expect(component.participantsError).toBe('Participants not found');
     });
   });
 });

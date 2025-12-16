@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.BusinessException;
+import com.fortnite.pronos.model.GameRegionRule;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.RegionRule;
 import com.fortnite.pronos.model.Team;
+import com.fortnite.pronos.model.TeamPlayer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +37,12 @@ public class ValidationService {
 
   /** Valide un email */
   public boolean isValidEmail(String email) {
-    return email != null && email.contains("@") && email.contains(".");
+    if (email == null) {
+      return false;
+    }
+    String trimmed = email.trim();
+    // Basic pattern: local part + @ + domain with at least one dot, no spaces
+    return trimmed.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{1,}$");
   }
 
   /** Valide une requête de création de game */
@@ -101,17 +108,21 @@ public class ValidationService {
             "Le nombre de joueurs par région doit être positif pour la région " + region);
       }
 
-      if (maxPlayers > 10) { // Max 10 joueurs par région
-        throw new IllegalArgumentException(
-            "Le nombre de joueurs par région ne peut pas dépasser 10 pour la région " + region);
-      }
-
       totalPlayers += maxPlayers;
     }
 
     if (totalPlayers > 20) { // Max 20 joueurs au total
-      throw new IllegalArgumentException(
-          "Le nombre total de joueurs ne peut pas dépasser 20 (actuel: " + totalPlayers + ")");
+      throw new IllegalArgumentException("Le nombre total de joueurs ne peut pas dépasser 20");
+    }
+
+    for (Map.Entry<Player.Region, Integer> entry : regionRules.entrySet()) {
+      Player.Region region = entry.getKey();
+      Integer maxPlayers = entry.getValue();
+
+      if (maxPlayers > 10) { // Max 10 joueurs par région
+        throw new IllegalArgumentException(
+            "Le nombre de joueurs par région ne peut pas dépasser 10 pour la région " + region);
+      }
     }
 
     log.info("Règles de région validées avec succès - Total joueurs: {}", totalPlayers);
@@ -124,7 +135,7 @@ public class ValidationService {
    * @param regionRules The region rules to validate against
    * @throws BusinessException if validation fails
    */
-  public void validateTeamComposition(Team team, List<RegionRule> regionRules) {
+  public void validateTeamComposition(Team team, List<?> regionRules) {
     log.info("Validating team composition for team: {}", team.getName());
 
     if (regionRules == null || regionRules.isEmpty()) {
@@ -132,18 +143,33 @@ public class ValidationService {
       return;
     }
 
-    // Count players by region
-    Map<String, Long> playersByRegion = new java.util.HashMap<>();
+    // Count active players by region using TeamPlayer mapping
+    Map<Player.Region, Long> playersByRegion = new java.util.HashMap<>();
 
-    for (Player player : team.getPlayers()) {
-      String region = player.getRegion();
-      playersByRegion.merge(region, 1L, Long::sum);
-    }
+    team.getPlayers().stream()
+        .filter(tp -> tp != null && tp.getUntil() == null)
+        .map(TeamPlayer::getPlayer)
+        .filter(p -> p != null && p.getRegion() != null)
+        .forEach(regionPlayer -> playersByRegion.merge(regionPlayer.getRegion(), 1L, Long::sum));
 
     // Check against region rules
-    for (RegionRule rule : regionRules) {
-      String region = rule.getRegion();
-      Integer maxPlayers = rule.getMaxPlayers();
+    for (Object ruleObj : regionRules) {
+      Player.Region region = null;
+      Integer maxPlayers = null;
+
+      if (ruleObj instanceof GameRegionRule grr) {
+        region = grr.getRegion();
+        maxPlayers = grr.getMaxPlayers();
+      } else if (ruleObj instanceof RegionRule rr) {
+        try {
+          region = rr.getRegion() != null ? Player.Region.valueOf(rr.getRegion()) : null;
+        } catch (IllegalArgumentException ex) {
+          throw new BusinessException("Unknown region in rule: " + rr.getRegion());
+        }
+        maxPlayers = rr.getMaxPlayers();
+      } else {
+        throw new BusinessException("Unsupported region rule type: " + ruleObj);
+      }
 
       Long currentCount = playersByRegion.getOrDefault(region, 0L);
 

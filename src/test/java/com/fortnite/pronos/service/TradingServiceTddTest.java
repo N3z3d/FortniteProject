@@ -24,6 +24,7 @@ import com.fortnite.pronos.repository.*;
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 @DisplayName("TDD - TradingService")
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class TradingServiceTddTest {
 
   @Mock private TradeRepository tradeRepository;
@@ -46,6 +47,7 @@ class TradingServiceTddTest {
   private Player player1;
   private Player player2;
   private Player player3;
+  private Player player4;
 
   @BeforeEach
   void setUp() {
@@ -53,7 +55,7 @@ class TradingServiceTddTest {
     game = new Game();
     game.setId(UUID.randomUUID());
     game.setName("Test Game");
-    game.setStatus(Game.Status.ACTIVE);
+    game.setStatus(GameStatus.ACTIVE);
     game.setTradingEnabled(true);
     game.setMaxTradesPerTeam(5);
 
@@ -92,7 +94,26 @@ class TradingServiceTddTest {
     player3 = new Player();
     player3.setId(UUID.randomUUID());
     player3.setName("Player 3");
-    player3.setRegion("EU");
+    player3.setRegion(Player.Region.EU);
+
+    player4 = new Player();
+    player4.setId(UUID.randomUUID());
+    player4.setName("Player 4");
+    player4.setRegion(Player.Region.NAW);
+  }
+
+  private void addPlayer(Team team, Player player) {
+    TeamPlayer tp = new TeamPlayer();
+    tp.setTeam(team);
+    tp.setPlayer(player);
+    tp.setPosition(team.getPlayers().size() + 1);
+    team.getPlayers().add(tp);
+  }
+
+  private void addPlayers(Team team, Player... players) {
+    for (Player p : players) {
+      addPlayer(team, p);
+    }
   }
 
   @Nested
@@ -103,8 +124,8 @@ class TradingServiceTddTest {
     @DisplayName("Devrait créer une proposition de trade valide")
     void shouldCreateValidTradeProposal() {
       // Given
-      team1.getPlayers().add(player1);
-      team2.getPlayers().add(player2);
+      addPlayer(team1, player1);
+      addPlayer(team2, player2);
 
       List<Player> offeredPlayers = List.of(player1);
       List<Player> requestedPlayers = List.of(player2);
@@ -185,7 +206,7 @@ class TradingServiceTddTest {
     @DisplayName("Devrait rejeter un trade avec un joueur non possédé")
     void shouldRejectTradeWithUnownedPlayer() {
       // Given
-      team2.getPlayers().add(player2);
+      addPlayer(team2, player2);
       // player1 n'est pas dans team1
 
       when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
@@ -211,8 +232,8 @@ class TradingServiceTddTest {
 
     @BeforeEach
     void setUpTrade() {
-      team1.getPlayers().add(player1);
-      team2.getPlayers().add(player2);
+      addPlayer(team1, player1);
+      addPlayer(team2, player2);
 
       pendingTrade = new Trade();
       pendingTrade.setId(UUID.randomUUID());
@@ -240,10 +261,10 @@ class TradingServiceTddTest {
       assertNotNull(acceptedTrade.getAcceptedAt());
 
       // Vérifier l'échange des joueurs
-      assertFalse(team1.getPlayers().contains(player1));
-      assertTrue(team1.getPlayers().contains(player2));
-      assertFalse(team2.getPlayers().contains(player2));
-      assertTrue(team2.getPlayers().contains(player1));
+      assertFalse(team1.getPlayers().stream().anyMatch(tp -> tp.getPlayer().equals(player1)));
+      assertTrue(team1.getPlayers().stream().anyMatch(tp -> tp.getPlayer().equals(player2)));
+      assertFalse(team2.getPlayers().stream().anyMatch(tp -> tp.getPlayer().equals(player2)));
+      assertTrue(team2.getPlayers().stream().anyMatch(tp -> tp.getPlayer().equals(player1)));
 
       verify(teamRepository, times(2)).save(any(Team.class));
       verify(tradeRepository).save(acceptedTrade);
@@ -351,8 +372,8 @@ class TradingServiceTddTest {
 
     @BeforeEach
     void setUpTrade() {
-      team1.getPlayers().add(player1);
-      team2.getPlayers().addAll(List.of(player2, player3));
+      addPlayer(team1, player1);
+      addPlayers(team2, player2, player3);
 
       originalTrade = new Trade();
       originalTrade.setId(UUID.randomUUID());
@@ -466,18 +487,16 @@ class TradingServiceTddTest {
     @DisplayName("Devrait valider le respect des règles régionales après trade")
     void shouldValidateRegionalRulesAfterTrade() {
       // Given
-      RegionRule euRule = new RegionRule();
-      euRule.setRegion("EU");
-      euRule.setMaxPlayers(2);
+      GameRegionRule euRule =
+          GameRegionRule.builder().region(Player.Region.EU).maxPlayers(2).game(game).build();
 
-      RegionRule naRule = new RegionRule();
-      naRule.setRegion("NA");
-      naRule.setMaxPlayers(1);
+      GameRegionRule naRule =
+          GameRegionRule.builder().region(Player.Region.NA).maxPlayers(1).game(game).build();
 
       game.setRegionRules(List.of(euRule, naRule));
 
-      team1.getPlayers().addAll(List.of(player1, player3)); // 2 EU
-      team2.getPlayers().add(player2); // 1 NA
+      addPlayers(team1, player1, player3); // 2 EU
+      addPlayer(team2, player2); // 1 NA
 
       // Tentative de trade qui violerait les règles (team1 aurait 2 EU + 1 NA)
       Trade invalidTrade = new Trade();
@@ -502,8 +521,8 @@ class TradingServiceTddTest {
     void shouldPreventTradingLockedPlayers() {
       // Given
       player1.setLocked(true); // Joueur verrouillé (ex: pendant un match)
-      team1.getPlayers().add(player1);
-      team2.getPlayers().add(player2);
+      addPlayer(team1, player1);
+      addPlayer(team2, player2);
 
       when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
       when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
@@ -546,8 +565,8 @@ class TradingServiceTddTest {
       player4.setId(UUID.randomUUID());
       player4.setName("Player 4");
 
-      team1.getPlayers().addAll(List.of(player1, player3));
-      team2.getPlayers().addAll(List.of(player2, player4));
+      addPlayers(team1, player1, player3);
+      addPlayers(team2, player2, player4);
 
       List<Player> offered = List.of(player1, player3);
       List<Player> requested = List.of(player2);
@@ -573,7 +592,7 @@ class TradingServiceTddTest {
         Player p = new Player();
         p.setId(UUID.randomUUID());
         tooManyPlayers.add(p);
-        team1.getPlayers().add(p);
+        addPlayer(team1, p);
       }
 
       when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));

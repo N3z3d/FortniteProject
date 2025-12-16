@@ -88,6 +88,8 @@ class GameDraftServiceTddTest {
   void selectPlayer_shouldPersistPick_andAdvanceDraft() {
     when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
     when(draftRepository.findByGame(game)).thenReturn(Optional.of(draft));
+    when(draftService.isUserTurn(draft, userId)).thenReturn(true);
+    when(draftPickRepository.existsByDraftAndPlayer(draft, player)).thenReturn(false);
     when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
     when(gameParticipantRepository.findByUserIdAndGameId(userId, gameId))
         .thenReturn(Optional.of(participant));

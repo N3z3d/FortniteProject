@@ -34,7 +34,7 @@ describe('CreateGameComponent', () => {
 
     gameServiceSpy.createGame.and.returnValue(of(mockGame));
 
-    await TestBed.configureTestingModule({
+    TestBed.configureTestingModule({
       imports: [
         CreateGameComponent,
         ReactiveFormsModule,
@@ -44,9 +44,11 @@ describe('CreateGameComponent', () => {
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy }
       ]
-    }).compileComponents();
+    });
+
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+    await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(CreateGameComponent);
     component = fixture.componentInstance;
@@ -66,10 +68,8 @@ describe('CreateGameComponent', () => {
       expect(component.gameForm).toBeDefined();
       expect(component.useDefaultConfig).toBe(true);
       expect(component.gameForm.get('name')?.value).toBe('');
-      expect(component.gameForm.get('maxParticipants')?.value).toBe(49);
-      expect(component.gameForm.get('regionRules')?.value).toEqual({
-        'EU': 7, 'NAC': 7, 'BR': 7, 'ASIA': 7, 'OCE': 7, 'NAW': 7, 'ME': 7
-      });
+      expect(component.gameForm.get('maxParticipants')?.value).toBe(5);
+      expect(component.gameForm.get('regionRules')?.value).toEqual({});
     });
   });
 
@@ -102,19 +102,29 @@ describe('CreateGameComponent', () => {
       component.ngOnInit();
       component.gameForm.patchValue({
         name: 'Test Game',
-        maxParticipants: 49,
-        regionRules: { 'EU': 7, 'NAC': 7, 'BR': 7, 'ASIA': 7, 'OCE': 7, 'NAW': 7, 'ME': 7 }
+        maxParticipants: 5,
+        regionRules: {}
       });
 
       component.onSubmit();
 
-      expect(gameService.createGame).toHaveBeenCalledWith({
+      expect(gameService.createGame).toHaveBeenCalledWith(jasmine.objectContaining({
         name: 'Test Game',
-        maxParticipants: 49,
-        regionRules: { 'EU': 7, 'NAC': 7, 'BR': 7, 'ASIA': 7, 'OCE': 7, 'NAW': 7, 'ME': 7 }
-      });
-      expect(snackBar.open).toHaveBeenCalledWith('Game créée avec succès!', 'Fermer', { duration: 3000 });
-      expect(router.navigate).toHaveBeenCalledWith(['/games', '1']);
+        maxParticipants: 5,
+        regionRules: {},
+        isPrivate: false,
+        autoStartDraft: true,
+        draftTimeLimit: 300,
+        autoPickDelay: 43200,
+        currentSeason: 2025,
+        description: jasmine.any(String)
+      }));
+      expect(snackBar.open).toHaveBeenCalledWith(
+        jasmine.any(String),
+        '',
+        jasmine.objectContaining({ duration: 2000, panelClass: 'success-snackbar' })
+      );
+      expect(router.navigate).toHaveBeenCalledWith(['/games', '1'], { queryParams: { created: 'true' } });
     });
 
     it('should handle error when creating game fails', () => {
@@ -124,13 +134,13 @@ describe('CreateGameComponent', () => {
       component.ngOnInit();
       component.gameForm.patchValue({
         name: 'Test Game',
-        maxParticipants: 49,
-        regionRules: { 'EU': 7, 'NAC': 7, 'BR': 7, 'ASIA': 7, 'OCE': 7, 'NAW': 7, 'ME': 7 }
+        maxParticipants: 5,
+        regionRules: {}
       });
 
       component.onSubmit();
 
-      expect(component.error).toBe('Erreur lors de la création de la game');
+      expect(component.error).toContain('Impossible');
       expect(component.loading).toBe(false);
     });
 

@@ -157,8 +157,7 @@ export class DashboardDataService {
     const sharedRequest = forkJoin({
       statistics: this.getGameStatistics(gameId),
       leaderboard: this.getGameLeaderboard(gameId),
-      regionDistribution: this.getRegionDistribution(gameId),
-      teams: this.getGameTeams(gameId)
+      regionDistribution: this.getRegionDistribution(gameId)
     }).pipe(
       timeout(this.REQUEST_TIMEOUT),
       shareReplay(1) // Cache the result for 1 emission
@@ -173,7 +172,15 @@ export class DashboardDataService {
           statistics: data.statistics,
           leaderboard: data.leaderboard,
           regionDistribution: data.regionDistribution,
-          teams: data.teams
+          teams: Array.isArray(data.leaderboard)
+            ? data.leaderboard.map(entry => ({
+                id: entry.teamId || entry.id,
+                name: entry.teamName,
+                totalPoints: entry.totalPoints || 0,
+                ownerName: entry.ownerName,
+                players: entry.players || []
+              }))
+            : []
         };
         
         console.log('✅ Final real dashboard data:', finalData);

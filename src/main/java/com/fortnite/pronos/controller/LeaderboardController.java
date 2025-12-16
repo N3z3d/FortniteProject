@@ -18,7 +18,6 @@ import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.LeaderboardService;
-import com.fortnite.pronos.service.cache.LeaderboardCacheService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 public class LeaderboardController {
 
   private final LeaderboardService leaderboardService;
-  private final LeaderboardCacheService leaderboardCacheService;
   private final ScoreRepository scoreRepository;
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;
@@ -46,7 +44,7 @@ public class LeaderboardController {
 
     try {
       // Utiliser la méthode optimisée avec cache
-      List<LeaderboardEntryDTO> entries = leaderboardCacheService.getCachedLeaderboard(season);
+      List<LeaderboardEntryDTO> entries = leaderboardService.getLeaderboard(season);
 
       // Filtrer par région si nécessaire (côté application pour éviter complexity)
       if (region != null && !region.trim().isEmpty()) {

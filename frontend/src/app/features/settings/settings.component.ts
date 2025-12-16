@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserContextService } from '../../core/services/user-context.service';
+import { TranslationService, SupportedLanguage } from '../../core/services/translation.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -40,8 +41,8 @@ export class SettingsComponent implements OnInit {
 
   // Display settings
   theme = 'dark';
-  language = 'en';
-  
+  language: SupportedLanguage = 'fr';
+
   // Game settings
   autoJoinDraft = false;
   showOnlineStatus = true;
@@ -49,10 +50,13 @@ export class SettingsComponent implements OnInit {
   constructor(
     private userContextService: UserContextService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    public t: TranslationService
   ) {}
 
   ngOnInit(): void {
+    // Initialiser la langue depuis le service
+    this.language = this.t.currentLanguage;
     // Load saved settings from local storage or backend
     this.loadSettings();
   }
@@ -64,6 +68,12 @@ export class SettingsComponent implements OnInit {
       const settings = JSON.parse(savedSettings);
       Object.assign(this, settings);
     }
+    // Synchroniser avec le service de traduction
+    this.language = this.t.currentLanguage;
+  }
+
+  onLanguageChange(): void {
+    this.t.setLanguage(this.language);
   }
 
   saveSettings(): void {
@@ -95,13 +105,12 @@ export class SettingsComponent implements OnInit {
     this.draftAlerts = true;
     this.tradeNotifications = true;
     this.theme = 'dark';
-    this.language = 'en';
+    this.language = 'fr';
     this.autoJoinDraft = false;
     this.showOnlineStatus = true;
     
-    this.snackBar.open('Settings reset to defaults', 'Close', {
-      duration: 3000
-    });
+    this.t.setLanguage(this.language);
+    this.snackBar.open(this.t.t('settings.settingsReset'), this.t.t('common.close'), { duration: 3000 });
   }
 
   deleteAccount(): void {

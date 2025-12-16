@@ -8,13 +8,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.fortnite.pronos.PronosApplication;
-import com.fortnite.pronos.service.TestSecurityConfigTestBackup;
+import com.fortnite.pronos.config.TestSecurityConfig;
 
 /**
  * Test TDD simple pour vérifier le démarrage de l'application Principe : Red (tests qui échouent) →
  * Green (implémentation) → Refactor
  */
-@SpringBootTest(classes = {PronosApplication.class, TestSecurityConfigTestBackup.class})
+@SpringBootTest(classes = {PronosApplication.class, TestSecurityConfig.class})
 @ActiveProfiles("test")
 @DisplayName("Test TDD Simple - Démarrage de l'Application")
 class SimpleStartupTest {

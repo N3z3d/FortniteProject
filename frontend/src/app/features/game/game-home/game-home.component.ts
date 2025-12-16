@@ -218,11 +218,10 @@ export class GameHomeComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur chargement games:', error);
-        this.error = 'Erreur lors du chargement de vos games';
+        this.error = error instanceof Error ? error.message : 'Erreur lors du chargement de vos games';
         this.loading = false;
       }
     });
   }
 
 } 
-

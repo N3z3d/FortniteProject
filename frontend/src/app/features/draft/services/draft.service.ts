@@ -1,102 +1,58 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError, timer } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, throwError, timer } from 'rxjs';
+import { catchError, map, switchMap, tap, filter } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
+import {
+  Draft,
+  DraftBoardState,
+  GameParticipant,
+  Player,
+  DraftPick,
+  DraftHistoryEntry,
+  DraftStatistics,
+  DraftInitializeRequest,
+  PlayerSelectionRequest,
+  DraftStatusInfo
+} from '../models/draft.interface';
 
-// Interfaces pour les types de données
-export interface Draft {
-  id: string;
-  gameId: string;
-  status: 'PENDING' | 'ACTIVE' | 'PAUSED' | 'FINISHED' | 'CANCELLED';
-  currentRound: number;
-  currentPick: number;
-  totalRounds: number;
-  createdAt: string;
-  updatedAt: string;
-  startedAt?: string;
-  finishedAt?: string;
-}
-
-export interface DraftBoardState {
-  draft: Draft;
-  participants: GameParticipant[];
-  availablePlayers: Player[];
-  picks: DraftPick[];
-}
-
-export interface GameParticipant {
-  id: string;
-  gameId: string;
-  userId: string;
-  username: string;
-  draftOrder: number;
-  lastSelectionTime: string;
-  selectedPlayers: Player[];
-  isCurrentTurn: boolean;
-  timeRemaining?: number;
-}
-
-export interface Player {
-  id: string;
-  nickname: string;
-  username: string;
-  region: string;
-  tranche: string;
-  currentSeason: number;
-  selected?: boolean;
-}
-
-export interface DraftPick {
-  id: string;
-  draftId: string;
-  participantId: string;
-  playerId: string;
-  round: number;
-  pickNumber: number;
-  selectionTime: string;
-  timeTakenSeconds?: number;
-  autoPick: boolean;
-}
-
-export interface DraftHistoryEntry {
-  pickId: string;
-  participantUsername: string;
-  playerNickname: string;
-  selectionTime: string;
-  autoPick: boolean;
-}
-
-export interface DraftStatistics {
-  totalPicks: number;
-  autoPicks: number;
-  manualPicks: number;
-  totalParticipants: number;
-  picksByRegion: Record<string, number>;
-}
-
-export interface DraftInitializeRequest {
-  gameId: string;
-}
-
-export interface PlayerSelectionRequest {
-  playerId: string;
-}
+export type {
+  Draft,
+  DraftBoardState,
+  GameParticipant,
+  Player,
+  DraftPick,
+  DraftHistoryEntry,
+  DraftStatistics,
+  DraftInitializeRequest,
+  PlayerSelectionRequest,
+  DraftStatusInfo
+} from '../models/draft.interface';
 
 @Injectable({
   providedIn: 'root'
 })
-export class DraftService {
-  private readonly apiUrl = `${environment.apiUrl}/drafts`;
+export class DraftService implements OnDestroy {
+  private readonly apiUrl = `${environment.apiUrl}/api/drafts`;
   
   // State management avec BehaviorSubject
   private draftStateSubject = new BehaviorSubject<DraftBoardState | null>(null);
-  public draftState$ = this.draftStateSubject.asObservable();
+  public draftState$ = this.draftStateSubject.asObservable().pipe(
+    filter((state): state is DraftBoardState => state !== null)
+  );
+  private currentGameIdSubject = new BehaviorSubject<string | null>(null);
+  public currentGameId$ = this.currentGameIdSubject.asObservable();
 
   // Auto-refresh timer
-  private refreshTimer?: any;
+  private refreshTimer: Subscription | null = null;
 
   constructor(private http: HttpClient) {}
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
+    this.draftStateSubject.complete();
+    this.currentGameIdSubject.complete();
+  }
 
   // Méthodes publiques principales
   initializeDraft(gameId: string): Observable<Draft> {
@@ -161,13 +117,35 @@ export class DraftService {
       .pipe(catchError(this.handleError));
   }
 
+  getDraftStatus(gameId: string): Observable<DraftStatusInfo> {
+    return this.http.get<DraftStatusInfo>(`${this.apiUrl}/${gameId}/status`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAllDraftPicks(gameId: string): Observable<DraftPick[]> {
+    return this.http.get<DraftPick[]>(`${this.apiUrl}/${gameId}/picks`)
+      .pipe(catchError(this.handleError));
+  }
+
+  selectPlayer(gameId: string, playerId: string): Observable<boolean> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/${gameId}/select`, { playerId })
+      .pipe(
+        map(response => response?.success === true),
+        catchError(this.handleError)
+      );
+  }
+
   getDraftStatistics(gameId: string): Observable<DraftStatistics> {
     return this.http.get<DraftStatistics>(`${this.apiUrl}/${gameId}/statistics`)
       .pipe(catchError(this.handleError));
   }
 
-  getAvailablePlayers(gameId: string): Observable<Player[]> {
-    return this.http.get<Player[]>(`${this.apiUrl}/${gameId}/available-players`)
+  getAvailablePlayers(gameId: string, region?: string): Observable<Player[]> {
+    const url = region
+      ? `${this.apiUrl}/${gameId}/available-players?region=${region}`
+      : `${this.apiUrl}/${gameId}/available-players`;
+
+    return this.http.get<Player[]>(url)
       .pipe(catchError(this.handleError));
   }
 
@@ -195,10 +173,8 @@ export class DraftService {
   }
 
   stopAutoRefresh(): void {
-    if (this.refreshTimer) {
-      this.refreshTimer.unsubscribe();
-      this.refreshTimer = null;
-    }
+    this.refreshTimer?.unsubscribe();
+    this.refreshTimer = null;
   }
 
   refreshDraftState(gameId: string): void {
@@ -211,6 +187,7 @@ export class DraftService {
 
   clearDraftState(): void {
     this.draftStateSubject.next(null);
+    this.currentGameIdSubject.next(null);
   }
 
   // Méthodes utilitaires
@@ -231,9 +208,11 @@ export class DraftService {
   }
 
   getDraftProgress(draft: Draft): { current: number; total: number; percentage: number } {
-    const totalPicks = draft.totalRounds * draft.currentPick;
-    const currentPick = (draft.currentRound - 1) * draft.currentPick + draft.currentPick;
-    const percentage = Math.round((currentPick / totalPicks) * 100);
+    const totalRounds = draft.totalRounds ?? 0;
+    const currentPickValue = draft.currentPick ?? 0;
+    const totalPicks = totalRounds * currentPickValue || 0;
+    const currentPick = (draft.currentRound - 1) * currentPickValue + currentPickValue;
+    const percentage = totalPicks > 0 ? Math.round((currentPick / totalPicks) * 100) : 0;
     
     return {
       current: currentPick,
@@ -258,6 +237,7 @@ export class DraftService {
   // Méthodes privées
   private handleDraftInitialization(draft: Draft, gameId: string): void {
     // Démarrer l'auto-refresh après l'initialisation
+    this.currentGameIdSubject.next(gameId);
     this.startAutoRefresh(gameId);
   }
 

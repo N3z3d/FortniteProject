@@ -1,33 +1,33 @@
 <div class="ultra-fast-create">
-  <!-- Header Simple -->
+  <!-- Simple Header -->
   <div class="create-header">
-    <h1>🎮 Nouvelle Game</h1>
-    <p class="header-subtitle">Créez votre game en 10 secondes</p>
+    <h1>🎮 Nouvelle partie</h1>
+    <p class="header-subtitle">Crée ta partie en 10 secondes</p>
   </div>
 
-  <!-- Formulaire Ultra-Simplifié -->
+  <!-- Ultra-Simplified Form -->
   <div class="instant-create-form">
     <form [formGroup]="gameForm" (ngSubmit)="onSubmit()" class="lightning-form">
-      
-      <!-- Seul Champ Requis : Nom -->
+
+      <!-- Only Required Field: Name -->
       <div class="name-section">
         <mat-form-field appearance="outline" class="game-name-mega">
-          <mat-label>Nom de votre game</mat-label>
-          <input 
-            matInput 
-            formControlName="name" 
-            placeholder="Ex: Game entre amis"
+          <mat-label>Nom de ta partie</mat-label>
+          <input
+            matInput
+            formControlName="name"
+            placeholder="Ex: Partie entre amis"
             maxlength="30"
             autofocus
             autocomplete="off">
-          <mat-hint>C'est tout ce qu'il vous faut !</mat-hint>
+          <mat-hint>C'est tout ce dont tu as besoin !</mat-hint>
           <mat-error *ngIf="gameForm.get('name')?.hasError('required')">
-            Donnez un nom à votre game
+            Donne un nom à ta partie
           </mat-error>
         </mat-form-field>
       </div>
 
-      <!-- Configuration Automatique Visible -->
+      <!-- Visible Auto Configuration -->
       <div class="auto-config-preview">
         <div class="config-card">
           <div class="config-icon">
@@ -40,17 +40,17 @@
               <span class="spec-item">5 joueurs par équipe</span>
               <span class="spec-item">Draft rapide</span>
             </div>
-            <p class="config-note">Tout est pré-configuré pour une expérience parfaite</p>
+            <p class="config-note">Tout est préconfiguré pour une expérience parfaite</p>
           </div>
         </div>
       </div>
 
-      <!-- Actions Ultra-Rapides -->
+      <!-- Ultra-Fast Actions -->
       <div class="instant-actions">
-        <button 
-          mat-fab 
+        <button
+          mat-fab
           extended
-          color="primary" 
+          color="primary"
           type="submit"
           [disabled]="gameForm.get('name')?.invalid || loading"
           class="mega-create-btn">
@@ -58,11 +58,11 @@
           <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
           {{ loading ? 'Création...' : 'Créer & Jouer' }}
         </button>
-        
-        <!-- Options Avancées (Cachées par défaut) -->
-        <button 
+
+        <!-- Advanced Options (Hidden by default) -->
+        <button
           *ngIf="!showAdvancedOptions"
-          mat-button 
+          mat-button
           type="button"
           (click)="showAdvancedOptions = true"
           class="show-advanced">
@@ -73,46 +73,46 @@
     </form>
   </div>
 
-  <!-- Mode Avancé (Masqué par défaut) -->
+  <!-- Advanced Mode (Hidden by default) -->
   <div class="advanced-panel" *ngIf="showAdvancedOptions">
     <div class="panel-header">
-      <h3>Configuration personnalisée</h3>
-      <button 
-        mat-icon-button 
+      <h3>Custom configuration</h3>
+      <button
+        mat-icon-button
         (click)="showAdvancedOptions = false"
         class="close-advanced">
         <mat-icon>close</mat-icon>
       </button>
     </div>
-    
+
     <div class="advanced-controls">
       <!-- Participants -->
       <mat-form-field appearance="outline">
-        <mat-label>Participants max</mat-label>
+        <mat-label>Max participants</mat-label>
         <mat-select formControlName="maxParticipants">
-          <mat-option value="2">2 joueurs</mat-option>
-          <mat-option value="3">3 joueurs</mat-option>
-          <mat-option value="4">4 joueurs</mat-option>
-          <mat-option value="5">5 joueurs</mat-option>
-          <mat-option value="6">6 joueurs</mat-option>
-          <mat-option value="8">8 joueurs</mat-option>
-          <mat-option value="10">10 joueurs</mat-option>
+          <mat-option value="2">2 players</mat-option>
+          <mat-option value="3">3 players</mat-option>
+          <mat-option value="4">4 players</mat-option>
+          <mat-option value="5">5 players</mat-option>
+          <mat-option value="6">6 players</mat-option>
+          <mat-option value="8">8 players</mat-option>
+          <mat-option value="10">10 players</mat-option>
         </mat-select>
       </mat-form-field>
 
-      <!-- Type de Game -->
+      <!-- Game Type -->
       <mat-form-field appearance="outline">
-        <mat-label>Type de game</mat-label>
+        <mat-label>Game type</mat-label>
         <mat-select [(ngModel)]="gameType" [ngModelOptions]="{standalone: true}">
-          <mat-option value="casual">Casual (recommandé)</mat-option>
-          <mat-option value="competitive">Compétitif</mat-option>
-          <mat-option value="tournament">Tournoi</mat-option>
+          <mat-option value="casual">Casual (recommended)</mat-option>
+          <mat-option value="competitive">Competitive</mat-option>
+          <mat-option value="tournament">Tournament</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
   </div>
 
-  <!-- Messages d'Erreur -->
+  <!-- Error Messages -->
   <div *ngIf="error" class="error-banner">
     <mat-icon>error</mat-icon>
     <span>{{ error }}</span>
@@ -123,7 +123,7 @@
     <div class="trust-stats">
       <div class="stat">
         <span class="number">1.2k</span>
-        <span class="label">Games créées</span>
+        <span class="label">Games created</span>
       </div>
       <div class="stat">
         <span class="number">98%</span>
@@ -131,7 +131,7 @@
       </div>
       <div class="stat">
         <span class="number">< 30s</span>
-        <span class="label">Temps moyen</span>
+        <span class="label">Average time</span>
       </div>
     </div>
   </div>

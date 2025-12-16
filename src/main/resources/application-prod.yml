@@ -7,53 +7,26 @@ app:
 spring:
   profiles:
     active: prod
-  # PHASE 3A: SPRINT 4 - DATABASE SCALING FOR 500+ USERS
   datasource:
-    # Primary datasource for write operations
-    primary:
-      jdbc-url: jdbc:postgresql://${DB_PRIMARY_HOST:localhost}:${DB_PRIMARY_PORT:5432}/${DB_NAME:fortnite_pronos}
-      username: ${DB_PRIMARY_USERNAME:postgres}
-      password: ${DB_PRIMARY_PASSWORD:postgres}
-      driver-class-name: org.postgresql.Driver
-      hikari:
-        # OPTIMIZED FOR 500+ SIMULTANEOUS USERS - PRIMARY DB
-        minimum-idle: 30               # Higher for primary DB
-        maximum-pool-size: 100         # Scaled for 500+ users
-        idle-timeout: 300000           # 5 minutes
-        connection-timeout: 6000       # Optimized for high load
-        validation-timeout: 1500       # Faster validation
-        max-lifetime: 1800000          # 30 minutes for production
-        leak-detection-threshold: 15000 # Strict leak detection
-        pool-name: "FortnitePronosPrimaryCP"
-        initialization-fail-timeout: 1
-        isolate-internal-queries: false
-        allow-pool-suspension: false
-        read-only: false
-        register-mbeans: true
-    # Read replica for read-only operations
-    read-only:
-      jdbc-url: jdbc:postgresql://${DB_READONLY_HOST:localhost}:${DB_READONLY_PORT:5433}/${DB_NAME:fortnite_pronos}
-      username: ${DB_READONLY_USERNAME:postgres}
-      password: ${DB_READONLY_PASSWORD:postgres}
-      driver-class-name: org.postgresql.Driver
-      hikari:
-        # OPTIMIZED FOR READ QUERIES - 500+ USERS SCALING
-        minimum-idle: 25               # Read-heavy workload
-        maximum-pool-size: 80          # Optimized for read operations
-        idle-timeout: 600000           # 10 minutes for read connections
-        connection-timeout: 8000       # Slightly higher for read ops
-        validation-timeout: 2000       # Standard validation
-        max-lifetime: 1800000          # 30 minutes
-        leak-detection-threshold: 20000
-        pool-name: "FortnitePronosReadOnlyCP"
-        initialization-fail-timeout: 1
-        isolate-internal-queries: false
-        allow-pool-suspension: false
-        read-only: true                # CRITICAL: Mark as read-only
-        register-mbeans: true
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fortnite_pronos}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 300000
+      connection-timeout: 8000
+      validation-timeout: 2000
+      max-lifetime: 1800000
+      leak-detection-threshold: 15000
+      pool-name: "FortnitePronosCP"
+      initialization-fail-timeout: 1
+      read-only: false
+      register-mbeans: true
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -75,10 +48,8 @@ spring:
         connection:
           provider_disables_autocommit: true
         cache:
-          use_second_level_cache: true
-          use_query_cache: true
-          region:
-            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+          use_second_level_cache: false
+          use_query_cache: false
   h2:
     console:
       enabled: false                # H2 console MUST be disabled in production

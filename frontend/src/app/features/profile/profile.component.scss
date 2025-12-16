@@ -45,7 +45,7 @@
       
       .user-info {
         h1 {
-          margin: 0;
+          margin: 0 0 0.75rem 0;
           font-size: 2rem;
           font-weight: 700;
           background: linear-gradient(135deg, var(--gaming-primary), var(--gaming-accent));
@@ -53,17 +53,67 @@
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-        
-        .user-role {
-          margin: 0.5rem 0;
-          color: var(--gaming-accent);
+
+        .role-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.4rem 1rem;
+          border-radius: 20px;
           font-weight: 600;
-          text-transform: uppercase;
-          font-size: 0.9rem;
+          font-size: 0.875rem;
+          margin: 0.5rem 0;
+          transition: all 0.3s ease;
+
+          mat-icon {
+            font-size: 1.125rem;
+            width: 1.125rem;
+            height: 1.125rem;
+          }
+
+          &[data-role="admin"] {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+
+            mat-icon {
+              color: white;
+            }
+          }
+
+          &[data-role="moderator"] {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+
+            mat-icon {
+              color: white;
+            }
+          }
+
+          &[data-role="player"] {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(162, 155, 254, 0.3);
+
+            mat-icon {
+              color: white;
+            }
+          }
+
+          &[data-role="user"] {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+
+            mat-icon {
+              color: rgba(255, 255, 255, 0.6);
+            }
+          }
         }
-        
+
         .user-email {
-          margin: 0;
+          margin: 0.5rem 0 0 0;
           color: rgba(255, 255, 255, 0.6);
           font-size: 0.95rem;
         }
@@ -113,6 +163,38 @@
             color: rgba(255, 255, 255, 0.9);
             font-size: 1rem;
             margin-top: 0.25rem;
+
+            &.role-line {
+              .role-badge-inline {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 0.8125rem;
+
+                &[data-role="admin"] {
+                  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                  color: white;
+                }
+
+                &[data-role="moderator"] {
+                  background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+                  color: white;
+                }
+
+                &[data-role="player"] {
+                  background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+                  color: white;
+                }
+
+                &[data-role="user"] {
+                  background: rgba(255, 255, 255, 0.15);
+                  color: rgba(255, 255, 255, 0.9);
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+              }
+            }
           }
         }
       }

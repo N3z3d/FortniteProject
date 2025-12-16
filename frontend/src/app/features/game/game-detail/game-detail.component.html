@@ -11,7 +11,7 @@
       <mat-card-content>
         <mat-icon color="warn">error</mat-icon>
         <p>{{ error }}</p>
-        <button mat-button color="primary" (click)="loadGameDetails()">
+        <button mat-button color="primary" (click)="retryLoad()">
           Réessayer
         </button>
       </mat-card-content>
@@ -123,6 +123,14 @@
         </mat-card-header>
         
         <mat-card-content>
+          <div class="participants-error" *ngIf="participantsError">
+            <mat-icon color="warn">error_outline</mat-icon>
+            <p>{{ participantsError }}</p>
+            <button mat-button color="primary" (click)="loadParticipants()">
+              RÇ¸essayer
+            </button>
+          </div>
+
           <!-- Creator -->
           <div class="creator-section" *ngIf="getCreator()">
             <h3>👑 Créateur</h3>
@@ -158,7 +166,7 @@
           </div>
 
           <!-- Empty State -->
-          <div class="empty-participants" *ngIf="participants.length === 0">
+          <div class="empty-participants" *ngIf="participants.length === 0 && !participantsError">
             <mat-icon class="empty-icon">group_off</mat-icon>
             <h3>Aucun participant</h3>
             <p>Soyez le premier à rejoindre cette game !</p>

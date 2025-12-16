@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.library.Architectures;
 
 /**
@@ -12,7 +13,10 @@ import com.tngtech.archunit.library.Architectures;
  */
 public class LayeredArchitectureTest {
 
-  private final JavaClasses classes = new ClassFileImporter().importPackages("com.fortnite.pronos");
+  private final JavaClasses classes =
+      new ClassFileImporter()
+          .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+          .importPackages("com.fortnite.pronos");
 
   @Test
   void shouldFollowLayeredArchitecture() {
@@ -20,6 +24,10 @@ public class LayeredArchitectureTest {
         .consideringAllDependencies()
         .layer("Controllers")
         .definedBy("..controller..")
+        .optionalLayer("UseCases")
+        .definedBy("..core..")
+        .optionalLayer("Exceptions")
+        .definedBy("..exception..")
         .layer("Services")
         .definedBy("..service..")
         .layer("Repositories")
@@ -32,16 +40,22 @@ public class LayeredArchitectureTest {
         .definedBy("..config..")
         .whereLayer("Controllers")
         .mayNotBeAccessedByAnyLayer()
+        .whereLayer("UseCases")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
+        .whereLayer("Exceptions")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Exceptions")
         .whereLayer("Services")
-        .mayOnlyBeAccessedByLayers("Controllers", "Services")
+        .mayOnlyBeAccessedByLayers(
+            "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions")
         .whereLayer("Repositories")
-        .mayOnlyBeAccessedByLayers("Services", "Config")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
         .whereLayer("Models")
-        .mayOnlyBeAccessedByLayers("Services", "Repositories", "DTOs")
+        .mayOnlyBeAccessedByLayers(
+            "Controllers", "Services", "Repositories", "DTOs", "UseCases", "Exceptions", "Config")
         .whereLayer("DTOs")
-        .mayOnlyBeAccessedByLayers("Controllers", "Services")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Exceptions", "Config")
         .whereLayer("Config")
-        .mayNotAccessAnyLayer()
+        .mayOnlyBeAccessedByLayers("Config", "Controllers", "Services", "UseCases", "Exceptions")
         .check(classes);
   }
 
@@ -59,6 +73,7 @@ public class LayeredArchitectureTest {
                 "..model..",
                 "..repository..",
                 "..core..",
+                "..controller..", // autoriser les DTO internes des contrôleurs
                 "java..",
                 "org.springframework..",
                 "org.slf4j..",

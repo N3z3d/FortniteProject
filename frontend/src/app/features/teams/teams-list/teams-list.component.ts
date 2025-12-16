@@ -1,20 +1,28 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Params } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Subject, combineLatest, of, takeUntil } from 'rxjs';
 
 import { TeamService, TeamDto } from '../../../core/services/team.service';
+
+interface Player {
+  id: string;
+  name: string;
+  gamertag: string;
+  points?: number;
+}
 
 interface Team {
   id: string;
   name: string;
   ownerName: string;
   playerCount: number;
+  players: Player[];
   totalPoints: number;
   gameId: string;
   gameName: string;
@@ -67,15 +75,40 @@ interface Team {
               </div>
             </div>
 
+            <!-- Liste des joueurs -->
+            <div class="players-section" *ngIf="team.players && team.players.length > 0">
+              <h4 class="players-title">
+                <mat-icon>group</mat-icon>
+                Joueurs de l'équipe
+              </h4>
+              <div class="players-list">
+                <div
+                  *ngFor="let player of team.players; trackBy: trackByPlayerId"
+                  class="player-item">
+                  <mat-icon class="player-icon">sports_esports</mat-icon>
+                  <div class="player-info">
+                    <span class="player-name">{{ player.gamertag || player.name }}</span>
+                    <span class="player-points" *ngIf="player.points">
+                      {{ player.points }} pts
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="team-meta">
-              <p class="owner">Propriétaire: {{ team.ownerName }}</p>
+              <p class="owner">
+                <mat-icon>account_circle</mat-icon>
+                {{ team.ownerName }}
+              </p>
               <p class="last-update">
-                Dernière mise à jour: {{ team.lastUpdate | date:'short' }}
+                <mat-icon>schedule</mat-icon>
+                {{ team.lastUpdate | date:'short' }}
               </p>
             </div>
 
             <div class="status-chips">
-              <mat-chip 
+              <mat-chip
                 [color]="team.isActive ? 'primary' : 'warn'">
                 {{ team.isActive ? 'Active' : 'Inactive' }}
               </mat-chip>
@@ -83,17 +116,17 @@ interface Team {
           </mat-card-content>
 
           <mat-card-actions>
-            <button 
-              mat-button 
+            <button
+              mat-button
               color="primary"
-              [routerLink]="['/teams', team.id]">
+              [routerLink]="['detail', team.id]">
               <mat-icon>visibility</mat-icon>
               Voir détails
             </button>
-            <button 
-              mat-button 
+            <button
+              mat-button
               color="accent"
-              [routerLink]="['/teams', team.id, 'edit']"
+              [routerLink]="['edit', team.id]"
               [disabled]="!team.isActive">
               <mat-icon>edit</mat-icon>
               Modifier
@@ -127,19 +160,22 @@ export class TeamsListComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   gameId: string | null = null;
-  private destroy$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private teamService: TeamService,
-    private route: ActivatedRoute
+    private readonly teamService: TeamService,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    // Get gameId from route params if it exists
-    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
-      this.gameId = params['id'] || null;
-      this.loadTeams();
-    });
+    const parentParams$ = this.route.parent?.params ?? of({} as Params);
+
+    combineLatest([this.route.params, parentParams$])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([params, parentParams]) => {
+        this.gameId = params['id'] || parentParams['id'] || null;
+        this.loadTeams();
+      });
   }
 
   ngOnDestroy(): void {
@@ -173,22 +209,59 @@ export class TeamsListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private mapTeamsData(apiTeams: any[]): Team[] {
+  private mapTeamsData(apiTeams: TeamDto[]): Team[] {
     if (!Array.isArray(apiTeams)) {
       return [];
     }
 
-    return apiTeams.map(team => ({
-      id: team.id || '',
-      name: team.name || team.teamName || 'Équipe sans nom',
-      ownerName: team.ownerName || team.owner || 'Propriétaire inconnu',
-      playerCount: team.players?.length || team.playerCount || 0,
-      totalPoints: team.totalPoints || team.points || 0,
-      gameId: team.gameId || '',
-      gameName: team.gameName || team.game?.name || 'Jeu inconnu',
-      lastUpdate: team.lastUpdate ? new Date(team.lastUpdate) : new Date(),
-      isActive: team.isActive !== false // Active par défaut
-    }));
+    return apiTeams.map((team: any) => {
+      const apiPlayers = Array.isArray(team.players) ? team.players : [];
+      const lastUpdateValue = team.updatedAt || team.lastUpdate || team.createdAt;
+
+      return {
+        id: team.id || '',
+        name: team.name || team.teamName || 'Équipe sans nom',
+        ownerName:
+          team.ownerUsername ||
+          team.ownerName ||
+          team.owner?.username ||
+          team.owner ||
+          'Propriétaire inconnu',
+        playerCount: apiPlayers.length || team.playerCount || 0,
+        players: this.mapPlayers(apiPlayers),
+        totalPoints: team.totalScore ?? team.totalPoints ?? team.points ?? 0,
+        gameId: team.gameId || this.gameId || '',
+        gameName:
+          team.gameName ||
+          team.game?.name ||
+          (this.gameId ? 'Jeu sélectionné' : 'Saison 2025'),
+        lastUpdate: lastUpdateValue ? new Date(lastUpdateValue) : new Date(),
+        isActive: team.isActive !== false // Active par défaut
+      };
+    });
+  }
+
+  private mapPlayers(apiPlayers: any[]): Player[] {
+    if (!Array.isArray(apiPlayers)) {
+      return [];
+    }
+
+    return apiPlayers.map((player: any) => {
+      const nickname =
+        player.nickname ||
+        player.gamertag ||
+        player.fortniteId ||
+        player.name ||
+        player.playerName ||
+        'Joueur';
+
+      return {
+        id: player.id || player.playerId || '',
+        name: nickname,
+        gamertag: nickname,
+        points: player.points || player.totalPoints || 0
+      };
+    });
   }
 
   private getMockTeams(): Team[] {
@@ -196,8 +269,15 @@ export class TeamsListComponent implements OnInit, OnDestroy {
       {
         id: 'team1',
         name: 'Les Legends',
-        ownerName: 'Joueur Test',
+        ownerName: 'Thibaut',
         playerCount: 5,
+        players: [
+          { id: 'p1', name: 'Bugha', gamertag: 'Bugha', points: 350 },
+          { id: 'p2', name: 'Ninja', gamertag: 'Ninja', points: 320 },
+          { id: 'p3', name: 'Tfue', gamertag: 'Tfue', points: 280 },
+          { id: 'p4', name: 'Clix', gamertag: 'Clix', points: 200 },
+          { id: 'p5', name: 'Mongraal', gamertag: 'Mongraal', points: 100 }
+        ],
         totalPoints: 1250,
         gameId: 'game1',
         gameName: 'Championnat Fortnite 2024',
@@ -207,8 +287,14 @@ export class TeamsListComponent implements OnInit, OnDestroy {
       {
         id: 'team2',
         name: 'Victory Squad',
-        ownerName: 'Joueur Test',
+        ownerName: 'Marcel',
         playerCount: 4,
+        players: [
+          { id: 'p6', name: 'SypherPK', gamertag: 'SypherPK', points: 290 },
+          { id: 'p7', name: 'Lachlan', gamertag: 'Lachlan', points: 250 },
+          { id: 'p8', name: 'Typical Gamer', gamertag: 'Typical Gamer', points: 200 },
+          { id: 'p9', name: 'Muselk', gamertag: 'Muselk', points: 150 }
+        ],
         totalPoints: 890,
         gameId: 'game2',
         gameName: 'Tournoi Hiver',
@@ -220,6 +306,10 @@ export class TeamsListComponent implements OnInit, OnDestroy {
 
   trackByTeamId(index: number, team: Team): string {
     return team.id;
+  }
+
+  trackByPlayerId(index: number, player: Player): string {
+    return player.id;
   }
 
   refreshTeams(): void {

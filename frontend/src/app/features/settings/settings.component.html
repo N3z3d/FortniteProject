@@ -2,7 +2,7 @@
   <div class="settings-content">
     <h1 class="page-title">
       <mat-icon>settings</mat-icon>
-      Settings
+      {{ t.translate('settings.title') }}
     </h1>
 
     <!-- Notifications Settings -->
@@ -10,47 +10,47 @@
       <mat-card-header>
         <mat-card-title>
           <mat-icon>notifications</mat-icon>
-          Notifications
+          {{ t.translate('settings.notifications') }}
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="settings-group">
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Email Notifications</span>
-              <span class="setting-description">Receive updates via email</span>
+              <span class="setting-label">{{ t.translate('settings.emailNotifications') }}</span>
+              <span class="setting-description">{{ t.translate('settings.emailNotificationsDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="emailNotifications"></mat-slide-toggle>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Push Notifications</span>
-              <span class="setting-description">Browser push notifications</span>
+              <span class="setting-label">{{ t.translate('settings.pushNotifications') }}</span>
+              <span class="setting-description">{{ t.translate('settings.pushNotificationsDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="pushNotifications"></mat-slide-toggle>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Game Reminders</span>
-              <span class="setting-description">Remind me about upcoming games</span>
+              <span class="setting-label">{{ t.translate('settings.gameReminders') }}</span>
+              <span class="setting-description">{{ t.translate('settings.gameRemindersDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="gameReminders"></mat-slide-toggle>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Draft Alerts</span>
-              <span class="setting-description">Notify when it's my turn to draft</span>
+              <span class="setting-label">{{ t.translate('settings.draftAlerts') }}</span>
+              <span class="setting-description">{{ t.translate('settings.draftAlertsDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="draftAlerts"></mat-slide-toggle>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Trade Notifications</span>
-              <span class="setting-description">Alert me about trade offers</span>
+              <span class="setting-label">{{ t.translate('settings.tradeNotifications') }}</span>
+              <span class="setting-description">{{ t.translate('settings.tradeNotificationsDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="tradeNotifications"></mat-slide-toggle>
           </div>
@@ -63,35 +63,34 @@
       <mat-card-header>
         <mat-card-title>
           <mat-icon>palette</mat-icon>
-          Display
+          {{ t.translate('settings.appearance') }}
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="settings-group">
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Theme</span>
-              <span class="setting-description">Choose your preferred theme</span>
+              <span class="setting-label">{{ t.translate('settings.theme') }}</span>
+              <span class="setting-description">{{ t.translate('settings.themeDesc') }}</span>
             </div>
             <mat-form-field appearance="outline">
               <mat-select [(ngModel)]="theme">
-                <mat-option value="dark">Dark Mode</mat-option>
-                <mat-option value="light">Light Mode</mat-option>
-                <mat-option value="auto">System Default</mat-option>
+                <mat-option value="dark">{{ t.translate('settings.darkMode') }}</mat-option>
+                <mat-option value="light">{{ t.translate('settings.lightMode') }}</mat-option>
+                <mat-option value="auto">{{ t.translate('settings.systemDefault') }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Language</span>
-              <span class="setting-description">Select display language</span>
+              <span class="setting-label">{{ t.translate('settings.language') }}</span>
+              <span class="setting-description">{{ t.translate('settings.selectLanguage') }}</span>
             </div>
             <mat-form-field appearance="outline">
-              <mat-select [(ngModel)]="language">
-                <mat-option value="en">English</mat-option>
-                <mat-option value="fr">Français</mat-option>
-                <mat-option value="es">Español</mat-option>
+              <mat-select [(ngModel)]="language" (selectionChange)="onLanguageChange()">
+                <mat-option value="fr">{{ t.translate('settings.french') }}</mat-option>
+                <mat-option value="en">{{ t.translate('settings.english') }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -104,23 +103,23 @@
       <mat-card-header>
         <mat-card-title>
           <mat-icon>sports_esports</mat-icon>
-          Game Preferences
+          {{ t.translate('settings.gamePreferences') }}
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="settings-group">
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Auto-Join Draft</span>
-              <span class="setting-description">Automatically join draft when it starts</span>
+              <span class="setting-label">{{ t.translate('settings.autoJoinDraft') }}</span>
+              <span class="setting-description">{{ t.translate('settings.autoJoinDraftDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="autoJoinDraft"></mat-slide-toggle>
           </div>
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Show Online Status</span>
-              <span class="setting-description">Let others see when you're online</span>
+              <span class="setting-label">{{ t.translate('settings.showOnlineStatus') }}</span>
+              <span class="setting-description">{{ t.translate('settings.showOnlineStatusDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="showOnlineStatus"></mat-slide-toggle>
           </div>
@@ -133,7 +132,7 @@
       <mat-card-header>
         <mat-card-title>
           <mat-icon>security</mat-icon>
-          Privacy & Data
+          {{ t.translate('settings.privacyData') }}
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
@@ -141,11 +140,11 @@
           <div class="danger-zone">
             <button mat-stroked-button (click)="exportData()">
               <mat-icon>download</mat-icon>
-              Export My Data
+              {{ t.translate('settings.exportData') }}
             </button>
             <button mat-stroked-button color="warn" (click)="deleteAccount()">
               <mat-icon>delete_forever</mat-icon>
-              Delete Account
+              {{ t.translate('settings.deleteAccount') }}
             </button>
           </div>
         </div>
@@ -156,11 +155,11 @@
     <div class="action-buttons">
       <button mat-raised-button color="primary" (click)="saveSettings()">
         <mat-icon>save</mat-icon>
-        Save Settings
+        {{ t.translate('common.save') }}
       </button>
       <button mat-stroked-button (click)="resetSettings()">
         <mat-icon>refresh</mat-icon>
-        Reset to Defaults
+        {{ t.translate('settings.resetDefaults') }}
       </button>
     </div>
   </div>

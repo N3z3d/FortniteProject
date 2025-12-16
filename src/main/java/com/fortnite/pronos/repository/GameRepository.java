@@ -31,9 +31,11 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
   @Query("SELECT g FROM Game g WHERE g.status IN ('DRAFTING', 'ACTIVE')")
   List<Game> findActiveGames();
 
-  /** @deprecated Games publiques supprimées */
+  /**
+   * @deprecated Games publiques supprimées
+   */
   @Deprecated
-  @Query("SELECT g FROM Game g WHERE 1=0") // Retourne toujours vide
+  @Query("SELECT g FROM Game g WHERE g.status = com.fortnite.pronos.model.GameStatus.CREATING")
   List<Game> findAvailableGames();
 
   /** Compter les games par statut */
@@ -88,9 +90,13 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
           + "ORDER BY g.createdAt DESC")
   List<Game> findByCreatorWithFetch(@Param("creator") User creator);
 
-  /** @deprecated Games publiques supprimées */
+  /**
+   * @deprecated Games publiques supprimées
+   */
   @Deprecated
-  @Query("SELECT g FROM Game g WHERE 1=0") // Retourne toujours vide
+  @Query(
+      "SELECT DISTINCT g FROM Game g LEFT JOIN FETCH g.participants p "
+          + "WHERE g.status = com.fortnite.pronos.model.GameStatus.CREATING")
   List<Game> findAvailableGamesWithFetch();
 
   /** OPTIMISÉ: Récupère une game par ID avec toutes les relations */

@@ -68,7 +68,6 @@ public class UnifiedAuthService {
   public LoginResponse refreshToken(String refreshToken) {
     log.info("Tentative de rafraîchissement de token");
 
-    // Pour le MVP, on simplifie la validation du refresh token
     try {
       String username = jwtService.extractUsername(refreshToken);
       Optional<User> userOpt = userRepository.findByUsername(username);
@@ -99,6 +98,12 @@ public class UnifiedAuthService {
       log.info("Token rafraîchi avec succès pour l'utilisateur: {}", user.getEmail());
       return response;
 
+    } catch (RuntimeException e) {
+      if ("Utilisateur non trouvé".equals(e.getMessage())) {
+        throw e;
+      }
+      log.warn("Erreur lors du rafraîchissement du token: {}", e.getMessage());
+      throw new RuntimeException("Token de rafraîchissement invalide");
     } catch (Exception e) {
       log.warn("Erreur lors du rafraîchissement du token: {}", e.getMessage());
       throw new RuntimeException("Token de rafraîchissement invalide");

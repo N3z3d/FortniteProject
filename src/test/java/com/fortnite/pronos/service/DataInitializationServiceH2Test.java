@@ -134,7 +134,7 @@ class DataInitializationServiceH2Test {
     User user = new User();
     user.setUsername(username);
     user.setEmail(email);
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setRole(User.UserRole.USER);
     user.setPassword("$2a$10$encodedPassword");
     return user;
   }

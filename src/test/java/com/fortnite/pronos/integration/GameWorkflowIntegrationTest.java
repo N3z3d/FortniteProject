@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
@@ -50,6 +51,7 @@ class GameWorkflowIntegrationTest {
 
   private MockMvc mockMvc;
   private ObjectMapper objectMapper;
+  private static final String TEST_USERNAME = "TestUser";
 
   private User testUser;
   private Game testGame;
@@ -60,7 +62,7 @@ class GameWorkflowIntegrationTest {
     objectMapper = new ObjectMapper();
 
     // Création d'un utilisateur de test
-    testUser = createTestUser("TestUser", "user@test.com");
+    testUser = createTestUser(TEST_USERNAME, "user@test.com");
 
     // Création d'une game de test
     testGame = createTestGame("Test Game", testUser);
@@ -80,8 +82,7 @@ class GameWorkflowIntegrationTest {
 
     // When & Then
     String response =
-        mockMvc
-            .perform(
+        performWithUser(
                 post("/api/games")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
@@ -106,8 +107,7 @@ class GameWorkflowIntegrationTest {
     joinRequest.setUserId(secondUser.getId());
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
@@ -131,8 +131,7 @@ class GameWorkflowIntegrationTest {
     joinGame(testGame.getId(), thirdUser.getId());
 
     // When & Then
-    mockMvc
-        .perform(post("/api/games/{id}/draft/start", testGame.getId()))
+    performWithUser(post("/api/games/{id}/draft/start", testGame.getId()))
         .andExpect(status().isOk());
 
     // Vérifier que le statut a changé
@@ -145,8 +144,7 @@ class GameWorkflowIntegrationTest {
   @DisplayName("Devrait récupérer toutes les games disponibles")
   void shouldRetrieveAllAvailableGames() throws Exception {
     // When & Then
-    mockMvc
-        .perform(get("/api/games/available"))
+    performWithUser(get("/api/games/available"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$[0].name").value("Test Game"));
@@ -155,9 +153,8 @@ class GameWorkflowIntegrationTest {
   @Test
   @DisplayName("Devrait récupérer les games d'un utilisateur spécifique")
   void shouldRetrieveGamesForSpecificUser() throws Exception {
-    // When & Then
-    mockMvc
-        .perform(get("/api/games/user/{userId}", testUser.getId()))
+    // When & Then - Use /api/games?user=username endpoint (not /api/games/user/{userId})
+    performWithUser(get("/api/games").param("user", testUser.getUsername()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$[0].name").value("Test Game"));
@@ -167,7 +164,7 @@ class GameWorkflowIntegrationTest {
   @DisplayName("Devrait supprimer une game avec succès")
   void shouldDeleteGameSuccessfully() throws Exception {
     // When & Then
-    mockMvc.perform(delete("/api/games/{id}", testGame.getId())).andExpect(status().isOk());
+    performWithUser(delete("/api/games/{id}", testGame.getId())).andExpect(status().isOk());
 
     // Vérifier que la game a été supprimée
     assertFalse(gameRepository.findById(testGame.getId()).isPresent());
@@ -180,7 +177,7 @@ class GameWorkflowIntegrationTest {
     UUID nonExistentGameId = UUID.randomUUID();
 
     // When & Then
-    mockMvc.perform(get("/api/games/{id}", nonExistentGameId)).andExpect(status().isNotFound());
+    performWithUser(get("/api/games/{id}", nonExistentGameId)).andExpect(status().isNotFound());
   }
 
   @Test
@@ -192,8 +189,7 @@ class GameWorkflowIntegrationTest {
     invalidRequest.setMaxParticipants(10);
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -219,8 +215,7 @@ class GameWorkflowIntegrationTest {
     joinRequest.setUserId(thirdUser.getId());
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
@@ -233,8 +228,7 @@ class GameWorkflowIntegrationTest {
     // Given - Game avec seulement 1 participant (le créateur)
 
     // When & Then
-    mockMvc
-        .perform(post("/api/games/{id}/draft/start", testGame.getId()))
+    performWithUser(post("/api/games/{id}/draft/start", testGame.getId()))
         .andExpect(status().isConflict());
   }
 
@@ -270,8 +264,7 @@ class GameWorkflowIntegrationTest {
     request.setMaxParticipants(null); // Null causera une erreur de validation
 
     // When & Then
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -283,7 +276,8 @@ class GameWorkflowIntegrationTest {
     User user = new User();
     user.setUsername(username);
     user.setEmail(email);
-    user.setRole(User.UserRole.PARTICIPANT);
+    user.setPassword("password");
+    user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
     return userRepository.save(user);
   }
@@ -302,11 +296,16 @@ class GameWorkflowIntegrationTest {
     joinRequest.setGameId(gameId);
     joinRequest.setUserId(userId);
 
-    mockMvc
-        .perform(
+    performWithUser(
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
         .andExpect(status().isOk());
+  }
+
+  private ResultActions performWithUser(
+      org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
+      throws Exception {
+    return mockMvc.perform(builder.header("X-Test-User", TEST_USERNAME));
   }
 }

@@ -45,9 +45,7 @@ import lombok.NoArgsConstructor;
 })
 public class Game {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @Id private UUID id;
 
   @Column(name = "finished_at")
   private LocalDateTime finishedAt;
@@ -98,6 +96,13 @@ public class Game {
   @Column(name = "trade_deadline")
   private LocalDateTime tradeDeadline;
 
+  @PrePersist
+  public void ensureId() {
+    if (id == null) {
+      id = UUID.randomUUID();
+    }
+  }
+
   // Inner enum for compatibility with tests
   public enum Status {
     CREATING,
@@ -109,39 +114,36 @@ public class Game {
     public static Status fromGameStatus(GameStatus gameStatus) {
       return switch (gameStatus) {
         case CREATING -> CREATING;
-        case DRAFTING, DRAFT_IN_PROGRESS, DRAFT_PENDING -> DRAFTING;
-        case ACTIVE, WAITING_FOR_PLAYERS -> ACTIVE;
+        case DRAFTING -> DRAFTING;
+        case ACTIVE -> ACTIVE;
         case FINISHED -> FINISHED;
         case CANCELLED -> CANCELLED;
       };
     }
+
+    public GameStatus toGameStatus() {
+      return switch (this) {
+        case CREATING -> GameStatus.CREATING;
+        case DRAFTING -> GameStatus.DRAFTING;
+        case ACTIVE -> GameStatus.ACTIVE;
+        case FINISHED -> GameStatus.FINISHED;
+        case CANCELLED -> GameStatus.CANCELLED;
+      };
+    }
   }
 
-  // Convenience method for tests
-  public void setStatus(Status status) {
-    this.status =
-        switch (status) {
-          case CREATING -> GameStatus.CREATING;
-          case DRAFTING -> GameStatus.DRAFTING;
-          case ACTIVE -> GameStatus.ACTIVE;
-          case FINISHED -> GameStatus.FINISHED;
-          case CANCELLED -> GameStatus.CANCELLED;
-        };
+  /** Legacy helpers for older tests */
+  public void setLegacyStatus(Status status) {
+    this.status = status != null ? status.toGameStatus() : null;
   }
 
-  public Status getStatus() {
+  public Status getLegacyStatus() {
     return Status.fromGameStatus(this.status);
   }
 
-  // Convenience methods for tests with RegionRule
-  private List<RegionRule> simpleRegionRules = new ArrayList<>();
-
-  public List<RegionRule> getRegionRules() {
-    return simpleRegionRules;
-  }
-
-  public void setRegionRules(List<RegionRule> regionRules) {
-    this.simpleRegionRules = regionRules != null ? regionRules : new ArrayList<>();
+  // Convenience methods for tests with RegionRule (legacy)
+  public void setRegionRules(List<GameRegionRule> regionRules) {
+    this.regionRules = regionRules != null ? regionRules : new ArrayList<>();
   }
 
   /** Ajoute une règle régionale à la game */
@@ -158,6 +160,9 @@ public class Game {
 
   /** Ajoute un participant à la game */
   public void addParticipant(GameParticipant participant) {
+    if (participants == null) {
+      participants = new ArrayList<>();
+    }
     participants.add(participant);
     participant.setGame(this);
   }
@@ -230,6 +235,9 @@ public class Game {
    * @return true if successfully added, false if rejected
    */
   public boolean addParticipant(User user) {
+    if (participants == null) {
+      participants = new ArrayList<>();
+    }
     // Business rule: Creator is automatically a participant
     if (user.equals(this.creator)) {
       return false;
@@ -271,7 +279,7 @@ public class Game {
     if (user.equals(this.creator)) {
       return true;
     }
-    return participants.stream().anyMatch(p -> p.getUser().equals(user));
+    return participants != null && participants.stream().anyMatch(p -> p.getUser().equals(user));
   }
 
   /**
@@ -289,7 +297,22 @@ public class Game {
    * @return total number of participants including creator
    */
   public int getTotalParticipantCount() {
-    return participants.size() + 1; // +1 for creator
+    List<GameParticipant> safeParticipants =
+        participants != null ? participants : new ArrayList<>();
+    boolean creatorAlreadyCounted =
+        safeParticipants.stream()
+            .anyMatch(
+                p ->
+                    p != null
+                        && p.getUser() != null
+                        && creator != null
+                        && creator.getId() != null
+                        && creator.getId().equals(p.getUser().getId()));
+    int count = safeParticipants.size();
+    if (!creatorAlreadyCounted && creator != null) {
+      count += 1;
+    }
+    return count;
   }
 
   /**

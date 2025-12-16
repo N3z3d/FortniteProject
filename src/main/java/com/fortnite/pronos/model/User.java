@@ -13,9 +13,7 @@ import lombok.Data;
 @Entity
 @Table(name = "users")
 public class User {
-  @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @Id private UUID id;
 
   @NotBlank
   @Size(min = 3, max = 50)
@@ -31,22 +29,25 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private UserRole role = UserRole.PARTICIPANT;
+  private UserRole role = UserRole.USER;
 
   @Column(name = "current_season", nullable = false)
   private Integer currentSeason = 2025;
 
   public enum UserRole {
-    ADMIN,
-    PARTICIPANT,
-    SPECTATEUR
+    USER, // Regular user - can create/join games, participate in drafts
+    ADMIN, // Administrator - full access to all features
+    SPECTATOR // Spectator - can view games but cannot participate actively
   }
 
   @PrePersist
   @PreUpdate
   public void validateRole() {
+    if (id == null) {
+      id = UUID.randomUUID();
+    }
     if (role == null) {
-      role = UserRole.PARTICIPANT;
+      role = UserRole.USER;
     }
     if (currentSeason == null || currentSeason <= 0) {
       currentSeason = 2025;
