@@ -324,6 +324,23 @@
   color: var(--nexus-gold, #c9a962);
 }
 
+/* Fix badge alignment - center vertically */
+.creator-item mat-chip,
+.participant-item mat-chip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: center !important;
+}
+
+/* Ensure matListItemMeta container is centered */
+.creator-item [matListItemMeta],
+.participant-item [matListItemMeta] {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
 /* Empty State */
 .empty-participants {
   display: flex;

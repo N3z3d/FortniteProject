@@ -11,6 +11,7 @@ import { MaterialModule } from '../../../../shared/material/material.module';
 import { TradingService, TradeOffer, Player } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { LoggerService } from '../../../../core/services/logger.service';
 
 interface TradeDetailsData {
   trade: TradeOffer;
@@ -150,7 +151,8 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private notificationService: NotificationService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private logger: LoggerService
   ) {
     this.trade = data.trade;
     this.currentUserId = this.userContextService.getCurrentUser()?.id || '';
@@ -364,10 +366,10 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
           this.showCounterOfferForm();
           break;
         default:
-          console.warn('Unknown action type:', actionType);
+          this.logger.warn('TradeDetails: unknown action type', { actionType });
       }
     } catch (error) {
-      console.error('Action failed:', error);
+      this.logger.error('TradeDetails: action failed', error);
       this.showErrorMessage('Action failed. Please try again.');
     } finally {
       this.isProcessing.next(false);
@@ -587,7 +589,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
   private trackDialogView(): void {
     // Analytics tracking would go here
-    console.log('Trade details viewed:', this.trade.id);
+    this.logger.debug('TradeDetails: viewed', { tradeId: this.trade.id });
   }
 
   trackByPlayerId(index: number, player: Player): string {

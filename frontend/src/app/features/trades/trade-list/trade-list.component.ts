@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { LoggerService } from '../../../core/services/logger.service';
 
 export interface Trade {
   id: string;
@@ -287,7 +288,10 @@ export class TradeListComponent implements OnInit {
   isLoading = true;
   displayedColumns = ['status', 'details', 'team', 'date', 'actions'];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private logger: LoggerService
+  ) {}
 
   ngOnInit(): void {
     this.loadTrades();
@@ -335,7 +339,7 @@ export class TradeListComponent implements OnInit {
   }
 
   cancelTrade(tradeId: string): void {
-    console.log('Annulation du trade:', tradeId);
+    this.logger.debug('TradeList: cancelling trade', { tradeId });
     // Implement cancel trade logic
   }
 

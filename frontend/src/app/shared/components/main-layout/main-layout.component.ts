@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, RouterModule, ChildrenOutletContexts } from '@angular/router';
+import { ActivatedRoute, Router, RouterOutlet, RouterModule, ChildrenOutletContexts } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { fadeSlideAnimation } from '../../animations/route.animations';
 import { MatCardModule } from '@angular/material/card';
@@ -25,9 +25,11 @@ import { takeUntil } from 'rxjs/operators';
 import { GameService } from '../../../features/game/services/game.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { GameSelectionService } from '../../../core/services/game-selection.service';
+import { LoggerService } from '../../../core/services/logger.service';
 import { Game, GameStatus } from '../../../features/game/models/game.interface';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
+import { DataSourceIndicator } from '../data-source-indicator/data-source-indicator';
 
 @Component({
   selector: 'app-main-layout',
@@ -51,7 +53,8 @@ import { FocusManagementService } from '../../services/focus-management.service'
     MatFormFieldModule,
     MatInputModule,
     MatSnackBarModule,
-    MatBadgeModule
+    MatBadgeModule,
+    DataSourceIndicator
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss'],
@@ -83,7 +86,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   constructor(
     private readonly gameService: GameService,
     private readonly userContextService: UserContextService,
+    private readonly logger: LoggerService,
     private readonly gameSelectionService: GameSelectionService,
+    private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly breakpointObserver: BreakpointObserver,
     private readonly accessibilityService: AccessibilityAnnouncerService,
@@ -111,7 +116,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.subscribeToRouteChanges();
 
     // Charger les games après un petit délai pour s'assurer que l'utilisateur est connecté
-    this.loadUserGames();
+    this.loadUserGamesFromResolver();
   }
 
   ngOnDestroy(): void {
@@ -150,7 +155,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
         this.invitationCode = '';
         this.showJoinCodeInput = false;
         this.joiningGame = false;
-        this.loadUserGames(); // Refresh the games list
+        this.reloadUserGames(); // Refresh the games list
       },
       error: (error) => {
         this.snackBar.open(
@@ -231,7 +236,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     try {
       this.userContextService.logout();
     } catch (error) {
-      console.error('Erreur de déconnexion', error);
+      this.logger.error('MainLayout: Logout failed', error);
     }
 
     this.clearLocalSession();
@@ -309,7 +314,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   reloadUserGames(): void {
-    this.loadUserGames();
+    this.reloadUserGamesFromApi();
   }
 
   getGameCount(): number {
@@ -344,34 +349,87 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(event => {
         if (event.constructor.name === 'NavigationEnd') {
-          // Désélectionner la game si on navigue vers /games (liste)
+          // Deselectionner la game si on navigue vers /games (liste)
           if (this.router.url === '/games' || this.router.url === '/') {
             this.selectedGame = null;
             this.gameSelectionService.setSelectedGame(null);
+          } else {
+            // Restaurer selectedGame depuis l'URL si on est sur une page de game
+            this.restoreSelectedGameFromUrl();
           }
         }
       });
+  }
+
+  /**
+   * Restaure la game selectionnee depuis l'URL
+   * Permet d'afficher la navigation meme apres un refresh de page
+   */
+  private restoreSelectedGameFromUrl(): void {
+    const urlMatch = this.router.url.match(/\/games\/([a-zA-Z0-9-]+)/);
+    if (urlMatch && urlMatch[1] && urlMatch[1] !== 'create') {
+      const gameId = urlMatch[1];
+
+      // Si on a deja la bonne game selectionnee, ne rien faire
+      if (this.selectedGame?.id === gameId) {
+        return;
+      }
+
+      // Chercher la game dans la liste chargee
+      const foundGame = this.userGames.find(g => g.id === gameId);
+      if (foundGame) {
+        this.selectedGame = foundGame;
+        this.gameSelectionService.setSelectedGame(foundGame);
+        this.logger.debug('MainLayout: Restored selected game from URL', { gameId, gameName: foundGame.name });
+      } else if (this.userGames.length === 0 && !this.loading) {
+        // Si les games ne sont pas encore chargees, attendre
+        this.logger.debug('MainLayout: Games not loaded yet, will restore after load', { gameId });
+      }
+    }
   }
 
   private loadCurrentUser(): void {
     this.currentUser = this.userContextService.getCurrentUser();
   }
 
-  private loadUserGames(): void {
+  private loadUserGamesFromResolver(): void {
+    const resolvedGames = (this.route.snapshot.data['userGames'] as Game[] | undefined) ?? [];
+    this.applyUserGames(resolvedGames);
+    this.logger.info('MainLayout: Games loaded from resolver', { count: resolvedGames.length });
+
+    this.route.data
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        const games = (data['userGames'] as Game[] | undefined) ?? [];
+        this.applyUserGames(games);
+        this.logger.info('MainLayout: Games loaded from resolver', { count: games.length });
+      });
+  }
+
+  private reloadUserGamesFromApi(): void {
     this.loading = true;
     this.error = null;
 
-    this.gameService.getUserGames().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (games) => {
-        this.userGames = games;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des games:', error);
-        this.error = 'Erreur lors du chargement de vos games';
-        this.loading = false;
-      }
-    });
+    this.gameService.getUserGames()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (games) => {
+          this.applyUserGames(games);
+          this.logger.info('MainLayout: Games reloaded from API', { count: games.length });
+        },
+        error: (error) => {
+          this.logger.error('MainLayout: Failed to reload games', error);
+          this.error = 'Erreur lors du chargement de vos games';
+          this.loading = false;
+        }
+      });
+  }
+
+  private applyUserGames(games: Game[]): void {
+    this.userGames = games;
+    this.loading = false;
+    this.error = null;
+    this.restoreSelectedGameFromUrl();
   }
 
   // Compatibilité tests : action rapide pour rejoindre une game

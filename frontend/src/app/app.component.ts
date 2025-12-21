@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { DevUserSwitchComponent } from './shared/components/dev-user-switch/dev-user-switch.component';
 import { UserContextService } from './core/services/user-context.service';
 import { environment } from '../environments/environment';
 
@@ -10,8 +9,7 @@ import { environment } from '../environments/environment';
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
-    DevUserSwitchComponent
+    RouterModule
   ],
   template: `
     <!-- Skip Links pour l'accessibilité -->
@@ -19,11 +17,6 @@ import { environment } from '../environments/environment';
       <a href="#main-content" class="skip-link sr-only sr-only-focusable">
         Aller au contenu principal
       </a>
-    </div>
-
-    <!-- Dev tools en mode développement -->
-    <div class="dev-tools" *ngIf="isDevelopment()">
-      <app-dev-user-switch></app-dev-user-switch>
     </div>
 
     <!-- Région live pour les annonces -->
@@ -38,13 +31,6 @@ import { environment } from '../environments/environment';
   styles: [`
     .content {
       min-height: 100vh;
-    }
-
-    .dev-tools {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1000;
     }
 
     .skip-links {

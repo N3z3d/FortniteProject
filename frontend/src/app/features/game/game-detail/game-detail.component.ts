@@ -17,6 +17,7 @@ import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
 import { Game, GameStatus, GameParticipant } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
+import { UserContextService } from '../../../core/services/user-context.service';
 
 @Component({
   selector: 'app-game-detail',
@@ -48,11 +49,12 @@ export class GameDetailComponent implements OnInit {
   gameId: string = '';
 
   constructor(
-    private gameService: GameService,
-    private gameDataService: GameDataService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private readonly gameService: GameService,
+    private readonly gameDataService: GameDataService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
+    private readonly snackBar: MatSnackBar,
+    private readonly userContextService: UserContextService
   ) { }
 
   ngOnInit(): void {
@@ -133,21 +135,85 @@ export class GameDetailComponent implements OnInit {
     });
   }
 
-  deleteGame(): void {
-    this.gameService.deleteGame(this.gameId).subscribe({
+  /**
+   * Archive la game (soft delete pour l'host)
+   */
+  archiveGame(): void {
+    if (!this.game) return;
+
+    this.gameService.archiveGame(this.gameId).subscribe({
       next: (success) => {
         if (success) {
-          this.snackBar.open('Game supprimée avec succès!', 'Fermer', { duration: 3000 });
+          this.snackBar.open('Game archivée avec succès!', 'Fermer', { duration: 3000 });
           this.router.navigate(['/games']);
         } else {
-          this.snackBar.open('Impossible de supprimer la game', 'Fermer', { duration: 3000 });
+          this.snackBar.open('Impossible d\'archiver la game', 'Fermer', { duration: 3000 });
         }
       },
       error: (error) => {
-        this.snackBar.open('Erreur lors de la suppression de la game', 'Fermer', { duration: 3000 });
-        console.error('Error deleting game:', error);
+        this.snackBar.open('Erreur lors de l\'archivage de la game', 'Fermer', { duration: 3000 });
+        console.error('Error archiving game:', error);
       }
     });
+  }
+
+  /**
+   * Quitter la game (pour les participants non-host)
+   */
+  leaveGame(): void {
+    if (!this.game) return;
+
+    this.gameService.leaveGame(this.gameId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.snackBar.open('Vous avez quitté la game', 'Fermer', { duration: 3000 });
+          this.router.navigate(['/games']);
+        } else {
+          this.snackBar.open('Impossible de quitter la game', 'Fermer', { duration: 3000 });
+        }
+      },
+      error: (error) => {
+        this.snackBar.open('Erreur lors de la sortie de la game', 'Fermer', { duration: 3000 });
+        console.error('Error leaving game:', error);
+      }
+    });
+  }
+
+  /**
+   * Confirme l'archivage de la game
+   */
+  confirmArchive(): void {
+    if (!this.game) return;
+
+    const confirmed = confirm(
+      'Êtes-vous sûr de vouloir archiver cette game ? Elle ne sera plus visible dans votre liste.'
+    );
+
+    if (confirmed) {
+      this.archiveGame();
+    }
+  }
+
+  /**
+   * Confirme la sortie de la game
+   */
+  confirmLeave(): void {
+    if (!this.game) return;
+
+    const confirmed = confirm(
+      'Êtes-vous sûr de vouloir quitter cette game ?'
+    );
+
+    if (confirmed) {
+      this.leaveGame();
+    }
+  }
+
+  /**
+   * @deprecated Utiliser archiveGame() pour soft delete
+   */
+  deleteGame(): void {
+    this.archiveGame();
   }
 
   joinGame(): void {
@@ -173,9 +239,37 @@ export class GameDetailComponent implements OnInit {
     return this.game.status === 'CREATING' && this.game.participantCount >= 2;
   }
 
-  canDeleteGame(): boolean {
+  /**
+   * Vérifie si l'utilisateur peut archiver la game (host uniquement)
+   */
+  canArchiveGame(): boolean {
     if (!this.game) return false;
-    return this.game.status === 'CREATING';
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    return this.gameService.isGameHost(this.game, currentUser.username);
+  }
+
+  /**
+   * Vérifie si l'utilisateur peut quitter la game (participant non-host)
+   */
+  canLeaveGame(): boolean {
+    if (!this.game) return false;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    // Peut quitter si participant mais pas host
+    const isHost = this.gameService.isGameHost(this.game, currentUser.username);
+    const isParticipant = this.game.participants?.some(p => p.username === currentUser.username) || false;
+
+    return isParticipant && !isHost;
+  }
+
+  /**
+   * @deprecated Utiliser canArchiveGame() à la place
+   */
+  canDeleteGame(): boolean {
+    return this.canArchiveGame();
   }
 
   canJoinGame(): boolean {

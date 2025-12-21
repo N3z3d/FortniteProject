@@ -64,11 +64,11 @@
       </mat-card-content>
       
       <mat-card-actions>
-        <button mat-button color="primary">
+        <button mat-button color="primary" (click)="viewTeamDetails(team.id)">
           <mat-icon>visibility</mat-icon>
           Voir détails
         </button>
-        <button mat-button>
+        <button mat-button (click)="manageTeam(team.id)">
           <mat-icon>edit</mat-icon>
           Gérer
         </button>

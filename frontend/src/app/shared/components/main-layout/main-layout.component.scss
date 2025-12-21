@@ -287,6 +287,21 @@
         font-size: 24px;
         color: var(--nexus-gold);
       }
+
+      .sidebar-home-btn {
+        padding: 0.25rem 0.5rem;
+        min-width: 0;
+        font: inherit;
+        color: inherit;
+        text-transform: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &:hover {
+          background: var(--nexus-gold-muted);
+        }
+      }
     }
 
     .sidebar-actions {

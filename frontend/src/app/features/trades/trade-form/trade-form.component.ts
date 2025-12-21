@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Player {
   id: string;
@@ -374,7 +375,8 @@ export class TradeFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private logger: LoggerService
   ) {
     this.tradeForm = this.fb.group({
       teamId: ['', Validators.required],
@@ -436,7 +438,7 @@ export class TradeFormComponent implements OnInit {
       this.isSubmitting = true;
       
       const tradeData = this.tradeForm.value;
-      console.log('Création du trade:', tradeData);
+      this.logger.debug('TradeForm: creating trade', tradeData);
       
       // Simulate API call
       setTimeout(() => {

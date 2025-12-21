@@ -18,6 +18,9 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { DraftService, DraftBoardState, Player, GameParticipant } from './services/draft.service';
 import { DraftStatus, PlayerRegion } from './models/draft.interface';
+import { LoggerService } from '../../core/services/logger.service';
+import { UserContextService } from '../../core/services/user-context.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
   REGION_LABELS,
   STATUS_LABELS,
@@ -69,11 +72,13 @@ export class DraftComponent implements OnInit, OnDestroy {
   private refreshInterval: any;
 
   constructor(
-    private draftService: DraftService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private readonly draftService: DraftService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
+    private readonly logger: LoggerService,
+    private readonly userContextService: UserContextService
   ) {}
 
   ngOnInit(): void {
@@ -306,8 +311,14 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentUser(): void {
-    // TODO: Implémenter la récupération de l'utilisateur actuel
-    this.currentUserId = 'participant-1'; // Temporaire pour les tests
+    const user = this.userContextService.getCurrentUser();
+    if (user?.id) {
+      this.currentUserId = user.id;
+      this.logger.debug('DraftComponent: current user loaded', { userId: this.currentUserId });
+    } else {
+      this.logger.warn('DraftComponent: no user found, using fallback');
+      this.currentUserId = 'participant-1'; // Fallback uniquement si aucun user
+    }
   }
 
   // Méthodes privées de gestion d'état
@@ -334,6 +345,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private handleDraftStateError(error: any): void {
+    this.logger.error('Draft: Failed to load draft state', error);
     const errorMessage = error.message || 'Erreur lors du chargement du draft';
     this.setError(errorMessage);
     this.setLoadingState(false);
@@ -350,6 +362,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private handlePlayerSelectionError(): void {
+    this.logger.error('Draft: Failed to select player');
     this.setError('Erreur lors de la sélection du joueur');
     this.showErrorMessage('Erreur lors de la sélection du joueur');
     this.setSelectingState(false);
@@ -392,6 +405,7 @@ export class DraftComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
+          this.logger.error(`Draft: Failed to ${action} draft`, error);
           const errorMessage = error.message || `Erreur lors de la ${action}`;
           this.setError(errorMessage);
           this.showErrorMessage(`Erreur lors de la ${action}`);
@@ -415,10 +429,22 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private showCancelConfirmation(): void {
-    // TODO: Implémenter la confirmation de suppression
-    if (confirm('Êtes-vous sûr de vouloir annuler ce draft ? Cette action est irréversible.')) {
-      this.executeDraftCancellation();
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Annuler le draft',
+        message: 'Êtes-vous sûr de vouloir annuler ce draft ? Cette action est irréversible.',
+        confirmText: 'Annuler le draft',
+        cancelText: 'Retour',
+        confirmColor: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.executeDraftCancellation();
+      }
+    });
   }
 
   private executeDraftCancellation(): void {

@@ -11,7 +11,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserContextService } from '../../core/services/user-context.service';
 import { TranslationService, SupportedLanguage } from '../../core/services/translation.service';
+import { ThemeService, Theme } from '../../core/services/theme.service';
 import { Router } from '@angular/router';
+import { LoggerService } from '../../core/services/logger.service';
 
 @Component({
   selector: 'app-settings',
@@ -40,7 +42,7 @@ export class SettingsComponent implements OnInit {
   tradeNotifications = true;
 
   // Display settings
-  theme = 'dark';
+  theme: Theme = 'dark';
   language: SupportedLanguage = 'fr';
 
   // Game settings
@@ -51,10 +53,14 @@ export class SettingsComponent implements OnInit {
     private userContextService: UserContextService,
     private router: Router,
     private snackBar: MatSnackBar,
-    public t: TranslationService
+    private logger: LoggerService,
+    public t: TranslationService,
+    private themeService: ThemeService // NEW: Inject ThemeService
   ) {}
 
   ngOnInit(): void {
+    // Initialiser le thème depuis le service
+    this.theme = this.themeService.getCurrentTheme();
     // Initialiser la langue depuis le service
     this.language = this.t.currentLanguage;
     // Load saved settings from local storage or backend
@@ -68,12 +74,19 @@ export class SettingsComponent implements OnInit {
       const settings = JSON.parse(savedSettings);
       Object.assign(this, settings);
     }
-    // Synchroniser avec le service de traduction
+    // Synchroniser avec les services
+    this.theme = this.themeService.getCurrentTheme();
     this.language = this.t.currentLanguage;
   }
 
   onLanguageChange(): void {
     this.t.setLanguage(this.language);
+  }
+
+  onThemeChange(): void {
+    // NEW: Apply theme using ThemeService
+    this.themeService.setTheme(this.theme);
+    this.logger.info(`Theme changed to: ${this.theme}`);
   }
 
   saveSettings(): void {
@@ -116,13 +129,13 @@ export class SettingsComponent implements OnInit {
   deleteAccount(): void {
     if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       // Implement account deletion logic
-      console.log('Account deletion requested');
+      this.logger.info('Settings: account deletion requested');
     }
   }
 
   exportData(): void {
     // Implement data export functionality
-    console.log('Export data requested');
+    this.logger.info('Settings: export data requested');
     this.snackBar.open('Data export started. You will receive an email when ready.', 'Close', {
       duration: 5000
     });

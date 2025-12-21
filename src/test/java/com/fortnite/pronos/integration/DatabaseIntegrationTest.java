@@ -50,7 +50,7 @@ public class DatabaseIntegrationTest {
   }
 
   @Test
-  @DisplayName("Devrait avoir les 147 joueurs Fortnite dans la base de données")
+  @DisplayName("Devrait avoir les 146 joueurs Fortnite dans la base de données")
   void shouldHave147FortnitePlayersInDatabase() {
     // When
     List<Player> players = playerRepository.findAll();

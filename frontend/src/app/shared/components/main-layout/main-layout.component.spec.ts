@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,7 +16,7 @@ import { MainLayoutComponent } from './main-layout.component';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { GameService } from '../../../features/game/services/game.service';
 import { Game, GameStatus } from '../../../features/game/models/game.interface';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
@@ -24,6 +24,8 @@ describe('MainLayoutComponent', () => {
   let router: Router;
   let mockUserContextService: jasmine.SpyObj<UserContextService>;
   let mockGameService: jasmine.SpyObj<GameService>;
+  let routeDataSubject: BehaviorSubject<Record<string, unknown>>;
+  let activatedRoute: ActivatedRoute;
 
   const mockUser: UserProfile = {
     id: '1',
@@ -88,6 +90,11 @@ describe('MainLayoutComponent', () => {
       'logout'
     ]);
     mockGameService = jasmine.createSpyObj('GameService', ['getUserGames']);
+    routeDataSubject = new BehaviorSubject<Record<string, unknown>>({ userGames: mockGames });
+    activatedRoute = {
+      data: routeDataSubject.asObservable(),
+      snapshot: { data: { userGames: mockGames } }
+    } as unknown as ActivatedRoute;
 
     await TestBed.configureTestingModule({
       imports: [
@@ -106,7 +113,8 @@ describe('MainLayoutComponent', () => {
       ],
       providers: [
         { provide: UserContextService, useValue: mockUserContextService },
-        { provide: GameService, useValue: mockGameService }
+        { provide: GameService, useValue: mockGameService },
+        { provide: ActivatedRoute, useValue: activatedRoute }
       ]
     }).compileComponents();
 
@@ -125,27 +133,32 @@ describe('MainLayoutComponent', () => {
     it('should load current user and games on init', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
 
       // Act
       component.ngOnInit();
 
       // Assert
       expect(mockUserContextService.getCurrentUser).toHaveBeenCalled();
-      expect(mockGameService.getUserGames).toHaveBeenCalled();
+      expect(mockGameService.getUserGames).not.toHaveBeenCalled();
       expect(component.currentUser).toEqual(mockUser);
       expect(component.userGames).toEqual(mockGames);
       expect(component.loading).toBeFalse();
     });
 
-    it('should handle error when loading games fails', () => {
+    it('should handle error when reloading games fails', () => {
       // Arrange
       const errorMessage = 'Erreur réseau';
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
+      component.ngOnInit();
+
       mockGameService.getUserGames.and.returnValue(throwError(() => new Error(errorMessage)));
 
       // Act
-      component.ngOnInit();
+      component.reloadUserGames();
 
       // Assert
       expect(component.error).toBe('Erreur lors du chargement de vos games');
@@ -157,7 +170,8 @@ describe('MainLayoutComponent', () => {
     it('should call logout method when logout button is clicked', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
 
       // Act
@@ -171,7 +185,8 @@ describe('MainLayoutComponent', () => {
     it('should clear local data when logging out', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
       
       // Vérifier que les données sont chargées
@@ -192,7 +207,8 @@ describe('MainLayoutComponent', () => {
     it('should handle logout errors gracefully', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       mockUserContextService.logout.and.throwError('Erreur de déconnexion');
       component.ngOnInit();
 
@@ -209,7 +225,8 @@ describe('MainLayoutComponent', () => {
     it('should display logout button in toolbar', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
       fixture.detectChanges();
 
@@ -224,7 +241,8 @@ describe('MainLayoutComponent', () => {
     it('should have logout icon in button', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
       fixture.detectChanges();
 
@@ -239,7 +257,8 @@ describe('MainLayoutComponent', () => {
     it('should trigger logout when logout button is clicked in template', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
       fixture.detectChanges();
 
@@ -256,7 +275,8 @@ describe('MainLayoutComponent', () => {
   describe('Game Selection', () => {
     beforeEach(() => {
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
     });
 
@@ -301,6 +321,22 @@ describe('MainLayoutComponent', () => {
       // Assert
       expect(router.navigate).toHaveBeenCalledWith(['/games/join']);
     });
+
+    it('should navigate to home when clicking mes games', () => {
+      // Arrange
+      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
+      fixture.detectChanges();
+      component.selectedGame = mockGames[0];
+      fixture.detectChanges();
+
+      // Act
+      const homeButton = fixture.nativeElement.querySelector('.sidebar-home-btn');
+      homeButton.click();
+
+      // Assert
+      expect(router.navigate).toHaveBeenCalledWith(['/games']);
+      expect(component.selectedGame).toBeNull();
+    });
   });
 
   describe('Status Methods', () => {
@@ -326,7 +362,8 @@ describe('MainLayoutComponent', () => {
   describe('Helper Methods', () => {
     beforeEach(() => {
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
     });
 
@@ -371,7 +408,8 @@ describe('MainLayoutComponent', () => {
   describe('Template Rendering', () => {
     beforeEach(() => {
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
+      routeDataSubject.next({ userGames: mockGames });
+      (activatedRoute.snapshot as any).data = { userGames: mockGames };
       component.ngOnInit();
     });
 
@@ -437,11 +475,12 @@ describe('MainLayoutComponent', () => {
     it('should show loading spinner when loading games', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      spyOn(component as any, 'loadUserGames').and.stub();
       component.sidebarCollapsed = false;
-      component.loading = true;
 
       // Act
+      fixture.detectChanges();
+      component.loading = true;
+      component.error = null;
       fixture.detectChanges();
 
       // Assert
@@ -452,11 +491,12 @@ describe('MainLayoutComponent', () => {
     it('should show error message when loading fails', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      spyOn(component as any, 'loadUserGames').and.stub();
       component.sidebarCollapsed = false;
-      component.error = 'Erreur de chargement';
 
       // Act
+      fixture.detectChanges();
+      component.loading = false;
+      component.error = 'Erreur de chargement';
       fixture.detectChanges();
 
       // Assert
@@ -469,7 +509,8 @@ describe('MainLayoutComponent', () => {
     it('should show empty state when no games', () => {
       // Arrange
       mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      mockGameService.getUserGames.and.returnValue(of([]));
+      routeDataSubject.next({ userGames: [] });
+      (activatedRoute.snapshot as any).data = { userGames: [] };
       component.ngOnInit();
 
       // Act

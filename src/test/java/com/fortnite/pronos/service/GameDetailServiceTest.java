@@ -159,6 +159,33 @@ class GameDetailServiceTest {
   }
 
   @Test
+  @DisplayName("devrait appliquer un fallback si un joueur est manquant")
+  void shouldFallbackWhenPlayerIsMissing() {
+    // Given
+    participantTeddy.setSelectedPlayers(
+        Arrays.asList(createPlayer("Tayson", Player.Region.EU), null));
+    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+    when(gameParticipantRepository.findByGame(testGame))
+        .thenReturn(Arrays.asList(participantThibaut, participantTeddy));
+    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
+
+    // When
+    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+
+    // Then
+    GameDetailDto.ParticipantInfo teddyInfo =
+        result.getParticipants().stream()
+            .filter(p -> p.getUsername().equals("Teddy"))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(teddyInfo.getSelectedPlayers()).hasSize(2);
+    assertThat(teddyInfo.getSelectedPlayers())
+        .extracting(GameDetailDto.PlayerInfo::getNickname)
+        .contains("Joueur indisponible");
+  }
+
+  @Test
   @DisplayName("devrait inclure les informations du draft")
   void shouldIncludeDraftInformation() {
     // Given

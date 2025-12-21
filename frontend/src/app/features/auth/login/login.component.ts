@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, ActivatedRoute } from '@angular/router';
 
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
+import { LoggerService } from '../../../core/services/logger.service';
 import { AccessibilityAnnouncerService } from '../../../shared/services/accessibility-announcer.service';
 
 @Component({
@@ -357,6 +358,7 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private userContextService: UserContextService,
+    private logger: LoggerService,
     private accessibilityService: AccessibilityAnnouncerService
   ) {
     this.quickForm = this.fb.group({
@@ -372,11 +374,13 @@ export class LoginComponent implements OnInit {
       this.isSwitchingUser = params['switchUser'] === 'true';
     });
 
+    const returnUrl = this.getSafeReturnUrl();
+
     // Vérifier si l'utilisateur est déjà connecté
     const currentUser = this.userContextService.getCurrentUser();
     if (currentUser) {
       // Si déjà connecté, rediriger immédiatement
-      this.router.navigate(['/games']);
+      this.router.navigateByUrl(returnUrl);
       return;
     }
 
@@ -384,13 +388,18 @@ export class LoginComponent implements OnInit {
     if (!this.isSwitchingUser) {
       const autoLoggedUser = this.userContextService.attemptAutoLogin();
       if (autoLoggedUser) {
-        console.log('🔐 Auto-connexion réussie pour:', autoLoggedUser.username);
-        this.router.navigate(['/games'], { queryParams: { autoLogin: 'true', user: autoLoggedUser.username } });
+        this.logger.info('Login: auto-login succeeded', { username: autoLoggedUser.username });
+
+        if (returnUrl === '/games') {
+          this.router.navigate(['/games'], { queryParams: { autoLogin: 'true', user: autoLoggedUser.username } });
+        } else {
+          this.router.navigateByUrl(returnUrl);
+        }
         return;
       }
     }
 
-    console.log('🔐 Page de login chargée - attente du choix utilisateur');
+    this.logger.info('Login: page loaded');
   }
 
   private loadAvailableProfiles(): void {
@@ -398,7 +407,7 @@ export class LoginComponent implements OnInit {
   }
 
   selectUser(profile: UserProfile): void {
-    console.log('🔐 Utilisateur sélectionné:', profile.username);
+    this.logger.info('Login: user selected', { username: profile.username });
     this.isLoading = true;
 
     // Announce the login attempt
@@ -407,16 +416,32 @@ export class LoginComponent implements OnInit {
     // Connexion avec feedback visuel approprié
     setTimeout(() => {
       this.userContextService.login(profile);
-      console.log('🔐 Connexion réussie pour:', profile.username);
+      this.logger.info('Login: login succeeded', { username: profile.username });
       this.isLoading = false;
 
       // Announce successful login
       this.accessibilityService.announceSuccess(`Login successful for ${profile.username}`);
       this.accessibilityService.announceNavigation('Sélection de game');
 
-      // Naviguer directement vers la sélection de game
-      this.router.navigate(['/games'], { queryParams: { welcome: 'true', user: profile.username } });
+      const returnUrl = this.getSafeReturnUrl();
+      this.logger.info('Login: redirecting after login', { returnUrl });
+
+      if (returnUrl === '/games') {
+        this.router.navigate(['/games'], { queryParams: { welcome: 'true', user: profile.username } });
+      } else {
+        this.router.navigateByUrl(returnUrl);
+      }
     }, 800); // Temps suffisant pour voir le feedback
+  }
+
+  private getSafeReturnUrl(): string {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (typeof returnUrl !== 'string' || returnUrl.trim().length === 0) {
+      return '/games';
+    }
+
+    const isSafeInternalPath = returnUrl.startsWith('/') && !returnUrl.startsWith('//');
+    return isSafeInternalPath ? returnUrl : '/games';
   }
 
   // Enhanced accessibility methods

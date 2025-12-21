@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 // import { LeaderboardApiMapper } from '../mappers/leaderboard-api.mapper';
 import { StatsApiMapper } from '../mappers/stats-api.mapper';
 import { MockDataService } from '../../../core/services/mock-data.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Enhanced Dashboard Data Service with Premium Fallback
@@ -22,9 +23,10 @@ export class DashboardDataService {
 
   constructor(
     private http: HttpClient,
+    private logger: LoggerService,
     private mockDataService: MockDataService
   ) { 
-    console.log('🎮 Enhanced DashboardDataService with Premium Fallback initialized');
+    this.logger.debug('🎮 Enhanced DashboardDataService with Premium Fallback initialized');
   }
 
   /**
@@ -34,29 +36,29 @@ export class DashboardDataService {
    * @returns Observable avec les statistiques
    */
   getGameStatistics(gameId: string): Observable<any> {
-    console.log('🔍 DashboardDataService.getGameStatistics called with gameId:', gameId);
+    this.logger.debug('🔍 DashboardDataService.getGameStatistics called with gameId:', gameId);
     
     // Pour l'instant, récupère les stats globales depuis l'endpoint leaderboard
     return this.http.get<any>(`${this.apiUrl}/leaderboard/stats?season=2025`)
       .pipe(
         map(response => {
-          console.log('📊 Raw statistics response from API:', response);
+          this.logger.debug('📊 Raw statistics response from API:', response);
           
           // Utiliser le mapper pour transformer les données API
           const mappedStats = StatsApiMapper.mapApiStatsToDisplayStats(response);
-          console.log('✅ Mapped statistics for dashboard:', mappedStats);
+          this.logger.debug('✅ Mapped statistics for dashboard:', mappedStats);
           
           // Valider les statistiques mappées
           if (!StatsApiMapper.validateMappedStats(mappedStats)) {
-            console.warn('⚠️ Mapped statistics validation failed, using fallback');
+            this.logger.warn('⚠️ Mapped statistics validation failed, using fallback');
             return this.getEmptyStatistics();
           }
           
           return mappedStats;
         }),
         catchError(error => {
-          console.error('❌ Error loading leaderboard statistics:', error);
-          console.log('🔄 Returning empty statistics as fallback');
+          this.logger.error('❌ Error loading leaderboard statistics:', error);
+          this.logger.debug('🔄 Returning empty statistics as fallback');
           return of(this.getEmptyStatistics());
         })
       );
@@ -69,23 +71,23 @@ export class DashboardDataService {
    * @returns Observable avec le leaderboard
    */
   getGameLeaderboard(gameId: string): Observable<any[]> {
-    console.log('🔍 DashboardDataService.getGameLeaderboard called with gameId:', gameId);
+    this.logger.debug('🔍 DashboardDataService.getGameLeaderboard called with gameId:', gameId);
     
     // Pour l'instant, récupère le leaderboard global depuis l'endpoint existant
     return this.http.get<any[]>(`${this.apiUrl}/leaderboard?season=2025`)
       .pipe(
         map(apiResponse => {
-          console.log('📊 Raw leaderboard response from API:', apiResponse);
+          this.logger.debug('📊 Raw leaderboard response from API:', apiResponse);
           
           // Utiliser le mapper pour convertir les données API vers le format attendu
           // const mappedEntries = LeaderboardApiMapper.mapApiResponseToLeaderboardEntries(apiResponse);
           const mappedEntries = (apiResponse as any)?.data || apiResponse || [];
-          console.log('✅ Mapped leaderboard entries count:', mappedEntries.length);
-          console.log('📋 Sample mapped entry:', mappedEntries[0]);
+          this.logger.debug('✅ Mapped leaderboard entries count:', mappedEntries.length);
+          this.logger.debug('📋 Sample mapped entry:', mappedEntries[0]);
           return mappedEntries;
         }),
         catchError(error => {
-          console.error('❌ Error loading leaderboard:', error);
+          this.logger.error('❌ Error loading leaderboard:', error);
           return of([]);
         })
       );
@@ -103,7 +105,7 @@ export class DashboardDataService {
       .pipe(
         map(distribution => this.normalizeRegionDistribution(distribution)),
         catchError(error => {
-          console.error('Error loading region distribution:', error);
+          this.logger.error('Error loading region distribution:', error);
           return of(this.getEmptyRegionDistribution());
         })
       );
@@ -129,7 +131,7 @@ export class DashboardDataService {
         }));
       }),
       catchError(error => {
-        console.error('Error loading teams from leaderboard:', error);
+        this.logger.error('Error loading teams from leaderboard:', error);
         return of([]);
       })
     );
@@ -150,8 +152,8 @@ export class DashboardDataService {
       return throwError(() => new Error('Game ID is required'));
     }
 
-    console.log('🔍 Enhanced DashboardDataService.getDashboardData called with gameId:', gameId);
-    console.log('🌐 Backend availability status:', this.backendAvailable);
+    this.logger.debug('🔍 Enhanced DashboardDataService.getDashboardData called with gameId:', gameId);
+    this.logger.debug('🌐 Backend availability status:', this.backendAvailable);
 
     // PERFORMANCE: Use shareReplay to avoid duplicate requests during concurrent calls
     const sharedRequest = forkJoin({
@@ -165,7 +167,7 @@ export class DashboardDataService {
 
     return sharedRequest.pipe(
       map(data => {
-        console.log('✅ Real API data received:', data);
+        this.logger.debug('✅ Real API data received:', data);
         this.backendAvailable = true;
         
         const finalData = {
@@ -183,17 +185,17 @@ export class DashboardDataService {
             : []
         };
         
-        console.log('✅ Final real dashboard data:', finalData);
+        this.logger.debug('✅ Final real dashboard data:', finalData);
         return finalData;
       }),
       catchError(error => {
-        console.warn('⚠️ Backend unavailable, switching to premium mock data:', error.message);
+        this.logger.warn('⚠️ Backend unavailable, switching to premium mock data:', error.message);
         this.backendAvailable = false;
         
         // Fallback to premium mock data to maintain UI experience
         return this.mockDataService.getMockDashboardData(gameId).pipe(
           map(mockData => {
-            console.log('🎮 Premium mock data loaded as fallback:', mockData);
+            this.logger.debug('🎮 Premium mock data loaded as fallback:', mockData);
             return {
               ...mockData,
               _isPremiumMockData: true // Flag to indicate mock data
@@ -222,7 +224,7 @@ export class DashboardDataService {
           return true;
         }),
         catchError(error => {
-          console.warn('🌐 Backend validation failed, using mock validation:', error.message);
+          this.logger.warn('🌐 Backend validation failed, using mock validation:', error.message);
           this.backendAvailable = false;
           // For mock data, accept any non-empty gameId
           return of(gameId.startsWith('mock-') || gameId.length > 0);
@@ -288,16 +290,16 @@ export class DashboardDataService {
    * @returns Nombre total de joueurs
    */
   private calculateTotalPlayers(teams: any[]): number {
-    console.log('🔍 Calculating total players from teams:', teams);
-    console.log('📊 Teams count:', teams.length);
+    this.logger.debug('🔍 Calculating total players from teams:', teams);
+    this.logger.debug('📊 Teams count:', teams.length);
     
     const totalPlayers = teams.reduce((total, team, index) => {
       const playersCount = team.players?.length || 0;
-      console.log(`Team ${index + 1} (${team.name || team.teamName || 'Unknown'}): ${playersCount} players`);
+      this.logger.debug(`Team ${index + 1} (${team.name || team.teamName || 'Unknown'}): ${playersCount} players`);
       return total + playersCount;
     }, 0);
     
-    console.log('✅ Total players calculated:', totalPlayers);
+    this.logger.debug('✅ Total players calculated:', totalPlayers);
     return totalPlayers;
   }
 

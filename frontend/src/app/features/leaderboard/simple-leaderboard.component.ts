@@ -4,16 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { GameSelectionService } from '../../core/services/game-selection.service';
 import { Subscription } from 'rxjs';
-import { LeaderboardService } from '../../core/services/leaderboard.service';
-
-interface Player {
-  playerId: string;
-  nickname: string;
-  username: string;
-  region: string;
-  totalPoints: number;
-  rank: number;
-}
+import { LeaderboardService, PlayerLeaderboardEntry } from '../../core/services/leaderboard.service';
 
 @Component({
   selector: 'app-simple-leaderboard',
@@ -24,8 +15,8 @@ interface Player {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
-  allPlayers: Player[] = [];
-  filteredPlayers: Player[] = [];
+  allPlayers: PlayerLeaderboardEntry[] = [];
+  filteredPlayers: PlayerLeaderboardEntry[] = [];
   loading = false;
   error = '';
   searchTerm = '';
@@ -60,22 +51,18 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     this.error = '';
     this.selectedGameId = this.gameSelectionService.getSelectedGame()?.id || this.selectedGameId || 'global';
 
-    this.leaderboardService.getTeamLeaderboard().subscribe({
+    this.leaderboardService.getPlayerLeaderboard(2025).subscribe({
       next: (entries) => {
-        if (!entries || entries.length === 0) {
-          this.allPlayers = [];
-          this.filteredPlayers = [];
-          return;
-        }
-
-        this.allPlayers = this.flattenLeaderboard(entries);
+        this.allPlayers = Array.isArray(entries) ? entries : [];
         this.filterPlayers();
       },
       error: (err) => {
         console.error('Erreur lors du chargement du leaderboard:', err);
-        this.error = 'Impossible de charger les données du classement.';
+        this.error = 'Données indisponibles (CSV non chargé)';
         this.allPlayers = [];
         this.filteredPlayers = [];
+        this.loading = false;
+        this.cdr.markForCheck();
       },
       complete: () => {
         this.loading = false;
@@ -84,37 +71,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  private flattenLeaderboard(entries: any[]): Player[] {
-    const players: Player[] = [];
-
-    entries.forEach((entry: any, index: number) => {
-      players.push({
-        playerId: entry.teamId || entry.id || `team-${index}`,
-        nickname: entry.teamName || entry.name || 'Équipe',
-        username: entry.ownerName || entry.ownerUsername || 'Inconnu',
-        region: 'TEAM',
-        totalPoints: entry.totalPoints || 0,
-        rank: index + 1
-      });
-
-      if (Array.isArray(entry.players)) {
-        entry.players.forEach((player: any) => {
-          players.push({
-            playerId: player.playerId || player.id,
-            nickname: player.nickname || player.username || 'Joueur',
-            username: player.username || entry.ownerName || 'Inconnu',
-            region: player.region || 'N/A',
-            totalPoints: player.totalPoints || player.points || 0,
-            rank: players.length + 1
-          });
-        });
-      }
-    });
-
-    return players;
-  }
-
-  getPaginatedPlayers(): Player[] {
+  getPaginatedPlayers(): PlayerLeaderboardEntry[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     return this.filteredPlayers.slice(start, start + this.itemsPerPage);
   }
@@ -135,7 +92,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     return '@';
   }
 
-  trackByPlayerId(index: number, player: Player): string {
+  trackByPlayerId(index: number, player: PlayerLeaderboardEntry): string {
     return player.playerId || `player-${index}`;
   }
 
@@ -143,7 +100,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     return page;
   }
 
-  trackByPlayer(index: number, player: Player): string {
+  trackByPlayer(index: number, player: PlayerLeaderboardEntry): string {
     return this.trackByPlayerId(index, player);
   }
 

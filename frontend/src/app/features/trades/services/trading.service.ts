@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, timer, throwError } from 'rxjs';
 import { map, catchError, tap, switchMap, shareReplay, retry } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
+import { LoggerService } from '../../../core/services/logger.service';
 
 export interface Player {
   id: string;
@@ -98,7 +99,10 @@ export class TradingService {
   private cache = new Map<string, { data: any, timestamp: number }>();
   private refreshInterval = 30000; // Refresh every 30 seconds
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private logger: LoggerService
+  ) {
     this.initializeRealTimeUpdates();
   }
 
@@ -111,8 +115,8 @@ export class TradingService {
     timer(0, this.refreshInterval).pipe(
       switchMap(() => this.loadTrades()),
       catchError(error => {
-        console.error('Error in real-time updates:', error);
-        return throwError(error);
+        this.logger.error('TradingService real-time updates failed', error);
+        return throwError(() => error);
       })
     ).subscribe();
   }

@@ -89,14 +89,24 @@
               Démarrer le Draft
             </button>
 
-            <!-- Delete Game Button -->
-            <button mat-raised-button 
-                    color="warn" 
-                    *ngIf="canDeleteGame()"
-                    (click)="confirmDelete()"
-                    matTooltip="Supprimer cette game">
-              <mat-icon>delete</mat-icon>
-              Supprimer
+            <!-- Archive Game Button (Host only) -->
+            <button mat-raised-button
+                    color="warn"
+                    *ngIf="canArchiveGame()"
+                    (click)="confirmArchive()"
+                    matTooltip="Archiver cette game (elle ne sera plus visible dans la liste)">
+              <mat-icon>archive</mat-icon>
+              Archiver
+            </button>
+
+            <!-- Leave Game Button (Participant non-host) -->
+            <button mat-raised-button
+                    color="accent"
+                    *ngIf="canLeaveGame()"
+                    (click)="confirmLeave()"
+                    matTooltip="Quitter cette game">
+              <mat-icon>exit_to_app</mat-icon>
+              Quitter
             </button>
 
             <!-- Game Full Message -->

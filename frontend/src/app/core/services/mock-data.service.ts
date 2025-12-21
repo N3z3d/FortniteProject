@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
 import { LeaderboardEntryDTO } from '../models/leaderboard.model';
 import { Game } from '../../features/game/models/game.interface';
+import { MOCK_GAMES } from '../data/mock-game-data';
+import { LoggerService } from './logger.service';
 
 /**
  * Simplified Mock Data Service
@@ -13,40 +15,15 @@ import { Game } from '../../features/game/models/game.interface';
 export class MockDataService {
   private isBackendAvailable = false;
   
-  constructor() {
-    console.log('🎮 MockDataService initialized - Basic fallback ready');
+  constructor(private logger: LoggerService) {
+    this.logger.debug('🎮 MockDataService initialized - Basic fallback ready');
   }
 
   /**
    * Basic Mock Games Data
    */
   getMockGames(): Observable<Game[]> {
-    const mockGames: Game[] = [
-      {
-        id: 'mock-game-1',
-        name: 'FNCS Championship 2025',
-        creatorName: 'Admin Gaming',
-        maxParticipants: 10,
-        status: 'ACTIVE',
-        createdAt: '2025-01-15T10:00:00Z',
-        participantCount: 8,
-        canJoin: true,
-        invitationCode: 'FNCS2025'
-      },
-      {
-        id: 'mock-game-2',
-        name: 'Zero Build Masters',
-        creatorName: 'Tournament_Master',
-        maxParticipants: 12,
-        status: 'DRAFTING',
-        createdAt: '2025-01-20T14:30:00Z',
-        participantCount: 6,
-        canJoin: true,
-        invitationCode: 'ZEROBUILD'
-      }
-    ];
-
-    return of(mockGames).pipe(delay(800));
+    return of(MOCK_GAMES).pipe(delay(800));
   }
 
   /**
@@ -119,7 +96,7 @@ export class MockDataService {
    * Basic Mock Dashboard Data
    */
   getMockDashboardData(gameId: string): Observable<any> {
-    console.log('🎮 Loading basic mock data for gameId:', gameId);
+    this.logger.debug('🎮 Loading basic mock data for gameId:', gameId);
     
     const mockData = {
       statistics: {

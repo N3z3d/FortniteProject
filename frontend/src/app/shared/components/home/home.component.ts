@@ -1,7 +1,9 @@
 import { Component, OnInit, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective, PulseDirective } from '../../directives/premium-interactions.directive';
 import { PremiumInteractionsService } from '../../services/premium-interactions.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Region {
   id: string;
@@ -97,7 +99,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   ];
 
-  constructor(private interactionsService: PremiumInteractionsService) { }
+  constructor(
+    private readonly interactionsService: PremiumInteractionsService,
+    private readonly logger: LoggerService,
+    private readonly router: Router
+  ) { }
 
   ngOnInit(): void {
     // Animations d'entrée retardées
@@ -128,35 +134,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   onRegionSelect(region: Region): void {
-    console.log(`Région sélectionnée: ${region.name}`);
-    // Ici on pourrait naviguer vers la page de sélection des joueurs
-    // this.router.navigate(['/teams', region.code.toLowerCase()]);
+    this.logger.info('Home: region selected', { region: region.code });
+    this.router.navigate(['/teams'], { queryParams: { region: region.code.toLowerCase() } });
   }
 
   onCreateTeam(): void {
-    console.log('Création d\'équipe démarrée');
-    // Navigation vers la page de création d\'équipe
-    // this.router.navigate(['/teams/create']);
+    this.logger.info('Home: navigating to team creation');
+    this.router.navigate(['/teams/create']);
   }
 
   onViewRules(): void {
-    console.log('Affichage des règles');
-    // Navigation vers la page des règles
-    // this.router.navigate(['/rules']);
+    this.logger.info('Home: viewing rules');
+    this.scrollToSection('rules');
   }
 
-  // Méthodes pour les animations et interactions
-  onHeroAction(action: string): void {
-    switch(action) {
-      case 'create':
-        this.onCreateTeam();
-        break;
-      case 'rules':
-        this.onViewRules();
-        break;
-      default:
-        console.log(`Action: ${action}`);
-    }
+  onStartNow(): void {
+    this.logger.info('Home: start now clicked');
+    this.router.navigate(['/games']);
+  }
+
+  onBeginnersGuide(): void {
+    this.logger.info('Home: beginners guide clicked');
+    this.scrollToSection('features');
   }
 
   // Smooth scroll vers les sections
@@ -185,14 +184,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   onRegionCardClick(region: Region): void {
-    // Create particle explosion effect
     this.interactionsService.showGamingNotification(
-      `Région ${region.name} sélectionnée !`, 
+      `Région ${region.name} sélectionnée !`,
       'success'
     );
-    
-    // Navigate to region detail (placeholder)
-    console.log(`Navigating to region: ${region.code}`);
+
+    this.logger.info('Home: region card clicked', { region: region.code });
+    this.onRegionSelect(region);
   }
 
   onHeroButtonClick(action: string): void {

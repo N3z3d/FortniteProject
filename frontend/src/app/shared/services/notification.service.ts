@@ -1,5 +1,6 @@
 import { Injectable, Inject, Optional } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { LoggerService } from '../../core/services/logger.service';
 
 // Interface pour MatSnackBar pour éviter l'import direct
 interface SnackBarLike {
@@ -36,7 +37,10 @@ export class NotificationService {
   public newNotification$: Observable<NotificationMessage | null> = new BehaviorSubject<NotificationMessage | null>(null);
   public connectionStatus$: Observable<boolean> = new BehaviorSubject<boolean>(true);
 
-  constructor(@Optional() @Inject('MatSnackBar') private snackBar?: SnackBarLike) {}
+  constructor(
+    private logger: LoggerService,
+    @Optional() @Inject('MatSnackBar') private snackBar?: SnackBarLike
+  ) {}
 
   /**
    * Shows a success notification
@@ -146,8 +150,8 @@ export class NotificationService {
         });
       }
     } else {
-      // Fallback: just log to console if no snackbar available
-      console.log(`[${type.toUpperCase()}] ${message}`);
+      // Fallback: log to LoggerService if no snackbar available
+      this.logger.info('NotificationService: fallback notification', { type, message });
     }
 
     return id;
@@ -328,7 +332,7 @@ export class NotificationService {
    * @param notification The notification object
    */
   private onNotificationAction(id: string, notification: NotificationMessage): void {
-    console.log('Notification action clicked:', { id, notification });
+    this.logger.debug('NotificationService: action clicked', { id, notification });
     
     // You can implement specific action handling here based on notification type
     // For example, navigation, API calls, etc.

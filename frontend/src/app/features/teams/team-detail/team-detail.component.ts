@@ -86,6 +86,7 @@ export class TeamDetailComponent implements OnInit {
   error: string | null = null;
   stats: TeamStats | null = null;
   allTeams: any[] = []; // Pour stocker toutes les équipes pour le calcul Top 10%
+  private readonly loadErrorMessage = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
   
   // Expose Object for template use
   Object = Object;
@@ -122,10 +123,8 @@ export class TeamDetailComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.warn('API non disponible, utilisation des données mockées:', error);
-        if (currentUser?.username) {
-          this.loadMockData(currentUser.username);
-        }
+        console.warn('Erreur lors du chargement des \u00e9quipes:', error);
+        this.handleLoadError();
       }
     });
   }
@@ -147,83 +146,27 @@ export class TeamDetailComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.warn('API non disponible, utilisation des données mockées:', error);
-        this.loadMockDataById(teamId);
+        console.warn('Erreur lors du chargement des \u00e9quipes:', error);
+        this.handleLoadError();
       }
     });
   }
 
-  private loadMockData(username: string) {
-    const mockTeams = this.getMockTeams();
-    const team = mockTeams.find(t => t.owner?.username?.toLowerCase() === username.toLowerCase());
-    
-    if (team) {
-      this.team = team;
-      this.calculateStats();
-    } else {
-      this.error = 'Équipe non trouvée pour cet utilisateur';
+  retryLoad(): void {
+    const routeId = this.route.snapshot.paramMap.get('id');
+    if (routeId) {
+      this.loadTeamById(routeId);
+      return;
     }
-    this.loading = false;
+    this.loadMyTeam();
   }
 
-  private loadMockDataById(teamId: string) {
-    const mockTeams = this.getMockTeams();
-    const team = mockTeams.find(t => t.id === teamId);
-    
-    if (team) {
-      this.team = team;
-      this.calculateStats();
-    } else {
-      this.error = 'Équipe non trouvée';
-    }
+  private handleLoadError(): void {
+    this.error = this.loadErrorMessage;
+    this.team = null;
+    this.stats = null;
+    this.allTeams = [];
     this.loading = false;
-  }
-
-  private getMockTeams(): Team[] {
-    return [
-      {
-        id: '9dd5f0f6-ff45-4bc7-9b8c-b72bb7d9e4a7',
-        name: 'Équipe Marcel',
-        season: 2025,
-        owner: { id: 'marcel-id', username: 'marcel' },
-        totalPoints: 3784379,
-        players: [
-          { player: { id: '1', nickname: 'NRG ronaldo', region: 'NAW', tranche: 'T1', points: 284520 }, position: 1 },
-          { player: { id: '2', nickname: 'aqua', region: 'EU', tranche: 'T1', points: 198765 }, position: 2 },
-          { player: { id: '3', nickname: 'ふーくん', region: 'ASIA', tranche: 'T2', points: 156890 }, position: 3 },
-          { player: { id: '4', nickname: 'らぜる', region: 'ASIA', tranche: 'T2', points: 145632 }, position: 4 },
-          { player: { id: '5', nickname: 'Bugha', region: 'NAW', tranche: 'T1', points: 234567 }, position: 5 }
-        ]
-      },
-      {
-        id: '88a782ba-7a8e-47bd-9865-abeb562075ba',
-        name: 'Équipe Teddy',
-        season: 2025,
-        owner: { id: 'teddy-id', username: 'teddy' },
-        totalPoints: 3952362,
-        players: [
-          { player: { id: '6', nickname: 'かめてぃん.魔女', region: 'ASIA', tranche: 'T1', points: 312450 }, position: 1 },
-          { player: { id: '7', nickname: 'TaySon', region: 'EU', tranche: 'T1', points: 287634 }, position: 2 },
-          { player: { id: '8', nickname: 'むきむきぱぱ', region: 'ASIA', tranche: 'T2', points: 178923 }, position: 3 },
-          { player: { id: '9', nickname: 'Cented', region: 'NAW', tranche: 'T1', points: 245678 }, position: 4 },
-          { player: { id: '10', nickname: 'E36だゾStain', region: 'ASIA', tranche: 'T3', points: 134567 }, position: 5 }
-        ]
-      },
-      {
-        id: 'e913457f-eefd-4378-8b16-0be4f8e68003',
-        name: 'Équipe Thibaut',
-        season: 2025,
-        owner: { id: 'thibaut-id', username: 'thibaut' },
-        totalPoints: 3892041,
-        players: [
-          { player: { id: '11', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 298765 }, position: 1 },
-          { player: { id: '12', nickname: 'Reet', region: 'NAW', tranche: 'T1', points: 276543 }, position: 2 },
-          { player: { id: '13', nickname: 'Jahq', region: 'NAW', tranche: 'T2', points: 198456 }, position: 3 },
-          { player: { id: '14', nickname: 'Kami', region: 'EU', tranche: 'T2', points: 187234 }, position: 4 },
-          { player: { id: '15', nickname: 'Queasy', region: 'EU', tranche: 'T1', points: 256789 }, position: 5 }
-        ]
-      }
-    ];
   }
 
   private formatTeamData(teamData: any): Team {

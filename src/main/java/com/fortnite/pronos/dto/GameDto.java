@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 
@@ -25,7 +28,10 @@ public class GameDto {
   private UUID creatorId;
   private String creatorUsername;
   private Integer maxParticipants;
+
+  @JsonProperty("currentParticipantCount")
   private Integer currentParticipantCount;
+
   private GameStatus status;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -230,6 +236,7 @@ public class GameDto {
    * Get participant count - alias for currentParticipantCount for accessibility service
    * compatibility This method provides WCAG-compliant access to participant information
    */
+  @JsonIgnore
   public Integer getParticipantCount() {
     return this.currentParticipantCount;
   }

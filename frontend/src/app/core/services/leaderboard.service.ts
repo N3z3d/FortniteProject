@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, map, switchMap, catchError, filter } from 'rxjs';
+import { Observable, of, map, switchMap, catchError, filter, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { LoggerService } from './logger.service';
 
 export type Region = 'EU' | 'NAW' | 'BR' | 'ASIA' | 'OCE' | 'NAC' | 'ME';
 
@@ -158,10 +159,13 @@ export class LeaderboardService {
   private readonly DEFAULT_MIN_RANK = 10;
   private readonly MIN_POINTS_THRESHOLD = 500;  // Points minimum pour être considéré comme actif
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private logger: LoggerService
+  ) {}
 
   getLeaderboard(filters: LeaderboardFilters): Observable<LeaderboardEntry[]> {
-    console.log('LeaderboardService.getLeaderboard appelé avec filtres:', filters);
+    this.logger.debug('LeaderboardService.getLeaderboard called', { filters });
     
     // Construire les paramètres de l'API
     let params = new HttpParams();
@@ -174,7 +178,7 @@ export class LeaderboardService {
 
     return this.http.get<LeaderboardEntry[]>(this.apiUrl, { params }).pipe(
       catchError(error => {
-        console.error('Erreur lors de la récupération du leaderboard:', error);
+        this.logger.error('LeaderboardService: failed to load leaderboard', error);
         // En cas d'erreur, retourner des données vides plutôt que de planter
         return of([]);
       })
@@ -384,14 +388,14 @@ export class LeaderboardService {
 
   // Nouvelle méthode pour le classement des pronostiqueurs
   getPronostiqueurLeaderboard(season: number): Observable<PronostiqueurLeaderboardEntry[]> {
-    console.log('LeaderboardService.getPronostiqueurLeaderboard appelé pour la saison:', season);
+    this.logger.debug('LeaderboardService.getPronostiqueurLeaderboard called', { season });
     
     let params = new HttpParams();
     params = params.set('season', season.toString());
 
     return this.http.get<PronostiqueurLeaderboardEntry[]>(`${this.apiUrl}/pronostiqueurs`, { params }).pipe(
       catchError(error => {
-        console.error('Erreur lors de la récupération du classement des pronostiqueurs:', error);
+        this.logger.error('LeaderboardService: failed to load pronostiqueur leaderboard', error);
         return of([]);
       })
     );
@@ -399,7 +403,7 @@ export class LeaderboardService {
 
   // Nouvelle méthode pour le classement des joueurs
   getPlayerLeaderboard(season: number, region?: string): Observable<PlayerLeaderboardEntry[]> {
-    console.log('LeaderboardService.getPlayerLeaderboard appelé pour la saison:', season, 'région:', region);
+    this.logger.debug('LeaderboardService.getPlayerLeaderboard called', { season, region });
     
     let params = new HttpParams();
     params = params.set('season', season.toString());
@@ -409,18 +413,45 @@ export class LeaderboardService {
 
     return this.http.get<PlayerLeaderboardEntry[]>(`${this.apiUrl}/joueurs`, { params }).pipe(
       catchError(error => {
-        console.error('Erreur lors de la récupération du classement des joueurs:', error);
-        return of([]);
+        this.logger.error('LeaderboardService: failed to load player leaderboard', error);
+        return throwError(() => error);
       })
     );
   }
 
   getTeamLeaderboard(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/api/leaderboard`).pipe(
+    const requestId = this.generateRequestId();
+    const url = `${environment.apiUrl}/api/leaderboard`;
+
+    this.logger.info('LeaderboardService: fetching team leaderboard', { requestId, url });
+
+    return this.http.get<any[]>(url).pipe(
+      map(data => {
+        this.logger.debug('LeaderboardService: team leaderboard fetched successfully', {
+          requestId,
+          teamsCount: data?.length || 0,
+          isEmpty: !data || data.length === 0
+        });
+        return data;
+      }),
       catchError(error => {
-        console.error('Erreur lors de la récupération du leaderboard des équipes:', error);
-        return of([]);
+        this.logger.error('LeaderboardService: failed to load team leaderboard', {
+          requestId,
+          status: error?.status,
+          statusText: error?.statusText,
+          url: error?.url,
+          message: error?.message,
+          timestamp: new Date().toISOString()
+        });
+        return throwError(() => error);
       })
     );
+  }
+
+  /**
+   * Génère un ID de requête unique pour le traçage
+   */
+  private generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 } 

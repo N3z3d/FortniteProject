@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface TradeDetail {
   id: string;
@@ -446,7 +447,8 @@ export class TradeDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -492,12 +494,12 @@ export class TradeDetailComponent implements OnInit {
   }
 
   completeTrade(): void {
-    console.log('Validation du trade:', this.tradeId);
+    this.logger.debug('TradeDetail: completing trade', { tradeId: this.tradeId });
     // Implement complete trade logic
   }
 
   cancelTrade(): void {
-    console.log('Annulation du trade:', this.tradeId);
+    this.logger.debug('TradeDetail: cancelling trade', { tradeId: this.tradeId });
     // Implement cancel trade logic
   }
 

@@ -1,0 +1,10 @@
+<div class="data-source-indicator" *ngIf="status">
+  <div
+    class="indicator-badge"
+    [ngClass]="getBadgeClass()"
+    [title]="status.message + ' - Dernière vérification: ' + status.lastChecked.toLocaleTimeString()"
+  >
+    <span class="icon">{{ getIcon() }}</span>
+    <span class="text">{{ getDisplayText() }}</span>
+  </div>
+</div>

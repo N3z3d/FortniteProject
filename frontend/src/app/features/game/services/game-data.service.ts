@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { Game, GameParticipant } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
-import { CsvDataService } from './csv-data.service';
+import { MOCK_GAMES, MOCK_GAME_PARTICIPANTS } from '../../../core/data/mock-game-data';
 
 /**
  * Service responsable de la gestion des données de games
  * Respecte le principe de Single Responsibility
- * Utilise uniquement les données de la base de données
+ * Utilise les donnees de la base de donnees avec fallback dev si indisponible
  */
 @Injectable({
   providedIn: 'root'
@@ -19,8 +19,7 @@ export class GameDataService {
   private readonly apiUrl = `${environment.apiUrl}/api`;
 
   constructor(
-    private http: HttpClient,
-    private csvDataService: CsvDataService
+    private http: HttpClient
   ) { }
 
   /**
@@ -43,7 +42,15 @@ export class GameDataService {
             throw new Error('Failed to process game data from server');
           }
         }),
-        catchError(this.handleHttpError)
+        catchError((error: HttpErrorResponse) => {
+          if (this.shouldUseFallback(error)) {
+            const fallbackGame = this.findFallbackGame(gameId);
+            if (fallbackGame) {
+              return of(fallbackGame);
+            }
+          }
+          return this.handleHttpError(error);
+        })
       );
   }
 
@@ -72,7 +79,12 @@ export class GameDataService {
             return []; // Retourner un tableau vide en cas d'erreur
           }
         }),
-        catchError(this.handleHttpError)
+        catchError((error: HttpErrorResponse) => {
+          if (this.shouldUseFallback(error)) {
+            return of(this.getFallbackParticipants(gameId));
+          }
+          return this.handleHttpError(error);
+        })
       );
   }
 
@@ -198,4 +210,19 @@ export class GameDataService {
 
     return throwError(() => new Error(errorMessage));
   }
+
+  private shouldUseFallback(error: HttpErrorResponse): boolean {
+    const fallbackEnabled = environment.enableFallbackData && !environment.production;
+    const isNetworkOrServerError = error.status === 0 || (error.status >= 500 && error.status < 600);
+    return fallbackEnabled && isNetworkOrServerError;
+  }
+
+  private findFallbackGame(gameId: string): Game | null {
+    return MOCK_GAMES.find(game => game.id === gameId) ?? null;
+  }
+
+  private getFallbackParticipants(gameId: string): GameParticipant[] {
+    return MOCK_GAME_PARTICIPANTS[gameId] ?? [];
+  }
+
 }

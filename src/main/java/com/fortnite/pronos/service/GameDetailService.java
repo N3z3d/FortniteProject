@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityNotFoundException;
+
+import org.hibernate.ObjectNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GameDetailService {
+
+  private static final String MISSING_PLAYER_NICKNAME = "Joueur indisponible";
+  private static final String MISSING_PLAYER_REGION = "UNKNOWN";
+  private static final String MISSING_PLAYER_TRANCHE = "N/A";
+  private static final String MISSING_USER_NAME = "Utilisateur indisponible";
 
   private final GameRepository gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
@@ -72,52 +80,142 @@ public class GameDetailService {
         .maxParticipants(game.getMaxParticipants())
         .createdAt(game.getCreatedAt())
         .updatedAt(game.getCreatedAt()) // Utiliser createdAt à défaut d'updatedAt
-        .participants(buildParticipantInfos(participants, game.getCreator()))
+        .participants(buildParticipantInfos(participants, game.getCreator(), game.getId()))
         .draftInfo(draft.map(this::buildDraftInfo).orElse(null))
-        .statistics(buildStatistics(participants, game))
+        .statistics(buildStatistics(participants, game, game.getId()))
         .build();
   }
 
   /** Construit la liste des informations des participants Clean Code : méthode focalisée */
   private List<ParticipantInfo> buildParticipantInfos(
-      List<GameParticipant> participants, User creator) {
+      List<GameParticipant> participants, User creator, UUID gameId) {
     return participants.stream()
-        .map(participant -> buildParticipantInfo(participant, creator))
+        .map(participant -> buildParticipantInfo(participant, creator, gameId))
         .collect(Collectors.toList());
   }
 
   /** Construit l'information d'un participant Clean Code : transformation simple et claire */
-  private ParticipantInfo buildParticipantInfo(GameParticipant participant, User creator) {
-    User user = participant.getUser();
-    List<Player> selectedPlayers = participant.getSelectedPlayers();
+  private ParticipantInfo buildParticipantInfo(
+      GameParticipant participant, User creator, UUID gameId) {
+    User user = getParticipantUserSafe(participant, gameId);
+
+    List<PlayerInfo> selectedPlayers = buildPlayerInfosSafe(participant, gameId);
 
     return ParticipantInfo.builder()
         .participantId(participant.getId())
-        .username(user.getUsername())
-        .email(user.getEmail())
-        .joinedAt(LocalDateTime.now()) // Valeur par défaut
-        .joinOrder(
-            participant.getDraftOrder() != null
-                ? participant.getDraftOrder()
-                : 0) // Utiliser draftOrder
-        .isCreator(user.getId().equals(creator.getId()))
+        .username(user != null ? user.getUsername() : MISSING_USER_NAME)
+        .email(user != null ? user.getEmail() : null)
+        .joinedAt(resolveJoinedAt(participant))
+        .joinOrder(participant.getDraftOrder() != null ? participant.getDraftOrder() : 0)
+        .isCreator(isCreator(user, creator))
         .totalPlayers(selectedPlayers.size())
-        .selectedPlayers(buildPlayerInfos(selectedPlayers))
+        .selectedPlayers(selectedPlayers)
         .build();
   }
 
-  /** Construit la liste des informations des joueurs Clean Code : transformation de collection */
-  private List<PlayerInfo> buildPlayerInfos(List<Player> players) {
-    return players.stream().map(this::buildPlayerInfo).collect(Collectors.toList());
+  private LocalDateTime resolveJoinedAt(GameParticipant participant) {
+    return participant.getJoinedAt() != null ? participant.getJoinedAt() : LocalDateTime.now();
   }
 
-  /** Construit l'information d'un joueur Clean Code : méthode simple et pure */
+  private boolean isCreator(User user, User creator) {
+    return user != null
+        && creator != null
+        && user.getId() != null
+        && user.getId().equals(creator.getId());
+  }
+
+  private User getParticipantUserSafe(GameParticipant participant, UUID gameId) {
+    try {
+      User user = participant.getUser();
+      if (user == null) {
+        log.warn(
+            "Participant sans utilisateur detecte (participantId={}, gameId={})",
+            participant.getId(),
+            gameId);
+      }
+      return user;
+    } catch (EntityNotFoundException | ObjectNotFoundException e) {
+      log.warn(
+          "Utilisateur introuvable (participantId={}, gameId={})", participant.getId(), gameId, e);
+      return null;
+    }
+  }
+
+  private List<PlayerInfo> buildPlayerInfosSafe(GameParticipant participant, UUID gameId) {
+    List<Player> players = getSelectedPlayersSafe(participant, gameId);
+    if (players.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    List<PlayerInfo> infos = new ArrayList<>();
+    for (Player player : players) {
+      infos.add(buildPlayerInfoOrFallback(player, gameId, participant.getId()));
+    }
+    return infos;
+  }
+
+  private List<Player> getSelectedPlayersSafe(GameParticipant participant, UUID gameId) {
+    try {
+      List<Player> players = participant.getSelectedPlayers();
+      return players != null ? players : Collections.emptyList();
+    } catch (EntityNotFoundException | ObjectNotFoundException e) {
+      log.warn(
+          "Joueurs selectionnes introuvables (participantId={}, gameId={})",
+          participant.getId(),
+          gameId,
+          e);
+      return Collections.<Player>singletonList(null);
+    }
+  }
+
+  private PlayerInfo buildPlayerInfoOrFallback(Player player, UUID gameId, UUID participantId) {
+    if (player == null) {
+      log.warn(
+          "Joueur manquant (participantId={}, gameId={}) - fallback applique",
+          participantId,
+          gameId);
+      return buildMissingPlayerInfo();
+    }
+
+    try {
+      return buildPlayerInfo(player);
+    } catch (EntityNotFoundException | ObjectNotFoundException e) {
+      log.warn(
+          "Joueur introuvable en base (participantId={}, gameId={}) - fallback applique",
+          participantId,
+          gameId,
+          e);
+      return buildMissingPlayerInfo();
+    } catch (RuntimeException e) {
+      log.error(
+          "Erreur lors du mapping du joueur (participantId={}, gameId={})",
+          participantId,
+          gameId,
+          e);
+      return buildMissingPlayerInfo();
+    }
+  }
+
+  private PlayerInfo buildMissingPlayerInfo() {
+    return PlayerInfo.builder()
+        .playerId(null)
+        .nickname(MISSING_PLAYER_NICKNAME)
+        .region(MISSING_PLAYER_REGION)
+        .tranche(MISSING_PLAYER_TRANCHE)
+        .currentScore(0)
+        .build();
+  }
+
+  /** Construit l'information d'un joueur Clean Code : methode simple et pure */
   private PlayerInfo buildPlayerInfo(Player player) {
+    String region = player.getRegion() != null ? player.getRegion().name() : MISSING_PLAYER_REGION;
+    String tranche = player.getTranche() != null ? player.getTranche() : MISSING_PLAYER_TRANCHE;
+
     return PlayerInfo.builder()
         .playerId(player.getId())
         .nickname(player.getNickname())
-        .region(player.getRegion().name())
-        .tranche(player.getTranche())
+        .region(region)
+        .tranche(tranche)
         .currentScore(calculateCurrentScore(player)) // Calcul du score actuel
         .build();
   }
@@ -137,13 +235,15 @@ public class GameDetailService {
   }
 
   /** Calcule les statistiques de la game Clean Code : calculs regroupés */
-  private GameStatistics buildStatistics(List<GameParticipant> participants, Game game) {
+  private GameStatistics buildStatistics(
+      List<GameParticipant> participants, Game game, UUID gameId) {
     int totalParticipants = participants.size();
-    int totalPlayers = calculateTotalPlayers(participants);
-    Map<String, Integer> regionDistribution = calculateRegionDistribution(participants);
+    int totalPlayers = calculateTotalPlayers(participants, gameId);
+    Map<String, Integer> regionDistribution = calculateRegionDistribution(participants, gameId);
     double averagePlayersPerParticipant =
         totalParticipants > 0 ? (double) totalPlayers / totalParticipants : 0.0;
-    int remainingSlots = game.getMaxParticipants() - totalParticipants;
+    int maxParticipants = game.getMaxParticipants() != null ? game.getMaxParticipants() : 0;
+    int remainingSlots = Math.max(0, maxParticipants - totalParticipants);
 
     return GameStatistics.builder()
         .totalParticipants(totalParticipants)
@@ -155,21 +255,33 @@ public class GameDetailService {
   }
 
   /** Calcule le nombre total de joueurs Clean Code : méthode focalisée */
-  private int calculateTotalPlayers(List<GameParticipant> participants) {
-    return participants.stream().mapToInt(p -> p.getSelectedPlayers().size()).sum();
+  private int calculateTotalPlayers(List<GameParticipant> participants, UUID gameId) {
+    return participants.stream()
+        .mapToInt(participant -> getSelectedPlayersSafe(participant, gameId).size())
+        .sum();
   }
 
   /** Calcule la distribution par région Clean Code : calcul isolé avec stream */
-  private Map<String, Integer> calculateRegionDistribution(List<GameParticipant> participants) {
+  private Map<String, Integer> calculateRegionDistribution(
+      List<GameParticipant> participants, UUID gameId) {
     Map<String, Integer> distribution = new HashMap<>();
 
-    participants.stream()
-        .flatMap(p -> p.getSelectedPlayers().stream())
-        .forEach(
-            player -> {
-              String region = player.getRegion().name();
-              distribution.merge(region, 1, Integer::sum);
-            });
+    for (GameParticipant participant : participants) {
+      List<Player> players = getSelectedPlayersSafe(participant, gameId);
+      for (Player player : players) {
+        if (player == null) {
+          log.warn(
+              "Joueur null dans les statistiques (participantId={}, gameId={})",
+              participant.getId(),
+              gameId);
+          distribution.merge(MISSING_PLAYER_REGION, 1, Integer::sum);
+          continue;
+        }
+        String region =
+            player.getRegion() != null ? player.getRegion().name() : MISSING_PLAYER_REGION;
+        distribution.merge(region, 1, Integer::sum);
+      }
+    }
 
     return distribution;
   }

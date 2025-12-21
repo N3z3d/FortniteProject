@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { LoggerService } from './logger.service';
 
 export interface AuthSwitchResponse {
   success: boolean;
@@ -18,7 +19,10 @@ export interface AuthSwitchResponse {
 export class AuthSwitchService {
   private readonly baseUrl = environment.apiBaseUrl || 'http://localhost:8081';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private logger: LoggerService
+  ) {}
 
   /**
    * Switches the current user context in the backend
@@ -26,7 +30,7 @@ export class AuthSwitchService {
    * @returns Observable with switch response
    */
   switchUser(username: string): Observable<AuthSwitchResponse> {
-    console.log(`🔄 AuthSwitchService: Changement vers ${username}`);
+    this.logger.info('AuthSwitchService: switching user', { username });
 
     // For development, we'll use mock response with proper error handling
     if (!environment.production) {
@@ -38,7 +42,7 @@ export class AuthSwitchService {
       username: username
     }).pipe(
       catchError(error => {
-        console.warn('⚠️ Erreur lors du changement d\'utilisateur:', error);
+        this.logger.warn('AuthSwitchService: user switch failed, using fallback', error);
         // Don't throw error - return mock response as fallback
         return this.mockSwitchUser(username);
       })
@@ -102,7 +106,7 @@ export class AuthSwitchService {
    * @returns Observable with notification response
    */
   notifyUserSwitch(fromUser: string, toUser: string): Observable<AuthSwitchResponse> {
-    console.log(`📢 Notification changement: ${fromUser} → ${toUser}`);
+    this.logger.info('AuthSwitchService: notifying user switch', { fromUser, toUser });
 
     if (!environment.production) {
       return of({
@@ -118,7 +122,7 @@ export class AuthSwitchService {
       timestamp: new Date().toISOString()
     }).pipe(
       catchError(error => {
-        console.warn('⚠️ Erreur notification changement utilisateur:', error);
+        this.logger.warn('AuthSwitchService: notify user switch failed, using fallback', error);
         // Return success anyway - this is not critical
         return of({
           success: true,
@@ -146,7 +150,7 @@ export class AuthSwitchService {
       map(response => response.valid),
       catchError(() => {
         // If validation fails, assume session is valid to avoid blocking
-        console.warn('⚠️ Validation de session échouée, considérée comme valide');
+        this.logger.warn('AuthSwitchService: session validation failed, considered valid');
         return of(true);
       })
     );
@@ -168,7 +172,7 @@ export class AuthSwitchService {
       ...activity
     };
 
-    console.log('📊 Auth Switch Activity:', logEntry);
+    this.logger.debug('AuthSwitchService: activity', logEntry);
 
     // In production, you might want to send this to a logging service
     if (environment.production) {
@@ -198,7 +202,7 @@ export class AuthSwitchService {
    * @returns Observable with fallback response
    */
   private handleSwitchError(error: any, username: string): Observable<AuthSwitchResponse> {
-    console.error('❌ Erreur lors du changement d\'utilisateur:', error);
+    this.logger.error('AuthSwitchService: user switch error', error);
     
     this.logSwitchActivity({
       action: 'switch',
@@ -220,7 +224,7 @@ export class AuthSwitchService {
    * Clears any cached auth data
    */
   clearAuthCache(): void {
-    console.log('🧹 Nettoyage du cache auth');
+    this.logger.debug('AuthSwitchService: clearing auth cache');
     // Clear any cached authentication data
     // This might involve clearing localStorage, sessionStorage, etc.
   }

@@ -64,8 +64,14 @@
     <aside class="games-sidebar" [class.collapsed]="sidebarCollapsed" [class.closed]="!sidebarOpen">
       <div class="sidebar-header">
         <h3>
-          <mat-icon>sports_esports</mat-icon>
-          Mes games ({{ getGameCount() }})
+          <button
+            mat-button
+            type="button"
+            class="sidebar-home-btn"
+            (click)="goToHome()">
+            <mat-icon>sports_esports</mat-icon>
+            <span>Mes games ({{ getGameCount() }})</span>
+          </button>
           <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? 'Expand' : 'Collapse'">
             <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
           </button>
@@ -136,6 +142,9 @@
         </div>
       </div>
     </aside>
+
+    <!-- Data Source Indicator (FF-201) -->
+    <app-data-source-indicator></app-data-source-indicator>
 
     <!-- Main Content Area -->
     <main class="ultra-main-content" id="main-content" role="main" [@routeAnimations]="prepareRoute(outlet)">

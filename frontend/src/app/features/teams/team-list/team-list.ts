@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TeamService, TeamDto, TeamPlayerDto } from '../../../core/services/team.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Component({
   selector: 'app-team-list',
@@ -26,7 +28,11 @@ export class TeamList implements OnInit {
   loading = true;
   error: string | null = null;
 
-  constructor(private teamService: TeamService) {}
+  constructor(
+    private readonly teamService: TeamService,
+    private readonly logger: LoggerService,
+    private readonly router: Router
+  ) {}
 
   ngOnInit() {
     this.loadTeams();
@@ -35,19 +41,29 @@ export class TeamList implements OnInit {
   loadTeams() {
     this.loading = true;
     this.error = null;
-    
+
     this.teamService.getAllTeamsForSeason(2025).subscribe({
       next: (teams) => {
         this.teams = teams;
         this.loading = false;
-        console.log('Équipes chargées:', teams);
+        this.logger.debug('TeamList: teams loaded', { count: teams.length });
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des équipes:', error);
+        this.logger.error('TeamList: failed to load teams', error);
         this.error = 'Erreur lors du chargement des équipes';
         this.loading = false;
       }
     });
+  }
+
+  viewTeamDetails(teamId: string): void {
+    this.logger.info('TeamList: navigating to team details', { teamId });
+    this.router.navigate(['/teams/detail', teamId]);
+  }
+
+  manageTeam(teamId: string): void {
+    this.logger.info('TeamList: navigating to team edit', { teamId });
+    this.router.navigate(['/teams/edit', teamId]);
   }
 
   getRegionColor(region: string): string {

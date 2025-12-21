@@ -65,12 +65,12 @@ class GamePlayerLinkIntegrationTest {
   }
 
   @Test
-  @DisplayName("Devrait avoir 147 joueurs dans la base de données")
+  @DisplayName("Devrait avoir 146 joueurs dans la base de données")
   void shouldHave147PlayersInDatabase() {
     // When: Compter tous les joueurs
     long totalPlayers = playerRepository.count();
 
-    // Then: 147 joueurs présents
+    // Then: 146 joueurs présents
     assertThat(totalPlayers).isEqualTo(147);
   }
 

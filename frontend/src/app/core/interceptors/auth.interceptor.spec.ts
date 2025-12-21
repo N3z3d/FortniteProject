@@ -65,6 +65,8 @@ describe('AuthInterceptor', () => {
   });
 
   it('falls back to default dev user when no user is available and fallback is enabled', () => {
+    const originalFallback = environment.enableFallbackData;
+    (environment as any).enableFallbackData = true;
     userContextService.getCurrentUser.and.returnValue(null);
     userContextService.getLastUser.and.returnValue(null);
 
@@ -74,6 +76,7 @@ describe('AuthInterceptor', () => {
     expect(req.request.params.get('user')).toBe(environment.defaultDevUser);
     expect(req.request.headers.get('X-Test-User')).toBe(environment.defaultDevUser);
     req.flush([]);
+    (environment as any).enableFallbackData = originalFallback;
   });
 
   it('does not add headers when fallback is disabled and no user is available', () => {

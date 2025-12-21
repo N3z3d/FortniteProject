@@ -50,7 +50,7 @@
   <div class="error-container" *ngIf="error && !loading">
     <div class="error-icon">⚠️</div>
     <h2>{{ error }}</h2>
-    <button class="retry-btn" (click)="loadMyTeam()">
+    <button class="retry-btn" (click)="retryLoad()">
       <mat-icon>refresh</mat-icon>
       Réessayer
     </button>

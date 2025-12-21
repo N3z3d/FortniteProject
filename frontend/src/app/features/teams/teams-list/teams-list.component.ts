@@ -9,6 +9,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Subject, combineLatest, of, takeUntil } from 'rxjs';
 
 import { TeamService, TeamDto } from '../../../core/services/team.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface Player {
   id: string;
@@ -60,7 +61,7 @@ interface Team {
           
           <mat-card-header>
             <mat-card-title>{{ team.name }}</mat-card-title>
-            <mat-card-subtitle>{{ team.gameName }}</mat-card-subtitle>
+            <mat-card-subtitle>Propriétaire: {{ team.ownerName }}</mat-card-subtitle>
           </mat-card-header>
 
           <mat-card-content>
@@ -97,13 +98,9 @@ interface Team {
             </div>
 
             <div class="team-meta">
-              <p class="owner">
-                <mat-icon>account_circle</mat-icon>
-                {{ team.ownerName }}
-              </p>
               <p class="last-update">
                 <mat-icon>schedule</mat-icon>
-                {{ team.lastUpdate | date:'short' }}
+                Mis à jour: {{ team.lastUpdate | date:'short' }}
               </p>
             </div>
 
@@ -135,7 +132,17 @@ interface Team {
         </mat-card>
       </div>
 
-      <div class="empty-state" *ngIf="!loading && teams.length === 0">
+      <div class="error-state" *ngIf="!loading && error">
+        <mat-icon class="large-icon">error</mat-icon>
+        <h3>Erreur de chargement</h3>
+        <p>{{ error }}</p>
+        <button mat-raised-button color="primary" (click)="refreshTeams()">
+          <mat-icon>refresh</mat-icon>
+          Recharger
+        </button>
+      </div>
+
+      <div class="empty-state" *ngIf="!loading && !error && teams.length === 0">
         <mat-icon class="large-icon">groups</mat-icon>
         <h3>Aucune équipe trouvée</h3>
         <p>Vous n'avez pas encore créé d'équipe. Commencez par rejoindre un jeu ou créer votre première équipe.</p>
@@ -164,7 +171,8 @@ export class TeamsListComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly teamService: TeamService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -200,11 +208,10 @@ export class TeamsListComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error: Error) => {
-          console.error('Erreur lors du chargement des équipes:', error);
-          this.error = 'Impossible de charger les équipes';
+          this.logger.error('Erreur lors du chargement des equipes', error);
+          this.error = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
           this.loading = false;
-          // Données de fallback pour éviter un écran vide
-          this.teams = this.getMockTeams();
+          this.teams = [];
         }
       });
   }
@@ -264,45 +271,6 @@ export class TeamsListComponent implements OnInit, OnDestroy {
     });
   }
 
-  private getMockTeams(): Team[] {
-    return [
-      {
-        id: 'team1',
-        name: 'Les Legends',
-        ownerName: 'Thibaut',
-        playerCount: 5,
-        players: [
-          { id: 'p1', name: 'Bugha', gamertag: 'Bugha', points: 350 },
-          { id: 'p2', name: 'Ninja', gamertag: 'Ninja', points: 320 },
-          { id: 'p3', name: 'Tfue', gamertag: 'Tfue', points: 280 },
-          { id: 'p4', name: 'Clix', gamertag: 'Clix', points: 200 },
-          { id: 'p5', name: 'Mongraal', gamertag: 'Mongraal', points: 100 }
-        ],
-        totalPoints: 1250,
-        gameId: 'game1',
-        gameName: 'Championnat Fortnite 2024',
-        lastUpdate: new Date(),
-        isActive: true
-      },
-      {
-        id: 'team2',
-        name: 'Victory Squad',
-        ownerName: 'Marcel',
-        playerCount: 4,
-        players: [
-          { id: 'p6', name: 'SypherPK', gamertag: 'SypherPK', points: 290 },
-          { id: 'p7', name: 'Lachlan', gamertag: 'Lachlan', points: 250 },
-          { id: 'p8', name: 'Typical Gamer', gamertag: 'Typical Gamer', points: 200 },
-          { id: 'p9', name: 'Muselk', gamertag: 'Muselk', points: 150 }
-        ],
-        totalPoints: 890,
-        gameId: 'game2',
-        gameName: 'Tournoi Hiver',
-        lastUpdate: new Date(Date.now() - 86400000), // Hier
-        isActive: false
-      }
-    ];
-  }
 
   trackByTeamId(index: number, team: Team): string {
     return team.id;

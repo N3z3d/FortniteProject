@@ -16,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
+import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
+import com.fortnite.pronos.repository.TeamRepository;
+import com.fortnite.pronos.repository.UserRepository;
 
 /**
  * Tests TDD pour CsvDataLoaderService Valide que tous les joueurs du CSV sont bien chargés en base
@@ -51,6 +54,12 @@ class CsvDataLoaderServiceTddTest {
 
   @Autowired private ScoreRepository scoreRepository;
 
+  @Autowired private TeamInitializationService teamInitializationService;
+
+  @Autowired private TeamRepository teamRepository;
+
+  @Autowired private UserRepository userRepository;
+
   @BeforeEach
   void setUp() {
     // Clean database before each test
@@ -60,7 +69,7 @@ class CsvDataLoaderServiceTddTest {
 
   @Test
   @Transactional
-  @DisplayName("Devrait charger tous les 147 joueurs du fichier CSV")
+  @DisplayName("Devrait charger tous les 146 joueurs du fichier CSV")
   void shouldLoadAll147PlayersFromCsv() {
     // ARRANGE
     long initialPlayerCount = playerRepository.count();
@@ -76,8 +85,8 @@ class CsvDataLoaderServiceTddTest {
     List<Player> allPlayers = playerRepository.findAll();
     List<Score> allScores = scoreRepository.findAll();
 
-    // Le CSV contient 147 lignes de données (hors header)
-    assertThat(allPlayers).hasSize(147).as("Le CSV devrait charger 147 joueurs, pas 12 hardcodés");
+    // Le CSV contient 146 lignes de données (hors header)
+    assertThat(allPlayers).hasSize(147).as("Le CSV devrait charger 146 joueurs, pas 12 hardcodés");
 
     assertThat(allScores).hasSize(147).as("Chaque joueur devrait avoir un score associé");
 
@@ -170,6 +179,30 @@ class CsvDataLoaderServiceTddTest {
   }
 
   @Test
+  @Transactional
+  @DisplayName("CSV -> 3 teams created for Thibaut, Teddy, Marcel")
+  void shouldCreateTeamsFromCsvAssignments() {
+    userRepository.saveAll(List.of(buildUser("Thibaut"), buildUser("Teddy"), buildUser("Marcel")));
+
+    csvDataLoaderService.loadAllCsvData();
+    teamInitializationService.createTeamsFromCsvData();
+
+    assertThat(teamRepository.countBySeason(2025)).isEqualTo(3);
+  }
+
+  @Test
+  @Transactional
+  @DisplayName("Team initialization should load CSV when assignments are missing")
+  void shouldLoadCsvWhenAssignmentsMissing() {
+    csvDataLoaderService.clearAssignments();
+
+    teamInitializationService.createTeamsFromCsvData();
+
+    assertThat(playerRepository.count()).isEqualTo(147);
+    assertThat(teamRepository.countBySeason(2025)).isEqualTo(3);
+  }
+
+  @Test
   @DisplayName("Devrait diagnostiquer le problème si seulement 12 joueurs sont chargés")
   void shouldDiagnoseIfOnly12PlayersLoaded() {
     // ACT
@@ -198,5 +231,15 @@ class CsvDataLoaderServiceTddTest {
     }
 
     // Ce test ne fait qu'afficher le diagnostic, pas d'assertion
+  }
+
+  private User buildUser(String username) {
+    User user = new User();
+    user.setUsername(username);
+    user.setEmail(username.toLowerCase() + "@test.com");
+    user.setPassword("password");
+    user.setRole(User.UserRole.USER);
+    user.setCurrentSeason(2025);
+    return user;
   }
 }

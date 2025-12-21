@@ -181,13 +181,15 @@
         <button
           class="btn btn-primary btn-large"
           appPremiumInteractions="magnetic"
-          appTooltip="Start your adventure now!">
+          appTooltip="Start your adventure now!"
+          (click)="onStartNow()">
           <span>⚡</span> Start Now
         </button>
         <button
           class="btn btn-ghost"
           appPremiumInteractions="spring"
-          appTooltip="Learn the basics of the game">
+          appTooltip="Learn the basics of the game"
+          (click)="onBeginnersGuide()">
           <span>📖</span> Beginner's Guide
         </button>
       </div>

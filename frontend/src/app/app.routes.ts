@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { gamesResolver } from './features/game/resolvers/games.resolver';
 import { MainLayoutComponent } from './shared/components/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -23,7 +24,8 @@ export const routes: Routes = [
     children: [
       {
         path: 'games',
-        loadChildren: () => import('./features/game/game.module').then(m => m.GameModule)
+        loadChildren: () => import('./features/game/game.module').then(m => m.GameModule),
+        resolve: { userGames: gamesResolver }
       },
       {
         path: 'auth',

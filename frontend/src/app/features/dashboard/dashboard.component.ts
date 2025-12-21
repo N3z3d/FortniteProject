@@ -30,10 +30,12 @@ import { interval } from 'rxjs';
 import { LeaderboardEntryDTO } from '../../core/models/leaderboard.model';
 import { GameSelectionService } from '../../core/services/game-selection.service';
 import { GameService } from '../game/services/game.service';
-import { DashboardDataService } from './services/dashboard-data.service';
+import { DashboardFacade } from '../../core/facades/dashboard.facade';
+import { DashboardChartService } from './services/dashboard-chart.service';
 import { Game } from '../game/models/game.interface';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { FocusManagementService } from '../../shared/services/focus-management.service';
+import { LoggerService } from '../../core/services/logger.service';
 import { TranslationService } from '../../core/services/translation.service';
 
 // PERFORMANCE: Register only necessary components (reduces bundle size by ~100KB)
@@ -145,13 +147,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private subscriptions: Subscription[] = [];
   private readonly LOAD_TIMEOUT = 10000; // 10 secondes
   private readonly REFRESH_INTERVAL = 300000; // 5 minutes
+  private readonly loadErrorMessage = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
   currentSeason = 2025;
 
-  // Premium stats properties
-  totalScore = 1547;
-  ranking = 7;
-  activeGames = 3;
-  weeklyBest = 423;
+  // Premium stats properties (calculated from real data)
+  totalScore = 0;
+  ranking = 0;
+  activeGames = 0;
+  weeklyBest = 0;
 
   constructor(
     private http: HttpClient,
@@ -159,7 +162,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private gameSelectionService: GameSelectionService,
-    private dashboardDataService: DashboardDataService,
+    private dashboardFacade: DashboardFacade,
+    private chartService: DashboardChartService,
+    private logger: LoggerService,
     private cdr: ChangeDetectorRef,
     private interactionsService: PremiumInteractionsService,
     private gameService: GameService,
@@ -179,21 +184,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     
     // Get gameId from route params if available
-    this.route.params.subscribe(params => {
-      const gameId = params['id'];
-      if (gameId) {
-        // Load specific game data
-        this.gameService.getGameById(gameId).subscribe({
-          next: (game) => {
-            this.selectedGame = game;
-            this.loadDashboardData();
-          },
-          error: (error) => {
-            console.error('Error loading game:', error);
-          }
-        });
-      }
-    });
+    this.subscriptions.push(
+      this.route.params.subscribe(params => {
+        const gameId = params['id'];
+        if (gameId) {
+          // Load specific game data
+          this.subscriptions.push(
+            this.gameService.getGameById(gameId).subscribe({
+              next: (game) => {
+                this.selectedGame = game;
+                this.loadDashboardData();
+              },
+              error: (error) => {
+                this.logger.error('Dashboard: failed to load game', error);
+              }
+            })
+          );
+        }
+      })
+    );
     
     // S'abonner aux changements de game sélectionnée
     this.subscriptions.push(
@@ -239,7 +248,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.games = games;
       },
       error: (error: any) => {
-        console.error('Erreur lors du chargement des games:', error);
+        this.logger.error('Dashboard: failed to load games', error);
         this.games = [];
       }
     });
@@ -260,36 +269,30 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.error = null;
 
     try {
-      // Enhanced data loading with premium mock fallback
-      this.dashboardDataService.getDashboardData(this.selectedGame.id).subscribe({
+      // NEW: Using DashboardFacade with automatic DB/Mock fallback
+      this.dashboardFacade.getDashboardData(this.selectedGame.id).subscribe({
         next: (data: any) => {
-          console.log('📊 Dashboard data received:', data);
-          
-          // Check if we're using mock data
-          this.isUsingMockData = data._isPremiumMockData || false;
-          this.backendStatus = this.isUsingMockData ? 'offline' : 'online';
-          
-          if (this.isUsingMockData) {
-            console.log('🎮 Using premium mock data for enhanced UX');
-            this.showMockDataNotification();
-          }
-          
+          this.logger.debug('📊 Dashboard data received:', data);
+
+          this.isUsingMockData = false;
+          this.backendStatus = 'online';
+
           // Update leaderboard
           if (data.leaderboard && Array.isArray(data.leaderboard)) {
-            console.log('📈 Leaderboard data:', data.leaderboard.length, 'entries');
+            this.logger.debug('📈 Leaderboard data', { entriesCount: data.leaderboard.length });
             this.leaderboardEntries = data.leaderboard;
             this.updateStatsFromLeaderboard(data.leaderboard);
           }
 
           // Update statistics
           if (data.statistics) {
-            console.log('📊 Statistics data:', data.statistics);
+            this.logger.debug('📊 Statistics data:', data.statistics);
             this.updateCompetitionStats(data.statistics);
           }
 
           // Update region distribution
           if (data.regionDistribution) {
-            console.log('🌍 Region distribution:', data.regionDistribution);
+            this.logger.debug('🌍 Region distribution:', data.regionDistribution);
             this.stats.teamComposition = this.stats.teamComposition || { regions: {}, tranches: {} };
             this.stats.teamComposition.regions = data.regionDistribution;
           }
@@ -297,7 +300,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.lastUpdate = new Date();
           this.isLoadingProgress = 100;
 
-          console.log('📊 Final stats after update:', this.stats);
+          this.logger.debug('📊 Final stats after update:', this.stats);
 
           // Announce successful data load
           this.accessibilityService.announceLoading(false, this.t.t('navigation.dashboard'));
@@ -316,11 +319,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           setTimeout(() => this.updateCharts(), 100);
         },
         error: (error) => {
-          console.error('Erreur lors du chargement des données dashboard:', error);
-          this.error = error?.message || 'Erreur lors du chargement des données';
+          this.logger.error('Dashboard: failed to load dashboard data', error);
+          this.error = this.loadErrorMessage;
+          this.isUsingMockData = false;
+          this.backendStatus = 'offline';
+          this.isLoadingProgress = 0;
           this.accessibilityService.announceError(this.t.t('dashboard.live.errorLoading'));
           this.updateLiveRegion(this.t.t('dashboard.live.errorLoading'), 'assertive');
           this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
+          if (showLoading) {
+            this.isLoading = false;
+          }
+          this.cdr.markForCheck();
         },
         complete: () => {
           if (showLoading) {
@@ -330,12 +340,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      this.error = error instanceof Error ? error.message : 'Erreur lors du chargement des données';
+      this.logger.error('Dashboard: failed to load data', error);
+      this.error = this.loadErrorMessage;
+      this.isUsingMockData = false;
+      this.backendStatus = 'offline';
+      this.isLoadingProgress = 0;
       this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
       if (showLoading) {
         this.isLoading = false;
       }
+      this.cdr.markForCheck();
     }
   }
 
@@ -358,7 +372,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       seasonProgress: this.calculateSeasonProgress()
     };
 
-    console.log('📊 Stats mises à jour:', {
+    this.logger.debug('📊 Stats mises à jour:', {
       stats: this.stats,
       competitionStats: this.competitionStats
     });
@@ -366,12 +380,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateStatsFromLeaderboard(entries: LeaderboardEntryDTO[]) {
     if (!entries?.length) {
-      console.log('⚠️ No leaderboard entries to process');
+      this.logger.debug('⚠️ No leaderboard entries to process');
       return;
     }
 
-    console.log('📊 Processing leaderboard entries:', entries.length);
-    console.log('📊 First entry example:', entries[0]);
+    this.logger.debug('📊 Processing leaderboard entries:', entries.length);
+    this.logger.debug('📊 First entry example:', entries[0]);
 
     const newStats: Partial<DashboardStats> = {
       totalTeams: entries.length,
@@ -387,7 +401,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     let totalPlayers = 0;
 
     entries.forEach((entry, index) => {
-      console.log(`📊 Processing team ${index}: ${entry.teamName} with ${entry.players?.length || 0} players`);
+      this.logger.debug(`📊 Processing team ${index}: ${entry.teamName} with ${entry.players?.length || 0} players`);
       
       entry.players?.forEach(player => {
         totalPlayers++;
@@ -399,12 +413,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         const tranche = `Tranche ${player.tranche || 'Unknown'}`;
         trancheCounts[tranche] = (trancheCounts[tranche] || 0) + 1;
         
-        console.log(`👤 Player: ${player.nickname}, Region: ${region}, Tranche: ${player.tranche}`);
+        this.logger.debug(`👤 Player: ${player.nickname}, Region: ${region}, Tranche: ${player.tranche}`);
       });
     });
 
-    console.log('📊 Region counts:', regionCounts);
-    console.log('📊 Total players:', totalPlayers);
+    this.logger.debug('📊 Region counts:', regionCounts);
+    this.logger.debug('📊 Total players:', totalPlayers);
 
     newStats.totalPlayers = totalPlayers;
     
@@ -418,8 +432,37 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       tranches: trancheCounts
     };
 
-    console.log('📊 Final calculated stats:', newStats);
+    this.logger.debug('📊 Final calculated stats:', newStats);
     this.updateStats(newStats as DashboardStats);
+
+    // Update premium stats from real data
+    this.updatePremiumStats(entries);
+  }
+
+  /**
+   * Update premium stats widgets from real leaderboard data
+   */
+  private updatePremiumStats(entries: LeaderboardEntryDTO[]) {
+    // Total score = total points across all teams
+    this.totalScore = entries.reduce((sum, entry) => sum + (entry.totalPoints || 0), 0);
+
+    // Active games = number of games (for now, set to games count)
+    this.activeGames = this.games.length;
+
+    // Weekly best = highest scoring team this period
+    this.weeklyBest = entries.length > 0
+      ? Math.max(...entries.map(e => e.totalPoints || 0))
+      : 0;
+
+    // Ranking = find current user's team rank (for now, show total teams as placeholder)
+    this.ranking = entries.length;
+
+    this.logger.debug('📊 Premium stats updated:', {
+      totalScore: this.totalScore,
+      ranking: this.ranking,
+      activeGames: this.activeGames,
+      weeklyBest: this.weeklyBest
+    });
   }
 
   private updateCompetitionStats(apiStats: any) {
@@ -439,7 +482,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.stats.totalPlayers = apiStats.totalPlayers;
       this.stats.totalPoints = apiStats.totalPoints || this.stats.totalPoints;
       
-      console.log('📊 Stats API reçues:', apiStats);
+      this.logger.debug('📊 Stats API reçues:', apiStats);
     } else {
       // Utiliser les stats calculées
       const seasonProgress = this.calculateSeasonProgress();
@@ -479,110 +522,46 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private createRegionChart() {
     if (!this.regionChartRef || !this.stats.teamComposition?.regions) return;
 
-    const ctx = this.regionChartRef.nativeElement.getContext('2d');
-    if (!ctx) return;
-
+    // Destroy existing chart
     if (this.regionChart) {
-      this.regionChart.destroy();
+      this.chartService.destroyChart(this.regionChart);
+      this.regionChart = null;
     }
 
-    const regions = this.stats.teamComposition.regions;
-    const labels = Object.keys(regions);
-    const data = Object.values(regions);
+    // Validate data
+    if (!this.chartService.isValidRegionDistribution(this.stats.teamComposition.regions)) {
+      this.logger.warn('⚠️ Invalid region distribution data, skipping chart creation');
+      return;
+    }
 
-    this.regionChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: [
-            '#667eea',
-            '#764ba2', 
-            '#f59e0b',
-            '#10b981',
-            '#ef4444',
-            '#3b82f6',
-            '#ec4899',
-            '#8b5cf6'
-          ],
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 0 // Disable animations for performance
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: this.t.t('dashboard.charts.regionTitle'),
-            font: { size: 14, weight: 'bold' }
-          },
-          legend: {
-            position: 'bottom',
-            labels: { padding: 10 }
-          }
-        }
-      }
-    });
+    // NEW: Use DashboardChartService to create chart
+    this.regionChart = this.chartService.createRegionChart(
+      this.regionChartRef.nativeElement,
+      this.stats.teamComposition.regions
+    );
   }
 
   private createPointsChart() {
     if (!this.pointsChartRef || !this.leaderboardEntries.length) return;
 
-    const ctx = this.pointsChartRef.nativeElement.getContext('2d');
-    if (!ctx) return;
-
+    // Destroy existing chart
     if (this.pointsChart) {
-      this.pointsChart.destroy();
+      this.chartService.destroyChart(this.pointsChart);
+      this.pointsChart = null;
     }
 
-    // Prendre les 10 meilleures équipes
-    const topTeams = this.leaderboardEntries.slice(0, 10);
-    const labels = topTeams.map(entry => this.displayTeamName(entry.teamName) || entry.ownerName || `${this.t.t('dashboard.labels.team')} ${entry.rank}`);
-    const data = topTeams.map(entry => entry.totalPoints);
+    // Validate data
+    if (!this.chartService.isValidLeaderboardData(this.leaderboardEntries)) {
+      this.logger.warn('⚠️ Invalid leaderboard data, skipping chart creation');
+      return;
+    }
 
-    this.pointsChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: this.t.t('dashboard.charts.pointsAxis'),
-          data: data,
-          backgroundColor: '#667eea',
-          borderColor: '#764ba2',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 0 // Disable animations for performance
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: this.t.t('dashboard.charts.top10Title'),
-            font: { size: 14, weight: 'bold' }
-          },
-          legend: { display: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: this.t.t('dashboard.charts.pointsAxis') }
-          },
-          x: {
-            ticks: { maxRotation: 45 }
-          }
-        }
-      }
-    });
+    // NEW: Use DashboardChartService to create chart
+    this.pointsChart = this.chartService.createPointsChart(
+      this.pointsChartRef.nativeElement,
+      this.leaderboardEntries,
+      10 // Top 10 teams
+    );
   }
 
   // Méthodes utilitaires
@@ -680,25 +659,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // PERFORMANCE: Update existing chart data instead of recreation
+  // PERFORMANCE: Update existing chart data instead of recreation (using DashboardChartService)
   private updateRegionChartData() {
     if (!this.regionChart || !this.stats.teamComposition?.regions) return;
-    
+
     const regions = this.stats.teamComposition.regions;
-    this.regionChart.data.labels = Object.keys(regions);
-    this.regionChart.data.datasets[0].data = Object.values(regions);
-    this.regionChart.update('none'); // Skip animations for performance
+    const data = Object.values(regions);
+    const labels = Object.keys(regions);
+
+    this.chartService.updateChart(this.regionChart, data, labels);
   }
 
-  // PERFORMANCE: Update existing chart data instead of recreation
+  // PERFORMANCE: Update existing chart data instead of recreation (using DashboardChartService)
   private updatePointsChartData() {
     if (!this.pointsChart || this.leaderboardEntries.length === 0) return;
-    
+
     const topTeams = this.leaderboardEntries.slice(0, 10);
-    this.pointsChart.data.labels = topTeams.map(entry => 
+    const labels = topTeams.map(entry =>
       this.displayTeamName(entry.teamName) || entry.ownerName || `${this.t.t('dashboard.labels.team')} ${entry.rank}`);
-    this.pointsChart.data.datasets[0].data = topTeams.map(entry => entry.totalPoints);
-    this.pointsChart.update('none'); // Skip animations for performance
+    const data = topTeams.map(entry => entry.totalPoints);
+
+    this.chartService.updateChart(this.pointsChart, data, labels);
   }
 
   getSeasonProgress(): number {
@@ -724,20 +705,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   displayTeamName(rawName: string | undefined | null): string {
     if (!rawName) return '';
     return rawName.replace(/^É?Équipe des\s+/i, '').trim();
-  }
-
-  /**
-   * Show premium notification when using mock data
-   */
-  private showMockDataNotification(): void {
-    this.snackBar.open(
-      '🎮 Mode Démo Premium - Données simulées pour maintenir l\'expérience',
-      'Compris',
-      {
-        duration: 6000,
-        panelClass: ['premium-snackbar', 'demo-mode-snackbar']
-      }
-    );
   }
 
   /**
@@ -768,7 +735,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
    * Retry loading data from backend
    */
   retryBackendConnection(): void {
-    console.log('🔄 Retrying backend connection...');
+    this.logger.debug('🔄 Retrying backend connection...');
     this.backendStatus = 'checking';
     this.isUsingMockData = false;
     this.loadDashboardData(true);
@@ -812,7 +779,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   selectGame(game: Game): void {
     this.selectedGameId = game.id.toString();
-    this.selectedGame = game;
     this.selectedGame = game;
     this.interactionsService.showGamingNotification(
       `Game "${game.name}" sélectionnée !`,

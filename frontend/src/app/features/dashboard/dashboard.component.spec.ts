@@ -8,7 +8,8 @@ import { HttpClient } from '@angular/common/http';
 import { DashboardComponent } from './dashboard.component';
 import { TranslationService } from '../../core/services/translation.service';
 import { GameSelectionService } from '../../core/services/game-selection.service';
-import { DashboardDataService } from './services/dashboard-data.service';
+import { DashboardFacade } from '../../core/facades/dashboard.facade';
+import { DashboardChartService } from './services/dashboard-chart.service';
 import { GameService } from '../game/services/game.service';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { FocusManagementService } from '../../shared/services/focus-management.service';
@@ -30,7 +31,13 @@ describe('DashboardComponent (i18n)', () => {
     const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     const snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
     const gameServiceSpy = jasmine.createSpyObj<GameService>('GameService', ['getUserGames', 'getGameById']);
-    const dashboardDataServiceSpy = jasmine.createSpyObj<DashboardDataService>('DashboardDataService', ['getDashboardData']);
+    const dashboardFacadeSpy = jasmine.createSpyObj<DashboardFacade>('DashboardFacade', ['getDashboardData']);
+    const chartServiceSpy = jasmine.createSpyObj<DashboardChartService>('DashboardChartService', [
+      'createRegionChart',
+      'createPointsChart',
+      'updateChart',
+      'destroyChart'
+    ]);
     const accessibilitySpy = jasmine.createSpyObj<AccessibilityAnnouncerService>('AccessibilityAnnouncerService', [
       'announceLoading',
       'announceError',
@@ -49,7 +56,7 @@ describe('DashboardComponent (i18n)', () => {
 
     gameServiceSpy.getUserGames.and.returnValue(of([]));
     gameServiceSpy.getGameById.and.returnValue(of(null as any));
-    dashboardDataServiceSpy.getDashboardData.and.returnValue(
+    dashboardFacadeSpy.getDashboardData.and.returnValue(
       of({
         statistics: null,
         leaderboard: [],
@@ -65,7 +72,8 @@ describe('DashboardComponent (i18n)', () => {
         { provide: ActivatedRoute, useValue: { params: of({}) } },
         { provide: MatSnackBar, useValue: snackBarSpy },
         { provide: GameService, useValue: gameServiceSpy },
-        { provide: DashboardDataService, useValue: dashboardDataServiceSpy },
+        { provide: DashboardFacade, useValue: dashboardFacadeSpy },
+        { provide: DashboardChartService, useValue: chartServiceSpy },
         { provide: GameSelectionService, useValue: { selectedGame$: NEVER, hasSelectedGame: () => false } },
         { provide: AccessibilityAnnouncerService, useValue: accessibilitySpy },
         { provide: FocusManagementService, useValue: {} },
