@@ -5,28 +5,28 @@
       <div class="title-section">
         <h1 class="dashboard-title">
           <mat-icon class="title-icon">swap_horiz</mat-icon>
-          Trading Hub
+          {{ t.t('trades.title') }}
         </h1>
-        <p class="dashboard-subtitle">Manage your player trades and negotiations</p>
+        <p class="dashboard-subtitle">{{ t.t('trades.subtitle') }}</p>
       </div>
-      
+
       <div class="header-actions">
-        <button 
-          mat-fab 
-          color="primary" 
+        <button
+          mat-fab
+          color="primary"
           class="create-trade-btn"
           (click)="onCreateTrade()"
-          matTooltip="Create New Trade"
+          [matTooltip]="t.t('trades.createTrade')"
           [@cardHover]>
           <mat-icon>add</mat-icon>
         </button>
-        
-        <button 
-          mat-icon-button 
+
+        <button
+          mat-icon-button
           class="refresh-btn"
           [class.spinning]="isRefreshing | async"
           (click)="refreshData(true)"
-          matTooltip="Refresh Data">
+          [matTooltip]="t.t('trades.refreshData')">
           <mat-icon>refresh</mat-icon>
         </button>
       </div>
@@ -35,17 +35,17 @@
     <!-- Search and Filters -->
     <div class="search-filters">
       <mat-form-field class="search-field" appearance="outline">
-        <mat-label>Search trades...</mat-label>
-        <input 
-          matInput 
+        <mat-label>{{ t.t('common.search') }}</mat-label>
+        <input
+          matInput
           #searchInput
-          placeholder="Search by player or user..."
+          [placeholder]="t.t('trades.searchPlaceholder')"
           (input)="onSearchChange(searchInput.value)">
         <mat-icon matPrefix>search</mat-icon>
       </mat-form-field>
 
       <mat-chip-set class="filter-chips" aria-label="Trade filters">
-        <mat-chip 
+        <mat-chip
           *ngFor="let filter of filterOptions"
           [class.selected]="(selectedFilter | async) === filter.value"
           (click)="onFilterChange(filter.value)">
@@ -60,7 +60,7 @@
   <div *ngIf="loading$ | async" class="loading-container">
     <div class="loading-card">
       <mat-spinner diameter="60"></mat-spinner>
-      <p>Loading your trades...</p>
+      <p>{{ t.t('trades.loading') }}</p>
     </div>
   </div>
 
@@ -69,11 +69,11 @@
     <mat-card class="error-card">
       <mat-card-content>
         <mat-icon class="error-icon">error_outline</mat-icon>
-        <h3>Something went wrong</h3>
+        <h3>{{ t.t('trades.errorTitle') }}</h3>
         <p>{{ error }}</p>
         <button mat-raised-button color="primary" (click)="refreshData(true)">
           <mat-icon>refresh</mat-icon>
-          Try Again
+          {{ t.t('trades.tryAgain') }}
         </button>
       </mat-card-content>
     </mat-card>
@@ -81,7 +81,7 @@
 
   <!-- Dashboard Content -->
   <div *ngIf="!(loading$ | async) && !(error$ | async)" class="dashboard-content">
-    
+
     <!-- Stats Overview -->
     <div class="stats-overview" *ngIf="dashboardStats$ | async as stats">
       <div class="stat-card" [@cardHover]>
@@ -90,7 +90,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.totalTrades }}</div>
-          <div class="stat-label">Total Trades</div>
+          <div class="stat-label">{{ t.t('trades.stats.totalTrades') }}</div>
         </div>
       </div>
 
@@ -100,7 +100,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.pendingOffers }}</div>
-          <div class="stat-label">Pending Offers</div>
+          <div class="stat-label">{{ t.t('trades.stats.pendingOffers') }}</div>
           <div *ngIf="stats.pendingOffers > 0" class="stat-badge">
             {{ stats.pendingOffers }}
           </div>
@@ -113,7 +113,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ stats.successfulTrades }}</div>
-          <div class="stat-label">Successful</div>
+          <div class="stat-label">{{ t.t('trades.stats.successful') }}</div>
         </div>
       </div>
 
@@ -123,55 +123,55 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ formatCurrency(stats.averageTradeValue) }}</div>
-          <div class="stat-label">Avg Value</div>
+          <div class="stat-label">{{ t.t('trades.stats.avgValue') }}</div>
         </div>
       </div>
     </div>
 
     <!-- Main Trading Content -->
-    <mat-tab-group 
+    <mat-tab-group
       class="trading-tabs"
       [(selectedIndex)]="selectedTab.value"
       (selectedIndexChange)="onTabChange($event)"
       animationDuration="400ms">
-      
+
       <!-- Pending Trades Tab -->
-      <mat-tab label="Pending">
+      <mat-tab [label]="t.t('trades.tabs.pending')">
         <ng-template matTabContent>
           <div class="trades-container">
             <div *ngIf="pendingTrades$ | async as trades">
               <div *ngIf="trades.length === 0" class="empty-state">
                 <mat-icon class="empty-icon">inbox</mat-icon>
-                <h3>No Pending Trades</h3>
-                <p>You don't have any pending trade offers at the moment.</p>
+                <h3>{{ t.t('trades.empty.pending') }}</h3>
+                <p>{{ t.t('trades.empty.pendingDesc') }}</p>
                 <button mat-raised-button color="primary" (click)="onCreateTrade()">
                   <mat-icon>add</mat-icon>
-                  Create Trade
+                  {{ t.t('trades.createTrade') }}
                 </button>
               </div>
 
               <div class="trades-grid" *ngIf="trades.length > 0">
-                <div 
-                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                <div
+                  *ngFor="let trade of trades; trackBy: trackByTradeId"
                   class="trade-card pending-trade"
                   [@cardHover]
                   [@statusChange]="trade.status">
-                  
+
                   <div class="trade-header">
                     <div class="trade-participants">
                       <div class="participant from">
                         <span class="participant-name">{{ trade.fromUserName }}</span>
-                        <small>Offering</small>
+                        <small>{{ t.t('trades.labels.offering') }}</small>
                       </div>
                       <mat-icon class="trade-direction">swap_horiz</mat-icon>
                       <div class="participant to">
                         <span class="participant-name">{{ trade.toUserName }}</span>
-                        <small>Receiving</small>
+                        <small>{{ t.t('trades.labels.receiving') }}</small>
                       </div>
                     </div>
-                    
+
                     <div class="trade-status">
-                      <mat-chip 
+                      <mat-chip
                         class="status-chip"
                         [class]="getTradeStatusClass(trade.status)">
                         <mat-icon>{{ getTradeStatusIcon(trade.status) }}</mat-icon>
@@ -183,25 +183,25 @@
                   <div class="trade-content" (click)="onViewTradeDetails(trade)">
                     <div class="players-section">
                       <div class="offered-players">
-                        <h4>Offered Players</h4>
+                        <h4>{{ t.t('trades.labels.offeredPlayers') }}</h4>
                         <div class="player-chips">
                           <mat-chip *ngFor="let player of trade.offeredPlayers.slice(0, 3)">
                             {{ player.name }}
                           </mat-chip>
                           <mat-chip *ngIf="trade.offeredPlayers.length > 3" class="more-chip">
-                            +{{ trade.offeredPlayers.length - 3 }} more
+                            +{{ trade.offeredPlayers.length - 3 }} {{ t.t('trades.labels.more') }}
                           </mat-chip>
                         </div>
                       </div>
 
                       <div class="requested-players">
-                        <h4>Requested Players</h4>
+                        <h4>{{ t.t('trades.labels.requestedPlayers') }}</h4>
                         <div class="player-chips">
                           <mat-chip *ngFor="let player of trade.requestedPlayers.slice(0, 3)">
                             {{ player.name }}
                           </mat-chip>
                           <mat-chip *ngIf="trade.requestedPlayers.length > 3" class="more-chip">
-                            +{{ trade.requestedPlayers.length - 3 }} more
+                            +{{ trade.requestedPlayers.length - 3 }} {{ t.t('trades.labels.more') }}
                           </mat-chip>
                         </div>
                       </div>
@@ -214,9 +214,9 @@
                         <mat-icon *ngIf="trade.valueBalance === 0">compare_arrows</mat-icon>
                         <span class="balance-value">{{ formatCurrency(abs(trade.valueBalance)) }}</span>
                         <span class="balance-label">
-                          <span *ngIf="trade.valueBalance > 0">You get more value</span>
-                          <span *ngIf="trade.valueBalance < 0">You give more value</span>
-                          <span *ngIf="trade.valueBalance === 0">Balanced trade</span>
+                          <span *ngIf="trade.valueBalance > 0">{{ t.t('trades.labels.youGetMoreValue') }}</span>
+                          <span *ngIf="trade.valueBalance < 0">{{ t.t('trades.labels.youGiveMoreValue') }}</span>
+                          <span *ngIf="trade.valueBalance === 0">{{ t.t('trades.labels.balancedTrade') }}</span>
                         </span>
                       </div>
                     </div>
@@ -227,45 +227,45 @@
                       <span class="trade-time">{{ formatDate(trade.createdAt) }}</span>
                       <span *ngIf="isTradeExpiringSoon(trade)" class="expiry-warning">
                         <mat-icon>access_time</mat-icon>
-                        Expires soon
+                        {{ t.t('trades.labels.expiresSoon') }}
                       </span>
                     </div>
 
                     <div class="action-buttons">
-                      <button 
+                      <button
                         *ngIf="canAcceptTrade(trade)"
-                        mat-raised-button 
-                        color="primary" 
+                        mat-raised-button
+                        color="primary"
                         class="accept-btn"
                         (click)="onAcceptTrade(trade); $event.stopPropagation()">
                         <mat-icon>check</mat-icon>
-                        Accept
+                        {{ t.t('trades.actions.accept') }}
                       </button>
 
-                      <button 
+                      <button
                         *ngIf="canRejectTrade(trade)"
-                        mat-stroked-button 
-                        color="warn" 
+                        mat-stroked-button
+                        color="warn"
                         class="reject-btn"
                         (click)="onRejectTrade(trade); $event.stopPropagation()">
                         <mat-icon>close</mat-icon>
-                        Reject
+                        {{ t.t('trades.actions.reject') }}
                       </button>
 
-                      <button 
+                      <button
                         *ngIf="canWithdrawTrade(trade)"
-                        mat-stroked-button 
+                        mat-stroked-button
                         class="withdraw-btn"
                         (click)="onWithdrawTrade(trade); $event.stopPropagation()">
                         <mat-icon>undo</mat-icon>
-                        Withdraw
+                        {{ t.t('trades.actions.withdraw') }}
                       </button>
 
-                      <button 
-                        mat-icon-button 
+                      <button
+                        mat-icon-button
                         class="details-btn"
                         (click)="onViewTradeDetails(trade); $event.stopPropagation()"
-                        matTooltip="View Details">
+                        [matTooltip]="t.t('trades.actions.viewDetails')">
                         <mat-icon>visibility</mat-icon>
                       </button>
                     </div>
@@ -278,27 +278,27 @@
       </mat-tab>
 
       <!-- Sent Trades Tab -->
-      <mat-tab label="Sent">
+      <mat-tab [label]="t.t('trades.tabs.sent')">
         <ng-template matTabContent>
           <div class="trades-container">
             <div *ngIf="sentTrades$ | async as trades">
               <div *ngIf="trades.length === 0" class="empty-state">
                 <mat-icon class="empty-icon">send</mat-icon>
-                <h3>No Sent Trades</h3>
-                <p>You haven't sent any trade offers yet.</p>
+                <h3>{{ t.t('trades.empty.sent') }}</h3>
+                <p>{{ t.t('trades.empty.sentDesc') }}</p>
                 <button mat-raised-button color="primary" (click)="onCreateTrade()">
                   <mat-icon>add</mat-icon>
-                  Create Trade
+                  {{ t.t('trades.createTrade') }}
                 </button>
               </div>
 
               <div class="trades-list" *ngIf="trades.length > 0">
-                <div 
-                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                <div
+                  *ngFor="let trade of trades; trackBy: trackByTradeId"
                   class="trade-item sent-trade"
                   [@cardHover]
                   (click)="onViewTradeDetails(trade)">
-                  
+
                   <div class="trade-summary">
                     <div class="trade-info">
                       <div class="trade-title">
@@ -309,7 +309,7 @@
                       </div>
                       <div class="trade-details">
                         <span class="player-count">
-                          {{ trade.offeredPlayers.length }} offered, {{ trade.requestedPlayers.length }} requested
+                          {{ trade.offeredPlayers.length }} {{ t.t('trades.labels.offered') }}, {{ trade.requestedPlayers.length }} {{ t.t('trades.labels.requested') }}
                         </span>
                         <span class="trade-time">{{ getTimeSince(trade.createdAt) }}</span>
                       </div>
@@ -325,19 +325,19 @@
                     </div>
 
                     <div class="trade-actions">
-                      <button 
+                      <button
                         *ngIf="canWithdrawTrade(trade)"
-                        mat-icon-button 
+                        mat-icon-button
                         color="warn"
                         (click)="onWithdrawTrade(trade); $event.stopPropagation()"
-                        matTooltip="Withdraw Trade">
+                        [matTooltip]="t.t('trades.actions.withdraw')">
                         <mat-icon>undo</mat-icon>
                       </button>
-                      
-                      <button 
-                        mat-icon-button 
+
+                      <button
+                        mat-icon-button
                         (click)="onViewTradeDetails(trade); $event.stopPropagation()"
-                        matTooltip="View Details">
+                        [matTooltip]="t.t('trades.actions.viewDetails')">
                         <mat-icon>visibility</mat-icon>
                       </button>
                     </div>
@@ -350,24 +350,24 @@
       </mat-tab>
 
       <!-- Received Trades Tab -->
-      <mat-tab label="Received">
+      <mat-tab [label]="t.t('trades.tabs.received')">
         <ng-template matTabContent>
           <div class="trades-container">
             <div *ngIf="receivedTrades$ | async as trades">
               <div *ngIf="trades.length === 0" class="empty-state">
                 <mat-icon class="empty-icon">inbox</mat-icon>
-                <h3>No Received Trades</h3>
-                <p>You haven't received any trade offers yet.</p>
+                <h3>{{ t.t('trades.empty.received') }}</h3>
+                <p>{{ t.t('trades.empty.receivedDesc') }}</p>
               </div>
 
               <div class="trades-list" *ngIf="trades.length > 0">
-                <div 
-                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                <div
+                  *ngFor="let trade of trades; trackBy: trackByTradeId"
                   class="trade-item received-trade"
                   [@cardHover]
                   [class.urgent]="isTradeExpiringSoon(trade)"
                   (click)="onViewTradeDetails(trade)">
-                  
+
                   <div class="trade-summary">
                     <div class="trade-info">
                       <div class="trade-title">
@@ -378,7 +378,7 @@
                       </div>
                       <div class="trade-details">
                         <span class="player-count">
-                          {{ trade.requestedPlayers.length }} wanted, {{ trade.offeredPlayers.length }} offered
+                          {{ trade.requestedPlayers.length }} {{ t.t('trades.labels.wanted') }}, {{ trade.offeredPlayers.length }} {{ t.t('trades.labels.offered') }}
                         </span>
                         <span class="trade-time">{{ getTimeSince(trade.createdAt) }}</span>
                       </div>
@@ -394,28 +394,28 @@
                     </div>
 
                     <div class="trade-actions">
-                      <button 
+                      <button
                         *ngIf="canAcceptTrade(trade)"
-                        mat-mini-fab 
+                        mat-mini-fab
                         color="primary"
                         (click)="onAcceptTrade(trade); $event.stopPropagation()"
-                        matTooltip="Accept Trade">
+                        [matTooltip]="t.t('trades.actions.accept')">
                         <mat-icon>check</mat-icon>
                       </button>
-                      
-                      <button 
+
+                      <button
                         *ngIf="canRejectTrade(trade)"
-                        mat-mini-fab 
+                        mat-mini-fab
                         color="warn"
                         (click)="onRejectTrade(trade); $event.stopPropagation()"
-                        matTooltip="Reject Trade">
+                        [matTooltip]="t.t('trades.actions.reject')">
                         <mat-icon>close</mat-icon>
                       </button>
-                      
-                      <button 
-                        mat-icon-button 
+
+                      <button
+                        mat-icon-button
                         (click)="onViewTradeDetails(trade); $event.stopPropagation()"
-                        matTooltip="View Details">
+                        [matTooltip]="t.t('trades.actions.viewDetails')">
                         <mat-icon>visibility</mat-icon>
                       </button>
                     </div>
@@ -428,29 +428,29 @@
       </mat-tab>
 
       <!-- Completed Trades Tab -->
-      <mat-tab label="History">
+      <mat-tab [label]="t.t('trades.tabs.history')">
         <ng-template matTabContent>
           <div class="trades-container">
             <div *ngIf="completedTrades$ | async as trades">
               <div *ngIf="trades.length === 0" class="empty-state">
                 <mat-icon class="empty-icon">history</mat-icon>
-                <h3>No Trade History</h3>
-                <p>Your completed trades will appear here.</p>
+                <h3>{{ t.t('trades.empty.history') }}</h3>
+                <p>{{ t.t('trades.empty.historyDesc') }}</p>
               </div>
 
               <div class="trades-list" *ngIf="trades.length > 0">
-                <div 
-                  *ngFor="let trade of trades; trackBy: trackByTradeId" 
+                <div
+                  *ngFor="let trade of trades; trackBy: trackByTradeId"
                   class="trade-item completed-trade"
                   [@cardHover]
                   [class]="getTradeStatusClass(trade.status)"
                   (click)="onViewTradeDetails(trade)">
-                  
+
                   <div class="trade-summary">
                     <div class="completion-indicator">
                       <mat-icon class="status-icon">{{ getTradeStatusIcon(trade.status) }}</mat-icon>
                     </div>
-                    
+
                     <div class="trade-info">
                       <div class="trade-title">
                         {{ trade.fromUserId === (userContextService.getCurrentUser()?.id) ? trade.toUserName : trade.fromUserName }}
@@ -466,10 +466,10 @@
                     </div>
 
                     <div class="trade-actions">
-                      <button 
-                        mat-icon-button 
+                      <button
+                        mat-icon-button
                         (click)="onViewTradeDetails(trade); $event.stopPropagation()"
-                        matTooltip="View Details">
+                        [matTooltip]="t.t('trades.actions.viewDetails')">
                         <mat-icon>visibility</mat-icon>
                       </button>
                     </div>

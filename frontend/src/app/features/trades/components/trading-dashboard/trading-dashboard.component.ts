@@ -11,6 +11,7 @@ import { MaterialModule } from '../../../../shared/material/material.module';
 import { TradingService, TradeOffer, TradeStats } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 @Component({
   selector: 'app-trading-dashboard',
@@ -75,6 +76,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly notificationService = inject(NotificationService);
+  public readonly t = inject(TranslationService);
 
   @ViewChild('searchInput', { static: false }) searchInput?: ElementRef<HTMLInputElement>;
 
@@ -112,14 +114,16 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     }))
   );
 
-  // Filter options
-  filterOptions = [
-    { value: 'all', label: 'All Trades', icon: 'swap_horiz' },
-    { value: 'pending', label: 'Pending', icon: 'schedule' },
-    { value: 'sent', label: 'Sent', icon: 'call_made' },
-    { value: 'received', label: 'call_received', icon: 'call_received' },
-    { value: 'completed', label: 'Completed', icon: 'check_circle' }
-  ];
+  // Filter options - dynamically translated
+  get filterOptions() {
+    return [
+      { value: 'all', label: this.t.t('trades.filters.all'), icon: 'swap_horiz' },
+      { value: 'pending', label: this.t.t('trades.tabs.pending'), icon: 'schedule' },
+      { value: 'sent', label: this.t.t('trades.tabs.sent'), icon: 'call_made' },
+      { value: 'received', label: this.t.t('trades.tabs.received'), icon: 'call_received' },
+      { value: 'completed', label: this.t.t('trades.filters.completed'), icon: 'check_circle' }
+    ];
+  }
 
   selectedFilter = new BehaviorSubject<string>('all');
 

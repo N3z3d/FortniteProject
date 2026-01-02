@@ -243,11 +243,76 @@ export class TranslationService {
           joinWithCode: 'Rejoindre avec un code',
           noGames: 'Aucune partie',
           players: 'joueurs',
+          manage: 'Gérer',
+          viewDetails: 'Voir les détails',
           status: {
             creating: 'Création',
             drafting: 'Draft',
             active: 'Active',
             completed: 'Terminée'
+          }
+        },
+        trades: {
+          title: 'Centre d\'Échanges',
+          subtitle: 'Gérez vos échanges de joueurs et négociations',
+          createTrade: 'Créer un échange',
+          refreshData: 'Actualiser les données',
+          searchPlaceholder: 'Rechercher par joueur ou utilisateur...',
+          loading: 'Chargement de vos échanges...',
+          errorTitle: 'Une erreur est survenue',
+          tryAgain: 'Réessayer',
+          filters: {
+            all: 'Tous les échanges',
+            completed: 'Terminés'
+          },
+          stats: {
+            totalTrades: 'Total des échanges',
+            pendingOffers: 'Offres en attente',
+            successful: 'Réussis',
+            avgValue: 'Valeur moyenne'
+          },
+          tabs: {
+            pending: 'En attente',
+            sent: 'Envoyés',
+            received: 'Reçus',
+            history: 'Historique'
+          },
+          empty: {
+            pending: 'Aucun échange en attente',
+            pendingDesc: 'Vous n\'avez aucune offre d\'échange en attente pour le moment.',
+            sent: 'Aucun échange envoyé',
+            sentDesc: 'Vous n\'avez pas encore envoyé d\'offres d\'échange.',
+            received: 'Aucun échange reçu',
+            receivedDesc: 'Vous n\'avez pas encore reçu d\'offres d\'échange.',
+            history: 'Aucun historique',
+            historyDesc: 'Vos échanges terminés apparaîtront ici.'
+          },
+          labels: {
+            offering: 'Propose',
+            receiving: 'Reçoit',
+            offeredPlayers: 'Joueurs proposés',
+            requestedPlayers: 'Joueurs demandés',
+            offered: 'proposés',
+            requested: 'demandés',
+            wanted: 'demandés',
+            more: 'de plus',
+            expiresSoon: 'Expire bientôt',
+            youGetMoreValue: 'Vous gagnez en valeur',
+            youGiveMoreValue: 'Vous perdez en valeur',
+            balancedTrade: 'Échange équilibré'
+          },
+          actions: {
+            accept: 'Accepter',
+            reject: 'Refuser',
+            withdraw: 'Retirer',
+            viewDetails: 'Voir les détails'
+          },
+          status: {
+            pending: 'En attente',
+            accepted: 'Accepté',
+            rejected: 'Refusé',
+            withdrawn: 'Retiré',
+            expired: 'Expiré'
           }
         },
         errors: {
@@ -438,11 +503,76 @@ export class TranslationService {
           joinWithCode: 'Join with code',
           noGames: 'No games',
           players: 'players',
+          manage: 'Manage',
+          viewDetails: 'View details',
           status: {
             creating: 'Creating',
             drafting: 'Drafting',
             active: 'Active',
             completed: 'Completed'
+          }
+        },
+        trades: {
+          title: 'Trading Hub',
+          subtitle: 'Manage your player trades and negotiations',
+          createTrade: 'Create New Trade',
+          refreshData: 'Refresh Data',
+          searchPlaceholder: 'Search by player or user...',
+          loading: 'Loading your trades...',
+          errorTitle: 'Something went wrong',
+          tryAgain: 'Try Again',
+          filters: {
+            all: 'All Trades',
+            completed: 'Completed'
+          },
+          stats: {
+            totalTrades: 'Total Trades',
+            pendingOffers: 'Pending Offers',
+            successful: 'Successful',
+            avgValue: 'Avg Value'
+          },
+          tabs: {
+            pending: 'Pending',
+            sent: 'Sent',
+            received: 'Received',
+            history: 'History'
+          },
+          empty: {
+            pending: 'No Pending Trades',
+            pendingDesc: 'You don\'t have any pending trade offers at the moment.',
+            sent: 'No Sent Trades',
+            sentDesc: 'You haven\'t sent any trade offers yet.',
+            received: 'No Received Trades',
+            receivedDesc: 'You haven\'t received any trade offers yet.',
+            history: 'No Trade History',
+            historyDesc: 'Your completed trades will appear here.'
+          },
+          labels: {
+            offering: 'Offering',
+            receiving: 'Receiving',
+            offeredPlayers: 'Offered Players',
+            requestedPlayers: 'Requested Players',
+            offered: 'offered',
+            requested: 'requested',
+            wanted: 'wanted',
+            more: 'more',
+            expiresSoon: 'Expires soon',
+            youGetMoreValue: 'You get more value',
+            youGiveMoreValue: 'You give more value',
+            balancedTrade: 'Balanced trade'
+          },
+          actions: {
+            accept: 'Accept',
+            reject: 'Reject',
+            withdraw: 'Withdraw',
+            viewDetails: 'View Details'
+          },
+          status: {
+            pending: 'Pending',
+            accepted: 'Accepted',
+            rejected: 'Rejected',
+            withdrawn: 'Withdrawn',
+            expired: 'Expired'
           }
         },
         errors: {

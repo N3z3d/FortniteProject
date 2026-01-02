@@ -1,0 +1,118 @@
+<div class="teams-page-container">
+    <!-- Hero Section -->
+    <header class="teams-hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <mat-icon class="hero-icon">groups</mat-icon>
+                {{ gameId ? 'Équipes en Lice' : 'Mes Équipes' }}
+            </h1>
+            <p class="hero-subtitle">
+                {{ gameId ? 'Découvrez les compétiteurs de cette saison' : 'Gérez vos équipes et vos participations' }}
+            </p>
+
+            <div class="hero-stats" *ngIf="!loading && teams.length > 0">
+                <div class="hero-stat">
+                    <span class="stat-value">{{ teams.length }}</span>
+                    <span class="stat-label">Équipes</span>
+                </div>
+                <div class="hero-divider"></div>
+                <div class="hero-stat">
+                    <span class="stat-value">{{ getTotalPlayers() }}</span>
+                    <span class="stat-label">Joueurs</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <button mat-flat-button color="primary" routerLink="/teams/create" *ngIf="!gameId" class="create-btn">
+                <mat-icon>add_circle</mat-icon>
+                Créer une équipe
+            </button>
+        </div>
+        <div class="hero-decoration">
+            <div class="glow-circle"></div>
+        </div>
+    </header>
+
+    <!-- Filter Section -->
+    <div class="teams-filter-bar" *ngIf="!loading && teams.length > 0">
+        <div class="search-input-wrapper">
+            <mat-icon>search</mat-icon>
+            <input type="text" placeholder="Rechercher une équipe ou un joueur..." (input)="onSearch($event)">
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Chargement des données...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" *ngIf="!loading && error">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <h3>Erreur de chargement</h3>
+        <p>{{ error }}</p>
+        <button mat-stroked-button color="warn" (click)="refreshTeams()">Réessayer</button>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && !error && filteredTeams.length === 0">
+        <mat-icon class="empty-icon">group_off</mat-icon>
+        <h3>Aucune équipe trouvée</h3>
+        <p *ngIf="searchTerm">Aucun résultat pour "<span class="highlight">{{ searchTerm }}</span>"</p>
+        <p *ngIf="!searchTerm">Il n'y a pas encore d'équipes ici.</p>
+        <button mat-raised-button color="primary" routerLink="/teams/create" *ngIf="!gameId && !searchTerm">
+            Créer ma première équipe
+        </button>
+    </div>
+
+    <!-- Teams Grid -->
+    <div class="teams-grid" *ngIf="!loading && !error && filteredTeams.length > 0">
+        <div class="premium-team-card" *ngFor="let team of filteredTeams; trackBy: trackByTeamId"
+            [class.inactive]="!team.isActive" [routerLink]="['detail', team.id]">
+
+            <div class="card-glow"></div>
+
+            <div class="card-header">
+                <div class="team-avatar">
+                    <span>{{ team.name.charAt(0).toUpperCase() }}</span>
+                </div>
+                <div class="team-info">
+                    <h3 class="team-name">{{ team.name }}</h3>
+                    <span class="team-owner">
+                        <mat-icon>person</mat-icon> {{ team.ownerName }}
+                    </span>
+                </div>
+                <div class="team-status" [class.active]="team.isActive">
+                    <span class="status-dot"></span>
+                </div>
+            </div>
+
+            <div class="card-stats">
+                <div class="stat-item">
+                    <span class="stat-val">{{ team.playerCount }}</span>
+                    <span class="stat-lbl">Joueurs</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item points-stat">
+                    <span class="stat-val">{{ team.totalPoints | number }}</span>
+                    <span class="stat-lbl">Points</span>
+                </div>
+            </div>
+
+            <div class="players-preview" *ngIf="team.players && team.players.length > 0">
+                <div class="player-pill" *ngFor="let player of team.players.slice(0, 3)">
+                    {{ player.gamertag || player.name }}
+                </div>
+                <div class="player-more" *ngIf="team.players.length > 3">
+                    +{{ team.players.length - 3 }}
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <span class="update-info">MAJ: {{ team.lastUpdate | date:'shortDate' }}</span>
+                <span class="action-hint">Voir détails <mat-icon>arrow_forward</mat-icon></span>
+            </div>
+        </div>
+    </div>
+</div>
