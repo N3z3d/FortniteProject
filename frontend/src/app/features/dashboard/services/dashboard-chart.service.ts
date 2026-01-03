@@ -235,4 +235,68 @@ export class DashboardChartService {
   isValidLeaderboardData(leaderboard: any[]): boolean {
     return Array.isArray(leaderboard) && leaderboard.length > 0;
   }
+
+  /**
+   * Check if region distribution has any data
+   * Alias for isValidRegionDistribution for backwards compatibility
+   * @param distribution - Region distribution object
+   * @returns boolean - true if at least one region has data > 0
+   */
+  hasRegionData(distribution: { [key: string]: number }): boolean {
+    return this.isValidRegionDistribution(distribution);
+  }
+
+  /**
+   * Check if leaderboard has valid points data
+   * @param entries - Leaderboard entries
+   * @returns boolean - true if at least one entry has points > 0
+   */
+  hasPointsData(entries: any[]): boolean {
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return false;
+    }
+    return entries.some(entry => (entry.totalPoints || 0) > 0);
+  }
+
+  /**
+   * Get normalized region chart data
+   * @param distribution - Region distribution object (can have string or number values)
+   * @returns Object with labels and data arrays
+   */
+  getRegionChartData(distribution: { [key: string]: number | string }): { labels: string[]; data: number[] } {
+    const labels = this.ALL_REGIONS;
+    const data = labels.map(region => {
+      const value = distribution[region];
+      return typeof value === 'string' ? Number.parseInt(value, 10) || 0 : (value || 0);
+    });
+
+    return { labels, data };
+  }
+
+  /**
+   * Get sorted and cleaned points chart data
+   * @param entries - Leaderboard entries
+   * @param limit - Maximum number of entries to return
+   * @returns Object with labels and data arrays, sorted by points descending
+   */
+  getPointsChartData(entries: any[], limit: number = 10): { labels: string[]; data: number[] } {
+    // Filter out entries with 0 points and sort by totalPoints descending
+    const validEntries = entries
+      .filter(entry => (entry.totalPoints || 0) > 0)
+      .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+      .slice(0, limit);
+
+    const labels = validEntries.map(entry => {
+      // Clean up team name: remove "Equipe de " prefix
+      let name = entry.teamName || entry.ownerName || 'Unknown';
+      if (name.startsWith('Equipe de ')) {
+        name = name.replace('Equipe de ', '');
+      }
+      return name;
+    });
+
+    const data = validEntries.map(entry => entry.totalPoints || 0);
+
+    return { labels, data };
+  }
 }
