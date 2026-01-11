@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { GameSelectionGuard } from './core/guards/game-selection.guard';
 import { gamesResolver } from './features/game/resolvers/games.resolver';
 import { MainLayoutComponent } from './shared/components/main-layout/main-layout.component';
 
@@ -32,24 +33,34 @@ export const routes: Routes = [
         loadChildren: () => import('./features/auth/auth.module').then(m => m.AuthModule)
       },
       {
+        // BE-P0-02: Require game selection before accessing leaderboard
         path: 'leaderboard',
-        loadChildren: () => import('./features/leaderboard/leaderboard.module').then(m => m.LeaderboardModule)
+        loadChildren: () => import('./features/leaderboard/leaderboard.module').then(m => m.LeaderboardModule),
+        canActivate: [GameSelectionGuard]
       },
       {
+        // BE-P0-02: Require game selection before accessing teams
         path: 'teams',
-        loadChildren: () => import('./features/teams/teams.module').then(m => m.TeamsModule)
+        loadChildren: () => import('./features/teams/teams.module').then(m => m.TeamsModule),
+        canActivate: [GameSelectionGuard]
       },
       {
+        // BE-P0-02: Require game selection before accessing trades
         path: 'trades',
-        loadChildren: () => import('./features/trades/trades.module').then(m => m.TradesModule)
+        loadChildren: () => import('./features/trades/trades.module').then(m => m.TradesModule),
+        canActivate: [GameSelectionGuard]
       },
       {
+        // BE-P0-02: Require game selection before accessing dashboard
         path: 'dashboard',
-        loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule)
+        loadChildren: () => import('./features/dashboard/dashboard.module').then(m => m.DashboardModule),
+        canActivate: [GameSelectionGuard]
       },
       {
+        // BE-P0-02: Require game selection before accessing draft
         path: 'draft',
-        loadComponent: () => import('./features/draft/draft.component').then(c => c.DraftComponent)
+        loadComponent: () => import('./features/draft/draft.component').then(c => c.DraftComponent),
+        canActivate: [GameSelectionGuard]
       },
       {
         path: 'profile',

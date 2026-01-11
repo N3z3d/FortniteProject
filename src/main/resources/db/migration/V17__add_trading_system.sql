@@ -62,13 +62,13 @@ ALTER TABLE teams ADD CONSTRAINT fk_teams_game
   FOREIGN KEY (game_id) REFERENCES games(id);
 
 -- Create indexes for performance
-CREATE INDEX idx_trades_from_team ON trades(from_team_id);
-CREATE INDEX idx_trades_to_team ON trades(to_team_id);
-CREATE INDEX idx_trades_status ON trades(status);
-CREATE INDEX idx_trades_proposed_at ON trades(proposed_at);
-CREATE INDEX idx_trades_game_id ON trades(from_team_id, to_team_id);
-CREATE INDEX idx_teams_game_id ON teams(game_id);
-CREATE INDEX idx_players_locked ON players(locked);
+CREATE INDEX IF NOT EXISTS idx_trades_from_team ON trades(from_team_id);
+CREATE INDEX IF NOT EXISTS idx_trades_to_team ON trades(to_team_id);
+CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status);
+CREATE INDEX IF NOT EXISTS idx_trades_proposed_at ON trades(proposed_at);
+CREATE INDEX IF NOT EXISTS idx_trades_game_id ON trades(from_team_id, to_team_id);
+CREATE INDEX IF NOT EXISTS idx_teams_game_id ON teams(game_id);
+CREATE INDEX IF NOT EXISTS idx_players_locked ON players(locked);
 
 -- Migrate existing trade data if any exists
 UPDATE trades SET from_team_id = team_from_id WHERE team_from_id IS NOT NULL;

@@ -52,7 +52,7 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   /**
-   * OPTIMISATION JSON: Configuration du convertisseur JSON pour 149 joueurs - Compression optimisée
+   * OPTIMISATION JSON: Configuration du convertisseur JSON pour 147 joueurs - Compression optimisée
    * - Sérialisation optimisée des gros objets
    */
   @Override
@@ -61,7 +61,7 @@ public class WebConfig implements WebMvcConfigurer {
     mapper.registerModule(new JavaTimeModule());
     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    // Optimisations pour de gros JSON (149 joueurs)
+    // Optimisations pour de gros JSON (147 joueurs)
     mapper.configure(
         SerializationFeature.INDENT_OUTPUT, false); // Pas d'indentation = moins de bytes
     mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false); // Skip null values

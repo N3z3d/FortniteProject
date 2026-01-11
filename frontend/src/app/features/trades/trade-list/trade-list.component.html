@@ -1,48 +1,41 @@
+<!-- Trade Hub - Premium Marketplace Design -->
 <div class="trade-hub-container">
-    <!-- Hero Section -->
+    <!-- Market Hero Section -->
     <header class="market-hero">
+        <div class="hero-decoration">
+            <div class="glow-orb left"></div>
+            <div class="glow-orb right"></div>
+        </div>
+
         <div class="hero-content">
             <div class="market-status">
                 <span class="status-indicator live"></span>
                 <span class="status-text">MARCHÉ OUVERT</span>
             </div>
-            <h1 class="hero-title">
-                <mat-icon class="hero-icon">swap_horiz</mat-icon>
-                Trade Hub
-            </h1>
-            <p class="hero-subtitle">
-                La place de marché officielle pour les transferts de joueurs.
-            </p>
 
-            <div class="market-stats" *ngIf="!isLoading">
+            <h1 class="market-title">Trade Hub</h1>
+            <p class="market-subtitle">Échangez vos joueurs pour maximiser votre score</p>
+
+            <div class="market-stats">
                 <div class="stat-item">
-                    <span class="stat-val">{{ trades.length }}</span>
-                    <span class="stat-lbl">Offres</span>
+                    <span class="stat-value">{{ trades.length }}</span>
+                    <span class="stat-label">Offres totales</span>
                 </div>
                 <div class="stat-divider"></div>
                 <div class="stat-item">
-                    <span class="stat-val">{{ getActiveTradesCount() }}</span>
-                    <span class="stat-lbl">Actifs</span>
+                    <span class="stat-value">{{ getActiveTradesCount() }}</span>
+                    <span class="stat-label">En cours</span>
                 </div>
             </div>
         </div>
-
-        <div class="hero-actions">
-            <button mat-flat-button color="primary" (click)="createNewTrade()" class="create-btn">
-                <mat-icon>add_circle</mat-icon>
-                Créer une offre
-            </button>
-        </div>
-
-        <div class="hero-bg-effect"></div>
     </header>
 
     <!-- Controls Bar -->
     <div class="controls-bar">
-        <div class="search-input">
-            <mat-icon>search</mat-icon>
-            <input type="text" placeholder="Rechercher un joueur, une équipe..." [(ngModel)]="searchTerm"
-                (ngModelChange)="applyFilters()">
+        <div class="search-wrapper">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input type="text" placeholder="Rechercher un joueur ou une équipe..." [(ngModel)]="searchTerm"
+                (input)="applyFilters()" class="search-input" />
         </div>
 
         <div class="filter-tabs">
@@ -61,73 +54,81 @@
 
     <!-- Loading State -->
     <div class="loading-state" *ngIf="isLoading">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Chargement du marché...</p>
+        <div class="spinner"></div>
+        <p>Chargement des trades...</p>
     </div>
 
     <!-- Empty State -->
     <div class="empty-state" *ngIf="!isLoading && filteredTrades.length === 0">
-        <mat-icon>shopping_bag</mat-icon>
-        <h3>Aucune offre trouvée</h3>
+        <mat-icon class="empty-icon">swap_horiz</mat-icon>
+        <h3>Aucun trade trouvé</h3>
         <p *ngIf="searchTerm">Aucun résultat pour "{{ searchTerm }}"</p>
-        <p *ngIf="!searchTerm">Le marché est calme pour le moment.</p>
-        <button mat-stroked-button color="primary" (click)="createNewTrade()" *ngIf="!searchTerm">
-            Lancer une offre
+        <p *ngIf="!searchTerm && activeTab === 'PENDING'">Vous n'avez aucun trade en cours</p>
+        <p *ngIf="!searchTerm && activeTab === 'HISTORY'">Aucun historique de trade</p>
+        <p *ngIf="!searchTerm && activeTab === 'ALL'">Commencez par créer votre premier trade</p>
+        <button mat-raised-button color="primary" (click)="createNewTrade()">
+            <mat-icon>add</mat-icon>
+            Créer un Trade
         </button>
     </div>
 
     <!-- Trades Grid -->
     <div class="trades-grid" *ngIf="!isLoading && filteredTrades.length > 0">
         <div class="trade-card" *ngFor="let trade of filteredTrades; trackBy: trackByTradeId"
-            [class.completed]="trade.status === 'COMPLETED'" [class.cancelled]="trade.status === 'CANCELLED'">
+            [class.pending]="trade.status === 'PENDING'" [class.completed]="trade.status === 'COMPLETED'"
+            [class.cancelled]="trade.status === 'CANCELLED'">
 
+            <!-- Card Header -->
             <div class="card-header">
                 <div class="team-info">
-                    <mat-icon class="team-icon">group</mat-icon>
                     <span class="team-name">{{ trade.team.name }}</span>
+                    <span class="trade-date">{{ trade.createdAt | date:'dd/MM/yyyy' }}</span>
                 </div>
-                <span class="trade-date">{{ trade.createdAt | date:'dd MMM' }}</span>
-            </div>
-
-            <div class="trade-body">
-                <div class="trade-side out">
-                    <span class="side-label">Cède</span>
-                    <div class="player-info">
-                        <span class="player-name">{{ trade.playerOut.username }}</span>
-                        <span class="player-region">{{ trade.playerOut.region || '??' }}</span>
-                    </div>
-                </div>
-
-                <div class="trade-visual">
-                    <div class="exchange-icon">
-                        <mat-icon>sync_alt</mat-icon>
-                    </div>
-                </div>
-
-                <div class="trade-side in">
-                    <span class="side-label">Reçoit</span>
-                    <div class="player-info">
-                        <span class="player-name">{{ trade.playerIn.username }}</span>
-                        <span class="player-region">{{ trade.playerIn.region || '??' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-footer">
-                <div class="status-badge" [ngClass]="trade.status.toLowerCase()">
-                    <span class="dot"></span>
+                <div class="status-badge" [class]="trade.status.toLowerCase()">
                     {{ getStatusLabel(trade.status) }}
                 </div>
+            </div>
 
-                <div class="actions">
-                    <button mat-icon-button (click)="viewTrade(trade.id)" matTooltip="Voir détails">
-                        <mat-icon>visibility</mat-icon>
-                    </button>
-                    <button mat-icon-button class="cancel-btn" (click)="cancelTrade(trade.id)"
-                        *ngIf="trade.status === 'PENDING'" matTooltip="Annuler l'offre">
-                        <mat-icon>close</mat-icon>
-                    </button>
+            <!-- Trade Visual -->
+            <div class="trade-visual">
+                <div class="player-out">
+                    <div class="player-avatar out">
+                        {{ trade.playerOut.username.charAt(0) }}
+                    </div>
+                    <div class="player-details">
+                        <span class="player-name">{{ trade.playerOut.username }}</span>
+                        <span class="player-region" *ngIf="trade.playerOut.region">{{ trade.playerOut.region }}</span>
+                    </div>
+                    <span class="direction-label">SORT</span>
                 </div>
+
+                <div class="exchange-arrow">
+                    <mat-icon>swap_horiz</mat-icon>
+                </div>
+
+                <div class="player-in">
+                    <div class="player-avatar in">
+                        {{ trade.playerIn.username.charAt(0) }}
+                    </div>
+                    <div class="player-details">
+                        <span class="player-name">{{ trade.playerIn.username }}</span>
+                        <span class="player-region" *ngIf="trade.playerIn.region">{{ trade.playerIn.region }}</span>
+                    </div>
+                    <span class="direction-label">ENTRE</span>
+                </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="card-actions">
+                <button mat-button class="view-btn" (click)="viewTrade(trade.id)">
+                    <mat-icon>visibility</mat-icon>
+                    Détails
+                </button>
+                <button mat-button class="cancel-btn" *ngIf="trade.status === 'PENDING'"
+                    (click)="cancelTrade(trade.id)">
+                    <mat-icon>close</mat-icon>
+                    Annuler
+                </button>
             </div>
         </div>
     </div>

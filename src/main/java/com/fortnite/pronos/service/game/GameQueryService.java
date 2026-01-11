@@ -38,6 +38,14 @@ public class GameQueryService {
         .collect(Collectors.toList());
   }
 
+  /** Gets games with available slots */
+  public List<GameDto> getAvailableGames() {
+    log.debug("Retrieving games with available slots");
+    return gameRepository.findGamesWithAvailableSlots().stream()
+        .map(GameDto::fromGame)
+        .collect(Collectors.toList());
+  }
+
   /** Gets games by user ID */
   public List<GameDto> getGamesByUser(UUID userId) {
     log.debug("Retrieving games for user {}", userId);
@@ -122,15 +130,6 @@ public class GameQueryService {
   /** Gets game count */
   public long getGameCount() {
     return gameRepository.count();
-  }
-
-  /**
-   * @deprecated Games publiques supprimées - utilisez getGamesByUser()
-   */
-  @Deprecated
-  public List<GameDto> getAvailableGames() {
-    log.debug("Endpoint déprécié - plus de games publiques");
-    return List.of();
   }
 
   /** Gets game count by status */

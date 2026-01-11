@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -7,11 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import { GameService } from '../services/game.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { Game, GameStatus } from '../models/game.interface';
 import { GameSelectionService } from '../../../core/services/game-selection.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-game-home',
@@ -29,7 +33,7 @@ import { GameSelectionService } from '../../../core/services/game-selection.serv
   templateUrl: './game-home.component.html',
   styleUrls: ['./game-home.component.scss']
 })
-export class GameHomeComponent implements OnInit {
+export class GameHomeComponent implements OnInit, OnDestroy {
   currentUser: UserProfile | null = null;
   userGames: Game[] = [];
   availableGames: Game[] = [];
@@ -37,19 +41,28 @@ export class GameHomeComponent implements OnInit {
   error: string | null = null;
   selectedGame: Game | null = null;
   sidebarOpened = false;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly gameService: GameService,
     private readonly userContextService: UserContextService,
     private readonly gameSelectionService: GameSelectionService,
+    private readonly userGamesStore: UserGamesStore,
+    public readonly t: TranslationService,
     public readonly router: Router,
     private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadCurrentUser();
-    this.loadUserGames();
+    this.subscribeToUserGamesState();
+    this.userGamesStore.loadGames().subscribe({ error: () => undefined });
     this.loadAvailableGames();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   createGame(): void {
@@ -135,7 +148,7 @@ export class GameHomeComponent implements OnInit {
   }
 
   reloadUserGames(): void {
-    this.loadUserGames();
+    this.userGamesStore.refreshGames().subscribe({ error: () => undefined });
   }
 
   toggleSidebar(): void {
@@ -190,38 +203,31 @@ export class GameHomeComponent implements OnInit {
     this.currentUser = this.userContextService.getCurrentUser();
   }
 
-  private loadUserGames(): void {
-    this.loading = true;
-    this.error = null;
+  private subscribeToUserGamesState(): void {
+    this.userGamesStore.state$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => {
+        this.userGames = state.games;
+        this.loading = state.loading;
+        this.error = state.error;
 
-    this.gameService.getUserGames().subscribe({
-      next: (games) => {
-        this.userGames = games;
-
-        if (games.length === 0) {
-          this.selectedGame = null;
-          this.gameSelectionService.setSelectedGame(null);
-        } else {
-          const isSelectedStillAvailable = this.selectedGame
-            ? games.some(game => game.id === this.selectedGame?.id)
-            : false;
-
-          // Sélectionner automatiquement la première game si nécessaire
-          if (!this.selectedGame || !isSelectedStillAvailable) {
-            this.selectedGame = games[0];
-            this.gameSelectionService.setSelectedGame(games[0]);
+        if (!state.loading) {
+          if (state.games.length === 0) {
+            this.selectedGame = null;
+            this.gameSelectionService.setSelectedGame(null);
+          } else {
+            const isSelectedStillAvailable = this.selectedGame
+              ? state.games.some(game => game.id === this.selectedGame?.id)
+              : false;
+            if (!this.selectedGame || !isSelectedStillAvailable) {
+              this.selectedGame = state.games[0];
+              this.gameSelectionService.setSelectedGame(state.games[0]);
+            }
           }
         }
-        
-        this.loading = false;
+
         this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Erreur chargement games:', error);
-        this.error = error instanceof Error ? error.message : 'Erreur lors du chargement de vos games';
-        this.loading = false;
-      }
-    });
+      });
   }
 
 } 

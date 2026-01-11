@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -29,11 +30,16 @@ import com.fortnite.pronos.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * BE-P1-01: Disabled by default - only enabled with 'fake-data' profile. This service creates
+ * additional test games that can cause data inconsistency. Use only for specific multi-game testing
+ * scenarios.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.context.annotation.Profile("fake-data")
 public class FakeGameSeedService {
-
   private static final String FAKE_GAME_NAME = "Fake League - 4 Players";
   private static final String FAKE_GAME_DESCRIPTION =
       "Mini dataset for multi-game navigation tests";
@@ -45,11 +51,16 @@ public class FakeGameSeedService {
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;
   private final Environment environment;
+  private final SeedProperties seedProperties;
 
   @EventListener(ApplicationReadyEvent.class)
   @Order(Ordered.LOWEST_PRECEDENCE)
   @Transactional
   public void seedFakeGame() {
+    if (!seedProperties.isFakeGameEnabled()) {
+      log.info("Fake game seed disabled (fortnite.seed.fake-game-enabled=false)");
+      return;
+    }
     if (!isDevProfile()) {
       return;
     }
@@ -69,7 +80,8 @@ public class FakeGameSeedService {
     List<User> participants = buildParticipants(creator);
     List<Player> players = pickPlayers();
     if (players.size() < FAKE_PLAYER_COUNT) {
-      log.warn("Fake game seed skipped: need {} players, found {}", FAKE_PLAYER_COUNT, players.size());
+      log.warn(
+          "Fake game seed skipped: need {} players, found {}", FAKE_PLAYER_COUNT, players.size());
       return;
     }
 
@@ -80,17 +92,16 @@ public class FakeGameSeedService {
     List<Team> teams = buildTeams(savedGame, participants, players);
     teamRepository.saveAll(teams);
 
-    log.info("Fake game seeded: {} (participants={}, players={})", FAKE_GAME_NAME, participants.size(), players.size());
+    log.info(
+        "Fake game seeded: {} (participants={}, players={})",
+        FAKE_GAME_NAME,
+        participants.size(),
+        players.size());
   }
 
   private boolean isDevProfile() {
-    String[] profiles = environment.getActiveProfiles();
-    for (String profile : profiles) {
-      if (profile.equals("dev")
-          || profile.equals("local")
-          || profile.equals("quickstart")
-          || profile.equals("h2")
-          || profile.equals("fast-startup")) {
+    for (String profile : environment.getActiveProfiles()) {
+      if ("dev".equals(profile)) {
         return true;
       }
     }

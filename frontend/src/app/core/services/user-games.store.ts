@@ -158,7 +158,7 @@ export class UserGamesStore {
         this.logger.info('UserGamesStore: games loaded from API', { count: games.length });
       }),
       catchError(error => {
-        const errorMessage = error?.message || 'Erreur lors du chargement des games';
+        const errorMessage = error?.message || 'Erreur lors du chargement des parties';
         this.updateState({
           ...this.stateSubject.value,
           loading: false,

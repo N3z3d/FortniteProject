@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class PlayerService {
   private final ScoreRepository scoreRepository;
 
   /**
-   * OPTIMISÉ: Retourne une page paginée de joueurs au lieu de tous à la fois Critical pour 149
+   * OPTIMISÉ: Retourne une page paginée de joueurs au lieu de tous à la fois Critical pour 147
    * joueurs - évite de surcharger la mémoire et le réseau
    */
   @Cacheable(
@@ -44,16 +45,8 @@ public class PlayerService {
     return playerRepository.findAll(pageable).map(PlayerDto::fromEntity);
   }
 
-  /**
-   * DEPRECATED: Utilisé uniquement pour la compatibilité ascendante Recommandé d'utiliser
-   * getAllPlayers(Pageable) pour de meilleures performances
-   */
-  @Deprecated
-  public List<PlayerDto> getAllPlayers() {
-    log.warn("⚠️  getAllPlayers() sans pagination appelé - Performance impact avec 149 joueurs!");
-    return playerRepository.findAll().stream()
-        .map(PlayerDto::fromEntity)
-        .collect(Collectors.toList());
+  public Page<PlayerDto> getAllPlayers() {
+    return getAllPlayers(PageRequest.of(0, 200));
   }
 
   public PlayerDto getPlayerById(UUID id) {

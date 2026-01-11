@@ -146,20 +146,6 @@ class PlayerServiceTddTest {
       // Should still make only one repository call
       verify(playerRepository, times(1)).findAll(largePageable);
     }
-
-    @Test
-    @DisplayName("Should warn when using deprecated non-paginated method")
-    void shouldWarnWhenUsingDeprecatedNonPaginatedMethod() {
-      // RED: Test deprecated method still works but with warning
-      when(playerRepository.findAll()).thenReturn(testPlayers);
-
-      List<PlayerDto> result = playerService.getAllPlayers();
-
-      assertThat(result).hasSize(3);
-      assertThat(result.get(0).getNickname()).isEqualTo("Pro Ninja");
-
-      verify(playerRepository).findAll();
-    }
   }
 
   // Helper method for creating large player lists - available to all nested classes

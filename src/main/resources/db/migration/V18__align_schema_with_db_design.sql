@@ -1,3 +1,4 @@
+-- flyway:executeInTransaction=false
 -- Final schema alignment with db-design and JPA expectations
 
 DO $$
@@ -27,7 +28,6 @@ BEGIN
 END $$;
 
 UPDATE users SET role = 'USER' WHERE role = 'PARTICIPANT';
-UPDATE users SET role = 'SPECTATOR' WHERE role = 'SPECTATEUR';
 
 ALTER TABLE games
   ADD COLUMN IF NOT EXISTS finished_at TIMESTAMP;

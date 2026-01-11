@@ -30,16 +30,19 @@ export class DashboardDataService {
   }
 
   /**
-   * Récupère les statistiques globales depuis la BDD
-   * Utilise l'endpoint général du leaderboard car les stats par game n'existent pas encore
-   * @param gameId - ID de la game sélectionnée (pour compatibilité future)
+   * Récupère les statistiques depuis la BDD, filtrées par game si fournie
+   * @param gameId - ID de la game sélectionnée
    * @returns Observable avec les statistiques
    */
   getGameStatistics(gameId: string): Observable<any> {
     this.logger.debug('🔍 DashboardDataService.getGameStatistics called with gameId:', gameId);
-    
-    // Pour l'instant, récupère les stats globales depuis l'endpoint leaderboard
-    return this.http.get<any>(`${this.apiUrl}/leaderboard/stats?season=2025`)
+
+    // Construire l'URL avec gameId pour filtrer les stats
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard/stats?season=2025`;
+
+    return this.http.get<any>(url)
       .pipe(
         map(response => {
           this.logger.debug('📊 Raw statistics response from API:', response);
@@ -65,16 +68,19 @@ export class DashboardDataService {
   }
 
   /**
-   * Récupère le leaderboard depuis la BDD
-   * Utilise l'endpoint général du leaderboard car les endpoints par game n'existent pas encore
-   * @param gameId - ID de la game (pour compatibilité future)
+   * Récupère le leaderboard depuis la BDD, filtré par game si fournie
+   * @param gameId - ID de la game
    * @returns Observable avec le leaderboard
    */
   getGameLeaderboard(gameId: string): Observable<any[]> {
     this.logger.debug('🔍 DashboardDataService.getGameLeaderboard called with gameId:', gameId);
-    
-    // Pour l'instant, récupère le leaderboard global depuis l'endpoint existant
-    return this.http.get<any[]>(`${this.apiUrl}/leaderboard?season=2025`)
+
+    // Construire l'URL avec gameId pour filtrer le leaderboard
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard?season=2025&gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard?season=2025`;
+
+    return this.http.get<any[]>(url)
       .pipe(
         map(apiResponse => {
           this.logger.debug('📊 Raw leaderboard response from API:', apiResponse);
@@ -94,14 +100,17 @@ export class DashboardDataService {
   }
 
   /**
-   * Récupère la distribution des joueurs par région depuis la BDD
-   * Utilise l'endpoint général car les endpoints par game n'existent pas encore
-   * @param gameId - ID de la game (pour compatibilité future)
+   * Récupère la distribution des joueurs par région depuis la BDD, filtrée par game si fournie
+   * @param gameId - ID de la game
    * @returns Observable avec la distribution par région
    */
   getRegionDistribution(gameId: string): Observable<{ [key: string]: number }> {
-    // Pour l'instant, récupère la distribution globale depuis l'endpoint existant
-    return this.http.get<{ [key: string]: number }>(`${this.apiUrl}/leaderboard/distribution/regions`)
+    // Construire l'URL avec gameId pour filtrer la distribution
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard/distribution/regions?gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard/distribution/regions`;
+
+    return this.http.get<{ [key: string]: number }>(url)
       .pipe(
         map(distribution => this.normalizeRegionDistribution(distribution)),
         catchError(error => {

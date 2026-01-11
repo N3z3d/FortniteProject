@@ -38,15 +38,22 @@ public class LeaderboardController {
   @GetMapping
   public ResponseEntity<List<LeaderboardEntryDTO>> getLeaderboard(
       @RequestParam(defaultValue = "2025") Integer season,
-      @RequestParam(required = false) String region) {
+      @RequestParam(required = false) String region,
+      @RequestParam(required = false) String gameId) {
 
-    log.info("📊 Demande leaderboard - Saison: {}, Région: {}", season, region);
+    log.info("📊 Demande leaderboard - Saison: {}, Région: {}, GameId: {}", season, region, gameId);
 
     try {
-      // Utiliser la méthode optimisée avec cache
-      List<LeaderboardEntryDTO> entries = leaderboardService.getLeaderboard(season);
+      List<LeaderboardEntryDTO> entries;
 
-      // Filtrer par région si nécessaire (côté application pour éviter complexity)
+      // Si gameId est fourni, filtrer par game (priorité)
+      if (gameId != null && !gameId.trim().isEmpty()) {
+        entries = leaderboardService.getLeaderboardByGame(UUID.fromString(gameId));
+      } else {
+        entries = leaderboardService.getLeaderboard(season);
+      }
+
+      // Filtrer par région si nécessaire
       if (region != null && !region.trim().isEmpty()) {
         entries =
             entries.stream()
@@ -56,7 +63,7 @@ public class LeaderboardController {
                             .anyMatch(
                                 player ->
                                     player.getRegion().name().equalsIgnoreCase(region.trim())))
-                .collect(Collectors.toList());
+                .toList();
         log.info("🌍 Filtrage par région {} -> {} équipes", region, entries.size());
       }
 
@@ -72,10 +79,16 @@ public class LeaderboardController {
   /** Obtenir le leaderboard pour une saison spécifique (compatibilité frontend) */
   @GetMapping("/season/{season}")
   public ResponseEntity<List<LeaderboardEntryDTO>> getLeaderboardBySeason(
-      @PathVariable Integer season, @RequestParam(required = false) String region) {
+      @PathVariable Integer season,
+      @RequestParam(required = false) String region,
+      @RequestParam(required = false) String gameId) {
 
-    log.info("📊 Demande leaderboard par path - Saison: {}, Région: {}", season, region);
-    return getLeaderboard(season, region);
+    log.info(
+        "📊 Demande leaderboard par path - Saison: {}, Région: {}, GameId: {}",
+        season,
+        region,
+        gameId);
+    return getLeaderboard(season, region, gameId);
   }
 
   /** Obtenir le classement d'une équipe spécifique */
@@ -95,11 +108,19 @@ public class LeaderboardController {
   /** Obtenir les statistiques du leaderboard */
   @GetMapping("/stats")
   public ResponseEntity<LeaderboardStatsDTO> getLeaderboardStats(
-      @RequestParam(defaultValue = "2025") Integer season) {
-    log.info("Récupération des statistiques du leaderboard pour la saison: {}", season);
+      @RequestParam(defaultValue = "2025") Integer season,
+      @RequestParam(required = false) String gameId) {
+    log.info("Récupération des statistiques - Saison: {}, GameId: {}", season, gameId);
 
     try {
-      LeaderboardStatsDTO stats = leaderboardService.getLeaderboardStats(season);
+      LeaderboardStatsDTO stats;
+
+      if (gameId != null && !gameId.trim().isEmpty()) {
+        stats = leaderboardService.getLeaderboardStatsByGame(UUID.fromString(gameId));
+      } else {
+        stats = leaderboardService.getLeaderboardStats(season);
+      }
+
       return ResponseEntity.ok(stats);
     } catch (Exception e) {
       log.error("Erreur lors de la récupération des statistiques", e);
@@ -109,11 +130,19 @@ public class LeaderboardController {
 
   /** Obtenir la répartition par région de tous les joueurs */
   @GetMapping("/distribution/regions")
-  public ResponseEntity<Map<String, Integer>> getRegionDistribution() {
-    log.info("Récupération de la répartition par région");
+  public ResponseEntity<Map<String, Integer>> getRegionDistribution(
+      @RequestParam(required = false) String gameId) {
+    log.info("Récupération de la répartition par région - GameId: {}", gameId);
 
     try {
-      Map<String, Integer> distribution = leaderboardService.getRegionDistribution();
+      Map<String, Integer> distribution;
+
+      if (gameId != null && !gameId.trim().isEmpty()) {
+        distribution = leaderboardService.getRegionDistributionByGame(UUID.fromString(gameId));
+      } else {
+        distribution = leaderboardService.getRegionDistribution();
+      }
+
       return ResponseEntity.ok(distribution);
     } catch (Exception e) {
       log.error("Erreur lors de la récupération de la répartition par région", e);
@@ -158,19 +187,31 @@ public class LeaderboardController {
   @GetMapping("/joueurs")
   public ResponseEntity<List<PlayerLeaderboardEntryDTO>> getPlayerLeaderboard(
       @RequestParam(defaultValue = "2025") Integer season,
-      @RequestParam(required = false) String region) {
+      @RequestParam(required = false) String region,
+      @RequestParam(required = false) String gameId) {
 
-    log.info("🎮 Demande classement joueurs - Saison: {}, Région: {}", season, region);
+    log.info(
+        "🎮 Demande classement joueurs - Saison: {}, Région: {}, GameId: {}",
+        season,
+        region,
+        gameId);
 
     try {
-      List<PlayerLeaderboardEntryDTO> entries = leaderboardService.getPlayerLeaderboard(season);
+      List<PlayerLeaderboardEntryDTO> entries;
+
+      // Si gameId est fourni, filtrer par game
+      if (gameId != null && !gameId.trim().isEmpty()) {
+        entries = leaderboardService.getPlayerLeaderboardByGame(UUID.fromString(gameId));
+      } else {
+        entries = leaderboardService.getPlayerLeaderboard(season);
+      }
 
       // Filtrer par région si nécessaire
       if (region != null && !region.trim().isEmpty()) {
         entries =
             entries.stream()
                 .filter(entry -> entry.getRegion().name().equalsIgnoreCase(region.trim()))
-                .collect(Collectors.toList());
+                .toList();
         log.info("🌍 Filtrage par région {} -> {} joueurs", region, entries.size());
       }
 

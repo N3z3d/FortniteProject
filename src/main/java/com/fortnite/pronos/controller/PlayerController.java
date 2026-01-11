@@ -75,7 +75,9 @@ public class PlayerController {
   @ApiResponse(responseCode = "200", description = "All players retrieved (non-paginated)")
   @GetMapping("/all")
   public ResponseEntity<List<PlayerDto>> getAllPlayersLegacy() {
-    return ResponseEntity.ok(playerService.getAllPlayers());
+    // Use pagination internally but return as list for backward compatibility
+    Pageable pageable = PageRequest.of(0, 200);
+    return ResponseEntity.ok(playerService.getAllPlayers(pageable).getContent());
   }
 
   @Operation(

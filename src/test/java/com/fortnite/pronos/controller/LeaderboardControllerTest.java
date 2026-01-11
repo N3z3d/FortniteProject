@@ -40,7 +40,7 @@ class LeaderboardControllerTest {
     when(leaderboardService.getLeaderboard(season)).thenReturn(serviceEntries);
 
     ResponseEntity<List<LeaderboardEntryDTO>> response =
-        leaderboardController.getLeaderboard(season, null);
+        leaderboardController.getLeaderboard(season, null, null);
 
     assertEquals(200, response.getStatusCodeValue());
     assertEquals(serviceEntries, response.getBody());
@@ -56,7 +56,7 @@ class LeaderboardControllerTest {
     when(leaderboardService.getLeaderboard(season)).thenReturn(List.of(euEntry, nawEntry));
 
     ResponseEntity<List<LeaderboardEntryDTO>> response =
-        leaderboardController.getLeaderboard(season, "EU");
+        leaderboardController.getLeaderboard(season, "EU", null);
 
     assertEquals(200, response.getStatusCodeValue());
     assertNotNull(response.getBody());

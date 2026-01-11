@@ -532,4 +532,15 @@ public class TeamService {
     teamRepository.deleteById(teamId);
     log.info("Équipe {} supprimée avec succès", teamId);
   }
+
+  /** Récupère toutes les équipes d'une game spécifique */
+  @Transactional(readOnly = true)
+  public List<TeamDto> getTeamsByGame(UUID gameId) {
+    log.debug("Récupération des équipes pour la game {}", gameId);
+
+    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    log.info("{} équipes trouvées pour la game {}", teams.size(), gameId);
+
+    return teams.stream().map(TeamDto::from).toList();
+  }
 }

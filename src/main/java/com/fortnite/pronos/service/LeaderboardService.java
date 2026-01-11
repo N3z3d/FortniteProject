@@ -92,6 +92,70 @@ public class LeaderboardService {
     return entries;
   }
 
+  /** Obtenir le leaderboard pour une game spécifique */
+  @Transactional(readOnly = true)
+  public List<LeaderboardEntryDTO> getLeaderboardByGame(UUID gameId) {
+    log.info("🏆 Récupération du leaderboard pour la game {}", gameId);
+
+    // 1. Récupérer les équipes de cette game avec FETCH EAGER
+    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    log.debug("📊 {} équipes trouvées pour la game {}", teams.size(), gameId);
+
+    if (teams.isEmpty()) {
+      log.warn("⚠️ Aucune équipe trouvée pour la game {}", gameId);
+      return new ArrayList<>();
+    }
+
+    // 2. Récupérer tous les scores en UNE SEULE requête
+    Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
+
+    // 3. Construire le leaderboard
+    List<LeaderboardEntryDTO> entries = new ArrayList<>();
+
+    for (Team team : teams) {
+      long totalPoints = 0;
+      List<LeaderboardEntryDTO.PlayerInfo> playerInfos = new ArrayList<>();
+
+      for (TeamPlayer teamPlayer : team.getPlayers()) {
+        if (!teamPlayer.isActive()) continue;
+
+        Player player = teamPlayer.getPlayer();
+        Integer points = playerPointsMap.getOrDefault(player.getId(), 0);
+        totalPoints += points;
+
+        playerInfos.add(
+            LeaderboardEntryDTO.PlayerInfo.builder()
+                .playerId(player.getId())
+                .username(player.getUsername())
+                .nickname(player.getNickname())
+                .region(player.getRegion())
+                .tranche(player.getTranche())
+                .points(points.longValue())
+                .build());
+      }
+
+      entries.add(
+          LeaderboardEntryDTO.builder()
+              .teamId(team.getId())
+              .teamName(team.getName())
+              .ownerId(team.getOwner().getId())
+              .ownerUsername(team.getOwner().getUsername())
+              .totalPoints(totalPoints)
+              .players(playerInfos)
+              .build());
+    }
+
+    // 4. Trier par points décroissants et assigner les rangs
+    entries.sort((a, b) -> Long.compare(b.getTotalPoints(), a.getTotalPoints()));
+
+    for (int i = 0; i < entries.size(); i++) {
+      entries.get(i).setRank(i + 1);
+    }
+
+    log.info("✅ Leaderboard game {} généré avec {} équipes", gameId, entries.size());
+    return entries;
+  }
+
   /** Récupère le classement d'une équipe spécifique */
   public LeaderboardEntryDTO getTeamRanking(String teamId) {
     UUID teamUuid = UUID.fromString(teamId);
@@ -165,6 +229,70 @@ public class LeaderboardService {
         .build();
   }
 
+  /** Obtenir les statistiques du leaderboard pour une game spécifique */
+  @Transactional(readOnly = true)
+  public LeaderboardStatsDTO getLeaderboardStatsByGame(UUID gameId) {
+    log.info("🔍 Calcul des statistiques pour la game {}", gameId);
+
+    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    log.info("📊 Équipes trouvées pour la game: {}", teams.size());
+
+    if (teams.isEmpty()) {
+      return LeaderboardStatsDTO.builder()
+          .totalTeams(0)
+          .totalPlayers(0)
+          .totalPoints(0L)
+          .averagePoints(0.0)
+          .regionStats(new HashMap<>())
+          .build();
+    }
+
+    // Extraire les joueurs des équipes de cette game
+    Set<UUID> playerIds = new HashSet<>();
+    for (Team team : teams) {
+      for (TeamPlayer tp : team.getPlayers()) {
+        if (tp.isActive()) {
+          playerIds.add(tp.getPlayer().getId());
+        }
+      }
+    }
+
+    List<Player> gamePlayers = playerRepository.findAllById(playerIds);
+    int totalPlayers = gamePlayers.size();
+
+    Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
+
+    int totalTeams = teams.size();
+    long totalPoints = 0;
+    Map<String, Long> regionPoints = new HashMap<>();
+
+    for (Player player : gamePlayers) {
+      String region = player.getRegion().name();
+      Integer playerPoints = playerPointsMap.getOrDefault(player.getId(), 0);
+      long points = playerPoints != null ? playerPoints.longValue() : 0L;
+
+      totalPoints += points;
+      regionPoints.merge(region, points, Long::sum);
+    }
+
+    double averagePoints = totalTeams > 0 ? (double) totalPoints / totalTeams : 0.0;
+
+    log.info(
+        "🎯 Stats calculées pour game {} - {} équipes, {} joueurs, {} points",
+        gameId,
+        totalTeams,
+        totalPlayers,
+        totalPoints);
+
+    return LeaderboardStatsDTO.builder()
+        .totalTeams(totalTeams)
+        .totalPlayers(totalPlayers)
+        .totalPoints(totalPoints)
+        .averagePoints(averagePoints)
+        .regionStats(regionPoints)
+        .build();
+  }
+
   /** Obtenir la répartition par région de tous les joueurs */
   @Cacheable(value = "regionDistribution", key = "'all_regions'")
   public Map<String, Integer> getRegionDistribution() {
@@ -177,6 +305,32 @@ public class LeaderboardService {
     }
 
     log.info("🌍 Répartition par région: {}", regionCounts);
+    return regionCounts;
+  }
+
+  /** Obtenir la répartition par région pour une game spécifique */
+  @Transactional(readOnly = true)
+  public Map<String, Integer> getRegionDistributionByGame(UUID gameId) {
+    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+
+    Set<UUID> playerIds = new HashSet<>();
+    for (Team team : teams) {
+      for (TeamPlayer tp : team.getPlayers()) {
+        if (tp.isActive()) {
+          playerIds.add(tp.getPlayer().getId());
+        }
+      }
+    }
+
+    List<Player> gamePlayers = playerRepository.findAllById(playerIds);
+    Map<String, Integer> regionCounts = new HashMap<>();
+
+    for (Player player : gamePlayers) {
+      String region = player.getRegion().name();
+      regionCounts.merge(region, 1, Integer::sum);
+    }
+
+    log.info("🌍 Répartition par région pour game {}: {}", gameId, regionCounts);
     return regionCounts;
   }
 
@@ -353,6 +507,103 @@ public class LeaderboardService {
 
     } catch (Exception e) {
       log.error("❌ Erreur lors de la génération du classement des joueurs", e);
+      throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
+    }
+  }
+
+  /** Obtenir le classement des joueurs Fortnite pour une game spécifique */
+  @Transactional(readOnly = true)
+  public List<PlayerLeaderboardEntryDTO> getPlayerLeaderboardByGame(UUID gameId) {
+    log.info("🎮 Récupération du classement des joueurs pour la game {}", gameId);
+
+    try {
+      // 1. Récupérer les équipes de cette game avec leurs joueurs
+      List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+      log.info("📊 {} équipes trouvées pour la game {}", teams.size(), gameId);
+
+      if (teams.isEmpty()) {
+        log.warn("⚠️ Aucune équipe trouvée pour la game {}", gameId);
+        return new ArrayList<>();
+      }
+
+      // 2. Extraire tous les joueurs uniques des équipes
+      Set<UUID> playerIds = new HashSet<>();
+      Map<UUID, List<TeamInfo>> playerTeamsMap = new HashMap<>();
+      Map<UUID, List<String>> playerPronostiqueurMap = new HashMap<>();
+
+      for (Team team : teams) {
+        for (TeamPlayer teamPlayer : team.getPlayers()) {
+          if (teamPlayer.isActive()) {
+            UUID playerId = teamPlayer.getPlayer().getId();
+            playerIds.add(playerId);
+
+            // Ajouter l'équipe
+            playerTeamsMap
+                .computeIfAbsent(playerId, k -> new ArrayList<>())
+                .add(
+                    new TeamInfo(
+                        team.getId().toString(), team.getName(), team.getOwner().getUsername()));
+
+            // Ajouter le pronostiqueur
+            playerPronostiqueurMap
+                .computeIfAbsent(playerId, k -> new ArrayList<>())
+                .add(team.getOwner().getUsername());
+          }
+        }
+      }
+
+      log.info("📊 {} joueurs uniques trouvés dans les équipes", playerIds.size());
+
+      // 3. Récupérer les informations des joueurs
+      List<Player> players = playerRepository.findAllById(playerIds);
+
+      // 4. Récupérer les scores (saison 2025 par défaut)
+      Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
+
+      // 5. Créer les entrées pour chaque joueur
+      List<PlayerLeaderboardEntryDTO> entries = new ArrayList<>();
+
+      for (Player player : players) {
+        UUID playerId = player.getId();
+        int totalPoints = playerPointsMap.getOrDefault(playerId, 0);
+
+        double avgPointsPerGame =
+            totalPoints > 0 ? (double) totalPoints / Math.max(1, totalPoints / 1000) : 0.0;
+        int bestScore = totalPoints;
+
+        List<TeamInfo> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
+        List<String> playerPronostiqueurs =
+            playerPronostiqueurMap.getOrDefault(playerId, new ArrayList<>());
+
+        PlayerLeaderboardEntryDTO entry = new PlayerLeaderboardEntryDTO();
+        entry.setPlayerId(playerId.toString());
+        entry.setNickname(player.getNickname());
+        entry.setUsername(player.getUsername());
+        entry.setRegion(player.getRegion());
+        entry.setTranche(player.getTranche());
+        entry.setTotalPoints(totalPoints);
+        entry.setAvgPointsPerGame(avgPointsPerGame);
+        entry.setBestScore(bestScore);
+        entry.setTeamsCount(playerTeams.size());
+        entry.setTeams(playerTeams);
+        entry.setPronostiqueurs(playerPronostiqueurs.stream().distinct().toList());
+
+        entries.add(entry);
+      }
+
+      // 6. Trier par points décroissants et assigner les rangs
+      entries.sort((a, b) -> Integer.compare(b.getTotalPoints(), a.getTotalPoints()));
+
+      for (int i = 0; i < entries.size(); i++) {
+        entries.get(i).setRank(i + 1);
+      }
+
+      log.info("✅ Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
+      return entries;
+
+    } catch (Exception e) {
+      log.error(
+          "❌ Erreur lors de la génération du classement des joueurs pour la game {}", gameId, e);
       throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
     }
   }

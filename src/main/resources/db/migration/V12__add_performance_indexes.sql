@@ -47,13 +47,19 @@ ON players(region)
 WHERE region IS NOT NULL;
 
 -- Index pour optimiser les requêtes de transfers
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transfers_from_team 
-ON transfers(from_team_id) 
-WHERE from_team_id IS NOT NULL;
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_transfers_to_team 
-ON transfers(to_team_id) 
-WHERE to_team_id IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_name = 'transfers'
+    )
+  THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_transfers_from_team ON transfers(from_team_id) WHERE from_team_id IS NOT NULL';
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_transfers_to_team ON transfers(to_team_id) WHERE to_team_id IS NOT NULL';
+    EXECUTE 'ANALYZE transfers';
+  END IF;
+END $$;
 
 -- Commentaires pour documentation
 COMMENT ON INDEX idx_teams_season IS 'Optimise les requêtes de leaderboard par saison';
@@ -73,4 +79,3 @@ ANALYZE team_players;
 ANALYZE players;
 ANALYZE drafts;
 ANALYZE draft_picks;
-ANALYZE transfers;

@@ -20,6 +20,25 @@
   border-radius: var(--radius-large);
 }
 
+@mixin premium-panel {
+  position: relative;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(0, 0, 0, 0.98));
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+  }
+}
+
 // ===== GAMING GRADIENTS =====
 @mixin gaming-gradient-bg($direction: 135deg) {
   background: linear-gradient($direction, var(--gaming-primary) 0%, var(--gaming-accent) 100%);

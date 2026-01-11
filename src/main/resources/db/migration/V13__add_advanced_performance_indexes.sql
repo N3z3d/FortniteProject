@@ -62,13 +62,26 @@ ON games(status, created_at DESC)
 WHERE status IN ('CREATING', 'DRAFTING', 'ACTIVE');
 
 -- Index pour optimiser les requêtes de trades
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_trades_from_team 
-ON trades(from_team_id) 
-WHERE from_team_id IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = 'trades' AND column_name = 'from_team_id'
+    )
+  THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_trades_from_team ON trades(from_team_id) WHERE from_team_id IS NOT NULL';
+  END IF;
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_trades_to_team 
-ON trades(to_team_id) 
-WHERE to_team_id IS NOT NULL;
+  IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = 'trades' AND column_name = 'to_team_id'
+    )
+  THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_trades_to_team ON trades(to_team_id) WHERE to_team_id IS NOT NULL';
+  END IF;
+END $$;
 
 -- Index composite pour optimiser getTeamByPlayerAndSeason
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_team_players_player_season 

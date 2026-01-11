@@ -2,13 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
 
 import { gamesResolver } from './games.resolver';
-import { GameService } from '../services/game.service';
 import { UserContextService } from '../../../core/services/user-context.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
+import { LoggerService } from '../../../core/services/logger.service';
 import { Game } from '../models/game.interface';
 
 describe('gamesResolver', () => {
-  let gameService: jasmine.SpyObj<GameService>;
   let userContextService: jasmine.SpyObj<UserContextService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
+  let logger: jasmine.SpyObj<LoggerService>;
 
   const mockGames: Game[] = [
     {
@@ -24,19 +26,22 @@ describe('gamesResolver', () => {
   ];
 
   beforeEach(() => {
-    gameService = jasmine.createSpyObj<GameService>('GameService', ['getUserGames']);
     userContextService = jasmine.createSpyObj<UserContextService>('UserContextService', ['isLoggedIn']);
+    userGamesStore = jasmine.createSpyObj<UserGamesStore>('UserGamesStore', ['loadGames', 'clear']);
+    logger = jasmine.createSpyObj<LoggerService>('LoggerService', ['info', 'warn', 'error', 'debug']);
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: GameService, useValue: gameService },
-        { provide: UserContextService, useValue: userContextService }
+        { provide: UserContextService, useValue: userContextService },
+        { provide: UserGamesStore, useValue: userGamesStore },
+        { provide: LoggerService, useValue: logger }
       ]
     });
   });
 
   it('returns an empty array when no user is logged in', (done) => {
     userContextService.isLoggedIn.and.returnValue(false);
+    userGamesStore.clear.and.stub();
 
     const result$ = TestBed.runInInjectionContext(
       () => gamesResolver({} as any, {} as any)
@@ -44,21 +49,22 @@ describe('gamesResolver', () => {
 
     result$.subscribe((games: Game[]) => {
       expect(games).toEqual([]);
-      expect(gameService.getUserGames).not.toHaveBeenCalled();
+      expect(userGamesStore.clear).toHaveBeenCalled();
+      expect(userGamesStore.loadGames).not.toHaveBeenCalled();
       done();
     });
   });
 
   it('loads user games when a user is logged in', (done) => {
     userContextService.isLoggedIn.and.returnValue(true);
-    gameService.getUserGames.and.returnValue(of(mockGames));
+    userGamesStore.loadGames.and.returnValue(of(mockGames));
 
     const result$ = TestBed.runInInjectionContext(
       () => gamesResolver({} as any, {} as any)
     ) as unknown as Observable<Game[]>;
 
     result$.subscribe((games: Game[]) => {
-      expect(gameService.getUserGames).toHaveBeenCalled();
+      expect(userGamesStore.loadGames).toHaveBeenCalled();
       expect(games).toEqual(mockGames);
       done();
     });
@@ -66,7 +72,7 @@ describe('gamesResolver', () => {
 
   it('falls back to an empty array on error', (done) => {
     userContextService.isLoggedIn.and.returnValue(true);
-    gameService.getUserGames.and.returnValue(throwError(() => new Error('network error')));
+    userGamesStore.loadGames.and.returnValue(throwError(() => new Error('network error')));
 
     const result$ = TestBed.runInInjectionContext(
       () => gamesResolver({} as any, {} as any)

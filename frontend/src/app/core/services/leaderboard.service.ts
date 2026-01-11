@@ -87,6 +87,7 @@ export interface LeaderboardFilters {
   region?: Region;
   season?: number;
   showInactive?: boolean;
+  gameId?: string;
 }
 
 export interface TradeValidation {
@@ -166,7 +167,7 @@ export class LeaderboardService {
 
   getLeaderboard(filters: LeaderboardFilters): Observable<LeaderboardEntry[]> {
     this.logger.debug('LeaderboardService.getLeaderboard called', { filters });
-    
+
     // Construire les paramètres de l'API
     let params = new HttpParams();
     if (filters.season) {
@@ -174,6 +175,9 @@ export class LeaderboardService {
     }
     if (filters.region) {
       params = params.set('region', filters.region);
+    }
+    if (filters.gameId) {
+      params = params.set('gameId', filters.gameId);
     }
 
     return this.http.get<LeaderboardEntry[]>(this.apiUrl, { params }).pipe(
@@ -402,13 +406,16 @@ export class LeaderboardService {
   }
 
   // Nouvelle méthode pour le classement des joueurs
-  getPlayerLeaderboard(season: number, region?: string): Observable<PlayerLeaderboardEntry[]> {
-    this.logger.debug('LeaderboardService.getPlayerLeaderboard called', { season, region });
-    
+  getPlayerLeaderboard(season: number, region?: string, gameId?: string): Observable<PlayerLeaderboardEntry[]> {
+    this.logger.debug('LeaderboardService.getPlayerLeaderboard called', { season, region, gameId });
+
     let params = new HttpParams();
     params = params.set('season', season.toString());
     if (region) {
       params = params.set('region', region);
+    }
+    if (gameId) {
+      params = params.set('gameId', gameId);
     }
 
     return this.http.get<PlayerLeaderboardEntry[]>(`${this.apiUrl}/joueurs`, { params }).pipe(

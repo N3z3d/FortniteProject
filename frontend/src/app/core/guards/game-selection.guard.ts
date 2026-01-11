@@ -34,7 +34,7 @@ export class GameSelectionGuard implements CanActivate {
       });
 
       this.snackBar.open(
-        'Veuillez d\'abord sélectionner une game',
+        'Veuillez d\'abord sélectionner une partie',
         'Fermer',
         { duration: 4000, panelClass: ['snackbar-warning'] }
       );

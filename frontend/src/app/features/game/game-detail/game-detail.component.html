@@ -2,7 +2,7 @@
   <!-- Loading Spinner -->
   <div class="loading-container" *ngIf="loading">
     <mat-spinner></mat-spinner>
-    <p>Chargement des détails de la game...</p>
+    <p>Chargement des détails de la partie...</p>
   </div>
 
   <!-- Error Message -->
@@ -57,7 +57,7 @@
           <!-- Participants Progress -->
           <div class="participants-progress-section">
             <div class="progress-header">
-              <span>Remplissage de la game</span>
+              <span>Remplissage de la partie</span>
               <span>{{ getParticipantPercentage() }}%</span>
             </div>
             <mat-progress-bar 
@@ -74,7 +74,7 @@
                     color="accent" 
                     *ngIf="canJoinGame()"
                     (click)="joinGame()"
-                    matTooltip="Rejoindre cette game">
+                    matTooltip="Rejoindre cette partie">
               <mat-icon>group_add</mat-icon>
               Rejoindre
             </button>
@@ -94,7 +94,7 @@
                     color="warn"
                     *ngIf="canArchiveGame()"
                     (click)="confirmArchive()"
-                    matTooltip="Archiver cette game (elle ne sera plus visible dans la liste)">
+                    matTooltip="Archiver cette partie (elle ne sera plus visible dans la liste)">
               <mat-icon>archive</mat-icon>
               Archiver
             </button>
@@ -104,7 +104,7 @@
                     color="accent"
                     *ngIf="canLeaveGame()"
                     (click)="confirmLeave()"
-                    matTooltip="Quitter cette game">
+                    matTooltip="Quitter cette partie">
               <mat-icon>exit_to_app</mat-icon>
               Quitter
             </button>
@@ -128,7 +128,7 @@
             Participants ({{ participants.length }})
           </mat-card-title>
           <mat-card-subtitle>
-            Liste des joueurs participant à cette game
+            Liste des joueurs participant à cette partie
           </mat-card-subtitle>
         </mat-card-header>
         
@@ -179,7 +179,7 @@
           <div class="empty-participants" *ngIf="participants.length === 0 && !participantsError">
             <mat-icon class="empty-icon">group_off</mat-icon>
             <h3>Aucun participant</h3>
-            <p>Soyez le premier à rejoindre cette game !</p>
+            <p>Soyez le premier à rejoindre cette partie !</p>
           </div>
         </mat-card-content>
       </mat-card>

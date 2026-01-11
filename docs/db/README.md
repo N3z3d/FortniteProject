@@ -31,7 +31,7 @@ cd frontend && npm start
 ```
 
 Test DB plan
-- Use H2 in-memory with `application-test.yml` (`mvn test`).
+- Use H2 in-memory with `src/test/resources/application-test.yml` (`mvn test`).
 - For dev manual tests, keep Postgres + Flyway seed data.
 
 Reset / truncate (Postgres)

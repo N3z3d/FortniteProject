@@ -19,40 +19,40 @@
       </button>
 
       <div class="toolbar-title" *ngIf="currentUser">
-        Bienvenue, {{ currentUser.username }} !
+        {{ t.t('layout.welcome') }}, {{ currentUser.username }} !
       </div>
 
       <!-- Navigation Links -->
       <nav class="main-navigation" *ngIf="selectedGame">
         <button mat-button [routerLink]="['/games', selectedGame.id, 'dashboard']" routerLinkActive="active">
           <mat-icon>dashboard</mat-icon>
-          <span>Tableau de bord</span>
+          <span>{{ t.t('navigation.dashboard') }}</span>
         </button>
         <button mat-button [routerLink]="['/games', selectedGame.id, 'teams']" routerLinkActive="active">
           <mat-icon>groups</mat-icon>
-          <span>Équipes</span>
+          <span>{{ t.t('navigation.teams') }}</span>
         </button>
         <button mat-button [routerLink]="['/games', selectedGame.id, 'leaderboard']" routerLinkActive="active">
           <mat-icon>leaderboard</mat-icon>
-          <span>Classement</span>
+          <span>{{ t.t('navigation.leaderboard') }}</span>
         </button>
         <button mat-button *ngIf="selectedGame.status === 'DRAFTING'" [routerLink]="['/games', selectedGame.id, 'draft']" routerLinkActive="active">
           <mat-icon>how_to_vote</mat-icon>
-          <span>Draft</span>
+          <span>{{ t.t('navigation.draft') }}</span>
         </button>
       </nav>
 
       <!-- User Actions -->
       <div class="user-section">
-        <button mat-icon-button [matTooltip]="'Profil'" routerLink="/profile">
+        <button mat-icon-button [matTooltip]="t.t('navigation.profile')" routerLink="/profile">
           <mat-icon>account_circle</mat-icon>
         </button>
-        <button mat-icon-button [matTooltip]="'Paramètres'" routerLink="/settings">
+        <button mat-icon-button [matTooltip]="t.t('navigation.settings')" routerLink="/settings">
           <mat-icon>settings</mat-icon>
         </button>
-        <button mat-stroked-button class="logout-btn logout-button" matTooltip="Se déconnecter" (click)="logout()">
+        <button mat-stroked-button class="logout-btn logout-button" [matTooltip]="t.t('auth.logout')" (click)="logout()">
           <mat-icon>logout</mat-icon>
-          <span>Déconnexion</span>
+          <span>{{ t.t('auth.logout') }}</span>
         </button>
       </div>
     </div>
@@ -70,19 +70,24 @@
             class="sidebar-home-btn"
             (click)="goToHome()">
             <mat-icon>sports_esports</mat-icon>
-            <span>Mes games ({{ getGameCount() }})</span>
+            <span>
+              {{ t.t('games.myGames') }}
+              <ng-container *ngIf="!loading && !error">
+                ({{ getGameCount() }})
+              </ng-container>
+            </span>
           </button>
           <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? 'Expand' : 'Collapse'">
             <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
           </button>
         </h3>
         <div class="sidebar-actions" *ngIf="!sidebarCollapsed">
-          <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="'Créer une game'" (click)="createGame()">
+          <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="t.t('games.createGame')" (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
           </button>
-          <button mat-button class="join-game-btn" [matTooltip]="'Rejoindre une game'" (click)="openJoinDialog()">
+          <button mat-button class="join-game-btn" [matTooltip]="t.t('games.joinGame')" (click)="openJoinDialog()">
             <mat-icon>group_add</mat-icon>
-            <span>Rejoindre une game</span>
+            <span>{{ t.t('games.joinGame') }}</span>
           </button>
         </div>
       </div>
@@ -91,13 +96,13 @@
       <div class="join-code-section" *ngIf="showJoinCodeInput">
         <mat-form-field appearance="outline">
           <mat-label>Code</mat-label>
-          <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" placeholder="Entrez le code">
+          <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" [placeholder]="t.t('games.enterCode')">
           <mat-icon matSuffix>key</mat-icon>
         </mat-form-field>
         <div class="join-actions">
-          <button mat-button (click)="cancelJoin()">Annuler</button>
+          <button mat-button (click)="cancelJoin()">{{ t.t('common.cancel') }}</button>
           <button mat-raised-button color="primary" (click)="joinWithCode()" [disabled]="!invitationCode.trim()">
-            Rejoindre
+            {{ t.t('games.join') }}
           </button>
         </div>
       </div>
@@ -115,9 +120,9 @@
 
         <div class="empty-state sidebar-empty" *ngIf="!loading && !error && userGames.length === 0">
           <mat-icon>sports_esports</mat-icon>
-          <p>Aucune game</p>
+          <p>{{ t.t('games.noGames') }}</p>
           <button mat-stroked-button (click)="createGame()">
-            Créer une game
+            {{ t.t('games.createGame') }}
           </button>
         </div>
 
@@ -151,4 +156,22 @@
       <router-outlet #outlet="outlet"></router-outlet>
     </main>
   </div>
+
+  <!-- Legal Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.legalNotice') }}</a>
+        <span class="footer-divider">|</span>
+        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.privacyPolicy') }}</a>
+        <span class="footer-divider">|</span>
+        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.contact') }}</a>
+      </div>
+      <div class="footer-info">
+        <p class="footer-copyright">{{ t.t('footer.copyright') }}</p>
+        <p class="footer-disclaimer">{{ t.t('footer.disclaimer') }}</p>
+      </div>
+    </div>
+  </footer>
 </div> 
+

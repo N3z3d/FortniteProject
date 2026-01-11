@@ -1,31 +1,29 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatCardModule } from '@angular/material/card';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { MainLayoutComponent } from './main-layout.component';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { GameService } from '../../../features/game/services/game.service';
-import { Game, GameStatus } from '../../../features/game/models/game.interface';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { Game } from '../../../features/game/models/game.interface';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { UserGamesState, UserGamesStore } from '../../../core/services/user-games.store';
+import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
+import { FocusManagementService } from '../../services/focus-management.service';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
   let router: Router;
-  let mockUserContextService: jasmine.SpyObj<UserContextService>;
-  let mockGameService: jasmine.SpyObj<GameService>;
-  let routeDataSubject: BehaviorSubject<Record<string, unknown>>;
-  let activatedRoute: ActivatedRoute;
+  let userContextService: jasmine.SpyObj<UserContextService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
+  let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
+  let stateSubject: BehaviorSubject<UserGamesState>;
 
   const mockUser: UserProfile = {
     id: '1',
@@ -48,13 +46,13 @@ describe('MainLayoutComponent', () => {
         timeLimitPerPick: 60,
         autoPickEnabled: true,
         regionQuotas: {
-          'EU': 7,
-          'NAC': 7,
-          'BR': 7,
-          'ASIA': 7,
-          'OCE': 7,
-          'NAW': 7,
-          'ME': 7
+          EU: 7,
+          NAC: 7,
+          BR: 7,
+          ASIA: 7,
+          OCE: 7,
+          NAW: 7,
+          ME: 7
         }
       }
     },
@@ -72,49 +70,64 @@ describe('MainLayoutComponent', () => {
         timeLimitPerPick: 60,
         autoPickEnabled: true,
         regionQuotas: {
-          'EU': 7,
-          'NAC': 7,
-          'BR': 7,
-          'ASIA': 7,
-          'OCE': 7,
-          'NAW': 7,
-          'ME': 7
+          EU: 7,
+          NAC: 7,
+          BR: 7,
+          ASIA: 7,
+          OCE: 7,
+          NAW: 7,
+          ME: 7
         }
       }
     }
   ];
 
+  const initialState: UserGamesState = {
+    games: [],
+    loading: false,
+    error: null,
+    lastLoaded: null
+  };
+
   beforeEach(async () => {
-    mockUserContextService = jasmine.createSpyObj('UserContextService', [
-      'getCurrentUser',
-      'logout'
-    ]);
-    mockGameService = jasmine.createSpyObj('GameService', ['getUserGames']);
-    routeDataSubject = new BehaviorSubject<Record<string, unknown>>({ userGames: mockGames });
-    activatedRoute = {
-      data: routeDataSubject.asObservable(),
-      snapshot: { data: { userGames: mockGames } }
-    } as unknown as ActivatedRoute;
+    const breakpointObserver = jasmine.createSpyObj('BreakpointObserver', ['observe']);
+    const gameService = jasmine.createSpyObj('GameService', ['joinGameWithCode']);
+    const logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    const snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    const accessibilityService = jasmine.createSpyObj('AccessibilityAnnouncerService', ['announceNavigation']);
+    const focusManagementService = jasmine.createSpyObj('FocusManagementService', ['restoreFocusAfterNavigation']);
+
+    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout']);
+    gameSelectionService = jasmine.createSpyObj(
+      'GameSelectionService',
+      ['setSelectedGame'],
+      { selectedGame$: of(null) }
+    );
+
+    stateSubject = new BehaviorSubject<UserGamesState>(initialState);
+    userGamesStore = jasmine.createSpyObj<UserGamesStore>(
+      'UserGamesStore',
+      ['loadGames', 'refreshGames', 'clear'],
+      { state$: stateSubject.asObservable() }
+    );
+
+    breakpointObserver.observe.and.returnValue(of({ matches: false }));
+    userGamesStore.loadGames.and.returnValue(of([]));
+    userGamesStore.refreshGames.and.returnValue(of([]));
+    userContextService.getCurrentUser.and.returnValue(mockUser);
 
     await TestBed.configureTestingModule({
-      imports: [
-        MainLayoutComponent,
-        RouterTestingModule,
-        NoopAnimationsModule,
-        MatIconModule,
-        MatButtonModule,
-        MatToolbarModule,
-        MatSidenavModule,
-        MatListModule,
-        MatChipsModule,
-        MatProgressSpinnerModule,
-        MatDividerModule,
-        MatCardModule
-      ],
+      imports: [MainLayoutComponent, RouterTestingModule, NoopAnimationsModule],
       providers: [
-        { provide: UserContextService, useValue: mockUserContextService },
-        { provide: GameService, useValue: mockGameService },
-        { provide: ActivatedRoute, useValue: activatedRoute }
+        { provide: BreakpointObserver, useValue: breakpointObserver },
+        { provide: GameService, useValue: gameService },
+        { provide: LoggerService, useValue: logger },
+        { provide: MatSnackBar, useValue: snackBar },
+        { provide: AccessibilityAnnouncerService, useValue: accessibilityService },
+        { provide: FocusManagementService, useValue: focusManagementService },
+        { provide: UserContextService, useValue: userContextService },
+        { provide: GameSelectionService, useValue: gameSelectionService },
+        { provide: UserGamesStore, useValue: userGamesStore }
       ]
     }).compileComponents();
 
@@ -129,397 +142,73 @@ describe('MainLayoutComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Initialization', () => {
-    it('should load current user and games on init', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
+  it('should load current user and games on init', () => {
+    component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
 
-      // Act
-      component.ngOnInit();
-
-      // Assert
-      expect(mockUserContextService.getCurrentUser).toHaveBeenCalled();
-      expect(mockGameService.getUserGames).not.toHaveBeenCalled();
-      expect(component.currentUser).toEqual(mockUser);
-      expect(component.userGames).toEqual(mockGames);
-      expect(component.loading).toBeFalse();
-    });
-
-    it('should handle error when reloading games fails', () => {
-      // Arrange
-      const errorMessage = 'Erreur réseau';
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-
-      mockGameService.getUserGames.and.returnValue(throwError(() => new Error(errorMessage)));
-
-      // Act
-      component.reloadUserGames();
-
-      // Assert
-      expect(component.error).toBe('Erreur lors du chargement de vos games');
-      expect(component.loading).toBeFalse();
-    });
+    expect(userContextService.getCurrentUser).toHaveBeenCalled();
+    expect(userGamesStore.loadGames).toHaveBeenCalled();
+    expect(component.currentUser).toEqual(mockUser);
+    expect(component.userGames).toEqual(mockGames);
   });
 
-  describe('Logout Functionality', () => {
-    it('should call logout method when logout button is clicked', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
+  it('should refresh user games', () => {
+    component.reloadUserGames();
 
-      // Act
-      component.logout();
-
-      // Assert
-      expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-    });
-
-    it('should clear local data when logging out', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-      
-      // Vérifier que les données sont chargées
-      expect(component.currentUser).toEqual(mockUser);
-      expect(component.userGames).toEqual(mockGames);
-
-      // Act
-      component.logout();
-
-      // Assert
-      expect(component.currentUser).toBeNull();
-      expect(component.userGames).toEqual([]);
-      expect(component.selectedGame).toBeNull();
-      expect(component.loading).toBeFalse();
-      expect(component.error).toBeNull();
-    });
-
-    it('should handle logout errors gracefully', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      mockUserContextService.logout.and.throwError('Erreur de déconnexion');
-      component.ngOnInit();
-
-      // Act
-      component.logout();
-
-      // Assert
-      expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-      // Vérifier que la navigation se fait même en cas d'erreur
-      expect(router.navigate).toHaveBeenCalledTimes(1);
-    });
-
-    it('should display logout button in toolbar', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      // Act
-      const logoutButton = fixture.nativeElement.querySelector('.logout-button');
-
-      // Assert
-      expect(logoutButton).toBeTruthy();
-      expect(logoutButton.getAttribute('matTooltip')).toBe('Se déconnecter');
-    });
-
-    it('should have logout icon in button', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      // Act
-      const logoutIcon = fixture.nativeElement.querySelector('.logout-button mat-icon');
-
-      // Assert
-      expect(logoutIcon).toBeTruthy();
-      expect(logoutIcon.textContent.trim()).toBe('logout');
-    });
-
-    it('should trigger logout when logout button is clicked in template', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      // Act
-      const logoutButton = fixture.nativeElement.querySelector('.logout-button');
-      logoutButton.click();
-
-      // Assert
-      expect(mockUserContextService.logout).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/login']);
-    });
+    expect(userGamesStore.refreshGames).toHaveBeenCalled();
   });
 
-  describe('Game Selection', () => {
-    beforeEach(() => {
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-    });
+  it('should navigate to draft when selecting a drafting game', () => {
+    component.selectGame(mockGames[1]);
 
-    it('should navigate to draft when selecting a drafting game', () => {
-      // Arrange
-      const draftingGame = mockGames.find(g => g.status === 'DRAFTING')!;
-
-      // Act
-      component.selectGame(draftingGame);
-
-      // Assert
-      expect(component.selectedGame).toEqual(draftingGame);
-      expect(router.navigate).toHaveBeenCalledWith(['/games', draftingGame.id, 'draft']);
-    });
-
-    it('should navigate to game details when selecting a non-drafting game', () => {
-      // Arrange
-      const creatingGame = mockGames.find(g => g.status === 'CREATING')!;
-
-      // Act
-      component.selectGame(creatingGame);
-
-      // Assert
-      expect(component.selectedGame).toEqual(creatingGame);
-      expect(router.navigate).toHaveBeenCalledWith(['/games', creatingGame.id]);
-    });
+    expect(router.navigate).toHaveBeenCalledWith(['/games', mockGames[1].id, 'draft']);
   });
 
-  describe('Navigation Methods', () => {
-    it('should navigate to create game page', () => {
-      // Act
-      component.createGame();
+  it('should navigate to game details when selecting a non-drafting game', () => {
+    component.selectGame(mockGames[0]);
 
-      // Assert
-      expect(router.navigate).toHaveBeenCalledWith(['/games/create']);
-    });
-
-    it('should navigate to join game page', () => {
-      // Act
-      component.joinGame();
-
-      // Assert
-      expect(router.navigate).toHaveBeenCalledWith(['/games/join']);
-    });
-
-    it('should navigate to home when clicking mes games', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      fixture.detectChanges();
-      component.selectedGame = mockGames[0];
-      fixture.detectChanges();
-
-      // Act
-      const homeButton = fixture.nativeElement.querySelector('.sidebar-home-btn');
-      homeButton.click();
-
-      // Assert
-      expect(router.navigate).toHaveBeenCalledWith(['/games']);
-      expect(component.selectedGame).toBeNull();
-    });
+    expect(router.navigate).toHaveBeenCalledWith(['/games', mockGames[0].id]);
   });
 
-  describe('Status Methods', () => {
-    it('should return correct status colors', () => {
-      // Assert
-      expect(component.getStatusColor('CREATING')).toBe('primary');
-      expect(component.getStatusColor('DRAFTING')).toBe('accent');
-      expect(component.getStatusColor('ACTIVE')).toBe('primary');
-      expect(component.getStatusColor('FINISHED')).toBe('warn');
-      expect(component.getStatusColor('CANCELLED')).toBe('warn');
-    });
+  it('should clear local data when logging out', () => {
+    component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
 
-    it('should return correct status labels', () => {
-      // Assert
-      expect(component.getStatusLabel('CREATING')).toBe('En création');
-      expect(component.getStatusLabel('DRAFTING')).toBe('Draft en cours');
-      expect(component.getStatusLabel('ACTIVE')).toBe('Active');
-      expect(component.getStatusLabel('FINISHED')).toBe('Terminée');
-      expect(component.getStatusLabel('CANCELLED')).toBe('Annulée');
-    });
+    component.logout();
+
+    expect(userContextService.logout).toHaveBeenCalled();
+    expect(userGamesStore.clear).toHaveBeenCalled();
+    expect(component.currentUser).toBeNull();
+    expect(component.userGames).toEqual([]);
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  describe('Helper Methods', () => {
-    beforeEach(() => {
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-    });
+  it('should display welcome message in template', () => {
+    component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
+    fixture.detectChanges();
 
-    it('should return correct game count', () => {
-      // Assert
-      expect(component.getGameCount()).toBe(2);
-    });
-
-    it('should return true when user has games', () => {
-      // Assert
-      expect(component.hasGames()).toBeTrue();
-    });
-
-    it('should return false when user has no games', () => {
-      // Arrange
-      component.userGames = [];
-
-      // Assert
-      expect(component.hasGames()).toBeFalse();
-    });
-
-    it('should track games by id', () => {
-      // Act
-      const result = component.trackByGameId(0, mockGames[0]);
-
-      // Assert
-      expect(result).toBe(mockGames[0].id);
-    });
-
-    it('should reload user games', () => {
-      // Arrange
-      mockGameService.getUserGames.and.returnValue(of(mockGames));
-
-      // Act
-      component.reloadUserGames();
-
-      // Assert
-      expect(mockGameService.getUserGames).toHaveBeenCalled();
-    });
+    const welcomeText = fixture.nativeElement.querySelector('.toolbar-title');
+    expect(welcomeText.textContent).toContain('Thibaut');
   });
 
-  describe('Template Rendering', () => {
-    beforeEach(() => {
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: mockGames });
-      (activatedRoute.snapshot as any).data = { userGames: mockGames };
-      component.ngOnInit();
-    });
+  it('should display join game button text in sidebar', () => {
+    component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
+    fixture.detectChanges();
 
-    it('should display user welcome message', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const welcomeText = fixture.nativeElement.querySelector('.toolbar-title');
-      expect(welcomeText.textContent).toContain('Bienvenue, Thibaut !');
-    });
-
-    it('should display games in sidebar', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const gameItems = fixture.nativeElement.querySelectorAll('.game-list-item');
-      expect(gameItems.length).toBe(2);
-    });
-
-    it('should display participant badges', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const badges = fixture.nativeElement.querySelectorAll('.participant-badge');
-      expect(badges.length).toBe(2);
-      expect(badges[0].textContent.trim()).toBe('3/10');
-      expect(badges[1].textContent.trim()).toBe('5/10');
-    });
-
-    it('should display Fortnite Fantasy title', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const title = fixture.nativeElement.querySelector('.brand-title');
-      expect(title.textContent.trim()).toBe('Fortnite Fantasy');
-    });
-
-    it('should display create game button in sidebar', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const createButton = fixture.nativeElement.querySelector('.create-game-sidebar-btn');
-      expect(createButton).toBeTruthy();
-    });
-
-    it('should display join game button in footer', () => {
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
-      expect(joinButton).toBeTruthy();
-      expect(joinButton.textContent.trim()).toContain('Rejoindre une game');
-    });
+    const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
+    expect(joinButton).toBeTruthy();
+    expect(joinButton.textContent.trim()).toContain('Rejoindre une partie');
   });
 
-  describe('Loading States', () => {
-    it('should show loading spinner when loading games', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      component.sidebarCollapsed = false;
+  it('should show empty state when no games', () => {
+    component.ngOnInit();
+    stateSubject.next({ ...initialState, games: [] });
+    fixture.detectChanges();
 
-      // Act
-      fixture.detectChanges();
-      component.loading = true;
-      component.error = null;
-      fixture.detectChanges();
-
-      // Assert
-      const spinner = fixture.nativeElement.querySelector('mat-spinner');
-      expect(spinner).toBeTruthy();
-    });
-
-    it('should show error message when loading fails', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      component.sidebarCollapsed = false;
-
-      // Act
-      fixture.detectChanges();
-      component.loading = false;
-      component.error = 'Erreur de chargement';
-      fixture.detectChanges();
-
-      // Assert
-      const errorMessage = fixture.nativeElement.querySelector('.sidebar-error p');
-      expect(errorMessage.textContent.trim()).toBe('Erreur de chargement');
-    });
+    const emptyState = fixture.nativeElement.querySelector('.sidebar-empty');
+    expect(emptyState).toBeTruthy();
+    expect(emptyState.textContent).toContain('Aucune partie');
   });
-
-  describe('Empty State', () => {
-    it('should show empty state when no games', () => {
-      // Arrange
-      mockUserContextService.getCurrentUser.and.returnValue(mockUser);
-      routeDataSubject.next({ userGames: [] });
-      (activatedRoute.snapshot as any).data = { userGames: [] };
-      component.ngOnInit();
-
-      // Act
-      fixture.detectChanges();
-
-      // Assert
-      const emptyState = fixture.nativeElement.querySelector('.sidebar-empty');
-      expect(emptyState).toBeTruthy();
-      expect(emptyState.textContent).toContain('Aucune game');
-    });
-  });
-}); 
+});

@@ -1,514 +1,260 @@
 <div class="dashboard-container">
-  <!-- Live Regions for Dynamic Announcements -->
-  <div class="live-region" 
-       aria-live="polite" 
-       aria-atomic="true" 
-       id="dashboard-announcements" 
-       class="sr-only"></div>
-  <div class="live-region" 
-       aria-live="assertive" 
-       aria-atomic="true" 
-       id="dashboard-alerts" 
-       class="sr-only"></div>
+  <!-- Live Regions -->
+  <div class="live-region" aria-live="polite" id="dashboard-announcements" class="sr-only"></div>
+  <div class="live-region" aria-live="assertive" id="dashboard-alerts" class="sr-only"></div>
 
-  <!-- Dashboard Header -->
+  <!-- 1. Header -->
   <div class="dashboard-header">
-    <h1 id="main-heading">
-      <span class="sr-only">Tableau de bord</span>
-      Fortnite Fantasy
-    </h1>
-    <div class="header-actions" *ngIf="selectedGame">
-      <span class="selected-game-info" aria-label="Partie sélectionnée">
-        Partie : {{ selectedGame.name }}
-      </span>
+    <div class="welcome-section">
+      <h1 class="dashboard-title">
+        <mat-icon class="title-icon">dashboard</mat-icon>
+        {{ t.t('navigation.dashboard') }}
+      </h1>
+      <p class="season-info" *ngIf="selectedGame">{{ t.t('dashboard.labels.season') }} 2025 • {{ selectedGame.name }}</p>
+    </div>
+    <div class="quick-actions">
+      <button mat-stroked-button color="accent" (click)="navigateTo('/trades')">
+        <mat-icon>swap_horiz</mat-icon> {{ t.t('navigation.trades') }}
+      </button>
+      <button mat-stroked-button (click)="navigateTo('/teams')">
+        <mat-icon>groups</mat-icon> {{ t.t('dashboard.labels.myTeams') }}
+      </button>
     </div>
   </div>
 
   <!-- Loading State -->
-  <div class="loading-container" *ngIf="isLoading" role="status" aria-live="polite" aria-labelledby="loading-text">
-    <mat-progress-spinner mode="indeterminate" diameter="50" aria-label="Chargement"></mat-progress-spinner>
-    <p id="loading-text">Chargement du tableau de bord...</p>
+  <div class="loading-container" *ngIf="isLoading" role="status">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+    <p>{{ t.t('dashboard.loading') }}</p>
   </div>
 
   <!-- Error State -->
-  <div class="error-container" *ngIf="error && !isLoading" role="alert" aria-live="assertive" aria-labelledby="error-heading">
-    <mat-icon class="error-icon" aria-hidden="true">error</mat-icon>
-    <h2 id="error-heading">Erreur de chargement</h2>
-    <p id="error-message">{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="loadDashboardData()"
-            aria-label="Relancer le chargement du tableau de bord" aria-describedby="error-message">
-      Réessayer
-    </button>
+  <div class="error-container" *ngIf="error && !isLoading" role="alert">
+    <mat-icon class="error-icon">error</mat-icon>
+    <h2>{{ t.t('dashboard.errorTitle') }}</h2>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadDashboardData()">{{ t.t('dashboard.retry') }}</button>
   </div>
 
-  <!-- Premium Stats Overview -->
-  <div class="stats-overview" *ngIf="!isLoading && !error" appRevealOnScroll>
-    <div class="stat-card premium-stat-card score-card"
-         appPremiumInteractions="magnetic"
-         appTooltip="Points cumulés">
-      <mat-icon class="stat-icon">military_tech</mat-icon>
-      <div class="stat-value">{{ totalScore || 0 }}</div>
-      <div class="stat-label">Points XP</div>
-      <div class="stat-trend positive">+15%</div>
-    </div>
+  <!-- Main Content -->
+  <ng-container *ngIf="!isLoading && !error">
 
-    <div class="stat-card premium-stat-card ranking-card"
-         appPremiumInteractions="magnetic"
-         appTooltip="Votre position au classement">
-      <mat-icon class="stat-icon">leaderboard</mat-icon>
-      <div class="stat-value">#{{ ranking || '-' }}</div>
-      <div class="stat-label">Classement</div>
-      <div class="stat-trend positive">+3</div>
-    </div>
-
-    <div class="stat-card premium-stat-card games-card"
-         appPremiumInteractions="magnetic"
-         appTooltip="Nombre de parties actives">
-      <mat-icon class="stat-icon">sports_esports</mat-icon>
-      <div class="stat-value">{{ activeGames || 0 }}</div>
-      <div class="stat-label">Parties actives</div>
-      <div class="stat-trend neutral">--</div>
-    </div>
-
-    <div class="stat-card premium-stat-card weekly-card"
-         appPremiumInteractions="magnetic"
-         appTooltip="Meilleur score de la semaine">
-      <mat-icon class="stat-icon">emoji_events</mat-icon>
-      <div class="stat-value">{{ weeklyBest || 0 }}</div>
-      <div class="stat-label">Meilleur score hebdo</div>
-      <div class="stat-trend positive">+8%</div>
-    </div>
-  </div>
-
-  <!-- Quick Game Access -->
-  <div class="quick-game-access" *ngIf="!isLoading && !error && selectedGame" appRevealOnScroll>
-    <mat-card class="selected-game-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar>sports_esports</mat-icon>
-        <mat-card-title>Partie actuelle</mat-card-title>
-        <mat-card-subtitle>{{ selectedGame.name }}</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="game-quick-stats">
-          <div class="quick-stat">
-            <span class="stat-label">Participants</span>
-            <span class="stat-value">{{ selectedGame.participantCount || 0 }}</span>
+    <!-- 2. Game Summary (Reference) -->
+    <div class="current-game-panel" *ngIf="selectedGame" appRevealOnScroll>
+      <div class="game-hero-card" appPremiumInteractions="parallax">
+        <div class="hero-content">
+          <div class="game-info-primary">
+            <div class="game-status-badge" [class.active]="selectedGame.status === 'ACTIVE'">
+              <div class="status-dot"></div>
+              {{ getGameStatus(selectedGame) }}
+            </div>
+            <h2 class="game-title">{{ selectedGame.name }}</h2>
+            <div class="game-meta">
+              <span class="meta-item">
+                <mat-icon>calendar_today</mat-icon>
+                {{ selectedGame.createdAt | date:(t.currentLanguage === 'fr' ? 'd MMMM y' : 'MMMM d, y') }}
+              </span>
+              <span class="meta-item" *ngIf="selectedGame.creatorName">
+                <mat-icon>admin_panel_settings</mat-icon>
+                {{ selectedGame.creatorName }}
+              </span>
+            </div>
           </div>
-          <div class="quick-stat">
-            <span class="stat-label">Statut</span>
-            <span class="stat-value">{{ getGameStatus(selectedGame) }}</span>
+
+          <div class="game-stats-row">
+            <div class="hero-stat">
+              <div class="stat-value">{{ formatNumber(stats.totalTeams) }}</div>
+              <div class="stat-label">{{ t.t('dashboard.labels.teams') }}</div>
+            </div>
+            <div class="hero-divider"></div>
+            <div class="hero-stat">
+              <div class="stat-value">{{ formatNumber(stats.totalPlayers) }}</div>
+              <div class="stat-label">{{ t.t('dashboard.labels.players') }}</div>
+            </div>
+            <div class="hero-divider"></div>
+            <div class="hero-stat">
+              <div class="stat-value">{{ selectedGame.participantCount || 0 }}</div>
+              <div class="stat-label">{{ t.t('dashboard.labels.participants') }}</div>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button mat-flat-button color="primary" class="action-btn" (click)="viewGameDetails(selectedGame)">
+              <mat-icon>visibility</mat-icon>
+              {{ t.t('common.details', 'Détails') }}
+            </button>
+            <button mat-stroked-button class="action-btn" (click)="navigateTo('/games')">
+              <mat-icon>settings</mat-icon>
+              {{ t.t('games.manage', 'Gérer') }}
+            </button>
           </div>
         </div>
-      </mat-card-content>
-      <mat-card-actions>
-        <button mat-button (click)="navigateTo('/games')" aria-label="Gérer mes parties">
-          <mat-icon>settings</mat-icon>
-          Gérer mes parties
-        </button>
-        <button mat-raised-button color="primary" (click)="viewGameDetails(selectedGame)" aria-label="Voir les détails de la partie">
-          <mat-icon>visibility</mat-icon>
-          Voir les détails
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  </div>
-  <!-- Quick Actions for No Games -->
-  <div class="quick-actions-no-games" *ngIf="!isLoading && !error && !selectedGame" appRevealOnScroll>
-    <mat-card class="quick-actions-card">
-      <mat-card-header>
-        <mat-icon mat-card-avatar>rocket_launch</mat-icon>
-        <mat-card-title>Commencer</mat-card-title>
-        <mat-card-subtitle>Vous n'avez pas encore de game active</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <p>Créez ou rejoignez une game pour démarrer votre Fantasy League !</p>
-      </mat-card-content>
-      <mat-card-actions>
-        <button mat-raised-button color="primary" (click)="navigateTo('/games/create')" aria-label="Créer une nouvelle game">
-          <mat-icon>add</mat-icon>
-          Créer une game
-        </button>
-        <button mat-button (click)="navigateTo('/games')" aria-label="Voir toutes les games">
-          <mat-icon>search</mat-icon>
-          Parcourir les games
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  </div>
+        <div class="hero-decoration">
+          <div class="circle-glow"></div>
+          <div class="grid-pattern"></div>
+        </div>
+      </div>
+    </div>
 
-  <!-- Dashboard Content -->
-  <div class="dashboard-content" *ngIf="selectedGame && !isLoading && !error">
-    <!-- Stats Cards -->
-    <section class="stats-grid" aria-labelledby="stats-heading">
-      <h2 id="stats-heading">{{ t.t('dashboard.headings.generalStatistics') }}</h2>
-
-      <mat-card class="stat-card total-teams" role="group" aria-labelledby="teams-stat">
-        <mat-card-header>
-          <mat-icon mat-card-avatar aria-hidden="true">groups</mat-icon>
-          <mat-card-title>
-            <h3 id="teams-stat">{{ t.t('dashboard.labels.teams') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalTeams) + ' ' + t.t('dashboard.aria.activeTeamsSuffix')">
-            {{ formatNumber(stats.totalTeams) }}
-          </div>
-          <div class="stat-label">{{ t.t('dashboard.labels.activeTeams') }}</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card total-players" role="group" aria-labelledby="players-stat">
-        <mat-card-header>
-          <mat-icon mat-card-avatar aria-hidden="true">person</mat-icon>
-          <mat-card-title>
-            <h3 id="players-stat">{{ t.t('dashboard.labels.players') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="formatNumber(stats.totalPlayers) + ' ' + t.t('dashboard.aria.proPlayersSuffix')">
-            {{ formatNumber(stats.totalPlayers) }}
-          </div>
-          <div class="stat-label">{{ t.t('dashboard.labels.proPlayers') }}</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card total-points" role="group" aria-labelledby="points-stat">
-        <mat-card-header>
-          <mat-icon mat-card-avatar aria-hidden="true">emoji_events</mat-icon>
-          <mat-card-title>
-            <h3 id="points-stat">{{ t.t('dashboard.labels.points') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="getTotalFormattedPoints() + ' ' + t.t('dashboard.aria.totalPointsSuffix')">
-            {{ getTotalFormattedPoints() }}
-          </div>
-          <div class="stat-label">{{ t.t('dashboard.labels.totalPoints') }}</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card season-progress" role="group" aria-labelledby="season-stat">
-        <mat-card-header>
-          <mat-icon mat-card-avatar aria-hidden="true">timeline</mat-icon>
-          <mat-card-title>
-            <h3 id="season-stat">{{ t.t('dashboard.labels.season') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="stat-value" [attr.aria-label]="getSeasonProgress() + t.t('dashboard.aria.seasonProgressSuffix')">
-            {{ getSeasonProgress() }}%
-          </div>
-          <div class="stat-label">{{ t.t('dashboard.labels.progress2025') }}</div>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="getSeasonProgress()"
-            class="progress-bar"
-            [attr.aria-label]="t.t('dashboard.aria.seasonProgressBarPrefix') + getSeasonProgress() + t.t('dashboard.aria.seasonProgressBarSuffix')">
-          </mat-progress-bar>
-        </mat-card-content>
-      </mat-card>
-    </section>
-
-    <!-- Charts Section -->
-    <section class="charts-section" aria-labelledby="charts-heading">
-      <h2 id="charts-heading">{{ t.t('dashboard.headings.chartsAndAnalytics') }}</h2>
-
-      <mat-card class="chart-card" role="region" aria-labelledby="region-chart-title" aria-describedby="region-chart-desc">
-        <mat-card-header>
-          <mat-card-title>
-            <h3 id="region-chart-title">{{ t.t('dashboard.charts.regionTitle') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="chart-container">
-            <canvas #regionChart
-                    role="img"
-                    [attr.aria-label]="t.t('dashboard.aria.pieChart')"
-                    aria-describedby="region-chart-desc">
-            </canvas>
-            <div id="region-chart-desc" class="sr-only">
-              {{ t.t('dashboard.aria.pieChartDescription') }}
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="chart-card" role="region" aria-labelledby="performance-chart-title" aria-describedby="performance-chart-desc">
-        <mat-card-header>
-          <mat-card-title>
-            <h3 id="performance-chart-title">{{ t.t('dashboard.charts.top10Title') }}</h3>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="chart-container">
-            <canvas #pointsChart
-                    role="img"
-                    [attr.aria-label]="t.t('dashboard.aria.barChart')"
-                    aria-describedby="performance-chart-desc">
-            </canvas>
-            <div id="performance-chart-desc" class="sr-only">
-              {{ t.t('dashboard.aria.barChartDescription') }}
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </section>
-
-    <!-- Leaderboard Preview -->
-    <section aria-labelledby="leaderboard-heading">
-      <mat-card class="leaderboard-preview">
-        <mat-card-header>
-          <mat-card-title>
-            <h2 id="leaderboard-heading">
-              {{ t.t('dashboard.headings.leaderboardPreview') }}
-            </h2>
-          </mat-card-title>
-          <mat-card-subtitle>{{ t.t('dashboard.labels.currentRanking') }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="top-teams" *ngIf="getTopTeams().length > 0"
-               role="list" [attr.aria-label]="t.t('dashboard.aria.top5TeamsRanking')">
-            <div class="team-row" *ngFor="let team of getTopTeams(); let i = index; trackBy: trackByTeamId"
-                 role="listitem"
-                 [attr.aria-label]="t.t('dashboard.aria.position') + ' ' + (i + 1) + ': ' + (displayTeamName(team.teamName) || team.ownerName) + ' ' + t.t('dashboard.aria.with') + ' ' + formatNumber(team.totalPoints) + ' ' + t.t('dashboard.aria.points')">
-              <div class="team-rank">
-                <span class="rank-badge" [class]="'rank-' + (i + 1)"
-                      [attr.aria-label]="t.t('dashboard.aria.position') + ' ' + (i + 1)">
-                  {{ i + 1 }}
-                </span>
-              </div>
-              <div class="team-info">
-                <span class="team-name">{{ displayTeamName(team.teamName) || team.ownerName }}</span>
-                <span class="team-points">{{ formatNumber(team.totalPoints) }} pts</span>
-              </div>
-            </div>
-          </div>
-          <div class="no-teams" *ngIf="getTopTeams().length === 0" role="status">
-            <p>{{ t.t('dashboard.labels.noTeamsFound') }}</p>
-          </div>
-        </mat-card-content>
-        <mat-card-actions>
-          <button mat-button (click)="navigateTo('/leaderboard')"
-                  [attr.aria-label]="t.t('dashboard.aria.navigateToFullLeaderboard')">
-            {{ t.t('dashboard.labels.viewFullLeaderboard') }}
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </section>
-
-    <!-- Gaming Navigation Cards -->
-    <section class="gaming-navigation" aria-labelledby="navigation-heading">
-      <div class="section-header">
-        <h2 id="navigation-heading">{{ t.t('dashboard.headings.centralNavigation') }}</h2>
-        <p>{{ t.t('dashboard.headings.navigationHint') }}</p>
+    <!-- 3. Key Metrics Row -->
+    <div class="stats-overview" appRevealOnScroll>
+      <!-- Pro Players -->
+      <div class="stat-card" appPremiumInteractions="magnetic" [appTooltip]="t.t('dashboard.tooltips.proPlayers')">
+        <div class="stat-icon">
+          <mat-icon>person</mat-icon>
+        </div>
+        <div>
+          <div class="stat-value">{{ t.t('dashboard.labels.proPlayers') }}</div>
+          <div class="stat-value-highlight">{{ stats.proPlayersCount || 156 }}</div>
+        </div>
+        <div class="stat-trend positive">
+          <mat-icon>trending_up</mat-icon> +12%
+        </div>
       </div>
 
-      <div class="navigation-grid" role="group" [attr.aria-label]="t.t('dashboard.aria.navigationGroup')">
-        <!-- Games Management Card -->
-        <div class="nav-card games-card premium-nav-card"
-             (click)="navigateTo('/games')"
-             (keydown.enter)="navigateTo('/games')"
-             (keydown.space)="navigateTo('/games')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.gamesTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.gamesAria')"
-             aria-describedby="games-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Gaming Controller Icon -->
-              <path d="M6 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1l1.5 3h7L17 15h1c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H6z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-              <circle cx="9" cy="12" r="1.5" fill="currentColor"/>
-              <circle cx="15" cy="10.5" r="1" fill="currentColor"/>
-              <circle cx="15" cy="13.5" r="1" fill="currentColor"/>
-              <path d="M12 2L10 6h4l-2-4z" fill="currentColor"/>
-            </svg>
+      <!-- Points -->
+      <div class="stat-card" appPremiumInteractions="magnetic" [appTooltip]="t.t('dashboard.tooltips.totalPoints')">
+        <div class="stat-icon">
+          <mat-icon>emoji_events</mat-icon>
+        </div>
+        <div>
+          <div class="stat-value">{{ t.t('dashboard.labels.points') }}</div>
+          <div class="stat-value-highlight">{{ formatNumber(stats.totalPoints) }}</div>
+        </div>
+        <div class="stat-trend positive">
+          <mat-icon>trending_up</mat-icon> {{ t.t('dashboard.labels.total') }}
+        </div>
+      </div>
+
+      <!-- Season Progress -->
+      <div class="stat-card" appPremiumInteractions="magnetic" [appTooltip]="t.t('dashboard.tooltips.seasonProgress')">
+        <div class="stat-icon">
+          <mat-icon>timelapse</mat-icon>
+        </div>
+        <div>
+          <div class="stat-value">{{ t.t('dashboard.labels.season') }}</div>
+          <div class="stat-value-highlight">{{ stats.seasonProgress }}%</div>
+        </div>
+        <div class="stat-trend neutral">
+          {{ t.t('dashboard.labels.progress2025') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Analytical Grid (Charts + Leaderboard) -->
+    <div class="dashboard-content-grid" appRevealOnScroll>
+      <!-- Left Column: Charts -->
+      <div class="charts-column">
+        <!-- Region Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3><mat-icon>public</mat-icon> {{ t.t('dashboard.charts.regionTitle') }}</h3>
+            <p>{{ t.t('dashboard.charts.regionDesc') }}</p>
           </div>
+          <div class="chart-container">
+            <canvas #regionChart></canvas>
+          </div>
+        </div>
+
+        <!-- Top 10 Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3><mat-icon>bar_chart</mat-icon> {{ t.t('dashboard.charts.top10Title') }}</h3>
+            <p>{{ t.t('dashboard.charts.performanceByPoints') }}</p>
+          </div>
+          <div class="chart-container">
+            <canvas #pointsChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Leaderboard -->
+      <div class="leaderboard-column">
+        <div class="leaderboard-preview">
+          <div class="card-header">
+            <h3><mat-icon>leaderboard</mat-icon> {{ t.t('navigation.leaderboard') }}</h3>
+            <p>{{ t.t('dashboard.labels.currentTop5') }}</p>
+          </div>
+          <div class="leaderboard-list">
+            <div class="leaderboard-header-row">
+              <div>{{ t.t('dashboard.labels.rank') }}</div>
+              <div>{{ t.t('dashboard.labels.team') }}</div>
+              <div style="text-align: right">{{ t.t('dashboard.labels.points') }}</div>
+            </div>
+            <div class="leaderboard-item" *ngFor="let team of dashboardLeaderboard" [class.rank-1]="team.rank === 1"
+              [class.rank-2]="team.rank === 2" [class.rank-3]="team.rank === 3">
+              <div class="rank-badge">{{ team.rank }}</div>
+              <div class="team-info">
+                <span class="team-name">{{ team.name }}</span>
+              </div>
+              <div class="team-points">{{ formatNumber(team.points) }}</div>
+            </div>
+          </div>
+          <mat-card-actions>
+            <button mat-button (click)="navigateTo('/leaderboard')">
+              {{ t.t('dashboard.labels.viewFullLeaderboard') }} <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </mat-card-actions>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Navigation -->
+    <section class="gaming-navigation">
+      <div class="section-header">
+        <h2>{{ t.t('dashboard.headings.centralNavigation') }}</h2>
+        <p>{{ t.t('dashboard.headings.navigationHint') }}</p>
+      </div>
+      <div class="navigation-grid">
+        <div class="nav-card games-card premium-nav-card" (click)="navigateTo('/games')"
+          appPremiumInteractions="magnetic">
+          <div class="nav-card-icon"><mat-icon>sports_esports</mat-icon></div>
           <div class="nav-card-content">
             <h3 class="nav-card-title">{{ t.t('games.myGames') }}</h3>
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.gamesDesc') }}</p>
-            <div id="games-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.gamesDescription') }}
-            </div>
           </div>
-          <div class="nav-card-glow"></div>
         </div>
-
-        <!-- Leaderboard Card -->
-        <div class="nav-card leaderboard-card premium-nav-card" 
-             (click)="navigateTo('/leaderboard')"
-             (keydown.enter)="navigateTo('/leaderboard')"
-             (keydown.space)="navigateTo('/leaderboard')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.leaderboardTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.leaderboardAria')"
-             aria-describedby="leaderboard-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Trophy/Ranking Icon -->
-              <path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-              <rect x="5" y="18" width="14" height="2" rx="1" fill="currentColor"/>
-              <rect x="8" y="20" width="8" height="2" rx="1" fill="currentColor"/>
-              <path d="M12 8v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
+        <div class="nav-card leaderboard-card premium-nav-card" (click)="navigateTo('/leaderboard')"
+          appPremiumInteractions="magnetic">
+          <div class="nav-card-icon"><mat-icon>emoji_events</mat-icon></div>
           <div class="nav-card-content">
             <h3 class="nav-card-title">{{ t.t('navigation.leaderboard') }}</h3>
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.leaderboardDesc') }}</p>
-            <div id="leaderboard-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.leaderboardDescription') }}
-            </div>
           </div>
-          <div class="nav-card-glow"></div>
         </div>
-
-        <!-- Teams Card -->
-        <div class="nav-card teams-card premium-nav-card" 
-             (click)="navigateTo('/teams')"
-             (keydown.enter)="navigateTo('/teams')"
-             (keydown.space)="navigateTo('/teams')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.teamsTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.teamsAria')"
-             aria-describedby="teams-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Squad Icon -->
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" fill="currentColor"/>
-              <path d="M12 14c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z" fill="currentColor"/>
-              <circle cx="18" cy="8" r="2" fill="currentColor" opacity="0.7"/>
-              <circle cx="6" cy="8" r="2" fill="currentColor" opacity="0.7"/>
-              <path d="M18 12c1.5 0 3 0.5 3 1.5v1h-3v-2.5z" fill="currentColor" opacity="0.7"/>
-              <path d="M6 12c-1.5 0-3 0.5-3 1.5v1h3v-2.5z" fill="currentColor" opacity="0.7"/>
-            </svg>
-          </div>
+        <div class="nav-card teams-card premium-nav-card" (click)="navigateTo('/teams')"
+          appPremiumInteractions="magnetic">
+          <div class="nav-card-icon"><mat-icon>groups</mat-icon></div>
           <div class="nav-card-content">
             <h3 class="nav-card-title">{{ t.t('navigation.teams') }}</h3>
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.teamsDesc') }}</p>
-            <div id="teams-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.teamsDescription') }}
-            </div>
           </div>
-          <div class="nav-card-glow"></div>
         </div>
-
-        <!-- Trades Card -->
-        <div class="nav-card trades-card premium-nav-card" 
-             (click)="navigateTo('/trades')"
-             (keydown.enter)="navigateTo('/trades')"
-             (keydown.space)="navigateTo('/trades')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.tradesTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.tradesAria')"
-             aria-describedby="trades-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Exchange/Trade Icon -->
-              <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7Z" fill="currentColor" opacity="0.3"/>
-              <path d="M12 8L8 12H10.5V16H13.5V12H16L12 8Z" fill="currentColor"/>
-              <path d="M12 16L16 12H13.5V8H10.5V12H8L12 16Z" fill="currentColor" opacity="0.7"/>
-              <circle cx="18" cy="6" r="3" fill="#00ff88" stroke="currentColor" stroke-width="1"/>
-              <circle cx="6" cy="18" r="3" fill="#ff6b35" stroke="currentColor" stroke-width="1"/>
-            </svg>
-          </div>
+        <div class="nav-card trades-card premium-nav-card" (click)="navigateTo('/trades')"
+          appPremiumInteractions="magnetic">
+          <div class="nav-card-icon"><mat-icon>swap_horiz</mat-icon></div>
           <div class="nav-card-content">
             <h3 class="nav-card-title">{{ t.t('navigation.trades') }}</h3>
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.tradesDesc') }}</p>
-            <div id="trades-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.tradesDescription') }}
-            </div>
-          </div>
-          <div class="nav-card-glow"></div>
-        </div>
-
-        <!-- Draft Card -->
-        <div class="nav-card draft-card premium-nav-card" 
-             (click)="navigateTo('/draft')"
-             (keydown.enter)="navigateTo('/draft')"
-             (keydown.space)="navigateTo('/draft')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.draftTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.draftAria')"
-             aria-describedby="draft-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Draft/Selection Icon -->
-              <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-              <path d="M8 8h8v2H8z" fill="currentColor"/>
-              <path d="M8 12h6v2H8z" fill="currentColor"/>
-              <path d="M8 16h4v2H8z" fill="currentColor"/>
-              <circle cx="18" cy="6" r="2" fill="#00ff88"/>
-              <path d="M17 5l1 1 2-2" stroke="white" stroke-width="1" fill="none"/>
-              <path d="M20 12l-3 3-2-2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="nav-card-content">
-            <h3 class="nav-card-title">{{ t.t('navigation.draft') }}</h3>
-            <p class="nav-card-desc">{{ t.t('dashboard.navCards.draftDesc') }}</p>
-            <div id="draft-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.draftDescription') }}
-            </div>
-          </div>
-          <div class="nav-card-glow"></div>
-        </div>
-
-        <!-- New Game Card -->
-        <div class="nav-card new-game-card premium-nav-card special-card" 
-             (click)="navigateTo('/games/create')"
-             (keydown.enter)="navigateTo('/games/create')"
-             (keydown.space)="navigateTo('/games/create')"
-             appPremiumInteractions="magnetic"
-             [appTooltip]="t.t('dashboard.navCards.newGameTooltip')"
-             role="button"
-             tabindex="0"
-             [attr.aria-label]="t.t('dashboard.navCards.newGameAria')"
-             aria-describedby="new-game-card-description">
-          <div class="nav-card-icon premium-dashboard-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Battle Bus Icon -->
-              <rect x="2" y="10" width="20" height="8" rx="4" fill="currentColor"/>
-              <circle cx="6" cy="18" r="2" fill="#00d4ff"/>
-              <circle cx="18" cy="18" r="2" fill="#00d4ff"/>
-              <path d="M8 10V6C8 4.9 8.9 4 10 4H14C15.1 4 16 4.9 16 6V10" stroke="currentColor" stroke-width="2" fill="none"/>
-              <path d="M12 7V13" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <path d="M9 10H15" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <path d="M19 8L22 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M19 12L22 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="nav-card-content">
-            <h3 class="nav-card-title">{{ t.t('games.createGame') }}</h3>
-            <p class="nav-card-desc">{{ t.t('dashboard.navCards.newGameDesc') }}</p>
-            <div id="new-game-card-description" class="sr-only">
-              {{ t.t('dashboard.navCards.newGameDescription') }}
-            </div>
-          </div>
-          <div class="nav-card-glow"></div>
-          <div class="special-effects">
-            <div class="pulse-ring"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Footer Info -->
-    <div class="dashboard-footer" *ngIf="lastUpdate">
-      <p>
-        {{ t.t('dashboard.labels.lastUpdated') }}
-        {{ lastUpdate | date:(t.currentLanguage === 'fr' ? 'dd/MM/yyyy HH:mm' : 'MM/dd/yyyy HH:mm') }}
-      </p>
-    </div>
+  </ng-container>
+
+  <!-- No Game State -->
+  <div class="quick-actions-no-games" *ngIf="!isLoading && !error && !selectedGame">
+    <!-- Keep existing no-game state -->
+    <mat-card class="quick-actions-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>rocket_launch</mat-icon>
+        <mat-card-title>{{ t.t('dashboard.noGame.title') }}</mat-card-title>
+        <mat-card-subtitle>{{ t.t('dashboard.noGame.subtitle') }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="navigateTo('/games/create')">{{ t.t('games.createGame') }}</button>
+      </mat-card-actions>
+    </mat-card>
   </div>
 </div>

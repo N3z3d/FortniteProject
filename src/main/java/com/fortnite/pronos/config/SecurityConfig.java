@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -38,6 +39,7 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final UserDetailsService userDetailsService;
+  private final Environment environment;
   private final org.springframework.beans.factory.ObjectProvider<TestFallbackAuthenticationFilter>
       testFallbackAuthenticationFilter;
 
@@ -120,8 +122,8 @@ public class SecurityConfig {
     CorsConfiguration configuration = new CorsConfiguration();
 
     // PHASE 1A: ENHANCED CORS - More restrictive for production security
-    String activeProfile = System.getProperty("spring.profiles.active", "h2");
-    if ("prod".equals(activeProfile)) {
+    boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+    if (isProd) {
       // Production: strict domain restrictions
       configuration.setAllowedOriginPatterns(
           List.of("https://fortnitepronos.com", "https://*.fortnitepronos.com"));

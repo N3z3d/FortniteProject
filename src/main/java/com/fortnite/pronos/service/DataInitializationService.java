@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -22,6 +23,7 @@ import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.repository.UserRepository;
+import com.fortnite.pronos.service.seed.SeedDataProviderSelectorService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataInitializationService {
 
+  private static final String SEED_RESET_PROPERTY = "fortnite.seed.reset";
+
   private final UserRepository userRepository;
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;
@@ -39,29 +43,43 @@ public class DataInitializationService {
   private final GameRepository gameRepository;
   private final Environment environment;
   private final CsvDataLoaderService csvDataLoaderService;
-  private final MockDataGeneratorService mockDataGeneratorService;
+  private final SeedDataProviderSelectorService seedDataProviderSelector;
   private final PasswordEncoder passwordEncoder;
+  private final SeedProperties seedProperties;
 
   /** Initialise les données de test au démarrage de l'application */
   @EventListener(ApplicationReadyEvent.class)
   @Transactional
   public void initializeTestData() {
+    if (!seedProperties.isEnabled()) {
+      log.info("Seed disabled (fortnite.seed.enabled=false)");
+      return;
+    }
+    if (!seedProperties.isLegacyEnabled()) {
+      log.info("Skipping legacy data initialization (fortnite.seed.legacy-enabled=false)");
+      return;
+    }
     // Vérifier si on est en mode dev
     if (!isDevProfile()) {
       log.info("Skipping test data initialization - not in dev mode");
       return;
     }
 
-    // Forcer la réinitialisation avec les 147 joueurs CSV
+    // Keep existing data unless a reset is requested.
     if (hasExistingData()) {
-      log.info("⚠️  Données existantes détectées, nettoyage et réinitialisation avec CSV...");
-      // Nettoyer les données existantes pour une initialisation propre
+      if (!isSeedResetEnabled()) {
+        log.info(
+            "Seed skipped: existing data detected. Set {}=true to re-seed.", SEED_RESET_PROPERTY);
+        return;
+      }
+
+      log.info("Seed reset enabled. Clearing existing data before CSV re-seed.");
       teamRepository.deleteAll();
       scoreRepository.deleteAll();
       gameRepository.deleteAll();
       playerRepository.deleteAll();
       userRepository.deleteAll();
-      log.info("🧹 Base de données nettoyée");
+      log.info("Database cleared before seed.");
     }
 
     try {
@@ -87,8 +105,7 @@ public class DataInitializationService {
       log.info("🎮 Chargement des données depuis le CSV...");
 
       // Utiliser le nouveau service de mock data
-      MockDataGeneratorService.MockDataSet mockData =
-          mockDataGeneratorService.loadMockDataFromCsv();
+      MockDataGeneratorService.MockDataSet mockData = seedDataProviderSelector.loadSeedData();
 
       if (mockData.total() == 0) {
         log.warn("⚠️ Aucune donnée mock chargée, fallback vers CsvDataLoaderService");
@@ -177,11 +194,11 @@ public class DataInitializationService {
   }
 
   private boolean isDevProfile() {
-    return Arrays.asList(environment.getActiveProfiles()).contains("dev")
-        || Arrays.asList(environment.getActiveProfiles()).contains("local")
-        || Arrays.asList(environment.getActiveProfiles()).contains("quickstart")
-        || Arrays.asList(environment.getActiveProfiles()).contains("h2")
-        || Arrays.asList(environment.getActiveProfiles()).contains("fast-startup");
+    return Arrays.asList(environment.getActiveProfiles()).contains("dev");
+  }
+
+  private boolean isSeedResetEnabled() {
+    return seedProperties.isReset();
   }
 
   private boolean hasExistingData() {
@@ -289,7 +306,7 @@ public class DataInitializationService {
     log.info("🏗️ Création d'équipes avec les assignations CSV réelles");
 
     // Charger les données mock pour obtenir les assignations
-    MockDataGeneratorService.MockDataSet mockData = mockDataGeneratorService.loadMockDataFromCsv();
+    MockDataGeneratorService.MockDataSet mockData = seedDataProviderSelector.loadSeedData();
 
     if (mockData.total() == 0) {
       log.warn("⚠️ Aucune donnée mock disponible, utilisation de la méthode de fallback");
@@ -491,32 +508,10 @@ public class DataInitializationService {
       gameActive.addParticipant(createGameParticipant(gameActive, marcel, 3));
 
       gameRepository.save(gameActive);
-      log.info(
-          "✅ Game principale '{}' créée avec 3 participants et équipes réelles",
-          gameActive.getName());
-
-      // Game de draft en cours pour Teddy
-      Game gameDraft =
-          createGame(
-              "Draft League 2025 - Nouvelle Saison",
-              "Nouvelle game en phase de draft avec équipes complètes",
-              teddy,
-              3,
-              GameStatus.DRAFTING);
-
-      // Ajouter les participants au draft
-      gameDraft.addParticipant(createGameParticipant(gameDraft, teddy, 1));
-      gameDraft.addParticipant(createGameParticipant(gameDraft, thibaut, 2));
-      gameDraft.addParticipant(createGameParticipant(gameDraft, marcel, 3));
-
-      gameRepository.save(gameDraft);
-      log.info("✅ Game draft '{}' créée avec 3 participants", gameDraft.getName());
-
-      long totalGames = gameRepository.count();
-      log.info("🎮 {} games de test créées au total avec équipes réelles", totalGames);
+      log.info("Seed game created with 3 participants and real teams");
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors de la création des games de test avec équipes réelles", e);
+      log.error("Seed game creation failed", e);
     }
   }
 

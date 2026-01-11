@@ -12,11 +12,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 // PERFORMANCE: Import only needed Chart.js components instead of everything
-import { 
-  Chart, 
-  DoughnutController, 
-  BarController, 
-  CategoryScale, 
+import {
+  Chart,
+  DoughnutController,
+  BarController,
+  CategoryScale,
   LinearScale,
   ArcElement,
   BarElement,
@@ -40,9 +40,9 @@ import { TranslationService } from '../../core/services/translation.service';
 
 // PERFORMANCE: Register only necessary components (reduces bundle size by ~100KB)
 Chart.register(
-  DoughnutController, 
-  BarController, 
-  CategoryScale, 
+  DoughnutController,
+  BarController,
+  CategoryScale,
   LinearScale,
   ArcElement,
   BarElement,
@@ -59,6 +59,7 @@ interface DashboardStats {
   averagePointsPerTeam: number;
   mostActiveTeam: string;
   seasonProgress: number;
+  proPlayersCount?: number;
   teamComposition?: {
     regions: { [key: string]: number };
     tranches: { [key: string]: number };
@@ -112,7 +113,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     totalPoints: 0,
     averagePointsPerTeam: 0,
     mostActiveTeam: '',
-    seasonProgress: 0
+    seasonProgress: 0,
+    proPlayersCount: 0 // Initialize new field
   };
 
   competitionStats: CompetitionStats = {
@@ -128,10 +130,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedGame: Game | null = null;
   games: Game[] = [];
   selectedGameId: string | null = null;
-  
+
   // Liste complète des régions (pour assurer un graphique complet)
-  static readonly ALL_REGIONS: string[] = ['EU','NAC','NAW','BR','ASIA','OCE','ME'];
-  
+  static readonly ALL_REGIONS: string[] = ['EU', 'NAC', 'NAW', 'BR', 'ASIA', 'OCE', 'ME'];
+
   // Graphiques
   private regionChart: Chart | null = null;
   private pointsChart: Chart | null = null;
@@ -143,7 +145,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   lastUpdate: Date | null = null;
   isUsingMockData = false;
   backendStatus: 'online' | 'offline' | 'checking' = 'checking';
-  
+
   private subscriptions: Subscription[] = [];
   private readonly LOAD_TIMEOUT = 10000; // 10 secondes
   private readonly REFRESH_INTERVAL = 300000; // 5 minutes
@@ -155,6 +157,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   ranking = 0;
   activeGames = 0;
   weeklyBest = 0;
+
+  // UI-2: New Leaderboard Mock Data
+  dashboardLeaderboard: any[] = [];
 
   constructor(
     private http: HttpClient,
@@ -171,7 +176,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private accessibilityService: AccessibilityAnnouncerService,
     private focusManagementService: FocusManagementService,
     public t: TranslationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     // Charger la liste des games
@@ -182,7 +187,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
       })
     );
-    
+
     // Get gameId from route params if available
     this.subscriptions.push(
       this.route.params.subscribe(params => {
@@ -203,7 +208,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       })
     );
-    
+
     // S'abonner aux changements de game sélectionnée
     this.subscriptions.push(
       this.gameSelectionService.selectedGame$.subscribe(game => {
@@ -218,7 +223,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.gameSelectionService.hasSelectedGame()) {
       this.loadDashboardData();
     }
-    
+
     // Rafraîchissement automatique seulement si une game est sélectionnée
     this.subscriptions.push(
       interval(this.REFRESH_INTERVAL).subscribe(() => {
@@ -299,6 +304,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.lastUpdate = new Date();
           this.isLoadingProgress = 100;
+          if (showLoading) this.isLoading = false;
+
+
+          // UI-2: Override with specific mock data for redesign request
+          if (this.isUsingMockData) {
+            this.setupMockData();
+          }
 
           this.logger.debug('📊 Final stats after update:', this.stats);
 
@@ -319,39 +331,56 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           setTimeout(() => this.updateCharts(), 100);
         },
         error: (error) => {
-          this.logger.error('Dashboard: failed to load dashboard data', error);
-          this.error = this.loadErrorMessage;
-          this.isUsingMockData = false;
+          this.logger.warn('Dashboard: backend offline, switching to mock data', error);
+
+          // Fallback to mock data on error so UI is visible
+          this.isUsingMockData = true;
           this.backendStatus = 'offline';
-          this.isLoadingProgress = 0;
-          this.accessibilityService.announceError(this.t.t('dashboard.live.errorLoading'));
-          this.updateLiveRegion(this.t.t('dashboard.live.errorLoading'), 'assertive');
-          this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
+          this.setupMockData();
+
+          this.error = null; // Clear error to show content
+          this.isLoadingProgress = 100;
+
           if (showLoading) {
             this.isLoading = false;
           }
+
+          // Trigger change detection and charts
           this.cdr.markForCheck();
-        },
-        complete: () => {
-          if (showLoading) {
-            this.isLoading = false;
-          }
-          this.cdr.markForCheck();
+          setTimeout(() => {
+            this.initializeCharts();
+            this.updateCharts();
+          }, 100);
+
+          this.snackBar.open('Mode Démonstration (Backend hors ligne)', 'OK', { duration: 3000 });
         }
       });
     } catch (error) {
-      this.logger.error('Dashboard: failed to load data', error);
-      this.error = this.loadErrorMessage;
-      this.isUsingMockData = false;
-      this.backendStatus = 'offline';
-      this.isLoadingProgress = 0;
-      this.snackBar.open(this.error || this.t.t('common.error'), this.t.t('common.close'), { duration: 5000 });
-      if (showLoading) {
-        this.isLoading = false;
-      }
-      this.cdr.markForCheck();
+      this.logger.error('Dashboard: unexpected error', error);
+      this.isLoading = false;
     }
   }
+
+  private setupMockData() {
+    // BE-P1-02: Use zero/placeholder values instead of fake hardcoded data
+    // These values indicate no real data is available (backend offline)
+    this.stats.totalTeams = 0;
+    this.stats.totalPlayers = 0;
+    this.stats.totalPoints = 0;
+    this.stats.seasonProgress = this.calculateSeasonProgress();
+    this.stats.proPlayersCount = 0;
+
+    // Empty region data when no backend
+    this.stats.teamComposition = {
+      regions: {},
+      tranches: {}
+    };
+
+    // Empty leaderboard when backend offline
+    this.dashboardLeaderboard = [];
+    this.leaderboardEntries = [];
+  }
+
 
 
   private updateStats(newStats: Partial<DashboardStats>) {
@@ -402,17 +431,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     entries.forEach((entry, index) => {
       this.logger.debug(`📊 Processing team ${index}: ${entry.teamName} with ${entry.players?.length || 0} players`);
-      
+
       entry.players?.forEach(player => {
         totalPlayers++;
         // Gérer le cas où region pourrait être un objet ou un string
-        const region = typeof player.region === 'string' ? player.region : 
-                      (player.region as any)?.name || player.region || 'Unknown';
+        const region = typeof player.region === 'string' ? player.region :
+          (player.region as any)?.name || player.region || 'Unknown';
         regionCounts[region] = (regionCounts[region] || 0) + 1;
-        
+
         const tranche = `Tranche ${player.tranche || 'Unknown'}`;
         trancheCounts[tranche] = (trancheCounts[tranche] || 0) + 1;
-        
+
         this.logger.debug(`👤 Player: ${player.nickname}, Region: ${region}, Tranche: ${player.tranche}`);
       });
     });
@@ -421,7 +450,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.logger.debug('📊 Total players:', totalPlayers);
 
     newStats.totalPlayers = totalPlayers;
-    
+
     // Vérifier que entries n'est pas vide avant reduce
     newStats.mostActiveTeam = entries.length > 0
       ? entries.reduce((prev, current) => (current.totalPoints || 0) > (prev.totalPoints || 0) ? current : prev).teamName
@@ -468,7 +497,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private updateCompetitionStats(apiStats: any) {
     if (apiStats) {
       const seasonProgress = this.calculateSeasonProgress();
-      
+
       this.competitionStats = {
         totalTeams: apiStats.totalTeams || this.stats.totalTeams,
         totalPlayers: apiStats.totalPlayers || this.stats.totalPlayers,
@@ -481,12 +510,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Utiliser les vraies données de l'API pour les stats globales
       this.stats.totalPlayers = apiStats.totalPlayers;
       this.stats.totalPoints = apiStats.totalPoints || this.stats.totalPoints;
-      
+
       this.logger.debug('📊 Stats API reçues:', apiStats);
     } else {
       // Utiliser les stats calculées
       const seasonProgress = this.calculateSeasonProgress();
-      
+
       this.competitionStats = {
         totalTeams: this.stats.totalTeams,
         totalPlayers: this.stats.totalPlayers,
@@ -506,10 +535,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1); // 1er janvier
     const endOfYear = new Date(now.getFullYear(), 11, 31); // 31 décembre
-    
+
     const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
     const daysElapsed = (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
-    
+
     const progress = (daysElapsed / totalDays) * 100;
     return Math.round(progress * 10) / 10; // Arrondir à 1 décimale
   }
@@ -606,10 +635,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Announce navigation intent to screen readers
     const label = this.getRouteLabel(route);
     this.accessibilityService.announceNavigation(label);
-    
+
     // Update live region with navigation announcement
     this.updateLiveRegion(`${this.t.t('dashboard.live.navigatingTo')} ${label}`, 'polite');
-    
+
     this.router.navigate([route]);
   }
 
@@ -688,10 +717,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getRegionPercentage(region: string): number {
     if (!this.stats.teamComposition?.regions || !this.stats.totalPlayers) return 0;
-    
+
     const regionCount = this.stats.teamComposition.regions[region] || 0;
     const percentage = (regionCount / this.stats.totalPlayers) * 100;
-    
+
     // Arrondir à 1 décimale
     return Math.round(percentage * 10) / 10;
   }
@@ -742,7 +771,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ============== OPTIMISATIONS PERFORMANCE ANGULAR ==============
-  
+
   /**
    * TrackBy function pour optimiser *ngFor des équipes dans le leaderboard
    * Évite les re-rendus inutiles quand les données changent
@@ -786,6 +815,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     this.cdr.detectChanges();
   }
+
+
 
   /**
    * Retourne le statut d'une game

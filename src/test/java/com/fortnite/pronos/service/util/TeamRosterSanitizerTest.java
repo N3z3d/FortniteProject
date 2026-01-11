@@ -1,4 +1,4 @@
-package com.fortnite.pronos.util;
+package com.fortnite.pronos.service.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

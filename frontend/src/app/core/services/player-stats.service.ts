@@ -21,8 +21,9 @@ export class PlayerStatsService {
 
   constructor(private http: HttpClient, private logger: LoggerService) {}
 
-  getPlayerStats(): Observable<PlayerStats> {
-    return this.http.get<PlayerStats>(this.statsUrl).pipe(
+  getPlayerStats(gameId?: string): Observable<PlayerStats> {
+    const url = gameId ? `${this.statsUrl}?gameId=${gameId}` : this.statsUrl;
+    return this.http.get<PlayerStats>(url).pipe(
       map(stats => {
         const playersByRegion = stats?.playersByRegion ?? {};
         const playersByTranche = stats?.playersByTranche ?? {};

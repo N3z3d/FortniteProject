@@ -25,15 +25,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   List<User> findByRole(User.UserRole role);
 
   @Query(
-      "SELECT u FROM User u WHERE u.role = 'PARTICIPANT' AND NOT EXISTS "
+      "SELECT u FROM User u WHERE u.role = 'USER' AND NOT EXISTS "
           + "(SELECT t FROM Team t WHERE t.owner = u AND t.season = ?1)")
   List<User> findParticipantsWithoutTeam(int season);
 
-  @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'PARTICIPANT'")
+  @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'USER'")
   long countParticipants();
 
   @Query(
-      "SELECT u FROM User u WHERE u.role = 'PARTICIPANT' AND EXISTS "
+      "SELECT u FROM User u WHERE u.role = 'USER' AND EXISTS "
           + "(SELECT t FROM Team t WHERE t.owner = u AND t.season = ?1)")
   List<User> findParticipantsWithTeam(int season);
 }

@@ -75,10 +75,10 @@ public class CacheConfig {
     cacheConfigurations.put(
         "games", defaultConfig.entryTtl(Duration.ofMinutes(60))); // 1h pour les games
 
-    // PLAYERS - Données relativement statiques (OPTIMISÉ pour 149 joueurs)
+    // PLAYERS - Données relativement statiques (OPTIMISÉ pour 147 joueurs)
     cacheConfigurations.put(
         "players",
-        defaultConfig.entryTtl(Duration.ofHours(24))); // 24h car les 149 joueurs changent très peu
+        defaultConfig.entryTtl(Duration.ofHours(24))); // 24h car les 147 joueurs changent très peu
 
     // PLAYER PAGES - Cache spécialisé pour la pagination
     cacheConfigurations.put(

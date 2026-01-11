@@ -1,19 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { GameHomeComponent } from './game-home.component';
 import { GameService } from '../services/game.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
-import { Game, GameStatus } from '../models/game.interface';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
+import { UserGamesState, UserGamesStore } from '../../../core/services/user-games.store';
+import { Game } from '../models/game.interface';
 
 describe('GameHomeComponent', () => {
   let component: GameHomeComponent;
   let fixture: ComponentFixture<GameHomeComponent>;
   let gameService: jasmine.SpyObj<GameService>;
   let userContextService: jasmine.SpyObj<UserContextService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
+  let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
   let router: jasmine.SpyObj<Router>;
+  let stateSubject: BehaviorSubject<UserGamesState>;
 
   const mockUser: UserProfile = {
     id: '1',
@@ -44,32 +49,44 @@ describe('GameHomeComponent', () => {
     }
   ];
 
-  beforeEach(async () => {
-    const gameServiceSpy = jasmine.createSpyObj('GameService', ['getUserGames', 'getAvailableGames']);
-    const userContextServiceSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout']);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+  const initialState: UserGamesState = {
+    games: [],
+    loading: false,
+    error: null,
+    lastLoaded: null
+  };
 
-    gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
-    gameServiceSpy.getAvailableGames.and.returnValue(of([]));
-    userContextServiceSpy.getCurrentUser.and.returnValue(mockUser);
+  beforeEach(async () => {
+    gameService = jasmine.createSpyObj('GameService', ['getAvailableGames']);
+    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout']);
+    gameSelectionService = jasmine.createSpyObj('GameSelectionService', ['setSelectedGame']);
+    router = jasmine.createSpyObj('Router', ['navigate']);
+
+    stateSubject = new BehaviorSubject<UserGamesState>(initialState);
+    userGamesStore = jasmine.createSpyObj<UserGamesStore>(
+      'UserGamesStore',
+      ['loadGames', 'refreshGames'],
+      { state$: stateSubject.asObservable() }
+    );
+
+    gameService.getAvailableGames.and.returnValue(of([]));
+    userContextService.getCurrentUser.and.returnValue(mockUser);
+    userGamesStore.loadGames.and.returnValue(of([]));
+    userGamesStore.refreshGames.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
-      imports: [
-        GameHomeComponent,
-        NoopAnimationsModule
-      ],
+      imports: [GameHomeComponent, NoopAnimationsModule],
       providers: [
-        { provide: GameService, useValue: gameServiceSpy },
-        { provide: UserContextService, useValue: userContextServiceSpy },
-        { provide: Router, useValue: routerSpy }
+        { provide: GameService, useValue: gameService },
+        { provide: UserContextService, useValue: userContextService },
+        { provide: GameSelectionService, useValue: gameSelectionService },
+        { provide: UserGamesStore, useValue: userGamesStore },
+        { provide: Router, useValue: router }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(GameHomeComponent);
     component = fixture.componentInstance;
-    gameService = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
-    userContextService = TestBed.inject(UserContextService) as jasmine.SpyObj<UserContextService>;
-    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
   });
 
   it('should create', () => {
@@ -81,46 +98,54 @@ describe('GameHomeComponent', () => {
       component.ngOnInit();
 
       expect(userContextService.getCurrentUser).toHaveBeenCalled();
-      expect(gameService.getUserGames).toHaveBeenCalled();
+      expect(userGamesStore.loadGames).toHaveBeenCalled();
       expect(gameService.getAvailableGames).toHaveBeenCalled();
       expect(component.currentUser).toEqual(mockUser);
-      expect(component.userGames).toEqual(mockGames);
     });
 
     it('should select first game automatically when games are loaded', () => {
       component.ngOnInit();
+      stateSubject.next({ ...initialState, games: mockGames });
 
       expect(component.selectedGame).toEqual(mockGames[0]);
+      expect(gameSelectionService.setSelectedGame).toHaveBeenCalledWith(mockGames[0]);
     });
 
-    it('should not select game when no games are available', () => {
-      gameService.getUserGames.and.returnValue(of([]));
-      
+    it('should clear selection when no games are available', () => {
+      component.selectedGame = mockGames[0];
       component.ngOnInit();
+      stateSubject.next({ ...initialState, games: [] });
 
       expect(component.selectedGame).toBeNull();
+      expect(gameSelectionService.setSelectedGame).toHaveBeenCalledWith(null);
+    });
+
+    it('should expose loading and error from the store state', () => {
+      component.ngOnInit();
+      stateSubject.next({ ...initialState, loading: true });
+      expect(component.loading).toBeTrue();
+
+      stateSubject.next({ ...initialState, loading: false, error: 'Erreur' });
+      expect(component.error).toBe('Erreur');
     });
   });
 
   describe('selectGame', () => {
     it('should select the specified game', () => {
       component.ngOnInit();
-      const gameToSelect = mockGames[1];
+      component.selectGame(mockGames[1]);
 
-      component.selectGame(gameToSelect);
-
-      expect(component.selectedGame).toEqual(gameToSelect);
+      expect(component.selectedGame).toEqual(mockGames[1]);
+      expect(gameSelectionService.setSelectedGame).toHaveBeenCalledWith(mockGames[1]);
     });
 
     it('should close sidebar on mobile when selecting game', () => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
         configurable: true,
-        value: 768,
+        value: 768
       });
       component.sidebarOpened = true;
-      component.ngOnInit();
-
       component.selectGame(mockGames[0]);
 
       expect(component.sidebarOpened).toBeFalse();
@@ -130,54 +155,36 @@ describe('GameHomeComponent', () => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
         configurable: true,
-        value: 1024,
+        value: 1024
       });
       component.sidebarOpened = true;
-      component.ngOnInit();
-
       component.selectGame(mockGames[0]);
 
       expect(component.sidebarOpened).toBeTrue();
     });
   });
 
-  describe('toggleSidebar', () => {
-    it('should toggle sidebar state', () => {
-      component.sidebarOpened = true;
-
-      component.toggleSidebar();
-
-      expect(component.sidebarOpened).toBeFalse();
-
-      component.toggleSidebar();
-
-      expect(component.sidebarOpened).toBeTrue();
-    });
-  });
-
-  describe('createGame', () => {
+  describe('navigation actions', () => {
     it('should navigate to create game page', () => {
       component.createGame();
 
       expect(router.navigate).toHaveBeenCalledWith(['/games/create']);
     });
-  });
 
-  describe('joinGame', () => {
     it('should navigate to join game page', () => {
       component.joinGame();
 
       expect(router.navigate).toHaveBeenCalledWith(['/games/join']);
     });
-  });
 
-  describe('viewGame', () => {
-    it('should navigate to game details page', () => {
-      const gameId = '123';
+    it('should navigate to game details page and store selection', () => {
+      component.ngOnInit();
+      stateSubject.next({ ...initialState, games: mockGames });
 
-      component.viewGame(gameId);
+      component.viewGame(mockGames[0].id);
 
-      expect(router.navigate).toHaveBeenCalledWith(['/games', gameId]);
+      expect(router.navigate).toHaveBeenCalledWith(['/games', mockGames[0].id]);
+      expect(gameSelectionService.setSelectedGame).toHaveBeenCalledWith(mockGames[0]);
     });
   });
 
@@ -190,314 +197,40 @@ describe('GameHomeComponent', () => {
     });
   });
 
-  describe('getStatusColor', () => {
-    it('should return correct color for CREATING status', () => {
+  describe('helpers', () => {
+    it('should return correct status color', () => {
       expect(component.getStatusColor('CREATING')).toBe('primary');
-    });
-
-    it('should return correct color for DRAFTING status', () => {
       expect(component.getStatusColor('DRAFTING')).toBe('accent');
-    });
-
-    it('should return correct color for ACTIVE status', () => {
       expect(component.getStatusColor('ACTIVE')).toBe('primary');
-    });
-
-    it('should return correct color for FINISHED status', () => {
       expect(component.getStatusColor('FINISHED')).toBe('warn');
-    });
-
-    it('should return correct color for CANCELLED status', () => {
       expect(component.getStatusColor('CANCELLED')).toBe('warn');
     });
-  });
 
-  describe('getStatusLabel', () => {
-    it('should return correct label for CREATING status', () => {
+    it('should return correct status label', () => {
       expect(component.getStatusLabel('CREATING')).toBe('En création');
-    });
-
-    it('should return correct label for DRAFTING status', () => {
       expect(component.getStatusLabel('DRAFTING')).toBe('Draft en cours');
-    });
-
-    it('should return correct label for ACTIVE status', () => {
       expect(component.getStatusLabel('ACTIVE')).toBe('Active');
-    });
-
-    it('should return correct label for FINISHED status', () => {
       expect(component.getStatusLabel('FINISHED')).toBe('Terminée');
-    });
-
-    it('should return correct label for CANCELLED status', () => {
       expect(component.getStatusLabel('CANCELLED')).toBe('Annulée');
     });
-  });
 
-  describe('hasGames', () => {
-    it('should return true when user has games', () => {
+    it('should expose game count and hasGames', () => {
       component.userGames = mockGames;
-
+      expect(component.getGameCount()).toBe(2);
       expect(component.hasGames()).toBeTrue();
     });
 
-    it('should return false when user has no games', () => {
-      component.userGames = [];
-
-      expect(component.hasGames()).toBeFalse();
-    });
-  });
-
-  describe('getGameCount', () => {
-    it('should return correct number of games', () => {
-      component.userGames = mockGames;
-
-      expect(component.getGameCount()).toBe(2);
-    });
-
-    it('should return 0 when no games', () => {
-      component.userGames = [];
-
-      expect(component.getGameCount()).toBe(0);
-    });
-  });
-
-  describe('trackByGameId', () => {
-    it('should return game id for tracking', () => {
-      const game = mockGames[0];
-
-      const result = component.trackByGameId(0, game);
-
-      expect(result).toBe(game.id);
+    it('should track games by id', () => {
+      const result = component.trackByGameId(0, mockGames[0]);
+      expect(result).toBe(mockGames[0].id);
     });
   });
 
   describe('reloadUserGames', () => {
-    it('should reload user games', () => {
+    it('should refresh games via the store', () => {
       component.reloadUserGames();
 
-      expect(gameService.getUserGames).toHaveBeenCalled();
+      expect(userGamesStore.refreshGames).toHaveBeenCalled();
     });
   });
-
-  describe('loading states', () => {
-    it('should handle loading state correctly', () => {
-      gameService.getUserGames.and.returnValue(of(mockGames));
-      
-      component.ngOnInit();
-
-      expect(component.loading).toBeFalse();
-      expect(component.error).toBeNull();
-    });
-
-    it('should handle error state correctly', () => {
-      const error = new Error('Network error');
-      gameService.getUserGames.and.returnValue(throwError(() => error));
-      
-      component.ngOnInit();
-
-      expect(component.loading).toBeFalse();
-      expect(component.error).toBe('Network error');
-    });
-  });
-
-  describe('empty state', () => {
-    it('should show empty state when no games', () => {
-      gameService.getUserGames.and.returnValue(of([]));
-      
-      component.ngOnInit();
-
-      expect(component.userGames.length).toBe(0);
-      expect(component.selectedGame).toBeNull();
-    });
-  });
-
-  describe('game selection', () => {
-    it('should maintain selected game when games are reloaded', () => {
-      component.ngOnInit();
-      const selectedGame = mockGames[1];
-      component.selectGame(selectedGame);
-
-      // Simuler un rechargement avec les mêmes games
-      gameService.getUserGames.and.returnValue(of(mockGames));
-      component.reloadUserGames();
-
-      expect(component.selectedGame).toEqual(selectedGame);
-    });
-
-    it('should select first game when current selection is not in new list', () => {
-      component.ngOnInit();
-      const newGames = [mockGames[1]]; // Différent de la sélection actuelle
-      gameService.getUserGames.and.returnValue(of(newGames));
-
-      component.reloadUserGames();
-
-      expect(component.selectedGame).toEqual(newGames[0]);
-    });
-  });
-
-  xdescribe('User Story Tests', () => {
-    it('should display empty state with create/join buttons when user has 0 games', () => {
-      gameService.getUserGames.and.returnValue(of([]));
-      
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const emptyState = fixture.nativeElement.querySelector('.empty-state');
-      const createButton = fixture.nativeElement.querySelector('.create-game-btn');
-      const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
-
-      expect(emptyState).toBeTruthy();
-      expect(createButton).toBeTruthy();
-      expect(joinButton).toBeTruthy();
-    });
-
-    it('should display selected game when user has games', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const selectedGame = fixture.nativeElement.querySelector('.selected-game');
-      const gameDetailCard = fixture.nativeElement.querySelector('.game-detail-card');
-
-      expect(selectedGame).toBeTruthy();
-      expect(gameDetailCard).toBeTruthy();
-    });
-
-    it('should display sidebar with game list', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const sidebar = fixture.nativeElement.querySelector('.games-sidebar');
-      const gameList = fixture.nativeElement.querySelectorAll('.game-list-item');
-
-      expect(sidebar).toBeTruthy();
-      expect(gameList.length).toBe(2); // 2 games in mock data
-    });
-
-    it('should allow creating new game from sidebar', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const createButton = fixture.nativeElement.querySelector('.create-game-sidebar-btn');
-      
-      expect(createButton).toBeTruthy();
-      
-      createButton.click();
-      
-      expect(router.navigate).toHaveBeenCalledWith(['/games/create']);
-    });
-
-    it('should allow joining game from sidebar footer', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
-      
-      expect(joinButton).toBeTruthy();
-      
-      joinButton.click();
-      
-      expect(router.navigate).toHaveBeenCalledWith(['/games/join']);
-    });
-
-    it('should highlight active game in sidebar', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const gameListItems = fixture.nativeElement.querySelectorAll('.game-list-item');
-      const firstGameItem = gameListItems[0];
-
-      expect(firstGameItem.classList.contains('active')).toBeTrue();
-    });
-
-    it('should show user welcome message in toolbar', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const toolbarTitle = fixture.nativeElement.querySelector('.toolbar-title');
-      
-      expect(toolbarTitle.textContent).toContain('Thibaut');
-    });
-
-    it('should show selected game name in toolbar', () => {
-      component.ngOnInit();
-      fixture.detectChanges();
-
-      const toolbarTitle = fixture.nativeElement.querySelector('.toolbar-title');
-      
-      expect(toolbarTitle.textContent).toContain('Championnat Saison 1');
-    });
-  });
-
-  xdescribe('Empty State Display', () => {
-    it('should display empty state when user has no games', () => {
-      // Arrange
-      gameService.getUserGames.and.returnValue(of([]));
-      userContextService.getCurrentUser.and.returnValue(mockUser);
-      
-      // Act
-      component.ngOnInit();
-      fixture.detectChanges();
-      
-      // Assert
-      const emptyState = fixture.nativeElement.querySelector('.empty-state');
-      const createButton = fixture.nativeElement.querySelector('.create-game-btn');
-      const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
-      
-      expect(emptyState).toBeTruthy();
-      expect(createButton).toBeTruthy();
-      expect(joinButton).toBeTruthy();
-      expect(createButton.textContent.trim()).toContain('Créer ma première game');
-      expect(joinButton.textContent.trim()).toContain('Rejoindre une game');
-    });
-
-    it('should NOT display error when user has no games (empty array is success)', () => {
-      // Arrange
-      gameService.getUserGames.and.returnValue(of([]));
-      userContextService.getCurrentUser.and.returnValue(mockUser);
-      
-      // Act
-      component.ngOnInit();
-      fixture.detectChanges();
-      
-      // Assert
-      const errorContainer = fixture.nativeElement.querySelector('.error-container');
-      const emptyState = fixture.nativeElement.querySelector('.empty-state');
-      
-      expect(errorContainer).toBeFalsy();
-      expect(emptyState).toBeTruthy();
-    });
-
-    it('should display error only when there is a real error', () => {
-      // Arrange
-      gameService.getUserGames.and.returnValue(throwError(() => new Error('Erreur réseau')));
-      userContextService.getCurrentUser.and.returnValue(mockUser);
-      
-      // Act
-      component.ngOnInit();
-      fixture.detectChanges();
-      
-      // Assert
-      const errorContainer = fixture.nativeElement.querySelector('.error-container');
-      const emptyState = fixture.nativeElement.querySelector('.empty-state');
-      
-      expect(errorContainer).toBeTruthy();
-      expect(emptyState).toBeFalsy();
-      expect(errorContainer.textContent).toContain('Erreur rゼseau');
-    });
-
-    it('should show loading state while fetching games', () => {
-      // Arrange
-      gameService.getUserGames.and.returnValue(of(mockGames)); // Changed to of(mockGames) to simulate loading
-      userContextService.getCurrentUser.and.returnValue(mockUser);
-      
-      // Act
-      component.ngOnInit();
-      fixture.detectChanges();
-      
-      // Assert
-      const loadingContainer = fixture.nativeElement.querySelector('.loading-container');
-      expect(loadingContainer).toBeTruthy();
-    });
-  });
-}); 
+});

@@ -79,6 +79,18 @@ public class TeamController {
   }
 
   @Operation(
+      summary = "Get all teams for a game",
+      description = "Retrieve all teams participating in a specific game")
+  @ApiResponse(responseCode = "200", description = "Teams retrieved successfully")
+  @GetMapping("/game/{gameId}")
+  public ResponseEntity<List<TeamDto>> getTeamsByGame(
+      @Parameter(description = "Game unique identifier", required = true) @PathVariable
+          UUID gameId) {
+    log.debug("Récupération des équipes pour la game {}", gameId);
+    return ResponseEntity.ok(teamService.getTeamsByGame(gameId));
+  }
+
+  @Operation(
       summary = "Get teams by username and year",
       description = "Retrieve teams for a user by username and year using query parameters")
   @ApiResponses(

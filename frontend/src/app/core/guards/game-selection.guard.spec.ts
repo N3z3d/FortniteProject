@@ -74,7 +74,7 @@ describe('GameSelectionGuard', () => {
       guard.canActivate(mockRoute, mockState);
 
       expect(snackBar.open).toHaveBeenCalledWith(
-        'Veuillez d\'abord sélectionner une game',
+        'Veuillez d\'abord sélectionner une partie',
         'Fermer',
         jasmine.objectContaining({ duration: 4000 })
       );

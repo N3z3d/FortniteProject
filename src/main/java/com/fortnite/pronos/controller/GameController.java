@@ -276,17 +276,24 @@ public class GameController {
     }
   }
 
-  /** Ancien endpoint pour les games disponibles. */
-  @Deprecated
+  /** Liste les games avec des places disponibles. */
   @GetMapping("/available")
   public ResponseEntity<List<GameDto>> getAvailableGames(
-      @RequestParam(name = "user", required = false) String userParam, HttpServletRequest request) {
-    log.debug("Endpoint /available utilise pour les tests/dev");
-    User user = resolveUser(userParam, false, request);
-    if (user == null) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    log.debug("Recuperation des games disponibles");
+
+    try {
+      User user = resolveUser(username, false, httpRequest);
+      if (user == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      }
+      List<GameDto> availableGames = gameService.getAvailableGames();
+      return ResponseEntity.ok(availableGames);
+    } catch (Exception e) {
+      log.error("Erreur lors de la recuperation des games disponibles", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
-    return ResponseEntity.ok(gameService.getAvailableGames());
   }
 
   /** Permet d'ajouter un utilisateur a une game. */

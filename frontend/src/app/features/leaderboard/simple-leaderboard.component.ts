@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { GameSelectionService } from '../../core/services/game-selection.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { Subscription } from 'rxjs';
 import { LeaderboardService, PlayerLeaderboardEntry } from '../../core/services/leaderboard.service';
 
@@ -32,7 +33,8 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     private leaderboardService: LeaderboardService,
     private cdr: ChangeDetectorRef,
     private accessibilityService: AccessibilityAnnouncerService,
-    private gameSelectionService: GameSelectionService
+    private gameSelectionService: GameSelectionService,
+    public t: TranslationService
   ) {}
 
   ngOnInit() {
@@ -49,9 +51,9 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
   loadData() {
     this.loading = true;
     this.error = '';
-    this.selectedGameId = this.gameSelectionService.getSelectedGame()?.id || this.selectedGameId || 'global';
+    this.selectedGameId = this.gameSelectionService.getSelectedGame()?.id || null;
 
-    this.leaderboardService.getPlayerLeaderboard(2025).subscribe({
+    this.leaderboardService.getPlayerLeaderboard(2025, undefined, this.selectedGameId || undefined).subscribe({
       next: (entries) => {
         this.allPlayers = Array.isArray(entries) ? entries : [];
         this.filterPlayers();

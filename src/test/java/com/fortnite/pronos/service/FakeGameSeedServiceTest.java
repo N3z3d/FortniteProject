@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
@@ -39,11 +40,23 @@ class FakeGameSeedServiceTest {
   @Mock private PlayerRepository playerRepository;
   @Mock private TeamRepository teamRepository;
   @Mock private Environment environment;
+  @Mock private SeedProperties seedProperties;
 
   @InjectMocks private FakeGameSeedService fakeGameSeedService;
 
   @Test
+  void skipsSeedWhenDisabled() {
+    when(seedProperties.isFakeGameEnabled()).thenReturn(false);
+
+    fakeGameSeedService.seedFakeGame();
+
+    verify(gameRepository, never()).save(any(Game.class));
+    verify(teamRepository, never()).saveAll(any());
+  }
+
+  @Test
   void skipsSeedOutsideDevProfiles() {
+    when(seedProperties.isFakeGameEnabled()).thenReturn(true);
     when(environment.getActiveProfiles()).thenReturn(new String[] {"prod"});
 
     fakeGameSeedService.seedFakeGame();
@@ -54,6 +67,7 @@ class FakeGameSeedServiceTest {
 
   @Test
   void skipsSeedWhenCreatorMissing() {
+    when(seedProperties.isFakeGameEnabled()).thenReturn(true);
     when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
     when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.empty());
 
@@ -65,6 +79,7 @@ class FakeGameSeedServiceTest {
 
   @Test
   void seedsGameAndTeamsForDevProfile() {
+    when(seedProperties.isFakeGameEnabled()).thenReturn(true);
     when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
 
     User creator = buildUser("Thibaut", User.UserRole.USER);
@@ -79,8 +94,7 @@ class FakeGameSeedServiceTest {
 
     List<Player> players =
         List.of(buildPlayer("A"), buildPlayer("B"), buildPlayer("C"), buildPlayer("D"));
-    when(playerRepository.findAll(
-            PageRequest.of(0, 4, Sort.by("nickname").ascending())))
+    when(playerRepository.findAll(PageRequest.of(0, 4, Sort.by("nickname").ascending())))
         .thenReturn(new PageImpl<>(players));
 
     when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));

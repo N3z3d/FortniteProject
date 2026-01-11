@@ -1,12 +1,15 @@
 package com.fortnite.pronos.service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /** Service to initialize teams from CSV assignments. */
 @Service
+@ConditionalOnProperty(name = "fortnite.data.provider", havingValue = "csv", matchIfMissing = true)
 @RequiredArgsConstructor
 @Slf4j
 public class TeamInitializationService {
@@ -29,6 +33,7 @@ public class TeamInitializationService {
   private static final int CURRENT_SEASON = 2025;
 
   private final CsvDataLoaderService csvDataLoaderService;
+  private final Environment environment;
   private final UserRepository userRepository;
   private final TeamRepository teamRepository;
   private final PlayerRepository playerRepository;
@@ -37,16 +42,17 @@ public class TeamInitializationService {
   @EventListener(ApplicationReadyEvent.class)
   @Order(2)
   @Transactional
-  public void createTeamsFromCsvData() {
-    // Check if players already exist - if so, skip entirely to prevent duplicate CSV loading
-    long existingPlayerCount = playerRepository.count();
-    if (existingPlayerCount > 0) {
-      log.info(
-          "Team initialization: {} players already exist, skipping team creation to prevent duplicate CSV load",
-          existingPlayerCount);
+  public void createTeamsFromCsvDataOnStartup() {
+    if (isTestProfile()) {
+      log.info("Team initialization: skipped for test profile");
       return;
     }
 
+    createTeamsFromCsvData();
+  }
+
+  @Transactional
+  public void createTeamsFromCsvData() {
     Map<String, List<Player>> playerAssignments = csvDataLoaderService.getAllPlayerAssignments();
     if (playerAssignments.isEmpty()) {
       log.warn("Team initialization: no assignments found in memory, loading CSV");
@@ -67,6 +73,10 @@ public class TeamInitializationService {
     }
 
     logInitializationSummary(stats);
+  }
+
+  private boolean isTestProfile() {
+    return Arrays.asList(environment.getActiveProfiles()).contains("test");
   }
 
   private Map<String, Boolean> buildExistingOwners(List<Team> existingTeams) {

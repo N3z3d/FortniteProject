@@ -1,12 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { GameHomeComponent } from './game-home.component';
 import { GameService } from '../services/game.service';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
 import { GameSelectionService } from '../../../core/services/game-selection.service';
+import { UserGamesState, UserGamesStore } from '../../../core/services/user-games.store';
 import { Game } from '../models/game.interface';
 
 describe('GameHomeComponent (template)', () => {
@@ -15,7 +16,9 @@ describe('GameHomeComponent (template)', () => {
   let gameService: jasmine.SpyObj<GameService>;
   let userContextService: jasmine.SpyObj<UserContextService>;
   let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
   let router: jasmine.SpyObj<Router>;
+  let stateSubject: BehaviorSubject<UserGamesState>;
 
   const mockUser: UserProfile = {
     id: '1',
@@ -56,14 +59,29 @@ describe('GameHomeComponent (template)', () => {
     }
   ];
 
+  const initialState: UserGamesState = {
+    games: [],
+    loading: false,
+    error: null,
+    lastLoaded: null
+  };
+
   beforeEach(async () => {
-    gameService = jasmine.createSpyObj('GameService', ['getUserGames', 'getAvailableGames']);
+    gameService = jasmine.createSpyObj('GameService', ['getAvailableGames']);
     userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout']);
     gameSelectionService = jasmine.createSpyObj('GameSelectionService', ['setSelectedGame']);
     router = jasmine.createSpyObj('Router', ['navigate']);
 
+    stateSubject = new BehaviorSubject<UserGamesState>(initialState);
+    userGamesStore = jasmine.createSpyObj<UserGamesStore>(
+      'UserGamesStore',
+      ['loadGames', 'refreshGames'],
+      { state$: stateSubject.asObservable() }
+    );
+
     userContextService.getCurrentUser.and.returnValue(mockUser);
     gameService.getAvailableGames.and.returnValue(of([]));
+    userGamesStore.loadGames.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [GameHomeComponent, NoopAnimationsModule],
@@ -71,6 +89,7 @@ describe('GameHomeComponent (template)', () => {
         { provide: GameService, useValue: gameService },
         { provide: UserContextService, useValue: userContextService },
         { provide: GameSelectionService, useValue: gameSelectionService },
+        { provide: UserGamesStore, useValue: userGamesStore },
         { provide: Router, useValue: router }
       ]
     }).compileComponents();
@@ -80,9 +99,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should render premium empty state when user has no games', () => {
-    gameService.getUserGames.and.returnValue(of([]));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: [] });
     fixture.detectChanges();
 
     const emptyState = fixture.nativeElement.querySelector('.premium-empty-state');
@@ -95,9 +113,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should render one card per game and select the first by default', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const cards: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.premium-game-card');
@@ -109,9 +126,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should not let the premium card overlay capture pointer events', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const card: HTMLElement | null = fixture.nativeElement.querySelector('.premium-game-card');
@@ -122,9 +138,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should navigate to game details when clicking "Voir les détails"', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const detailButtons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll('.detail-btn');
@@ -137,9 +152,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should navigate to game details when clicking the visible details button (hit-testing)', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const detailButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.detail-btn');
@@ -160,10 +174,9 @@ describe('GameHomeComponent (template)', () => {
     expect(gameSelectionService.setSelectedGame).toHaveBeenCalledWith(mockGames[0]);
   });
 
-  it('should navigate to draft when clicking "Enter Draft"', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
+  it('should navigate to draft when clicking "Entrer dans la draft"', () => {
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const draftButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.draft-btn');
@@ -175,9 +188,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should navigate to dashboard when clicking "Tableau de bord"', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const dashboardButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.dashboard-btn');
@@ -189,9 +201,8 @@ describe('GameHomeComponent (template)', () => {
   });
 
   it('should navigate to dashboard when clicking the visible dashboard button (hit-testing)', () => {
-    gameService.getUserGames.and.returnValue(of(mockGames));
-
     component.ngOnInit();
+    stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
     const dashboardButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.dashboard-btn');

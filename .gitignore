@@ -59,4 +59,6 @@ Thumbs.db
 # Misc
 *.swp
 *.swo
-*~ .pgdata/
+*~
+.pgdata/
+.claude/settings.local.json

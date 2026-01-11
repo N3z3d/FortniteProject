@@ -104,7 +104,7 @@ spring:
     baseline-on-migrate: true
 ```
 
-**Testing (application-test.yml):**
+**Testing (src/test/resources/application-test.yml):**
 ```yaml
 spring:
   datasource:

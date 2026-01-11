@@ -128,11 +128,9 @@
 
 1\) \*\*Plan bref\*\* (3–6 puces) décrivant l’approche.
 
-2\) \*\*DIFF unifié uniquement\*\* des fichiers à modifier/créer/supprimer.
+2\) \*\*Tests\*\* (diff des fichiers dans `tests/` ou équivalent).
 
-3\) \*\*Tests\*\* (diff des fichiers dans `tests/` ou équivalent).
-
-4\) \*\*Checklist qualité\*\* :
+3\) \*\*Checklist qualité\*\* :
 
 &nbsp;  - \[ ] SOLID respecté (SRP/OCP/LSP/ISP/DIP)
 

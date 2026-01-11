@@ -2,15 +2,22 @@ package com.fortnite.pronos.service.draft;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
+import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.DraftRepository;
+import com.fortnite.pronos.repository.GameParticipantRepository;
+import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DraftService {
 
   private final DraftRepository draftRepository;
+  private final GameRepository gameRepository;
+  private final GameParticipantRepository gameParticipantRepository;
+  private final PlayerRepository playerRepository;
 
   /** Crée un nouveau draft pour une game */
   public Draft createDraft(Game game, List<GameParticipant> participants) {
@@ -181,5 +191,70 @@ public class DraftService {
     // Cette méthode nécessiterait l'accès aux participants
     // Pour l'instant, on retourne true pour éviter l'erreur de compilation
     return true;
+  }
+
+  // ============== MÉTHODES POUR DÉCOUPLER LE CONTROLLER ==============
+
+  /** Trouve une game par ID ou lève une exception */
+  @Transactional(readOnly = true)
+  public Game findGameById(UUID gameId) {
+    return gameRepository
+        .findById(gameId)
+        .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
+  }
+
+  /** Trouve une game par ID (optionnel) */
+  @Transactional(readOnly = true)
+  public Optional<Game> findGameByIdOptional(UUID gameId) {
+    return gameRepository.findById(gameId);
+  }
+
+  /** Trouve un joueur par ID ou lève une exception */
+  @Transactional(readOnly = true)
+  public Player findPlayerById(UUID playerId) {
+    return playerRepository
+        .findById(playerId)
+        .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
+  }
+
+  /** Trouve un joueur par ID (optionnel) */
+  @Transactional(readOnly = true)
+  public Optional<Player> findPlayerByIdOptional(UUID playerId) {
+    return playerRepository.findById(playerId);
+  }
+
+  /** Récupère les participants d'une game ordonnés par draft order */
+  @Transactional(readOnly = true)
+  public List<GameParticipant> getParticipantsOrderedByDraftOrder(UUID gameId) {
+    return gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
+  }
+
+  /** Trouve le draft associé à une game */
+  @Transactional(readOnly = true)
+  public Optional<Draft> findDraftByGame(Game game) {
+    return draftRepository.findByGame(game);
+  }
+
+  /** Sauvegarde un draft */
+  public Draft saveDraft(Draft draft) {
+    return draftRepository.save(draft);
+  }
+
+  /** Récupère les joueurs disponibles par région */
+  @Transactional(readOnly = true)
+  public List<Player> getAvailablePlayersByRegion(Player.Region region) {
+    return playerRepository.findByRegion(region);
+  }
+
+  /** Met à jour le statut d'une game */
+  public Game updateGameStatus(Game game, GameStatus status) {
+    game.setStatus(status);
+    return gameRepository.save(game);
+  }
+
+  /** Avance le draft au pick suivant et retourne le draft sauvegardé */
+  public Draft advanceToNextPick(Draft draft) {
+    draft.nextPick();
+    return draftRepository.save(draft);
   }
 }

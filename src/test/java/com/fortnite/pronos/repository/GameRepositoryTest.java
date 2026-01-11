@@ -196,18 +196,6 @@ class GameRepositoryTest {
   }
 
   @Test
-  @DisplayName("Devrait trouver les games disponibles pour rejoindre")
-  void shouldFindAvailableGames() {
-    // When
-    List<Game> availableGames = gameRepository.findAvailableGames();
-
-    // Then
-    assertThat(availableGames).hasSize(1);
-    assertThat(availableGames.get(0).getStatus()).isEqualTo(GameStatus.CREATING);
-    assertThat(availableGames.get(0).getName()).isEqualTo("Test Game 1");
-  }
-
-  @Test
   @DisplayName("Devrait compter les games par statut")
   void shouldCountGamesByStatus() {
     // When

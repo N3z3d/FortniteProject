@@ -7,10 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.service.draft.DraftService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,10 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DraftController {
 
   private final DraftService draftService;
-  private final DraftRepository draftRepository;
-  private final GameRepository gameRepository;
-  private final GameParticipantRepository gameParticipantRepository;
-  private final PlayerRepository playerRepository;
 
   @Operation(
       summary = "Get draft information",
@@ -268,8 +260,7 @@ public class DraftController {
       @PathVariable UUID gameId, @RequestBody Map<String, String> request) {
     log.debug("Selecting player for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
+    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
@@ -285,8 +276,7 @@ public class DraftController {
       return ResponseEntity.badRequest().body(Map.of("error", "Invalid playerId format"));
     }
 
-    Optional<Player> playerOpt = playerRepository.findById(playerId);
-    if (playerOpt.isEmpty()) {
+    if (draftService.findPlayerByIdOptional(playerId).isEmpty()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Player not found"));
     }
 
@@ -298,21 +288,20 @@ public class DraftController {
   public ResponseEntity<Map<String, Object>> getNextParticipant(@PathVariable UUID gameId) {
     log.debug("Getting next participant for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
+    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
     Game game = gameOpt.get();
-    List<GameParticipant> participants =
-        gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
+    List<GameParticipant> participants = draftService.getParticipantsOrderedByDraftOrder(gameId);
 
     if (participants.isEmpty()) {
       return ResponseEntity.ok(Map.of("message", "No participants found"));
     }
 
     // Check if draft exists and get current pick position
-    Optional<Draft> draftOpt = draftRepository.findByGame(game);
+    Optional<Draft> draftOpt = draftService.findDraftByGame(game);
     int currentPick = 1;
     int currentRound = 1;
     if (draftOpt.isPresent()) {
@@ -341,13 +330,11 @@ public class DraftController {
   public ResponseEntity<List<Map<String, Object>>> getDraftOrder(@PathVariable UUID gameId) {
     log.debug("Getting draft order for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
+    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
-    List<GameParticipant> participants =
-        gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
+    List<GameParticipant> participants = draftService.getParticipantsOrderedByDraftOrder(gameId);
 
     List<Map<String, Object>> result =
         participants.stream()
@@ -368,13 +355,11 @@ public class DraftController {
       @PathVariable UUID gameId, @PathVariable UUID userId) {
     log.debug("Checking if it's user {} turn in game {}", userId, gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
+    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
-    List<GameParticipant> participants =
-        gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
+    List<GameParticipant> participants = draftService.getParticipantsOrderedByDraftOrder(gameId);
 
     if (participants.isEmpty()) {
       return ResponseEntity.ok(Map.of("isTurn", false));
@@ -392,7 +377,7 @@ public class DraftController {
   public ResponseEntity<Map<String, Object>> moveToNext(@PathVariable UUID gameId) {
     log.debug("Moving to next participant in game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
+    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
@@ -400,7 +385,7 @@ public class DraftController {
     Game game = gameOpt.get();
 
     // Find or create draft for the game
-    Optional<Draft> draftOpt = draftRepository.findByGame(game);
+    Optional<Draft> draftOpt = draftService.findDraftByGame(game);
     Draft draft;
     if (draftOpt.isEmpty()) {
       // Create new draft if doesn't exist
@@ -410,12 +395,10 @@ public class DraftController {
     }
 
     // Advance to next pick
-    draft.nextPick();
-    Draft savedDraft = draftRepository.save(draft);
+    Draft savedDraft = draftService.advanceToNextPick(draft);
 
     // Get next participant based on new draft state
-    List<GameParticipant> participants =
-        gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
+    List<GameParticipant> participants = draftService.getParticipantsOrderedByDraftOrder(gameId);
 
     Map<String, Object> response = new HashMap<>();
     response.put("success", true);
@@ -438,7 +421,7 @@ public class DraftController {
   public ResponseEntity<Map<String, Object>> checkDraftComplete(@PathVariable UUID gameId) {
     log.debug("Checking if draft is complete for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
+    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
@@ -455,8 +438,7 @@ public class DraftController {
       @PathVariable UUID gameId, @PathVariable String region) {
     log.debug("Getting available players for region {} in game {}", region, gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
+    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
@@ -467,7 +449,7 @@ public class DraftController {
       return ResponseEntity.badRequest().build();
     }
 
-    List<Player> players = playerRepository.findByRegion(playerRegion);
+    List<Player> players = draftService.getAvailablePlayersByRegion(playerRegion);
 
     List<Map<String, Object>> result =
         players.stream()
@@ -487,8 +469,7 @@ public class DraftController {
   public ResponseEntity<Map<String, Object>> handleTimeouts(@PathVariable UUID gameId) {
     log.debug("Handling timeouts for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
+    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
@@ -500,14 +481,13 @@ public class DraftController {
   public ResponseEntity<Map<String, Object>> finishDraft(@PathVariable UUID gameId) {
     log.debug("Finishing draft for game {}", gameId);
 
-    Optional<Game> gameOpt = gameRepository.findById(gameId);
+    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
     Game game = gameOpt.get();
-    game.setStatus(GameStatus.ACTIVE);
-    gameRepository.save(game);
+    draftService.updateGameStatus(game, GameStatus.ACTIVE);
 
     return ResponseEntity.ok(Map.of("success", true, "message", "Draft terminé avec succès"));
   }

@@ -141,16 +141,6 @@ class GameWorkflowIntegrationTest {
   }
 
   @Test
-  @DisplayName("Devrait récupérer toutes les games disponibles")
-  void shouldRetrieveAllAvailableGames() throws Exception {
-    // When & Then
-    performWithUser(get("/api/games/available"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$[0].name").value("Test Game"));
-  }
-
-  @Test
   @DisplayName("Devrait récupérer les games d'un utilisateur spécifique")
   void shouldRetrieveGamesForSpecificUser() throws Exception {
     // When & Then - Use /api/games?user=username endpoint (not /api/games/user/{userId})

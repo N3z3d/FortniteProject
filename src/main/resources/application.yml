@@ -37,7 +37,7 @@ spring:
       cache-null-values: false
   datasource:
     # PostgreSQL configuration by default for dev/prod
-    url: jdbc:postgresql://localhost:5432/fortnite_pronos
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fortnite_pronos}
     username: ${DB_USERNAME:fortnite_user}
     password: ${DB_PASSWORD:fortnite_pass}
     driver-class-name: org.postgresql.Driver
@@ -78,6 +78,10 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+    mixed: true
+    postgresql:
+      transactional:
+        lock: false
   sql:
     init:
       mode: never
@@ -141,6 +145,8 @@ cors:
   allow-credentials: true
 
 management:
+  tracing:
+    enabled: false
   endpoints:
     web:
       exposure:
@@ -193,4 +199,17 @@ database:
 fortnite:
   api:
     key: ${FORTNITE_API_KEY:}
-    url: ${FORTNITE_API_URL:https://fortnite-api.com/v2/stats/br/v2} 
+    url: ${FORTNITE_API_URL:https://fortnite-api.com/v2/stats/br/v2}
+  data:
+    provider: ${FORTNITE_DATA_PROVIDER:csv}
+  seed:
+    enabled: ${FORTNITE_SEED_ENABLED:false}
+    mode: ${FORTNITE_SEED_MODE:reference}
+    legacy-enabled: ${FORTNITE_SEED_LEGACY_ENABLED:false}
+    fake-game-enabled: ${FORTNITE_SEED_FAKE_GAME_ENABLED:false}
+    reset: ${FORTNITE_SEED_RESET:false}
+  supabase:
+    url: ${SUPABASE_URL:}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    schema: ${SUPABASE_SCHEMA:public}
+    seed-game-id: ${SUPABASE_SEED_GAME_ID:}

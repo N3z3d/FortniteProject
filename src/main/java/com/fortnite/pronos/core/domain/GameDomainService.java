@@ -53,14 +53,20 @@ public class GameDomainService {
 
   /** Determine if a user can participate in a game */
   public boolean canUserParticipate(User user, Game game) {
+    if (user == null || game == null) {
+      return false;
+    }
+
     // Domain rule: Creator cannot participate as a regular participant
-    if (game.getCreator().getId().equals(user.getId())) {
+    if (game.getCreator() != null
+        && game.getCreator().getId() != null
+        && game.getCreator().getId().equals(user.getId())) {
       return false;
     }
 
     // Domain rule: Only participants and admins can join games
-    String role = user.getRole() != null ? user.getRole().toString() : "";
-    return "PARTICIPANT".equals(role) || "ADMIN".equals(role);
+    User.UserRole role = user.getRole();
+    return role == User.UserRole.USER || role == User.UserRole.ADMIN;
   }
 
   /** Calculate game priority score for scheduling */

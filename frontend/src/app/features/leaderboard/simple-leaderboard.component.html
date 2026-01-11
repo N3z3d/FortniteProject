@@ -1,30 +1,30 @@
 <div class="leaderboard-container">
   <!-- Skip to main content link -->
-  <a href="#main-content" class="skip-link sr-only-focusable">Aller au contenu principal</a>
-  
+  <a href="#main-content" class="skip-link sr-only-focusable">{{ t.t('leaderboard.skipToContent') }}</a>
+
   <header role="banner">
-    <h1 id="main-heading">Classement des Joueurs - Saison 2025</h1>
+    <h1 id="main-heading">{{ t.t('leaderboard.title') }}</h1>
   </header>
-  
+
   <!-- Loading -->
   <div *ngIf="loading" class="loading" role="status" aria-live="polite" aria-labelledby="loading-text">
-    <span id="loading-text">Chargement des données du classement en cours</span>
+    <span id="loading-text">{{ t.t('leaderboard.loading') }}</span>
   </div>
-  
+
   <!-- Error -->
   <div *ngIf="error" class="error" role="alert" aria-live="assertive" aria-labelledby="error-heading">
-    <h2 id="error-heading">Erreur de chargement</h2>
+    <h2 id="error-heading">{{ t.t('leaderboard.errorTitle') }}</h2>
     <p id="error-message">{{ error }}</p>
-    <button (click)="loadData()" aria-label="Réessayer le chargement des données" aria-describedby="error-message">Réessayer</button>
+    <button (click)="loadData()" [attr.aria-label]="t.t('leaderboard.retry')" aria-describedby="error-message">{{ t.t('leaderboard.retry') }}</button>
   </div>
-  
+
   <!-- Empty Leaderboard State -->
   <div *ngIf="!loading && !error && filteredPlayers.length === 0" class="no-game-selected" role="status" aria-live="polite">
     <div class="empty-state-icon">Δ</div>
-    <h2>Aucune donnée de classement</h2>
-    <p>Aucune équipe ou joueur n'est disponible pour le moment. Vérifiez que le backend est démarré ou réessayez plus tard.</p>
-    <button class="cta-button" (click)="loadData()" aria-label="Recharger le classement">
-      <span>Recharger</span>
+    <h2>{{ t.t('leaderboard.noData') }}</h2>
+    <p>{{ t.t('leaderboard.noDataDesc') }}</p>
+    <button class="cta-button" (click)="loadData()" [attr.aria-label]="t.t('leaderboard.reload')">
+      <span>{{ t.t('leaderboard.reload') }}</span>
       <span aria-hidden="true">↻</span>
     </button>
   </div>
@@ -33,69 +33,69 @@
     
     <!-- Search and Filters -->
     <section class="controls" aria-labelledby="filters-heading">
-      <h2 id="filters-heading" class="sr-only">Filtres et recherche</h2>
-      <label for="search-input" class="sr-only">Rechercher un joueur par nom</label>
-      <input 
+      <h2 id="filters-heading" class="sr-only">{{ t.t('leaderboard.filtersHeading') }}</h2>
+      <label for="search-input" class="sr-only">{{ t.t('leaderboard.searchLabel') }}</label>
+      <input
         id="search-input"
-        type="text" 
-        [(ngModel)]="searchTerm" 
+        type="text"
+        [(ngModel)]="searchTerm"
         (input)="filterPlayers()"
-        placeholder="Rechercher un joueur..."
+        [placeholder]="t.t('leaderboard.searchPlaceholder')"
         class="search-input"
-        aria-label="Rechercher un joueur par nom ou pseudo"
+        [attr.aria-label]="t.t('leaderboard.searchLabel')"
         role="searchbox">
-        
-      <label for="region-select" class="sr-only">Filtrer par région</label>
-      <select id="region-select" [(ngModel)]="selectedRegion" (change)="filterPlayers()" class="region-select" aria-label="Filtrer les joueurs par région">
-        <option value="">Toutes les régions</option>
-        <option value="EU">Europe</option>
-        <option value="NAW">NAW (Amérique du Nord Ouest)</option>
-        <option value="ASIA">Asie</option>
-        <option value="BR">Brésil</option>
-        <option value="NAC">NAC (Amérique du Nord Centre)</option>
-        <option value="OCE">Océanie</option>
-        <option value="ME">Moyen-Orient</option>
+
+      <label for="region-select" class="sr-only">{{ t.t('leaderboard.region') }}</label>
+      <select id="region-select" [(ngModel)]="selectedRegion" (change)="filterPlayers()" class="region-select" [attr.aria-label]="t.t('leaderboard.region')">
+        <option value="">{{ t.t('leaderboard.allRegions') }}</option>
+        <option value="EU">{{ t.t('leaderboard.regions.EU') }}</option>
+        <option value="NAW">{{ t.t('leaderboard.regions.NAW') }}</option>
+        <option value="ASIA">{{ t.t('leaderboard.regions.ASIA') }}</option>
+        <option value="BR">{{ t.t('leaderboard.regions.BR') }}</option>
+        <option value="NAC">{{ t.t('leaderboard.regions.NAC') }}</option>
+        <option value="OCE">{{ t.t('leaderboard.regions.OCE') }}</option>
+        <option value="ME">{{ t.t('leaderboard.regions.ME') }}</option>
       </select>
-      
-      <button (click)="resetFilters()" class="reset-btn" aria-label="Réinitialiser tous les filtres">Réinitialiser les filtres</button>
+
+      <button (click)="resetFilters()" class="reset-btn" [attr.aria-label]="t.t('leaderboard.resetFilters')">{{ t.t('leaderboard.resetFilters') }}</button>
     </section>
-    
+
     <!-- Stats -->
     <section class="stats" aria-labelledby="stats-heading">
-      <h2 id="stats-heading" class="sr-only">Statistiques générales</h2>
+      <h2 id="stats-heading" class="sr-only">{{ t.t('dashboard.headings.generalStatistics') }}</h2>
       <div class="stat-item" role="group" aria-labelledby="players-count">
         <span class="stat-number" id="players-count-value">{{ filteredPlayers.length }}</span>
-        <span class="stat-label" id="players-count">Joueurs</span>
+        <span class="stat-label" id="players-count">{{ t.t('leaderboard.players') }}</span>
       </div>
       <div class="stat-item" role="group" aria-labelledby="total-points">
         <span class="stat-number" id="total-points-value">{{ getTotalPoints() | number }}</span>
-        <span class="stat-label" id="total-points">Points Total</span>
+        <span class="stat-label" id="total-points">{{ t.t('leaderboard.totalPoints') }}</span>
       </div>
     </section>
     
     <!-- Podium Top 3 -->
     <section *ngIf="filteredPlayers.length >= 3" class="podium" aria-labelledby="podium-heading">
-      <h2 id="podium-heading" class="sr-only">Podium des 3 meilleurs joueurs</h2>
-      
+      <h2 id="podium-heading" class="sr-only">{{ t.t('leaderboard.podiumHeading') }}</h2>
+
       <div class="podium-item second" role="group" aria-labelledby="second-place" tabindex="0">
-        <div class="rank" role="img" aria-label="Deuxième place">2ème</div>
-        <div class="avatar" role="img" [attr.aria-label]="'Avatar de ' + filteredPlayers[1].nickname">{{ getInitials(filteredPlayers[1].nickname) }}</div>
+        <div class="rank" role="img" [attr.aria-label]="t.t('leaderboard.secondPlace')">2</div>
+        <div class="avatar" role="img" [attr.aria-label]="filteredPlayers[1].nickname">{{ getInitials(filteredPlayers[1].nickname) }}</div>
         <div class="name" id="second-place">{{ filteredPlayers[1].nickname }}</div>
-        <div class="points" [attr.aria-label]="(filteredPlayers[1].totalPoints | number) + ' points'">{{ filteredPlayers[1].totalPoints | number }}</div>
+        <div class="points" [attr.aria-label]="(filteredPlayers[1].totalPoints | number) + ' ' + t.t('leaderboard.points')">{{ filteredPlayers[1].totalPoints | number }}</div>
       </div>
-      
+
       <div class="podium-item first" role="group" aria-labelledby="first-place" tabindex="0">
-        <div class="rank" role="img" aria-label="Première place">1er</div>
-        <div class="avatar" role="img" [attr.aria-label]="'Avatar de ' + filteredPlayers[0].nickname">{{ getInitials(filteredPlayers[0].nickname) }}</div>
+        <div class="rank" role="img" [attr.aria-label]="t.t('leaderboard.firstPlace')">1</div>
+        <div class="avatar" role="img" [attr.aria-label]="filteredPlayers[0].nickname">{{ getInitials(filteredPlayers[0].nickname) }}</div>
         <div class="name" id="first-place">{{ filteredPlayers[0].nickname }}</div>
-        <div class="points" [attr.aria-label]="(filteredPlayers[0].totalPoints | number) + ' points'">{{ filteredPlayers[0].totalPoints | number }}</div>
+        <div class="points" [attr.aria-label]="(filteredPlayers[0].totalPoints | number) + ' ' + t.t('leaderboard.points')">{{ filteredPlayers[0].totalPoints | number }}</div>
       </div>
-      
+
       <div class="podium-item third" role="group" aria-labelledby="third-place" tabindex="0">
-        <div class="rank" role="img" aria-label="Troisième place">3ème</div>
-        <div class="avatar" role="img" [attr.aria-label]="'Avatar de ' + filteredPlayers[2].nickname">{{ getInitials(filteredPlayers[2].nickname) }}</div>
+        <div class="rank" role="img" [attr.aria-label]="t.t('leaderboard.thirdPlace')">3</div>
+        <div class="avatar" role="img" [attr.aria-label]="filteredPlayers[2].nickname">{{ getInitials(filteredPlayers[2].nickname) }}</div>
         <div class="name" id="third-place">{{ filteredPlayers[2].nickname }}</div>
-        <div class="points" [attr.aria-label]="(filteredPlayers[2].totalPoints | number) + ' points'">{{ filteredPlayers[2].totalPoints | number }}</div>
+        <div class="points" [attr.aria-label]="(filteredPlayers[2].totalPoints | number) + ' ' + t.t('leaderboard.points')">{{ filteredPlayers[2].totalPoints | number }}</div>
       </div>
     </section>
     
@@ -103,27 +103,26 @@
     <div class="table-container">
       <table class="players-table" role="table" aria-labelledby="table-caption">
         <caption id="table-caption" class="sr-only">
-          Player leaderboard showing rank, name, region, and points. 
-          {{ filteredPlayers.length }} players displayed, sorted by points descending.
+          {{ t.t('leaderboard.title') }}. {{ filteredPlayers.length }} {{ t.t('leaderboard.players') }}.
         </caption>
         <thead>
           <tr role="row">
             <th scope="col" aria-sort="none" role="columnheader">
-              <button class="sort-header" (click)="sortBy('rank')" 
-                      aria-label="Sort by rank"
-                      [attr.aria-pressed]="currentSort === 'rank'">Rang</button>
+              <button class="sort-header" (click)="sortBy('rank')"
+                      [attr.aria-label]="t.t('leaderboard.rank')"
+                      [attr.aria-pressed]="currentSort === 'rank'">{{ t.t('leaderboard.rank') }}</button>
             </th>
-            <th scope="col" role="columnheader">Joueur</th>
+            <th scope="col" role="columnheader">{{ t.t('leaderboard.player') }}</th>
             <th scope="col" role="columnheader">
-              <button class="sort-header" (click)="sortBy('region')" 
-                      aria-label="Sort by region"
-                      [attr.aria-pressed]="currentSort === 'region'">Région</button>
+              <button class="sort-header" (click)="sortBy('region')"
+                      [attr.aria-label]="t.t('leaderboard.region')"
+                      [attr.aria-pressed]="currentSort === 'region'">{{ t.t('leaderboard.region') }}</button>
             </th>
             <th scope="col" aria-sort="descending" role="columnheader">
-              <button class="sort-header" (click)="sortBy('points')" 
-                      aria-label="Sort by points, currently sorted descending"
+              <button class="sort-header" (click)="sortBy('points')"
+                      [attr.aria-label]="t.t('leaderboard.points')"
                       [attr.aria-pressed]="currentSort === 'points'">
-                Points
+                {{ t.t('leaderboard.points') }}
               </button>
             </th>
           </tr>
@@ -163,33 +162,33 @@
     </div>
     
     <!-- Pagination -->
-    <nav *ngIf="getTotalPages() > 1" class="pagination" role="navigation" aria-label="Leaderboard pagination">
-      <button 
-        [disabled]="currentPage === 1" 
+    <nav *ngIf="getTotalPages() > 1" class="pagination" role="navigation" [attr.aria-label]="t.t('leaderboard.title')">
+      <button
+        [disabled]="currentPage === 1"
         (click)="goToPage(currentPage - 1)"
         class="page-btn"
-        [attr.aria-label]="'Go to previous page, currently on page ' + currentPage">
-        ⬅️ Précédent
+        [attr.aria-label]="t.t('leaderboard.previous')">
+        ⬅️ {{ t.t('leaderboard.previous') }}
       </button>
-      
+
       <span class="page-info" aria-live="polite" aria-atomic="true">
-        Page {{ currentPage }} sur {{ getTotalPages() }}
+        Page {{ currentPage }} / {{ getTotalPages() }}
       </span>
-      
-      <button 
-        [disabled]="currentPage === getTotalPages()" 
+
+      <button
+        [disabled]="currentPage === getTotalPages()"
         (click)="goToPage(currentPage + 1)"
         class="page-btn"
-        [attr.aria-label]="'Go to next page, currently on page ' + currentPage">
-        Suivant ➡️
+        [attr.aria-label]="t.t('leaderboard.next')">
+        {{ t.t('leaderboard.next') }} ➡️
       </button>
     </nav>
-    
+
     <!-- Empty State -->
     <div *ngIf="filteredPlayers.length === 0" class="empty-state">
-      <h3>😔 Aucun joueur trouvé</h3>
-      <p>Essayez de modifier vos critères de recherche</p>
-      <button (click)="resetFilters()" class="reset-btn">Réinitialiser les filtres</button>
+      <h3>😔 {{ t.t('leaderboard.noPlayersFound') }}</h3>
+      <p>{{ t.t('leaderboard.noPlayersFoundDesc') }}</p>
+      <button (click)="resetFilters()" class="reset-btn">{{ t.t('leaderboard.resetFilters') }}</button>
     </div>
     
   </main>

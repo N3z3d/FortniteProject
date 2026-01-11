@@ -5,7 +5,7 @@
   <div class="wizard-header">
     <h1>
       <mat-icon>auto_awesome</mat-icon>
-      Créer une nouvelle game
+      Créer une nouvelle partie
     </h1>
     <p class="wizard-subtitle">Assistant intelligent en 3 étapes</p>
   </div>
@@ -84,12 +84,12 @@
         <div class="basic-info-section">
           <h3>
             <mat-icon>edit</mat-icon>
-            Détails de votre game
+            Détails de votre partie
           </h3>
           
           <!-- Real-time validation feedback - UX-001 requirement -->
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Nom de la game</mat-label>
+            <mat-label>Nom de la partie</mat-label>
             <input 
               matInput 
               formControlName="name" 
@@ -105,7 +105,7 @@
             <textarea 
               matInput 
               formControlName="description" 
-              placeholder="Décrivez votre game..."
+              placeholder="Décrivez votre partie..."
               rows="3"
               maxlength="200"></textarea>
             <mat-hint align="end">{{ basicInfoForm.get('description')?.value?.length || 0 }}/200</mat-hint>
@@ -236,10 +236,10 @@
         
         <h3>
           <mat-icon>visibility</mat-icon>
-          Aperçu de votre game
+          Aperçu de votre partie
         </h3>
         <p class="review-description">
-          Vérifiez les détails avant de créer votre game
+          Vérifiez les détails avant de créer votre partie
         </p>
 
         <!-- Game Preview Card -->
@@ -319,7 +319,7 @@
             class="create-button">
             <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
             <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
-            {{ loading ? 'Création en cours...' : 'Créer la game' }}
+            {{ loading ? 'Création en cours...' : 'Créer la partie' }}
           </button>
         </div>
       </div>

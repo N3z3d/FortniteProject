@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { HttpClient } from '@angular/common/http';
 import { UserContextService } from '../../../core/services/user-context.service';
 import { TeamService, TeamDto } from '../../../core/services/team.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { LeaderboardService } from '../../../core/services/leaderboard.service';
 import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
 
@@ -63,10 +64,12 @@ interface TeamWithOwner extends Team {
   selector: 'app-team-detail',
   standalone: true,
   imports: [
-    CommonModule, 
-    MatCardModule, 
-    MatButtonModule, 
+    CommonModule,
+    RouterModule,
+    MatCardModule,
+    MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
     MatChipsModule,
     MatProgressBarModule,
     MatTabsModule
@@ -80,14 +83,14 @@ export class TeamDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly teamService = inject(TeamService);
   private readonly leaderboardService = inject(LeaderboardService);
-  
+
   team: Team | null = null;
   loading = true;
   error: string | null = null;
   stats: TeamStats | null = null;
   allTeams: any[] = []; // Pour stocker toutes les équipes pour le calcul Top 10%
   private readonly loadErrorMessage = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
-  
+
   // Expose Object for template use
   Object = Object;
 
@@ -103,17 +106,17 @@ export class TeamDetailComponent implements OnInit {
   loadMyTeam() {
     this.loading = true;
     this.error = null;
-    
+
     const currentUser = this.userContext.getCurrentUser();
-    
+
     // Utiliser l'API leaderboard qui contient les données complètes avec les points
     this.leaderboardService.getTeamLeaderboard().subscribe({
       next: (teams: any[]) => {
         this.allTeams = teams; // Stocker toutes les équipes
-        const userTeam = teams.find(team => 
+        const userTeam = teams.find(team =>
           team.ownerUsername?.toLowerCase() === currentUser?.username?.toLowerCase()
         );
-        
+
         if (userTeam) {
           this.team = this.convertLeaderboardToTeam(userTeam);
           this.calculateStats();
@@ -132,7 +135,7 @@ export class TeamDetailComponent implements OnInit {
   loadTeamById(teamId: string) {
     this.loading = true;
     this.error = null;
-    
+
     this.leaderboardService.getTeamLeaderboard().subscribe({
       next: (teams: any[]) => {
         this.allTeams = teams; // Stocker toutes les équipes
@@ -192,7 +195,7 @@ export class TeamDetailComponent implements OnInit {
     const players = this.team.players;
     const totalPoints = this.team.totalPoints || 0;
     const playersCount = players.length;
-    
+
     const points = players.map(tp => tp.player.points || 0);
     const averagePoints = playersCount > 0 ? totalPoints / playersCount : 0;
     const topPlayerPoints = Math.max(...points, 0);
@@ -246,10 +249,10 @@ export class TeamDetailComponent implements OnInit {
       'OCE': 'AU',    // Australia
       'ME': 'AE'      // United Arab Emirates
     };
-    
+
     const code = flagCodes[region];
     if (!code) return '';
-    
+
     // Retourner l'URL du drapeau SVG
     return `https://cdn.jsdelivr.net/gh/madebybowtie/FlagKit@2.4/Assets/SVG/${code}.svg`;
   }
@@ -313,15 +316,15 @@ export class TeamDetailComponent implements OnInit {
 
   getRegionArcOffset(region: string): number {
     if (!this.stats) return 0;
-    
+
     const sortedRegions = this.getSortedRegionsByPoints();
     const currentIndex = sortedRegions.indexOf(region);
-    
+
     let offset = 25; // Start from top (25% offset)
     for (let i = 0; i < currentIndex; i++) {
       offset -= this.getRegionPercentage(sortedRegions[i]);
     }
-    
+
     return offset;
   }
 
@@ -333,7 +336,7 @@ export class TeamDetailComponent implements OnInit {
 
   getTop10PercentPlayersCount(): number {
     if (!this.team || !this.allTeams.length) return 0;
-    
+
     // Adapter la structure pour le service
     const teamWithPlayers = {
       ...this.team,
@@ -342,7 +345,7 @@ export class TeamDetailComponent implements OnInit {
         points: tp.player.points || 0
       }))
     };
-    
+
     const allTeamsAdapted = this.allTeams.map(t => ({
       ...t,
       players: (t.players || []).map((p: any) => ({
@@ -350,7 +353,7 @@ export class TeamDetailComponent implements OnInit {
         points: p.points || 0
       }))
     }));
-    
+
     // Calcul local du top percentile
     return this.calculateTopPercentileCount(teamWithPlayers, allTeamsAdapted, 10);
   }
@@ -437,10 +440,10 @@ export class TeamDetailComponent implements OnInit {
   // Méthode pour calculer le ratio de performance d'une région
   getRegionRatio(region: string): number {
     if (!this.stats || !this.allTeams || this.allTeams.length === 0) return 0;
-    
+
     // Calculer les points totaux de cette région pour l'équipe actuelle
     const teamRegionPoints = this.stats.regionPointsDistribution[region] || 0;
-    
+
     // Calculer les points totaux de cette région pour TOUTES les équipes
     let totalRegionPoints = 0;
     this.allTeams.forEach(team => {
@@ -452,59 +455,59 @@ export class TeamDetailComponent implements OnInit {
         });
       }
     });
-    
+
     // Si pas de points dans cette région, retourner 0
     if (totalRegionPoints === 0) return 0;
-    
+
     // Calculer le pourcentage de part de marché
     const marketShare = (teamRegionPoints / totalRegionPoints) * 100;
     return Math.round(marketShare);
   }
-  
+
   // Méthode pour obtenir les régions triées par ratio
   getSortedRegionsByRatio(): string[] {
     if (!this.stats) return [];
-    
+
     return Object.keys(this.stats.regionPointsDistribution)
       .sort((a, b) => this.getRegionRatio(b) - this.getRegionRatio(a));
   }
-  
+
   // Méthode pour calculer le ratio moyen
   getAverageRatio(): number {
     if (!this.stats) return 0;
-    
+
     const regions = Object.keys(this.stats.regionPointsDistribution);
     if (regions.length === 0) return 0;
-    
+
     const totalRatio = regions.reduce((sum, region) => sum + this.getRegionRatio(region), 0);
     return Math.round(totalRatio / regions.length);
   }
-  
+
   // Adapter les méthodes d'arc pour utiliser les ratios au lieu des points
   getRegionArcLengthByRatio(region: string): number {
     const regions = this.getSortedRegionsByRatio();
     const totalRatio = regions.reduce((sum, r) => sum + this.getRegionRatio(r), 0);
-    
+
     if (totalRatio === 0) return 0;
-    
+
     const ratio = this.getRegionRatio(region);
     return (ratio / totalRatio) * 100;
   }
-  
+
   getRegionArcOffsetByRatio(region: string): number {
     if (!this.stats) return 0;
-    
+
     const sortedRegions = this.getSortedRegionsByRatio();
     const currentIndex = sortedRegions.indexOf(region);
     const totalRatio = sortedRegions.reduce((sum, r) => sum + this.getRegionRatio(r), 0);
-    
+
     if (totalRatio === 0) return 25;
-    
+
     let offset = 25; // Start from top (25% offset)
     for (let i = 0; i < currentIndex; i++) {
       offset -= (this.getRegionRatio(sortedRegions[i]) / totalRatio) * 100;
     }
-    
+
     return offset;
   }
 }

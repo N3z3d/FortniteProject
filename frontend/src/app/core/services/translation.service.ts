@@ -35,7 +35,7 @@ export class TranslationService {
     localStorage.setItem('app_language', lang);
   }
 
-  translate(key: string): string {
+  translate(key: string, fallback?: string): string {
     const keys = key.split('.');
     let result: string | Translations = this.translations[this.currentLang$.value];
 
@@ -43,15 +43,15 @@ export class TranslationService {
       if (result && typeof result === 'object' && k in result) {
         result = result[k];
       } else {
-        return key; // Return key if translation not found
+        return fallback ?? key; // Return key if translation not found
       }
     }
 
-    return typeof result === 'string' ? result : key;
+    return typeof result === 'string' ? result : (fallback ?? key);
   }
 
-  t(key: string): string {
-    return this.translate(key);
+  t(key: string, fallback?: string): string {
+    return this.translate(key, fallback);
   }
 
   private restoreLanguagePreference(): void {
@@ -66,9 +66,11 @@ export class TranslationService {
       fr: {
         common: {
           save: 'Enregistrer',
+          saving: 'Enregistrement...',
           and: 'et',
           cancel: 'Annuler',
           edit: 'Modifier',
+          editing: 'Modification...',
           delete: 'Supprimer',
           confirm: 'Confirmer',
           loading: 'Chargement...',
@@ -81,7 +83,13 @@ export class TranslationService {
           close: 'Fermer',
           search: 'Rechercher',
           noData: 'Aucune donnée',
-          actions: 'Actions'
+          actions: 'Actions',
+          details: 'Détails',
+          players: 'Joueurs',
+          player: 'Joueur'
+        },
+        layout: {
+          welcome: 'Bienvenue'
         },
         auth: {
           login: 'Connexion',
@@ -156,12 +164,15 @@ export class TranslationService {
           settings: 'Paramètres'
         },
         dashboard: {
+          loading: 'Chargement du tableau de bord...',
+          errorTitle: 'Erreur de chargement',
+          retry: 'Réessayer',
           headings: {
             generalStatistics: 'Statistiques générales',
             chartsAndAnalytics: 'Graphiques et analyses',
             leaderboardPreview: 'Top 5 équipes - classement',
             centralNavigation: 'Navigation centrale',
-            navigationHint: 'Accès rapide aux fonctionnalités principales'
+            navigationHint: 'Accès rapide aux fonctionnalités'
           },
           labels: {
             team: 'Équipe',
@@ -171,12 +182,33 @@ export class TranslationService {
             proPlayers: 'Joueurs pro',
             points: 'Points',
             totalPoints: 'Points totaux',
+            total: 'Totaux',
             season: 'Saison',
             progress2025: 'Progression 2025',
             currentRanking: 'Classement actuel',
             noTeamsFound: 'Aucune équipe trouvée',
             viewFullLeaderboard: 'Voir le classement complet',
-            lastUpdated: 'Dernière mise à jour :'
+            lastUpdated: 'Dernière mise à jour :',
+            myTeams: 'Mes Équipes',
+            participants: 'Participants',
+            currentTop5: 'Top 5 actuel',
+            rank: 'Rang'
+          },
+          tooltips: {
+            proPlayers: 'Nombre de joueurs professionnels',
+            totalPoints: 'Points totaux accumulés',
+            seasonProgress: 'Progression de la saison'
+          },
+          noGame: {
+            title: 'Commencer',
+            subtitle: 'Vous n\'avez pas encore de partie active'
+          },
+          charts: {
+            regionTitle: 'Répartition par région',
+            regionDesc: 'Distribution des joueurs professionnels',
+            top10Title: 'Top 10 Équipes',
+            performanceByPoints: 'Performance par points',
+            pointsAxis: 'Points'
           },
           aria: {
             activeTeamsSuffix: 'équipes actives',
@@ -229,18 +261,15 @@ export class TranslationService {
             players: 'joueurs',
             errorLoading: 'Erreur lors du chargement du tableau de bord. Veuillez réessayer.',
             navigatingTo: 'Navigation vers'
-          },
-          charts: {
-            regionTitle: 'Répartition par région',
-            top10Title: 'Top 10 équipes par points',
-            pointsAxis: 'Points'
           }
         },
         games: {
-          myGames: 'Mes Parties',
+          myGames: 'Mes parties',
           createGame: 'Créer une partie',
           joinGame: 'Rejoindre une partie',
           joinWithCode: 'Rejoindre avec un code',
+          join: 'Rejoindre',
+          enterCode: 'Entrez le code',
           noGames: 'Aucune partie',
           players: 'joueurs',
           manage: 'Gérer',
@@ -315,6 +344,52 @@ export class TranslationService {
             expired: 'Expiré'
           }
         },
+        leaderboard: {
+          title: 'Classement des Joueurs - Saison 2025',
+          loading: 'Chargement des données du classement en cours',
+          errorTitle: 'Erreur de chargement',
+          retry: 'Réessayer',
+          noData: 'Aucune donnée de classement',
+          noDataDesc: 'Aucune équipe ou joueur n\'est disponible pour le moment. Vérifiez que le backend est démarré ou réessayez plus tard.',
+          reload: 'Recharger',
+          skipToContent: 'Aller au contenu principal',
+          filtersHeading: 'Filtres et recherche',
+          searchPlaceholder: 'Rechercher un joueur...',
+          searchLabel: 'Rechercher un joueur par nom ou pseudo',
+          allRegions: 'Toutes les régions',
+          resetFilters: 'Réinitialiser les filtres',
+          players: 'Joueurs',
+          totalPoints: 'Points Total',
+          podiumHeading: 'Podium des 3 meilleurs joueurs',
+          firstPlace: 'Première place',
+          secondPlace: 'Deuxième place',
+          thirdPlace: 'Troisième place',
+          rank: 'Rang',
+          player: 'Joueur',
+          region: 'Région',
+          points: 'Points',
+          noPlayersFound: 'Aucun joueur trouvé',
+          noPlayersFoundDesc: 'Essayez de modifier vos critères de recherche',
+          previous: 'Précédent',
+          next: 'Suivant',
+          pageOf: 'Page {current} sur {total}',
+          regions: {
+            EU: 'Europe',
+            NAW: 'NAW (Amérique du Nord Ouest)',
+            ASIA: 'Asie',
+            BR: 'Brésil',
+            NAC: 'NAC (Amérique du Nord Centre)',
+            OCE: 'Océanie',
+            ME: 'Moyen-Orient'
+          }
+        },
+        footer: {
+          legalNotice: 'Mentions légales',
+          privacyPolicy: 'Politique de confidentialité',
+          contact: 'Contact',
+          copyright: '© 2025 Fortnite Fantasy. Tous droits réservés.',
+          disclaimer: 'Ce site n\'est pas affilié à Epic Games.'
+        },
         errors: {
           generic: 'Une erreur est survenue',
           network: 'Erreur de connexion au serveur',
@@ -326,9 +401,11 @@ export class TranslationService {
       en: {
         common: {
           save: 'Save',
+          saving: 'Saving...',
           and: 'and',
           cancel: 'Cancel',
           edit: 'Edit',
+          editing: 'Editing...',
           delete: 'Delete',
           confirm: 'Confirm',
           loading: 'Loading...',
@@ -341,7 +418,13 @@ export class TranslationService {
           close: 'Close',
           search: 'Search',
           noData: 'No data',
-          actions: 'Actions'
+          actions: 'Actions',
+          details: 'Details',
+          players: 'Players',
+          player: 'Player'
+        },
+        layout: {
+          welcome: 'Welcome'
         },
         auth: {
           login: 'Login',
@@ -416,6 +499,9 @@ export class TranslationService {
           settings: 'Settings'
         },
         dashboard: {
+          loading: 'Loading dashboard...',
+          errorTitle: 'Loading error',
+          retry: 'Retry',
           headings: {
             generalStatistics: 'General Statistics',
             chartsAndAnalytics: 'Charts and Analytics',
@@ -431,12 +517,33 @@ export class TranslationService {
             proPlayers: 'Pro players',
             points: 'Points',
             totalPoints: 'Total points',
+            total: 'Total',
             season: 'Season',
             progress2025: 'Progress 2025',
             currentRanking: 'Current ranking',
             noTeamsFound: 'No teams found',
             viewFullLeaderboard: 'View full leaderboard',
-            lastUpdated: 'Last updated:'
+            lastUpdated: 'Last updated:',
+            myTeams: 'My Teams',
+            participants: 'Participants',
+            currentTop5: 'Current Top 5',
+            rank: 'Rank'
+          },
+          tooltips: {
+            proPlayers: 'Number of professional players',
+            totalPoints: 'Total accumulated points',
+            seasonProgress: 'Season progress'
+          },
+          noGame: {
+            title: 'Get Started',
+            subtitle: 'You don\'t have an active game yet'
+          },
+          charts: {
+            regionTitle: 'Distribution by Region',
+            regionDesc: 'Professional players distribution',
+            top10Title: 'Top 10 Teams',
+            performanceByPoints: 'Performance by points',
+            pointsAxis: 'Points'
           },
           aria: {
             activeTeamsSuffix: 'active teams',
@@ -489,11 +596,6 @@ export class TranslationService {
             players: 'players',
             errorLoading: 'Error loading dashboard data. Please try again.',
             navigatingTo: 'Navigating to'
-          },
-          charts: {
-            regionTitle: 'Distribution by Region',
-            top10Title: 'Top 10 Teams by Points',
-            pointsAxis: 'Points'
           }
         },
         games: {
@@ -501,6 +603,8 @@ export class TranslationService {
           createGame: 'Create Game',
           joinGame: 'Join Game',
           joinWithCode: 'Join with code',
+          join: 'Join',
+          enterCode: 'Enter code',
           noGames: 'No games',
           players: 'players',
           manage: 'Manage',
@@ -574,6 +678,52 @@ export class TranslationService {
             withdrawn: 'Withdrawn',
             expired: 'Expired'
           }
+        },
+        leaderboard: {
+          title: 'Player Leaderboard - Season 2025',
+          loading: 'Loading leaderboard data',
+          errorTitle: 'Loading error',
+          retry: 'Retry',
+          noData: 'No leaderboard data',
+          noDataDesc: 'No team or player is available at the moment. Check that the backend is running or try again later.',
+          reload: 'Reload',
+          skipToContent: 'Skip to main content',
+          filtersHeading: 'Filters and search',
+          searchPlaceholder: 'Search for a player...',
+          searchLabel: 'Search for a player by name or username',
+          allRegions: 'All regions',
+          resetFilters: 'Reset filters',
+          players: 'Players',
+          totalPoints: 'Total Points',
+          podiumHeading: 'Top 3 players podium',
+          firstPlace: 'First place',
+          secondPlace: 'Second place',
+          thirdPlace: 'Third place',
+          rank: 'Rank',
+          player: 'Player',
+          region: 'Region',
+          points: 'Points',
+          noPlayersFound: 'No players found',
+          noPlayersFoundDesc: 'Try modifying your search criteria',
+          previous: 'Previous',
+          next: 'Next',
+          pageOf: 'Page {current} of {total}',
+          regions: {
+            EU: 'Europe',
+            NAW: 'NAW (North America West)',
+            ASIA: 'Asia',
+            BR: 'Brazil',
+            NAC: 'NAC (North America Central)',
+            OCE: 'Oceania',
+            ME: 'Middle East'
+          }
+        },
+        footer: {
+          legalNotice: 'Legal Notice',
+          privacyPolicy: 'Privacy Policy',
+          contact: 'Contact',
+          copyright: '© 2025 Fortnite Fantasy. All rights reserved.',
+          disclaimer: 'This site is not affiliated with Epic Games.'
         },
         errors: {
           generic: 'An error occurred',

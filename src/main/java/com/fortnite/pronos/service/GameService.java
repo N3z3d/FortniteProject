@@ -58,6 +58,11 @@ public class GameService {
     return gameQueryService.getAllGames();
   }
 
+  /** Gets games with available slots */
+  public List<GameDto> getAvailableGames() {
+    return gameQueryService.getAvailableGames();
+  }
+
   /** Gets games by user ID */
   public List<GameDto> getGamesByUser(UUID userId) {
     return gameQueryService.getGamesByUser(userId);
@@ -86,20 +91,6 @@ public class GameService {
   /** Gets active games */
   public List<GameDto> getActiveGames() {
     return gameQueryService.getActiveGames();
-  }
-
-  /**
-   * @deprecated Games publiques supprimées - utilisez getGamesByUser()
-   */
-  @Deprecated
-  public List<GameDto> getAvailableGames() {
-    return gameQueryService.getAllGames().stream()
-        .filter(
-            game ->
-                game.getStatus() == GameStatus.CREATING
-                    || game.getStatus() == GameStatus.DRAFTING
-                    || game.getStatus() == GameStatus.ACTIVE)
-        .toList();
   }
 
   /** Gets games with pagination */

@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,11 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class DatabaseAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
-  private final Environment environment;
   private final DataSource dataSource;
 
-  public DatabaseAutoConfiguration(Environment environment, DataSource dataSource) {
-    this.environment = environment;
+  public DatabaseAutoConfiguration(DataSource dataSource) {
     this.dataSource = dataSource;
   }
 
@@ -58,11 +55,9 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
     log.info("🔥 ════════════════════════════════════════════════════════════");
 
     if (databaseType.contains("H2")) {
-      log.info("💡 BASE DE DONNÉES: H2 Embedded (Mode Développement Rapide)");
-      log.info("📁 Fichier: ./data/fortnite_quickstart_db");
-      log.info("🌐 Console H2: http://localhost:8080/h2-console");
-      log.info("🔑 Credentials: sa / quickstart");
-      log.info("✅ PRÊT À DÉVELOPPER - Aucune configuration supplémentaire requise!");
+      log.info("BASE DE DONNEES: H2 (profil test)");
+      log.info("Donnees en memoire: reinitialisees a chaque demarrage");
+      log.info("Utilisez le profil dev pour PostgreSQL persistante");
 
     } else if (databaseType.contains("PostgreSQL")) {
       log.info("🐘 BASE DE DONNÉES: PostgreSQL (Mode Production)");
@@ -81,40 +76,28 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
   private void displayUserGuidance(String databaseType) {
     if (databaseType.contains("H2")) {
       log.info("");
-      log.info("💡 MODE DÉVELOPPEMENT RAPIDE ACTIVÉ");
-      log.info("   ➤ Données temporaires rechargées à chaque démarrage");
-      log.info("   ➤ Idéal pour prototypage et tests rapides");
-      log.info("   ➤ Pour PostgreSQL: modifiez spring.profiles.active=dev");
+      log.info("MODE TEST H2");
+      log.info("  Donnees temporaires en memoire");
+      log.info("  Pour PostgreSQL: spring.profiles.active=dev");
       log.info("");
 
     } else if (databaseType.contains("PostgreSQL")) {
       log.info("");
-      log.info("🚀 MODE PRODUCTION PostgreSQL");
-      log.info("   ➤ Données persistantes entre les redémarrages");
-      log.info("   ➤ Migrations Flyway activées");
-      log.info("   ➤ Optimal pour développement avancé");
+      log.info("MODE DEV/PROD PostgreSQL");
+      log.info("  Donnees persistantes entre redemarrages");
+      log.info("  Migrations Flyway actives");
       log.info("");
     }
   }
 
   /** Affiche des messages d'erreur UX-friendly avec solutions */
   private void displayDatabaseError(SQLException e) {
-    log.error("🔥 ════════════════════════════════════════════════════════════");
-    log.error("❌   ERREUR DE CONNEXION BASE DE DONNÉES");
-    log.error("🔥 ════════════════════════════════════════════════════════════");
-    log.error("💥 Erreur: {}", e.getMessage());
+    log.error("DATABASE CONNECTION ERROR");
+    log.error("Error: {}", e.getMessage());
     log.error("");
-    log.error("🛠️  SOLUTIONS RECOMMANDÉES:");
-    log.error("   1️⃣  DÉMARRAGE RAPIDE: Utilisez le profil 'quickstart'");
-    log.error("      ➤ Modifiez: spring.profiles.active=quickstart");
-    log.error("      ➤ Redémarrez l'application");
-    log.error("");
-    log.error("   2️⃣  PostgreSQL: Vérifiez votre configuration");
-    log.error("      ➤ PostgreSQL est-il installé et démarré?");
-    log.error("      ➤ La base 'fortnite_pronos' existe-t-elle?");
-    log.error("      ➤ L'utilisateur 'fortnite_user' est-il créé?");
-    log.error("");
-    log.error("   3️⃣  AIDE RAPIDE: Utilisez le script quick-start.ps1");
-    log.error("🔥 ════════════════════════════════════════════════════════════");
+    log.error("RECOMMENDED STEPS:");
+    log.error("  1) Ensure PostgreSQL is running");
+    log.error("  2) Verify database name, user, and password");
+    log.error("  3) For tests only: use spring.profiles.active=test");
   }
 }

@@ -81,7 +81,12 @@ export class HttpDashboardRepository extends DashboardRepository {
   }
 
   getStatistics(gameId: string): Observable<DashboardStats> {
-    return this.http.get<any>(`${this.apiUrl}/leaderboard/stats?season=2025`).pipe(
+    // BE-P0-01: Pass gameId to filter stats by selected game
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard/stats?season=2025`;
+
+    return this.http.get<any>(url).pipe(
       timeout(this.REQUEST_TIMEOUT),
       map(response => this.mapApiStatsToStats(response)),
       catchError(error => {
@@ -92,7 +97,12 @@ export class HttpDashboardRepository extends DashboardRepository {
   }
 
   getLeaderboard(gameId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/leaderboard?season=2025`).pipe(
+    // BE-P0-01: Pass gameId to filter leaderboard by selected game
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard?season=2025&gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard?season=2025`;
+
+    return this.http.get<any[]>(url).pipe(
       timeout(this.REQUEST_TIMEOUT),
       map(apiResponse => (apiResponse as any)?.data || apiResponse || []),
       catchError(error => {
@@ -103,7 +113,12 @@ export class HttpDashboardRepository extends DashboardRepository {
   }
 
   getRegionDistribution(gameId: string): Observable<{ [key: string]: number }> {
-    return this.http.get<{ [key: string]: number }>(`${this.apiUrl}/leaderboard/distribution/regions`).pipe(
+    // BE-P0-01: Pass gameId to filter region distribution by selected game
+    const url = gameId
+      ? `${this.apiUrl}/leaderboard/distribution/regions?gameId=${gameId}`
+      : `${this.apiUrl}/leaderboard/distribution/regions`;
+
+    return this.http.get<{ [key: string]: number }>(url).pipe(
       timeout(this.REQUEST_TIMEOUT),
       map(distribution => this.normalizeRegionDistribution(distribution)),
       catchError(error => {

@@ -56,10 +56,10 @@ public class PerformanceMonitoringConfig {
       this.memoryBean = ManagementFactory.getMemoryMXBean();
       this.osBean = ManagementFactory.getOperatingSystemMXBean();
 
-      // Métriques spécialisées pour 149 joueurs
+      // Métriques spécialisées pour 147 joueurs
       this.playerListTimer =
           Timer.builder("api.players.list.duration")
-              .description("Temps de réponse pour la liste des joueurs (149 joueurs)")
+              .description("Temps de réponse pour la liste des joueurs (147 joueurs)")
               .register(meterRegistry);
 
       this.leaderboardTimer =
@@ -85,7 +85,7 @@ public class PerformanceMonitoringConfig {
 
     @PostConstruct
     public void setupGauges() {
-      // Surveillance mémoire critique avec 149 joueurs
+      // Surveillance mémoire critique avec 147 joueurs
       Gauge.builder(
               "jvm.memory.used.percentage",
               this,
@@ -135,7 +135,7 @@ public class PerformanceMonitoringConfig {
     }
 
     /**
-     * Surveillance automatique toutes les 30 secondes Alerte si les performances dégradent avec 149
+     * Surveillance automatique toutes les 30 secondes Alerte si les performances dégradent avec 147
      * joueurs
      */
     @Scheduled(fixedRate = 30000) // 30 secondes
@@ -147,7 +147,7 @@ public class PerformanceMonitoringConfig {
 
       if (memoryPercentage > 80) {
         log.warn(
-            "🚨 ALERTE MÉMOIRE: {}% utilisé - Risque de dégradation avec 149 joueurs!",
+            "🚨 ALERTE MÉMOIRE: {}% utilisé - Risque de dégradation avec 147 joueurs!",
             String.format("%.1f", memoryPercentage));
       }
 
@@ -155,7 +155,7 @@ public class PerformanceMonitoringConfig {
       double avgPlayerListTime = playerListTimer.mean(TimeUnit.MILLISECONDS);
       if (avgPlayerListTime > 1000) { // > 1 seconde
         log.warn(
-            "🐌 ALERTE PERFORMANCE: Temps moyen liste joueurs = {}ms - Trop lent pour 149 joueurs!",
+            "🐌 ALERTE PERFORMANCE: Temps moyen liste joueurs = {}ms - Trop lent pour 147 joueurs!",
             String.format("%.0f", avgPlayerListTime));
       }
 

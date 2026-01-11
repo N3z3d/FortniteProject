@@ -35,10 +35,23 @@ export class DashboardChartService {
    * @param regionDistribution - Data { EU: 10, NAC: 5, ... }
    * @returns Chart instance
    */
+  /**
+   * Create region distribution doughnut chart (Premium Redesign)
+   */
   createRegionChart(canvas: HTMLCanvasElement, regionDistribution: { [key: string]: number }): Chart {
     const labels = this.ALL_REGIONS;
     const data = labels.map(region => regionDistribution[region] || 0);
-    const colors = labels.map(region => this.REGION_COLORS[region] || '#6b7280');
+
+    // Premium Palette for Regions
+    const regionColors = [
+      '#FFD700', // Gold (EU)
+      '#00d4ff', // Cyan (NAC)
+      '#ff0055', // Neon Red (NAW)
+      '#b388ff', // Purple (BR)
+      '#00ff9d', // Green (ASIA)
+      '#ff9100', // Orange (OCE)
+      '#ffffff'  // White (ME)
+    ];
 
     const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',
@@ -46,43 +59,46 @@ export class DashboardChartService {
         labels: labels,
         datasets: [{
           data: data,
-          backgroundColor: colors,
-          borderWidth: 2,
-          borderColor: '#ffffff'
+          backgroundColor: regionColors,
+          borderWidth: 0,
+          hoverOffset: 10
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '70%', // Thinner ring
         plugins: {
           legend: {
-            position: 'bottom',
+            position: 'right',
             labels: {
-              padding: 15,
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: 'circle',
               font: {
-                size: 12,
-                family: "'Inter', sans-serif"
+                size: 11,
+                family: "'Orbitron', sans-serif"
               },
-              color: '#6b7280'
+              color: '#e2e8f0' // Light gray
             }
           },
           tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#FFD700',
+            bodyColor: '#fff',
+            borderColor: 'rgba(255, 215, 0, 0.3)',
+            borderWidth: 1,
             padding: 12,
-            titleFont: {
-              size: 14,
-              weight: 'bold'
-            },
-            bodyFont: {
-              size: 13
-            },
+            titleFont: { family: "'Orbitron', sans-serif", size: 13 },
+            bodyFont: { family: "'Exo 2', sans-serif", size: 12 },
+            cornerRadius: 8,
             callbacks: {
               label: (context) => {
                 const label = context.label || '';
                 const value = context.parsed || 0;
                 const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                 const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                return `${label}: ${value} joueurs (${percentage}%)`;
+                return ` ${label}: ${value} (${percentage}%)`;
               }
             }
           }
@@ -94,15 +110,14 @@ export class DashboardChartService {
   }
 
   /**
-   * Create top teams points bar chart
-   * @param canvas - HTMLCanvasElement reference
-   * @param leaderboard - Array of leaderboard entries
-   * @param limit - Number of teams to show (default: 10)
-   * @returns Chart instance
+   * Create top teams points bar chart (Premium Redesign)
    */
   createPointsChart(canvas: HTMLCanvasElement, leaderboard: any[], limit: number = 10): Chart {
     const topTeams = leaderboard.slice(0, limit);
-    const labels = topTeams.map(entry => entry.teamName || entry.ownerName || 'Unknown');
+    const labels = topTeams.map(entry => {
+      let name = entry.teamName || entry.ownerName || 'Unknown';
+      return name.replace('Equipe de ', '');
+    });
     const data = topTeams.map(entry => entry.totalPoints || 0);
 
     const config: ChartConfiguration<'bar'> = {
@@ -110,68 +125,55 @@ export class DashboardChartService {
       data: {
         labels: labels,
         datasets: [{
-          label: 'Points totaux',
+          label: 'Points',
           data: data,
-          backgroundColor: 'rgba(59, 130, 246, 0.8)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 2,
-          borderRadius: 6,
-          borderSkipped: false
+          backgroundColor: (context) => {
+            const index = context.dataIndex;
+            // Top 3 get special metallic gradients (simulated with solid colors for now)
+            if (index === 0) return '#FFD700'; // Gold
+            if (index === 1) return '#C0C0C0'; // Silver
+            if (index === 2) return '#CD7F32'; // Bronze
+            return 'rgba(255, 255, 255, 0.2)'; // Others ghost white
+          },
+          borderColor: 'transparent',
+          borderRadius: 4,
+          borderSkipped: false,
+          barPercentage: 0.6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        indexAxis: 'y', // Horizontal bar chart
+        indexAxis: 'y',
         plugins: {
-          legend: {
-            display: false
-          },
+          legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            titleColor: '#FFD700',
+            bodyColor: '#fff',
+            borderColor: 'rgba(255, 215, 0, 0.3)',
+            borderWidth: 1,
             padding: 12,
-            titleFont: {
-              size: 14,
-              weight: 'bold'
-            },
-            bodyFont: {
-              size: 13
-            },
+            titleFont: { family: "'Orbitron', sans-serif", size: 13 },
             callbacks: {
-              label: (context) => {
-                return `${context.parsed.x} points`;
-              }
+              label: (ctx) => ` ${ctx.formattedValue} pts`
             }
           }
         },
         scales: {
           x: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
-            },
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
             ticks: {
-              font: {
-                size: 11,
-                family: "'Inter', sans-serif"
-              },
-              color: '#6b7280'
+              color: '#94a3b8',
+              font: { family: "'Exo 2', sans-serif", size: 10 }
             }
           },
           y: {
-            grid: {
-              display: false
-            },
+            grid: { display: false },
             ticks: {
-              font: {
-                size: 11,
-                family: "'Inter', sans-serif"
-              },
-              color: '#374151',
-              callback: function(value, index) {
-                const label = this.getLabelForValue(Number(value));
-                return label.length > 20 ? label.substring(0, 20) + '...' : label;
-              }
+              color: '#fff',
+              font: { family: "'Orbitron', sans-serif", size: 11 },
+              autoSkip: false
             }
           }
         }

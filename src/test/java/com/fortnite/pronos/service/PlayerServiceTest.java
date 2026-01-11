@@ -97,32 +97,36 @@ class PlayerServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait récupérer tous les joueurs")
+  @DisplayName("Devrait récupérer tous les joueurs avec pagination")
   void shouldGetAllPlayers() {
     // Given
     List<Player> players = Arrays.asList(testPlayer1, testPlayer2, testPlayer3);
-    when(playerRepository.findAll()).thenReturn(players);
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<Player> playerPage = new PageImpl<>(players, pageable, players.size());
+    when(playerRepository.findAll(pageable)).thenReturn(playerPage);
 
     // When
-    List<PlayerDto> result = playerService.getAllPlayers();
+    Page<PlayerDto> result = playerService.getAllPlayers(pageable);
 
     // Then
-    assertThat(result).hasSize(3);
-    verify(playerRepository).findAll();
+    assertThat(result.getContent()).hasSize(3);
+    verify(playerRepository).findAll(pageable);
   }
 
   @Test
-  @DisplayName("Devrait retourner une liste vide quand aucun joueur n'existe")
+  @DisplayName("Devrait retourner une page vide quand aucun joueur n'existe")
   void shouldReturnEmptyListWhenNoPlayersExist() {
     // Given
-    when(playerRepository.findAll()).thenReturn(Arrays.asList());
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<Player> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
+    when(playerRepository.findAll(pageable)).thenReturn(emptyPage);
 
     // When
-    List<PlayerDto> result = playerService.getAllPlayers();
+    Page<PlayerDto> result = playerService.getAllPlayers(pageable);
 
     // Then
-    assertThat(result).isEmpty();
-    verify(playerRepository).findAll();
+    assertThat(result.getContent()).isEmpty();
+    verify(playerRepository).findAll(pageable);
   }
 
   @Test

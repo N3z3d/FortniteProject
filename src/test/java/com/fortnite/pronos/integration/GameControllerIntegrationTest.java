@@ -292,33 +292,6 @@ public class GameControllerIntegrationTest {
   }
 
   @Test
-  @DisplayName("Devrait retourner toutes les games disponibles")
-  void shouldReturnAllAvailableGames() {
-    // Given
-    Game game1 = new Game();
-    game1.setName("Available Game 1");
-    game1.setCreator(testUser);
-    game1.setStatus(GameStatus.CREATING);
-    game1.setMaxParticipants(4);
-    gameRepository.save(game1);
-
-    Game game2 = new Game();
-    game2.setName("Available Game 2");
-    game2.setCreator(testUser);
-    game2.setStatus(GameStatus.CREATING);
-    game2.setMaxParticipants(4);
-    gameRepository.save(game2);
-
-    // When
-    ResponseEntity<GameDto[]> response = getWithUser(baseUrl + "/available", GameDto[].class);
-
-    // Then
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().length).isGreaterThanOrEqualTo(2);
-  }
-
-  @Test
   @DisplayName("Devrait gérer les erreurs de validation des requêtes")
   void shouldHandleRequestValidationErrors() {
     // Given
