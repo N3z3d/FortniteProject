@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
+import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -43,7 +44,7 @@ public class UnifiedAuthService {
 
     if (userOpt.isEmpty()) {
       log.warn("Utilisateur non trouvé: {}", request.getUsername());
-      throw new RuntimeException("Utilisateur non trouvé");
+      throw new UserNotFoundException("Utilisateur non trouvé: " + request.getUsername());
     }
 
     User user = userOpt.get();
@@ -74,7 +75,7 @@ public class UnifiedAuthService {
 
       if (userOpt.isEmpty()) {
         log.warn("Utilisateur non trouvé pour le token: {}", username);
-        throw new RuntimeException("Utilisateur non trouvé");
+        throw new UserNotFoundException("Utilisateur non trouvé: " + username);
       }
 
       User user = userOpt.get();

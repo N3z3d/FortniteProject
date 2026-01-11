@@ -19,6 +19,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.fortnite.pronos.core.error.FortnitePronosException;
+import com.fortnite.pronos.exception.UserNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,6 +67,28 @@ public class GlobalExceptionHandler {
             .path(request.getRequestURI())
             .accessibilityHint("Utilisez Tab pour naviguer vers le formulaire de connexion")
             .keyboardAction("Appuyez sur Entrée pour vous connecter")
+            .requiresUserAction(true)
+            .build();
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+  }
+
+  /** Gestion des erreurs utilisateur non trouvé (login) */
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleUserNotFoundException(
+      UserNotFoundException ex, HttpServletRequest request) {
+
+    log.warn("User not found: {}", ex.getMessage());
+
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.UNAUTHORIZED.value())
+            .error("Authentication Failed")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .code("USER_NOT_FOUND")
+            .accessibilityHint("Vérifiez votre nom d'utilisateur ou créez un compte")
             .requiresUserAction(true)
             .build();
 

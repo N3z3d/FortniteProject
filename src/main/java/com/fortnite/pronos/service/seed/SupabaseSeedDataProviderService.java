@@ -62,8 +62,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
   }
 
   private MockDataSet fetchFromSupabase() {
-    List<SupabasePlayerAssignmentRow> assignments =
-        supabaseTableService.fetchPlayerAssignments();
+    List<SupabasePlayerAssignmentRow> assignments = supabaseTableService.fetchPlayerAssignments();
     if (!assignments.isEmpty()) {
       return transformAssignments(assignments);
     }
@@ -225,8 +224,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return players;
   }
 
-  private Map<UUID, Score> mapScores(
-      List<SupabaseScoreRow> rows, Map<UUID, Player> playersById) {
+  private Map<UUID, Score> mapScores(List<SupabaseScoreRow> rows, Map<UUID, Player> playersById) {
     Map<UUID, Score> scores = new LinkedHashMap<>();
     for (SupabaseScoreRow row : rows) {
       if (row.playerId() == null) {
@@ -248,8 +246,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return scores;
   }
 
-  private Map<UUID, List<SupabaseTeamPlayerRow>> mapTeamPlayers(
-      List<SupabaseTeamPlayerRow> rows) {
+  private Map<UUID, List<SupabaseTeamPlayerRow>> mapTeamPlayers(List<SupabaseTeamPlayerRow> rows) {
     Map<UUID, List<SupabaseTeamPlayerRow>> mapped = new LinkedHashMap<>();
     for (SupabaseTeamPlayerRow row : rows) {
       if (row.teamId() == null || row.playerId() == null) {

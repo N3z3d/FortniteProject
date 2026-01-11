@@ -27,6 +27,7 @@ import com.fortnite.pronos.core.error.ErrorCode;
 import com.fortnite.pronos.core.error.FortnitePronosException;
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
+import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.service.UnifiedAuthService;
 
 /**
@@ -111,6 +112,26 @@ class AuthControllerTddTest {
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(objectMapper.writeValueAsString(validLoginRequest)))
           .andExpect(status().isInternalServerError());
+
+      verify(unifiedAuthService).login(any(LoginRequest.class));
+    }
+
+    @Test
+    @DisplayName("Should return 401 when user is not found")
+    void shouldReturn401WhenUserNotFound() throws Exception {
+      // RED: Security test - user not found should return 401, not 500
+      when(unifiedAuthService.login(any(LoginRequest.class)))
+          .thenThrow(new UserNotFoundException("Utilisateur non trouvé: testuser"));
+
+      mockMvc
+          .perform(
+              post("/api/auth/login")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(objectMapper.writeValueAsString(validLoginRequest)))
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.status").value(401))
+          .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"))
+          .andExpect(jsonPath("$.message").value("Utilisateur non trouvé: testuser"));
 
       verify(unifiedAuthService).login(any(LoginRequest.class));
     }
