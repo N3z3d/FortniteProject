@@ -1,0 +1,34 @@
+# DOCKER COMPOSE FOR LOCAL DEVELOPMENT
+# Simple Postgres setup for dev without monitoring overhead
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # POSTGRES DATABASE (DEV)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: fortnite-postgres-dev
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: fortnite_pronos
+      POSTGRES_USER: fortnite_user
+      POSTGRES_PASSWORD: fortnite_pass
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortnite_user -d fortnite_pronos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
+    driver: local

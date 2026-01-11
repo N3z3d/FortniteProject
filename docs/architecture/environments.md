@@ -12,8 +12,24 @@ proposes a minimal target set aligned with the JIRA request.
 ## Current profiles (backend)
 - default: `application.yml` (spring.profiles.active defaults to `dev`).
 - dev: `application-dev.yml` (Postgres local, Flyway enabled, debug logs).
+- h2: `application-h2.yml` (H2 in-memory, no Postgres required, seed 4 users).
 - prod: `application-prod.yml` (Postgres via env vars, stricter settings).
 - test: `src/test/resources/application-test.yml` (H2 in-memory, ddl create-drop, Flyway disabled).
+
+## Quick start commands
+
+### Option 1: H2 (no Docker required)
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=h2
+```
+Users disponibles: thibaut, teddy, marcel, sarah
+
+### Option 2: Postgres local (Docker)
+```bash
+docker compose -f docker-compose.dev.yml up -d
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+Variables: DB_HOST=localhost, DB_PORT=5432, DB_NAME=fortnite_pronos, DB_USERNAME=fortnite_user, DB_PASSWORD=fortnite_pass
 
 ## Current data sources and seed paths
 - CSV data: `src/main/resources/data/fortnite_data.csv` (148 players; Thibaut 50 / Teddy 49 / Marcel 49).
@@ -26,11 +42,10 @@ proposes a minimal target set aligned with the JIRA request.
 - Seed provider selection: `SeedDataProviderSelector` (property `fortnite.data.provider`).
 
 ## Target profile set (minimal)
-- dev: development + seed + manual tests (Postgres).
-- prod: official data (Postgres).
-- test: automated tests only (H2 in-memory).
-
-Removed profiles: local, h2, fast-startup, minimal (aliases removed; H2 is test-only).
+- h2: local dev without Docker (H2 in-memory, 4 test users).
+- dev: development + seed + manual tests (Postgres via docker-compose.dev.yml).
+- prod: official data (Postgres via env vars).
+- test: automated tests only (H2 in-memory, no seed).
 
 ## Cross-profile persistence (target)
 - Dev data should persist across restarts and dev runs.

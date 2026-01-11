@@ -40,8 +40,7 @@ public class H2SeedService {
     createUserIfNotExists("thibaut", "thibaut@test.com", User.UserRole.ADMIN);
     createUserIfNotExists("teddy", "teddy@test.com", User.UserRole.USER);
     createUserIfNotExists("marcel", "marcel@test.com", User.UserRole.USER);
-    createUserIfNotExists("admin", "admin@test.com", User.UserRole.ADMIN);
-    createUserIfNotExists("test", "test@test.com", User.UserRole.USER);
+    createUserIfNotExists("sarah", "sarah@test.com", User.UserRole.USER);
 
     log.info("H2 Seed: completed - {} users in database", userRepository.count());
   }
