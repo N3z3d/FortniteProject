@@ -16,6 +16,15 @@ export interface TradeNotification {
   counterTradeId?: string;
 }
 
+export interface GameNotification {
+  type: 'GAME_STATUS_CHANGED' | 'PLAYER_JOINED' | 'PLAYER_LEFT' | 'DRAFT_STARTED' | 'GAME_FINISHED';
+  gameId: string;
+  gameName: string;
+  status: string;
+  username?: string;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -24,7 +33,8 @@ export class WebSocketService implements OnDestroy {
   private subscriptions: StompSubscription[] = [];
 
   private connectionStatus$ = new BehaviorSubject<boolean>(false);
-  private tradeNotifications$ = new Subject<TradeNotification>();
+  private readonly tradeNotifications$ = new Subject<TradeNotification>();
+  private readonly gameNotifications$ = new Subject<GameNotification>();
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 3000;
@@ -37,6 +47,10 @@ export class WebSocketService implements OnDestroy {
 
   get tradeNotifications(): Observable<TradeNotification> {
     return this.tradeNotifications$.asObservable();
+  }
+
+  get gameNotifications(): Observable<GameNotification> {
+    return this.gameNotifications$.asObservable();
   }
 
   connect(token?: string): void {
@@ -101,6 +115,24 @@ export class WebSocketService implements OnDestroy {
     this.subscriptions.push(subscription);
   }
 
+  /**
+   * Subscribe to game events topic (for spectators and participants).
+   * Receives notifications about: status changes, player join/leave, draft start, game finish.
+   */
+  subscribeToGameEvents(gameId: string): void {
+    if (!this.client?.active) {
+      console.warn('[WebSocket] Not connected, cannot subscribe to game events');
+      return;
+    }
+
+    const destination = `/topic/games/${gameId}/events`;
+    const subscription = this.client.subscribe(destination, (message: IMessage) => {
+      this.handleGameMessage(message);
+    });
+
+    this.subscriptions.push(subscription);
+  }
+
   private subscribeToUserQueue(): void {
     if (!this.client?.active) {
       return;
@@ -119,6 +151,15 @@ export class WebSocketService implements OnDestroy {
       this.tradeNotifications$.next(notification);
     } catch (error) {
       console.error('[WebSocket] Failed to parse trade notification:', error);
+    }
+  }
+
+  private handleGameMessage(message: IMessage): void {
+    try {
+      const notification: GameNotification = JSON.parse(message.body);
+      this.gameNotifications$.next(notification);
+    } catch (error) {
+      console.error('[WebSocket] Failed to parse game notification:', error);
     }
   }
 
@@ -174,6 +215,7 @@ export class WebSocketService implements OnDestroy {
   ngOnDestroy(): void {
     this.disconnect();
     this.tradeNotifications$.complete();
+    this.gameNotifications$.complete();
     this.connectionStatus$.complete();
   }
 }
