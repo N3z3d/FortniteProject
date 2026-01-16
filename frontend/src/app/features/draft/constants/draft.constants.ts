@@ -40,39 +40,40 @@ export const DRAFT_CONSTANTS = {
 };
 
 // Options de filtrage pour les joueurs
+// Labels use translation keys - resolve with TranslationService.t(labelKey)
 export const FILTER_OPTIONS = {
   ALL_REGIONS: 'ALL' as const,
   ALL_POSITIONS: 'ALL' as const,
   ALL_TRANCHES: 'ALL' as const,
   DEFAULT_SEARCH_TERM: '',
-  
+
   REGIONS: [
-    { value: 'ALL', label: 'Toutes les régions', color: '#6c757d' },
-    { value: 'NAE', label: 'Nord-Amérique Est', color: '#007bff' },
-    { value: 'NAW', label: 'Nord-Amérique Ouest', color: '#17a2b8' },
-    { value: 'EU', label: 'Europe', color: '#28a745' },
-    { value: 'ASIA', label: 'Asie', color: '#ffc107' },
-    { value: 'OCE', label: 'Océanie', color: '#dc3545' },
-    { value: 'BRAZIL', label: 'Brésil', color: '#fd7e14' },
-    { value: 'MENA', label: 'Moyen-Orient/Afrique', color: '#6f42c1' }
+    { value: 'ALL', labelKey: 'draft.filters.allRegions', color: '#6c757d' },
+    { value: 'NAE', labelKey: 'draft.filters.naeRegion', color: '#007bff' },
+    { value: 'NAW', labelKey: 'draft.filters.nawRegion', color: '#17a2b8' },
+    { value: 'EU', labelKey: 'draft.filters.euRegion', color: '#28a745' },
+    { value: 'ASIA', labelKey: 'draft.filters.asiaRegion', color: '#ffc107' },
+    { value: 'OCE', labelKey: 'draft.filters.oceRegion', color: '#dc3545' },
+    { value: 'BRAZIL', labelKey: 'draft.filters.brazilRegion', color: '#fd7e14' },
+    { value: 'MENA', labelKey: 'draft.filters.menaRegion', color: '#6f42c1' }
   ] as const,
-  
+
   PERFORMANCE_LEVELS: [
-    { value: 'ALL', label: 'Tous les niveaux', min: 0, max: Infinity },
-    { value: 'BEGINNER', label: 'Débutant', min: 0, max: 100 },
-    { value: 'INTERMEDIATE', label: 'Intermédiaire', min: 100, max: 500 },
-    { value: 'ADVANCED', label: 'Avancé', min: 500, max: 1000 },
-    { value: 'EXPERT', label: 'Expert', min: 1000, max: Infinity }
+    { value: 'ALL', labelKey: 'draft.filters.allLevels', min: 0, max: Infinity },
+    { value: 'BEGINNER', labelKey: 'draft.filters.beginner', min: 0, max: 100 },
+    { value: 'INTERMEDIATE', labelKey: 'draft.filters.intermediate', min: 100, max: 500 },
+    { value: 'ADVANCED', labelKey: 'draft.filters.advanced', min: 500, max: 1000 },
+    { value: 'EXPERT', labelKey: 'draft.filters.expert', min: 1000, max: Infinity }
   ] as const,
-  
+
   SORT_OPTIONS: [
-    { value: 'points_desc', label: 'Points (décroissant)', field: 'totalPoints', order: 'desc' },
-    { value: 'points_asc', label: 'Points (croissant)', field: 'totalPoints', order: 'asc' },
-    { value: 'name_asc', label: 'Nom (A-Z)', field: 'name', order: 'asc' },
-    { value: 'name_desc', label: 'Nom (Z-A)', field: 'name', order: 'desc' },
-    { value: 'region_asc', label: 'Région (A-Z)', field: 'region', order: 'asc' },
-    { value: 'kd_desc', label: 'K/D (décroissant)', field: 'kdRatio', order: 'desc' },
-    { value: 'winrate_desc', label: 'Winrate (décroissant)', field: 'winRate', order: 'desc' }
+    { value: 'points_desc', labelKey: 'draft.sort.pointsDesc', field: 'totalPoints', order: 'desc' },
+    { value: 'points_asc', labelKey: 'draft.sort.pointsAsc', field: 'totalPoints', order: 'asc' },
+    { value: 'name_asc', labelKey: 'draft.sort.nameAsc', field: 'name', order: 'asc' },
+    { value: 'name_desc', labelKey: 'draft.sort.nameDesc', field: 'name', order: 'desc' },
+    { value: 'region_asc', labelKey: 'draft.sort.regionAsc', field: 'region', order: 'asc' },
+    { value: 'kd_desc', labelKey: 'draft.sort.kdDesc', field: 'kdRatio', order: 'desc' },
+    { value: 'winrate_desc', labelKey: 'draft.sort.winrateDesc', field: 'winRate', order: 'desc' }
   ] as const
 };
 
@@ -96,13 +97,13 @@ export const PERFORMANCE_CONFIG = {
     UNKNOWN: '#6c757d'    // Gris
   },
   
-  // Labels de performance
-  PERFORMANCE_LABELS: {
-    EXCELLENT: 'Excellent',
-    GOOD: 'Bon',
-    AVERAGE: 'Moyen',
-    POOR: 'Faible',
-    UNKNOWN: 'Inconnu'
+  // Labels de performance - use translation keys
+  PERFORMANCE_LABEL_KEYS: {
+    EXCELLENT: 'draft.performance.excellent',
+    GOOD: 'draft.performance.good',
+    AVERAGE: 'draft.performance.average',
+    POOR: 'draft.performance.poor',
+    UNKNOWN: 'draft.performance.unknown'
   }
 };
 
@@ -124,34 +125,40 @@ export const DRAFT_TYPES = {
   RANDOM: 'RANDOM' as const
 };
 
-// Messages d'erreur du draft (avec alias pour compatibilité)
-export const DRAFT_ERROR_MESSAGES = {
-  PLAYER_ALREADY_SELECTED: 'Ce joueur a déjà été sélectionné',
-  NOT_YOUR_TURN: 'Ce n\'est pas votre tour de drafter',
-  REGION_LIMIT_EXCEEDED: 'Limite de joueurs par région atteinte',
-  TEAM_FULL: 'Votre équipe est complète',
-  TIME_EXPIRED: 'Le temps de sélection a expiré',
-  INVALID_SELECTION: 'Sélection invalide',
-  DRAFT_NOT_ACTIVE: 'Le draft n\'est pas actif',
-  CONNECTION_ERROR: 'Erreur de connexion au serveur',
-  UNAUTHORIZED: 'Vous n\'êtes pas autorisé à participer à ce draft',
-  GAME_NOT_FOUND: 'Jeu non trouvé',
-  PLAYER_NOT_FOUND: 'Joueur non trouvé',
-  INVALID_ROUND: 'Round de draft invalide',
-  DRAFT_COMPLETED: 'Le draft est déjà terminé',
-  SERVER_ERROR: 'Erreur serveur, veuillez réessayer'
+// Error message translation keys (use with TranslationService.t())
+export const DRAFT_ERROR_MESSAGE_KEYS = {
+  PLAYER_ALREADY_SELECTED: 'draft.errors.playerAlreadySelected',
+  NOT_YOUR_TURN: 'draft.errors.notYourTurn',
+  REGION_LIMIT_EXCEEDED: 'draft.errors.regionLimitExceeded',
+  TEAM_FULL: 'draft.errors.teamFull',
+  TIME_EXPIRED: 'draft.errors.timeExpired',
+  INVALID_SELECTION: 'draft.errors.invalidSelection',
+  DRAFT_NOT_ACTIVE: 'draft.errors.draftNotActive',
+  CONNECTION_ERROR: 'draft.errors.connectionError',
+  UNAUTHORIZED: 'draft.errors.unauthorized',
+  GAME_NOT_FOUND: 'draft.errors.gameNotFound',
+  PLAYER_NOT_FOUND: 'draft.errors.playerNotFound',
+  INVALID_ROUND: 'draft.errors.invalidRound',
+  DRAFT_COMPLETED: 'draft.errors.draftCompleted',
+  SERVER_ERROR: 'draft.errors.serverError'
 };
 
-// Messages de succès du draft (avec alias pour compatibilité)
-export const DRAFT_SUCCESS_MESSAGES = {
-  PLAYER_SELECTED: 'Joueur sélectionné avec succès',
-  DRAFT_STARTED: 'Le draft a commencé',
-  DRAFT_COMPLETED: 'Le draft est terminé',
-  TURN_UPDATED: 'C\'est votre tour de drafter',
-  TEAM_UPDATED: 'Équipe mise à jour',
-  DRAFT_PAUSED: 'Le draft a été mis en pause',
-  DRAFT_RESUMED: 'Le draft a repris'
+// Success message translation keys (use with TranslationService.t())
+export const DRAFT_SUCCESS_MESSAGE_KEYS = {
+  PLAYER_SELECTED: 'draft.success.playerSelected',
+  DRAFT_STARTED: 'draft.success.draftStarted',
+  DRAFT_COMPLETED: 'draft.success.draftCompleted',
+  TURN_UPDATED: 'draft.success.turnUpdated',
+  TEAM_UPDATED: 'draft.success.teamUpdated',
+  DRAFT_PAUSED: 'draft.success.draftPaused',
+  DRAFT_RESUMED: 'draft.success.draftResumed'
 };
+
+// Legacy aliases - deprecated, use *_KEYS versions with TranslationService
+/** @deprecated Use DRAFT_ERROR_MESSAGE_KEYS with TranslationService */
+export const DRAFT_ERROR_MESSAGES = DRAFT_ERROR_MESSAGE_KEYS;
+/** @deprecated Use DRAFT_SUCCESS_MESSAGE_KEYS with TranslationService */
+export const DRAFT_SUCCESS_MESSAGES = DRAFT_SUCCESS_MESSAGE_KEYS;
 
 // Configuration de l'interface utilisateur
 export const UI_CONFIG = {
@@ -241,28 +248,28 @@ export const VALIDATION_RULES = {
   }
 };
 
-// Configuration de l'accessibilité
+// Configuration de l'accessibilité - uses translation keys
 export const ACCESSIBILITY_CONFIG = {
-  // Labels ARIA
-  ARIA_LABELS: {
-    PLAYER_CARD: 'Carte joueur',
-    SELECT_PLAYER: 'Sélectionner ce joueur',
-    TEAM_OVERVIEW: 'Vue d\'ensemble de l\'équipe',
-    DRAFT_TIMER: 'Temps restant pour sélectionner',
-    CURRENT_TURN: 'Tour actuel',
-    DRAFT_STATUS: 'Statut du draft'
+  // Labels ARIA - translation keys
+  ARIA_LABEL_KEYS: {
+    PLAYER_CARD: 'draft.accessibility.playerCard',
+    SELECT_PLAYER: 'draft.accessibility.selectPlayer',
+    TEAM_OVERVIEW: 'draft.accessibility.teamOverview',
+    DRAFT_TIMER: 'draft.accessibility.draftTimer',
+    CURRENT_TURN: 'draft.accessibility.currentTurn',
+    DRAFT_STATUS: 'draft.accessibility.draftStatus'
   },
-  
-  // Descriptions pour lecteurs d'écran
-  SCREEN_READER_DESCRIPTIONS: {
-    PLAYER_AVAILABLE: 'Joueur disponible pour sélection',
-    PLAYER_SELECTED: 'Joueur déjà sélectionné',
-    YOUR_TURN: 'C\'est votre tour de sélectionner un joueur',
-    WAITING_TURN: 'En attente de votre tour',
-    DRAFT_COMPLETED: 'Draft terminé, toutes les équipes sont complètes'
+
+  // Screen reader description keys
+  SCREEN_READER_DESCRIPTION_KEYS: {
+    PLAYER_AVAILABLE: 'draft.accessibility.playerAvailable',
+    PLAYER_SELECTED: 'draft.accessibility.playerSelected',
+    YOUR_TURN: 'draft.accessibility.yourTurn',
+    WAITING_TURN: 'draft.accessibility.waitingTurn',
+    DRAFT_COMPLETED: 'draft.accessibility.draftCompletedMsg'
   },
-  
-  // Raccourcis clavier
+
+  // Raccourcis clavier (no translation needed)
   KEYBOARD_SHORTCUTS: {
     SELECT_PLAYER: 'Enter',
     NEXT_PLAYER: 'ArrowRight',
@@ -280,14 +287,17 @@ export type PerformanceLevel = typeof FILTER_OPTIONS.PERFORMANCE_LEVELS[number][
 export type SortOption = typeof FILTER_OPTIONS.SORT_OPTIONS[number]['value'];
 
 // Alias pour compatibilité avec l'ancien code
-export const ERROR_MESSAGES = DRAFT_ERROR_MESSAGES;
-export const SUCCESS_MESSAGES = DRAFT_SUCCESS_MESSAGES;
+export const ERROR_MESSAGES = DRAFT_ERROR_MESSAGE_KEYS;
+export const SUCCESS_MESSAGES = DRAFT_SUCCESS_MESSAGE_KEYS;
 
-// Labels pour les régions
-export const REGION_LABELS = FILTER_OPTIONS.REGIONS.reduce((acc, region) => {
-  acc[region.value] = region.label;
+// Region label keys mapping (use TranslationService.t(labelKey) to resolve)
+export const REGION_LABEL_KEYS = FILTER_OPTIONS.REGIONS.reduce((acc, region) => {
+  acc[region.value] = region.labelKey;
   return acc;
 }, {} as Record<string, string>);
+
+// Legacy alias for backwards compatibility
+export const REGION_LABELS = REGION_LABEL_KEYS;
 
 // Couleurs pour les statuts
 export const STATUS_COLORS = {
@@ -299,16 +309,19 @@ export const STATUS_COLORS = {
   ERROR: '#dc3545',
   CREATED: '#6c757d', // Alias pour NOT_STARTED
   ACTIVE: '#007bff'   // Alias pour IN_PROGRESS
-} as any;
+} as const;
 
-// Labels pour les statuts
-export const STATUS_LABELS = {
-  NOT_STARTED: 'Non démarré',
-  IN_PROGRESS: 'En cours',
-  PAUSED: 'En pause',
-  COMPLETED: 'Terminé',
-  CANCELLED: 'Annulé',
-  ERROR: 'Erreur',
-  CREATED: 'Créé',
-  ACTIVE: 'En cours'
-} as any;
+// Status label translation keys
+export const STATUS_LABEL_KEYS = {
+  NOT_STARTED: 'draft.status.notStarted',
+  IN_PROGRESS: 'draft.status.inProgress',
+  PAUSED: 'draft.status.paused',
+  COMPLETED: 'draft.status.completed',
+  CANCELLED: 'draft.status.cancelled',
+  ERROR: 'draft.status.error',
+  CREATED: 'draft.status.created',
+  ACTIVE: 'draft.status.active'
+} as const;
+
+// Legacy alias for backwards compatibility (with index signature for dynamic access)
+export const STATUS_LABELS: Record<string, string> = STATUS_LABEL_KEYS;

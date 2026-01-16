@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record SupabaseGameRow(
+public record SupabaseGameRowDto(
     UUID id,
     String name,
     @JsonProperty("creator_id") UUID creatorId,

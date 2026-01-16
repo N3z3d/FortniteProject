@@ -134,7 +134,7 @@ export class HttpDashboardRepository extends DashboardRepository {
       totalPlayers: apiResponse.totalPlayers || 0,
       totalPoints: apiResponse.totalPoints || 0,
       averagePointsPerTeam: apiResponse.averagePointsPerTeam || 0,
-      mostActiveTeam: apiResponse.mostActiveTeam || 'Aucune équipe',
+      mostActiveTeam: apiResponse.mostActiveTeam || '',
       seasonProgress: this.calculateSeasonProgress()
     };
   }
@@ -206,7 +206,7 @@ export class MockDashboardRepository extends DashboardRepository {
       totalPlayers: 0,
       totalPoints: 0,
       averagePointsPerTeam: 0,
-      mostActiveTeam: 'Aucune équipe',
+      mostActiveTeam: '',
       seasonProgress: this.calculateSeasonProgress()
     };
   }

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record SupabaseGameParticipantRow(
+public record SupabaseGameParticipantRowDto(
     UUID id,
     @JsonProperty("game_id") UUID gameId,
     @JsonProperty("user_id") UUID userId,

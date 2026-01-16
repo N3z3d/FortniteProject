@@ -76,3 +76,7 @@ fortnite:
     legacy-enabled: false
     fake-game-enabled: false
     reset: false
+
+ingestion:
+  local:
+    enabled: true

@@ -28,6 +28,7 @@ public class TradingService {
   private final PlayerRepository playerRepository;
   private final GameRepository gameRepository;
   private final ValidationService validationService;
+  private final TradeNotificationService tradeNotificationService;
 
   /**
    * Propose a trade between two teams (with UUID lists)
@@ -150,7 +151,9 @@ public class TradingService {
             .proposedAt(LocalDateTime.now())
             .build();
 
-    return tradeRepository.save(trade);
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeProposed(savedTrade);
+    return savedTrade;
   }
 
   /**
@@ -227,7 +230,9 @@ public class TradingService {
     // Save everything
     teamRepository.save(fromTeam);
     teamRepository.save(toTeam);
-    return tradeRepository.save(trade);
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeAccepted(savedTrade);
+    return savedTrade;
   }
 
   /**
@@ -258,7 +263,9 @@ public class TradingService {
     trade.setStatus(Trade.Status.REJECTED);
     trade.setRejectedAt(LocalDateTime.now());
 
-    return tradeRepository.save(trade);
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeRejected(savedTrade);
+    return savedTrade;
   }
 
   /**
@@ -289,7 +296,9 @@ public class TradingService {
     trade.setStatus(Trade.Status.CANCELLED);
     trade.setCancelledAt(LocalDateTime.now());
 
-    return tradeRepository.save(trade);
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeCancelled(savedTrade);
+    return savedTrade;
   }
 
   /**
@@ -363,7 +372,7 @@ public class TradingService {
 
     // Mark original trade as countered
     originalTrade.setStatus(Trade.Status.COUNTERED);
-    tradeRepository.save(originalTrade);
+    Trade savedOriginal = tradeRepository.save(originalTrade);
 
     // Create counter-offer (roles are swapped)
     Trade counterTrade =
@@ -374,7 +383,9 @@ public class TradingService {
             requestedPlayers);
 
     counterTrade.setOriginalTradeId(originalTradeId);
-    return tradeRepository.save(counterTrade);
+    Trade savedCounter = tradeRepository.save(counterTrade);
+    tradeNotificationService.notifyTradeCountered(savedOriginal, savedCounter);
+    return savedCounter;
   }
 
   /**

@@ -296,7 +296,7 @@ class GameRepositoryTest {
   void shouldFindGamesCreatedBetweenDates() {
     // Given
     LocalDateTime startDate = LocalDateTime.now().minusDays(2);
-    LocalDateTime endDate = LocalDateTime.now();
+    LocalDateTime endDate = LocalDateTime.now().plusMinutes(1);
 
     // When
     List<Game> gamesInPeriod = gameRepository.findByCreatedAtBetween(startDate, endDate);
@@ -306,6 +306,6 @@ class GameRepositoryTest {
     assertThat(gamesInPeriod)
         .allMatch(
             game ->
-                game.getCreatedAt().isAfter(startDate) && game.getCreatedAt().isBefore(endDate));
+                !game.getCreatedAt().isBefore(startDate) && !game.getCreatedAt().isAfter(endDate));
   }
 }

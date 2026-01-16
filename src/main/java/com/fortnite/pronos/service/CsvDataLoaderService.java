@@ -177,14 +177,26 @@ public class CsvDataLoaderService {
       } else if (updatePlayerFromRow(player, row)) {
         updatedPlayers++;
       }
-
-      playersByPronosticator
-          .computeIfAbsent(row.pronostiqueur(), keyValue -> new ArrayList<>())
-          .add(player);
     }
 
+    // Save new players first to get IDs before building assignments
     if (!newPlayers.isEmpty()) {
-      playerRepository.saveAll(newPlayers);
+      List<Player> savedPlayers = playerRepository.saveAll(newPlayers);
+      // Update references in playersByNickname with persisted entities
+      for (Player saved : savedPlayers) {
+        playersByNickname.put(normalizeNickname(saved.getNickname()), saved);
+      }
+    }
+
+    // Build assignments after all players are persisted
+    for (CsvRow row : rows) {
+      String key = normalizeNickname(row.nickname());
+      Player player = playersByNickname.get(key);
+      if (player != null) {
+        playersByPronosticator
+            .computeIfAbsent(row.pronostiqueur(), keyValue -> new ArrayList<>())
+            .add(player);
+      }
     }
 
     Map<UUID, Score> scoresByPlayerId = loadScoresByPlayerId();

@@ -18,12 +18,12 @@ import com.fortnite.pronos.model.Score;
 import com.fortnite.pronos.service.MockDataGeneratorService.MockDataSet;
 import com.fortnite.pronos.service.MockDataGeneratorService.PlayerWithScore;
 import com.fortnite.pronos.service.supabase.SupabaseTableService;
-import com.fortnite.pronos.service.supabase.dto.SupabasePlayerAssignmentRow;
-import com.fortnite.pronos.service.supabase.dto.SupabasePlayerRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseScoreRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseTeamPlayerRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseTeamRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseUserRow;
+import com.fortnite.pronos.service.supabase.dto.SupabasePlayerAssignmentRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabasePlayerRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseScoreRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseTeamPlayerRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseTeamRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseUserRowDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +62,8 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
   }
 
   private MockDataSet fetchFromSupabase() {
-    List<SupabasePlayerAssignmentRow> assignments = supabaseTableService.fetchPlayerAssignments();
+    List<SupabasePlayerAssignmentRowDto> assignments =
+        supabaseTableService.fetchPlayerAssignments();
     if (!assignments.isEmpty()) {
       return transformAssignments(assignments);
     }
@@ -84,11 +85,11 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
       return MockDataSet.empty();
     }
 
-    List<SupabaseUserRow> users = supabaseTableService.fetchUsers();
-    List<SupabasePlayerRow> players = supabaseTableService.fetchPlayers();
-    List<SupabaseScoreRow> scores = supabaseTableService.fetchScores();
-    List<SupabaseTeamRow> teams = supabaseTableService.fetchTeams();
-    List<SupabaseTeamPlayerRow> teamPlayers = supabaseTableService.fetchTeamPlayers();
+    List<SupabaseUserRowDto> users = supabaseTableService.fetchUsers();
+    List<SupabasePlayerRowDto> players = supabaseTableService.fetchPlayers();
+    List<SupabaseScoreRowDto> scores = supabaseTableService.fetchScores();
+    List<SupabaseTeamRowDto> teams = supabaseTableService.fetchTeams();
+    List<SupabaseTeamPlayerRowDto> teamPlayers = supabaseTableService.fetchTeamPlayers();
 
     if (teams.isEmpty() || teamPlayers.isEmpty() || players.isEmpty()) {
       log.warn("Supabase tables missing data for seed fallback");
@@ -98,21 +99,21 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     Map<UUID, String> usernamesById = mapUsernames(users);
     Map<UUID, Player> playersById = mapPlayers(players);
     Map<UUID, Score> scoresByPlayer = mapScores(scores, playersById);
-    Map<UUID, List<SupabaseTeamPlayerRow>> teamPlayersByTeam = mapTeamPlayers(teamPlayers);
+    Map<UUID, List<SupabaseTeamPlayerRowDto>> teamPlayersByTeam = mapTeamPlayers(teamPlayers);
 
     Map<String, List<PlayerWithScore>> playersByPronosticator = new LinkedHashMap<>();
 
-    for (SupabaseTeamRow team : teams) {
+    for (SupabaseTeamRowDto team : teams) {
       if (team.gameId() == null || !team.gameId().equals(gameId)) {
         continue;
       }
       String pronostiqueur = resolvePronostiqueur(usernamesById, team.ownerId());
-      List<SupabaseTeamPlayerRow> roster = teamPlayersByTeam.get(team.id());
+      List<SupabaseTeamPlayerRowDto> roster = teamPlayersByTeam.get(team.id());
       if (roster == null || roster.isEmpty()) {
         continue;
       }
 
-      for (SupabaseTeamPlayerRow row : roster) {
+      for (SupabaseTeamPlayerRowDto row : roster) {
         Player player = playersById.get(row.playerId());
         if (player == null) {
           continue;
@@ -143,10 +144,10 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return new MockDataSet(playersByPronosticator, total);
   }
 
-  private MockDataSet transformAssignments(List<SupabasePlayerAssignmentRow> rows) {
+  private MockDataSet transformAssignments(List<SupabasePlayerAssignmentRowDto> rows) {
     Map<String, List<PlayerWithScore>> playersByPronosticator = new LinkedHashMap<>();
 
-    for (SupabasePlayerAssignmentRow row : rows) {
+    for (SupabasePlayerAssignmentRowDto row : rows) {
       String pronostiqueur = resolvePronostiqueur(row.pronostiqueur());
 
       Player player = new Player();
@@ -179,9 +180,9 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return new MockDataSet(playersByPronosticator, total);
   }
 
-  private Map<UUID, String> mapUsernames(List<SupabaseUserRow> rows) {
+  private Map<UUID, String> mapUsernames(List<SupabaseUserRowDto> rows) {
     Map<UUID, String> usernames = new LinkedHashMap<>();
-    for (SupabaseUserRow row : rows) {
+    for (SupabaseUserRowDto row : rows) {
       if (row.id() == null) {
         continue;
       }
@@ -194,9 +195,9 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return usernames;
   }
 
-  private Map<UUID, Player> mapPlayers(List<SupabasePlayerRow> rows) {
+  private Map<UUID, Player> mapPlayers(List<SupabasePlayerRowDto> rows) {
     Map<UUID, Player> players = new LinkedHashMap<>();
-    for (SupabasePlayerRow row : rows) {
+    for (SupabasePlayerRowDto row : rows) {
       if (row.id() == null) {
         continue;
       }
@@ -224,9 +225,10 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return players;
   }
 
-  private Map<UUID, Score> mapScores(List<SupabaseScoreRow> rows, Map<UUID, Player> playersById) {
+  private Map<UUID, Score> mapScores(
+      List<SupabaseScoreRowDto> rows, Map<UUID, Player> playersById) {
     Map<UUID, Score> scores = new LinkedHashMap<>();
-    for (SupabaseScoreRow row : rows) {
+    for (SupabaseScoreRowDto row : rows) {
       if (row.playerId() == null) {
         continue;
       }
@@ -246,9 +248,10 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return scores;
   }
 
-  private Map<UUID, List<SupabaseTeamPlayerRow>> mapTeamPlayers(List<SupabaseTeamPlayerRow> rows) {
-    Map<UUID, List<SupabaseTeamPlayerRow>> mapped = new LinkedHashMap<>();
-    for (SupabaseTeamPlayerRow row : rows) {
+  private Map<UUID, List<SupabaseTeamPlayerRowDto>> mapTeamPlayers(
+      List<SupabaseTeamPlayerRowDto> rows) {
+    Map<UUID, List<SupabaseTeamPlayerRowDto>> mapped = new LinkedHashMap<>();
+    for (SupabaseTeamPlayerRowDto row : rows) {
       if (row.teamId() == null || row.playerId() == null) {
         continue;
       }
@@ -260,7 +263,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return mapped;
   }
 
-  private Score buildScore(Player player, SupabaseScoreRow row) {
+  private Score buildScore(Player player, SupabaseScoreRowDto row) {
     Score score = new Score();
     score.setPlayer(player);
     score.setSeason(row.season() != null ? row.season() : CURRENT_SEASON);

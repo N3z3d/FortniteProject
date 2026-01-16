@@ -396,6 +396,154 @@ export class TranslationService {
           unauthorized: 'Non autorisé',
           notFound: 'Non trouvé',
           validation: 'Erreur de validation'
+        },
+        notifications: {
+          close: 'Fermer',
+          loadingDefault: 'Chargement en cours...',
+          apiLoading: '{operation} en cours...',
+          apiSuccess: '{operation} réalisé avec succès',
+          apiError: 'Erreur lors de {operation}',
+          apiErrorWithDetails: 'Erreur lors de {operation}: {error}',
+          game: {
+            created: 'Jeu "{name}" créé avec succès',
+            joined: 'Vous avez rejoint "{name}"',
+            left: 'Vous avez quitté "{name}"',
+            draftStarted: 'La draft a commencé pour "{name}"',
+            yourTurn: 'C\'est votre tour de drafter !',
+            viewAction: 'Voir',
+            viewTeamAction: 'Voir équipe',
+            participateAction: 'Participer',
+            gotoDraftAction: 'Aller à la draft'
+          },
+          team: {
+            playerAdded: '{player} ajouté à votre équipe',
+            playerRemoved: '{player} retiré de votre équipe',
+            tradeCompleted: 'Trade effectué: {out} ↔ {in}'
+          },
+          auth: {
+            loginSuccess: 'Connexion réussie en tant que {username}',
+            logoutSuccess: 'Déconnexion réussie',
+            sessionExpired: 'Session expirée, veuillez vous reconnecter',
+            profileSwitched: 'Profil changé vers {username}',
+            connectAction: 'Se connecter'
+          }
+        },
+        draft: {
+          filters: {
+            allRegions: 'Toutes les régions',
+            naeRegion: 'Nord-Amérique Est',
+            nawRegion: 'Nord-Amérique Ouest',
+            euRegion: 'Europe',
+            asiaRegion: 'Asie',
+            oceRegion: 'Océanie',
+            brazilRegion: 'Brésil',
+            menaRegion: 'Moyen-Orient/Afrique',
+            allLevels: 'Tous les niveaux',
+            beginner: 'Débutant',
+            intermediate: 'Intermédiaire',
+            advanced: 'Avancé',
+            expert: 'Expert'
+          },
+          sort: {
+            pointsDesc: 'Points (décroissant)',
+            pointsAsc: 'Points (croissant)',
+            nameAsc: 'Nom (A-Z)',
+            nameDesc: 'Nom (Z-A)',
+            regionAsc: 'Région (A-Z)',
+            kdDesc: 'K/D (décroissant)',
+            winrateDesc: 'Winrate (décroissant)'
+          },
+          performance: {
+            excellent: 'Excellent',
+            good: 'Bon',
+            average: 'Moyen',
+            poor: 'Faible',
+            unknown: 'Inconnu'
+          },
+          status: {
+            notStarted: 'Non démarré',
+            inProgress: 'En cours',
+            paused: 'En pause',
+            completed: 'Terminé',
+            cancelled: 'Annulé',
+            error: 'Erreur',
+            created: 'Créé',
+            active: 'En cours'
+          },
+          errors: {
+            playerAlreadySelected: 'Ce joueur a déjà été sélectionné',
+            notYourTurn: 'Ce n\'est pas votre tour de drafter',
+            regionLimitExceeded: 'Limite de joueurs par région atteinte',
+            teamFull: 'Votre équipe est complète',
+            timeExpired: 'Le temps de sélection a expiré',
+            invalidSelection: 'Sélection invalide',
+            draftNotActive: 'Le draft n\'est pas actif',
+            connectionError: 'Erreur de connexion au serveur',
+            unauthorized: 'Vous n\'êtes pas autorisé à participer à ce draft',
+            gameNotFound: 'Jeu non trouvé',
+            playerNotFound: 'Joueur non trouvé',
+            invalidRound: 'Round de draft invalide',
+            draftCompleted: 'Le draft est déjà terminé',
+            serverError: 'Erreur serveur, veuillez réessayer'
+          },
+          success: {
+            playerSelected: 'Joueur sélectionné avec succès',
+            draftStarted: 'Le draft a commencé',
+            draftCompleted: 'Le draft est terminé',
+            turnUpdated: 'C\'est votre tour de drafter',
+            teamUpdated: 'Équipe mise à jour',
+            draftPaused: 'Le draft a été mis en pause',
+            draftResumed: 'Le draft a repris'
+          },
+          accessibility: {
+            playerCard: 'Carte joueur',
+            selectPlayer: 'Sélectionner ce joueur',
+            teamOverview: 'Vue d\'ensemble de l\'équipe',
+            draftTimer: 'Temps restant pour sélectionner',
+            currentTurn: 'Tour actuel',
+            draftStatus: 'Statut du draft',
+            playerAvailable: 'Joueur disponible pour sélection',
+            playerSelected: 'Joueur déjà sélectionné',
+            yourTurn: 'C\'est votre tour de sélectionner un joueur',
+            waitingTurn: 'En attente de votre tour',
+            draftCompletedMsg: 'Draft terminé, toutes les équipes sont complètes'
+          }
+        },
+        home: {
+          welcome: 'Bienvenue dans Fortnite Pro League !',
+          regionSelected: 'Région {name} sélectionnée !',
+          creatingTeam: 'Création d\'équipe en cours...',
+          loadingRules: 'Chargement des règles...',
+          regions: {
+            eu: {
+              name: 'Europe',
+              description: 'Le cœur stratégique du competitive. Des équipes disciplinées et une mécanique impeccable.'
+            },
+            nac: {
+              name: 'North America Central',
+              description: 'L\'épicentre du gaming créatif. Innovation et spectacle garantis.'
+            },
+            naw: {
+              name: 'North America West',
+              description: 'Terre des pionniers et des game-changers. Où naissent les méta.'
+            },
+            br: {
+              name: 'Brazil',
+              description: 'La passion à l\'état pur. Un style unique et une technique impressionnante.'
+            },
+            oce: {
+              name: 'Oceania',
+              description: 'Les guerriers des antipodes. Redoutables et imprévisibles.'
+            },
+            me: {
+              name: 'Middle East',
+              description: 'Les diamants du désert. Talent émergent et ambition infinie.'
+            },
+            asia: {
+              name: 'Asia',
+              description: 'La région de l\'innovation technologique. Précision et excellence.'
+            }
+          }
         }
       },
       en: {
@@ -731,6 +879,154 @@ export class TranslationService {
           unauthorized: 'Unauthorized',
           notFound: 'Not found',
           validation: 'Validation error'
+        },
+        notifications: {
+          close: 'Close',
+          loadingDefault: 'Loading...',
+          apiLoading: '{operation} in progress...',
+          apiSuccess: '{operation} completed successfully',
+          apiError: 'Error during {operation}',
+          apiErrorWithDetails: 'Error during {operation}: {error}',
+          game: {
+            created: 'Game "{name}" created successfully',
+            joined: 'You joined "{name}"',
+            left: 'You left "{name}"',
+            draftStarted: 'Draft started for "{name}"',
+            yourTurn: 'It\'s your turn to draft!',
+            viewAction: 'View',
+            viewTeamAction: 'View team',
+            participateAction: 'Participate',
+            gotoDraftAction: 'Go to draft'
+          },
+          team: {
+            playerAdded: '{player} added to your team',
+            playerRemoved: '{player} removed from your team',
+            tradeCompleted: 'Trade completed: {out} ↔ {in}'
+          },
+          auth: {
+            loginSuccess: 'Successfully logged in as {username}',
+            logoutSuccess: 'Successfully logged out',
+            sessionExpired: 'Session expired, please log in again',
+            profileSwitched: 'Profile switched to {username}',
+            connectAction: 'Log in'
+          }
+        },
+        draft: {
+          filters: {
+            allRegions: 'All regions',
+            naeRegion: 'North America East',
+            nawRegion: 'North America West',
+            euRegion: 'Europe',
+            asiaRegion: 'Asia',
+            oceRegion: 'Oceania',
+            brazilRegion: 'Brazil',
+            menaRegion: 'Middle East/Africa',
+            allLevels: 'All levels',
+            beginner: 'Beginner',
+            intermediate: 'Intermediate',
+            advanced: 'Advanced',
+            expert: 'Expert'
+          },
+          sort: {
+            pointsDesc: 'Points (descending)',
+            pointsAsc: 'Points (ascending)',
+            nameAsc: 'Name (A-Z)',
+            nameDesc: 'Name (Z-A)',
+            regionAsc: 'Region (A-Z)',
+            kdDesc: 'K/D (descending)',
+            winrateDesc: 'Winrate (descending)'
+          },
+          performance: {
+            excellent: 'Excellent',
+            good: 'Good',
+            average: 'Average',
+            poor: 'Poor',
+            unknown: 'Unknown'
+          },
+          status: {
+            notStarted: 'Not started',
+            inProgress: 'In progress',
+            paused: 'Paused',
+            completed: 'Completed',
+            cancelled: 'Cancelled',
+            error: 'Error',
+            created: 'Created',
+            active: 'Active'
+          },
+          errors: {
+            playerAlreadySelected: 'This player has already been selected',
+            notYourTurn: 'It\'s not your turn to draft',
+            regionLimitExceeded: 'Region player limit reached',
+            teamFull: 'Your team is full',
+            timeExpired: 'Selection time expired',
+            invalidSelection: 'Invalid selection',
+            draftNotActive: 'Draft is not active',
+            connectionError: 'Server connection error',
+            unauthorized: 'You are not authorized to participate in this draft',
+            gameNotFound: 'Game not found',
+            playerNotFound: 'Player not found',
+            invalidRound: 'Invalid draft round',
+            draftCompleted: 'Draft is already completed',
+            serverError: 'Server error, please try again'
+          },
+          success: {
+            playerSelected: 'Player selected successfully',
+            draftStarted: 'Draft started',
+            draftCompleted: 'Draft completed',
+            turnUpdated: 'It\'s your turn to draft',
+            teamUpdated: 'Team updated',
+            draftPaused: 'Draft paused',
+            draftResumed: 'Draft resumed'
+          },
+          accessibility: {
+            playerCard: 'Player card',
+            selectPlayer: 'Select this player',
+            teamOverview: 'Team overview',
+            draftTimer: 'Time remaining to select',
+            currentTurn: 'Current turn',
+            draftStatus: 'Draft status',
+            playerAvailable: 'Player available for selection',
+            playerSelected: 'Player already selected',
+            yourTurn: 'It\'s your turn to select a player',
+            waitingTurn: 'Waiting for your turn',
+            draftCompletedMsg: 'Draft completed, all teams are full'
+          }
+        },
+        home: {
+          welcome: 'Welcome to Fortnite Pro League!',
+          regionSelected: 'Region {name} selected!',
+          creatingTeam: 'Creating team...',
+          loadingRules: 'Loading rules...',
+          regions: {
+            eu: {
+              name: 'Europe',
+              description: 'The strategic heart of competitive. Disciplined teams and impeccable mechanics.'
+            },
+            nac: {
+              name: 'North America Central',
+              description: 'The epicenter of creative gaming. Innovation and spectacle guaranteed.'
+            },
+            naw: {
+              name: 'North America West',
+              description: 'Land of pioneers and game-changers. Where metas are born.'
+            },
+            br: {
+              name: 'Brazil',
+              description: 'Pure passion. A unique style and impressive technique.'
+            },
+            oce: {
+              name: 'Oceania',
+              description: 'The warriors from down under. Formidable and unpredictable.'
+            },
+            me: {
+              name: 'Middle East',
+              description: 'Desert diamonds. Emerging talent and infinite ambition.'
+            },
+            asia: {
+              name: 'Asia',
+              description: 'The region of technological innovation. Precision and excellence.'
+            }
+          }
         }
       }
     };

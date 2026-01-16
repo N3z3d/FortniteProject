@@ -4,14 +4,14 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.service.supabase.dto.SupabaseGameParticipantRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseGameRow;
-import com.fortnite.pronos.service.supabase.dto.SupabasePlayerAssignmentRow;
-import com.fortnite.pronos.service.supabase.dto.SupabasePlayerRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseScoreRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseTeamPlayerRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseTeamRow;
-import com.fortnite.pronos.service.supabase.dto.SupabaseUserRow;
+import com.fortnite.pronos.service.supabase.dto.SupabaseGameParticipantRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseGameRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabasePlayerAssignmentRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabasePlayerRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseScoreRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseTeamPlayerRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseTeamRowDto;
+import com.fortnite.pronos.service.supabase.dto.SupabaseUserRowDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,37 +28,37 @@ public class SupabaseTableService {
   private static final String GAMES_TABLE = "games";
   private static final String GAME_PARTICIPANTS_TABLE = "game_participants";
 
-  private final SupabaseRestClient restClient;
+  private final SupabaseRestService restClient;
 
-  public List<SupabasePlayerAssignmentRow> fetchPlayerAssignments() {
-    return restClient.fetchAll(ASSIGNMENTS_VIEW, SupabasePlayerAssignmentRow[].class);
+  public List<SupabasePlayerAssignmentRowDto> fetchPlayerAssignments() {
+    return restClient.fetchAll(ASSIGNMENTS_VIEW, SupabasePlayerAssignmentRowDto[].class);
   }
 
-  public List<SupabasePlayerRow> fetchPlayers() {
-    return restClient.fetchAll(PLAYERS_TABLE, SupabasePlayerRow[].class);
+  public List<SupabasePlayerRowDto> fetchPlayers() {
+    return restClient.fetchAll(PLAYERS_TABLE, SupabasePlayerRowDto[].class);
   }
 
-  public List<SupabaseScoreRow> fetchScores() {
-    return restClient.fetchAll(SCORES_TABLE, SupabaseScoreRow[].class);
+  public List<SupabaseScoreRowDto> fetchScores() {
+    return restClient.fetchAll(SCORES_TABLE, SupabaseScoreRowDto[].class);
   }
 
-  public List<SupabaseUserRow> fetchUsers() {
-    return restClient.fetchAll(USERS_TABLE, SupabaseUserRow[].class);
+  public List<SupabaseUserRowDto> fetchUsers() {
+    return restClient.fetchAll(USERS_TABLE, SupabaseUserRowDto[].class);
   }
 
-  public List<SupabaseTeamRow> fetchTeams() {
-    return restClient.fetchAll(TEAMS_TABLE, SupabaseTeamRow[].class);
+  public List<SupabaseTeamRowDto> fetchTeams() {
+    return restClient.fetchAll(TEAMS_TABLE, SupabaseTeamRowDto[].class);
   }
 
-  public List<SupabaseTeamPlayerRow> fetchTeamPlayers() {
-    return restClient.fetchAll(TEAM_PLAYERS_TABLE, SupabaseTeamPlayerRow[].class);
+  public List<SupabaseTeamPlayerRowDto> fetchTeamPlayers() {
+    return restClient.fetchAll(TEAM_PLAYERS_TABLE, SupabaseTeamPlayerRowDto[].class);
   }
 
-  public List<SupabaseGameRow> fetchGames() {
-    return restClient.fetchAll(GAMES_TABLE, SupabaseGameRow[].class);
+  public List<SupabaseGameRowDto> fetchGames() {
+    return restClient.fetchAll(GAMES_TABLE, SupabaseGameRowDto[].class);
   }
 
-  public List<SupabaseGameParticipantRow> fetchGameParticipants() {
-    return restClient.fetchAll(GAME_PARTICIPANTS_TABLE, SupabaseGameParticipantRow[].class);
+  public List<SupabaseGameParticipantRowDto> fetchGameParticipants() {
+    return restClient.fetchAll(GAME_PARTICIPANTS_TABLE, SupabaseGameParticipantRowDto[].class);
   }
 }

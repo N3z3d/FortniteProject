@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +8,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
+import { WebSocketService, TradeNotification } from '../../../core/services/websocket.service';
+import { TradingService, TradeOffer } from '../services/trading.service';
 
 export interface Trade {
   id: string;
@@ -48,29 +52,128 @@ export interface Trade {
   templateUrl: './trade-list.component.html',
   styleUrls: ['./trade-list.component.scss']
 })
-export class TradeListComponent implements OnInit {
+export class TradeListComponent implements OnInit, OnDestroy {
   trades: Trade[] = [];
   filteredTrades: Trade[] = [];
   isLoading = true;
   searchTerm = '';
   activeTab: 'ALL' | 'PENDING' | 'HISTORY' = 'ALL';
 
+  private readonly destroy$ = new Subject<void>();
+
   constructor(
-    private router: Router,
-    private logger: LoggerService
+    private readonly router: Router,
+    private readonly logger: LoggerService,
+    private readonly tradingService: TradingService,
+    private readonly translationService: TranslationService,
+    private readonly webSocketService: WebSocketService
   ) { }
 
   ngOnInit(): void {
     this.loadTrades();
+    this.subscribeToTradeNotifications();
+  }
+
+  private subscribeToTradeNotifications(): void {
+    this.webSocketService.connect();
+
+    this.webSocketService.tradeNotifications.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (notification: TradeNotification) => {
+        this.handleTradeNotification(notification);
+      },
+      error: (error) => {
+        this.logger.error('TradeList: WebSocket notification error', error);
+      }
+    });
+  }
+
+  private handleTradeNotification(notification: TradeNotification): void {
+    this.logger.debug('TradeList: received trade notification', notification);
+
+    switch (notification.type) {
+      case 'TRADE_PROPOSED':
+        this.loadTrades();
+        break;
+      case 'TRADE_ACCEPTED':
+      case 'TRADE_REJECTED':
+      case 'TRADE_CANCELLED':
+      case 'TRADE_COUNTERED':
+        this.updateTradeStatus(notification.tradeId, notification.status);
+        break;
+    }
+  }
+
+  private updateTradeStatus(tradeId: string, status: string): void {
+    const trade = this.trades.find(t => t.id === tradeId);
+    if (trade) {
+      trade.status = this.mapOfferStatus(status.toLowerCase());
+      this.applyFilters();
+    } else {
+      this.loadTrades();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private loadTrades(): void {
-    // Simulate API call with mock data
-    setTimeout(() => {
-      this.trades = this.getMockTrades();
-      this.applyFilters();
-      this.isLoading = false;
-    }, 1000);
+    this.isLoading = true;
+
+    this.tradingService.getTrades().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (tradeOffers: TradeOffer[]) => {
+        this.trades = this.mapTradeOffersToTrades(tradeOffers);
+        this.applyFilters();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.logger.error('TradeList: failed to load trades', error);
+        // Fallback to mock data if API fails
+        this.trades = this.getMockTrades();
+        this.applyFilters();
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private mapTradeOffersToTrades(offers: TradeOffer[]): Trade[] {
+    return offers.map(offer => ({
+      id: offer.id,
+      playerOut: {
+        id: offer.offeredPlayers[0]?.id || '',
+        username: offer.offeredPlayers[0]?.name || '',
+        region: offer.offeredPlayers[0]?.region
+      },
+      playerIn: {
+        id: offer.requestedPlayers[0]?.id || '',
+        username: offer.requestedPlayers[0]?.name || '',
+        region: offer.requestedPlayers[0]?.region
+      },
+      team: {
+        id: offer.fromTeamId,
+        name: offer.fromTeamName,
+        owner: offer.fromUserName
+      },
+      createdAt: offer.createdAt,
+      status: this.mapOfferStatus(offer.status)
+    }));
+  }
+
+  private mapOfferStatus(status: string): 'PENDING' | 'COMPLETED' | 'CANCELLED' {
+    switch (status) {
+      case 'pending': return 'PENDING';
+      case 'accepted': return 'COMPLETED';
+      case 'rejected':
+      case 'withdrawn':
+      case 'expired':
+        return 'CANCELLED';
+      default: return 'PENDING';
+    }
   }
 
   applyFilters(): void {
@@ -160,11 +263,17 @@ export class TradeListComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'PENDING': return 'En cours';
-      case 'COMPLETED': return 'Terminé';
-      case 'CANCELLED': return 'Annulé';
-      default: return status;
-    }
+    const statusKey = status.toLowerCase();
+    const translationKey = `trades.status.${statusKey}`;
+
+    // Map legacy status values to translation keys
+    const statusMap: Record<string, string> = {
+      'pending': 'trades.status.pending',
+      'completed': 'trades.status.accepted',
+      'cancelled': 'trades.status.withdrawn'
+    };
+
+    const key = statusMap[statusKey] || translationKey;
+    return this.translationService.t(key, status);
   }
 }

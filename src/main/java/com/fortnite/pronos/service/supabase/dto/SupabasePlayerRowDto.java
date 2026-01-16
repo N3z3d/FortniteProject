@@ -6,9 +6,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record SupabaseTeamRow(
+public record SupabasePlayerRowDto(
     UUID id,
-    String name,
-    @JsonProperty("owner_id") UUID ownerId,
-    Integer season,
-    @JsonProperty("game_id") UUID gameId) {}
+    @JsonProperty("fortnite_id") String fortniteId,
+    String username,
+    String nickname,
+    String region,
+    String tranche,
+    @JsonProperty("current_season") Integer currentSeason) {}

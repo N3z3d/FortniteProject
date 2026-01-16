@@ -110,7 +110,7 @@ public class ReferenceGameSeedService {
 
   private boolean isDevProfile() {
     for (String profile : environment.getActiveProfiles()) {
-      if ("dev".equals(profile)) {
+      if ("dev".equals(profile) || "h2".equals(profile)) {
         return true;
       }
     }
@@ -125,14 +125,32 @@ public class ReferenceGameSeedService {
   }
 
   private Map<String, List<Player>> loadAssignments() {
-    MockDataGeneratorService.MockDataSet seedData = seedDataProviderSelector.loadSeedData();
-    if (seedData.total() == 0) {
-      return Map.of();
-    }
-
     String providerKey = environment.getProperty("fortnite.data.provider", "csv");
     if ("csv".equalsIgnoreCase(providerKey)) {
       csvDataLoaderService.loadAllCsvData();
+      // Reload players from DB to ensure they are in current persistence context
+      Map<String, Player> playersByNickname = loadPlayersByNickname();
+      Map<String, List<Player>> result = new LinkedHashMap<>();
+      for (Map.Entry<String, List<Player>> entry :
+          csvDataLoaderService.getAllPlayerAssignments().entrySet()) {
+        List<Player> managedPlayers = new ArrayList<>();
+        for (Player p : entry.getValue()) {
+          Player managed = playersByNickname.get(normalizeNickname(p.getNickname()));
+          if (managed != null) {
+            managedPlayers.add(managed);
+          }
+        }
+        if (!managedPlayers.isEmpty()) {
+          result.put(entry.getKey(), managedPlayers);
+        }
+      }
+      return result;
+    }
+
+    // Fallback for other providers
+    MockDataGeneratorService.MockDataSet seedData = seedDataProviderSelector.loadSeedData();
+    if (seedData.total() == 0) {
+      return Map.of();
     }
     return resolveAssignments(seedData);
   }
@@ -149,9 +167,14 @@ public class ReferenceGameSeedService {
         Player seedPlayer = playerData.player();
         String key = normalizeNickname(seedPlayer.getNickname());
         Player persisted = playersByNickname.get(key);
-        resolvedPlayers.add(persisted != null ? persisted : seedPlayer);
+        // Only add persisted players, skip transient ones
+        if (persisted != null) {
+          resolvedPlayers.add(persisted);
+        }
       }
-      resolved.put(entry.getKey(), resolvedPlayers);
+      if (!resolvedPlayers.isEmpty()) {
+        resolved.put(entry.getKey(), resolvedPlayers);
+      }
     }
 
     return resolved;

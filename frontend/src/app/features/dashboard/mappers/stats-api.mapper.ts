@@ -42,10 +42,10 @@ export class StatsApiMapper {
       ? Math.round(totalPoints / totalTeams) 
       : 0;
 
-    const mostActiveTeam = stats.mostActiveTeam || 
-                          stats.topTeam?.name || 
-                          stats.leadingTeam || 
-                          'Aucune équipe';
+    const mostActiveTeam = stats.mostActiveTeam ||
+                          stats.topTeam?.name ||
+                          stats.leadingTeam ||
+                          '';
 
     const seasonProgress = this.parseNumber(stats.seasonProgress, this.calculateSeasonProgress());
 
@@ -79,10 +79,10 @@ export class StatsApiMapper {
       averageKD: this.parseNumber(stats.averageKD || stats.avgKD || stats.globalKD, 0),
       totalKills: this.parseNumber(stats.totalKills || stats.kills || 0, 0),
       totalWins: this.parseNumber(stats.totalWins || stats.wins || 0, 0),
-      topPerformer: stats.topPerformer || 
-                   stats.bestPlayer || 
-                   stats.mvp || 
-                   'Aucun joueur',
+      topPerformer: stats.topPerformer ||
+                   stats.bestPlayer ||
+                   stats.mvp ||
+                   '',
       winRate: this.parseNumber(stats.winRate || stats.globalWinRate || 0, 0)
     };
   }
@@ -153,7 +153,7 @@ export class StatsApiMapper {
     const teamMap = new Map();
     
     leaderboardEntries.forEach(entry => {
-      const teamName = entry.teamName || entry.team?.name || 'Équipe inconnue';
+      const teamName = entry.teamName || entry.team?.name || 'Unknown Team';
       const points = this.parseNumber(entry.totalPoints || entry.points, 0);
       const playersCount = entry.players?.length || 1;
 
@@ -290,13 +290,13 @@ export class StatsApiMapper {
       totalPlayers: 0,
       totalPoints: 0,
       averagePointsPerTeam: 0,
-      mostActiveTeam: 'Aucune équipe',
+      mostActiveTeam: '',
       seasonProgress: this.calculateSeasonProgress(),
       additionalStats: {
         averageKD: 0,
         totalKills: 0,
         totalWins: 0,
-        topPerformer: 'Aucun joueur',
+        topPerformer: '',
         winRate: 0
       }
     };

@@ -37,6 +37,8 @@ class TradingServiceTddTest {
 
   @Mock private ValidationService validationService;
 
+  @Mock private TradeNotificationService tradeNotificationService;
+
   @InjectMocks private TradingService tradingService;
 
   private Game game;

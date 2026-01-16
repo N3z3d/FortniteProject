@@ -4,12 +4,13 @@ import { Router } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective, PulseDirective } from '../../directives/premium-interactions.directive';
 import { PremiumInteractionsService } from '../../services/premium-interactions.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface Region {
   id: string;
   code: string;
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   icon: string;
   playerCount: number;
   topTeams: number;
@@ -37,8 +38,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'eu',
       code: 'EU',
-      name: 'Europe',
-      description: 'Le cœur stratégique du competitive. Des équipes disciplinées et une mécanique impeccable.',
+      nameKey: 'home.regions.eu.name',
+      descriptionKey: 'home.regions.eu.description',
       icon: '🏰',
       playerCount: 32,
       topTeams: 8
@@ -46,8 +47,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'nac',
       code: 'NAC',
-      name: 'North America Central',
-      description: 'L\'épicentre du gaming créatif. Innovation et spectacle garantis.',
+      nameKey: 'home.regions.nac.name',
+      descriptionKey: 'home.regions.nac.description',
       icon: '🗽',
       playerCount: 28,
       topTeams: 7
@@ -55,8 +56,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'naw',
       code: 'NAW',
-      name: 'North America West',
-      description: 'Terre des pionniers et des game-changers. Où naissent les méta.',
+      nameKey: 'home.regions.naw.name',
+      descriptionKey: 'home.regions.naw.description',
       icon: '🌄',
       playerCount: 25,
       topTeams: 6
@@ -64,8 +65,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'br',
       code: 'BR',
-      name: 'Brazil',
-      description: 'La passion à l\'état pur. Un style unique et une technique impressionnante.',
+      nameKey: 'home.regions.br.name',
+      descriptionKey: 'home.regions.br.description',
       icon: '🏖️',
       playerCount: 22,
       topTeams: 6
@@ -73,8 +74,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'oce',
       code: 'OCE',
-      name: 'Oceania',
-      description: 'Les guerriers des antipodes. Redoutables et imprévisibles.',
+      nameKey: 'home.regions.oce.name',
+      descriptionKey: 'home.regions.oce.description',
       icon: '🏄‍♂️',
       playerCount: 18,
       topTeams: 4
@@ -82,8 +83,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'me',
       code: 'ME',
-      name: 'Middle East',
-      description: 'Les diamants du désert. Talent émergent et ambition infinie.',
+      nameKey: 'home.regions.me.name',
+      descriptionKey: 'home.regions.me.description',
       icon: '🏛️',
       playerCount: 22,
       topTeams: 5
@@ -91,18 +92,29 @@ export class HomeComponent implements OnInit, AfterViewInit {
     {
       id: 'asia',
       code: 'ASIA',
-      name: 'Asia',
-      description: 'La région de l\'innovation technologique. Précision et excellence.',
+      nameKey: 'home.regions.asia.name',
+      descriptionKey: 'home.regions.asia.description',
       icon: '🏯',
       playerCount: 20,
       topTeams: 5
     }
   ];
 
+  // Helper to get translated region name
+  getRegionName(region: Region): string {
+    return this.translationService.t(region.nameKey, region.code);
+  }
+
+  // Helper to get translated region description
+  getRegionDescription(region: Region): string {
+    return this.translationService.t(region.descriptionKey, '');
+  }
+
   constructor(
     private readonly interactionsService: PremiumInteractionsService,
     private readonly logger: LoggerService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly translationService: TranslationService
   ) { }
 
   ngOnInit(): void {
@@ -177,15 +189,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
   // Premium interaction methods
   private initPremiumInteractions(): void {
     // Show welcome notification
-    this.interactionsService.showGamingNotification(
-      'Bienvenue dans Fortnite Pro League ! 🎮', 
-      'info'
-    );
+    const welcomeMessage = this.translationService.t('home.welcome', 'Welcome to Fortnite Pro League!');
+    this.interactionsService.showGamingNotification(welcomeMessage, 'info');
   }
 
   onRegionCardClick(region: Region): void {
+    const regionName = this.getRegionName(region);
+    const template = this.translationService.t('home.regionSelected', 'Region {name} selected!');
     this.interactionsService.showGamingNotification(
-      `Région ${region.name} sélectionnée !`,
+      template.replace('{name}', regionName),
       'success'
     );
 
@@ -197,14 +209,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     switch (action) {
       case 'create':
         this.interactionsService.showGamingNotification(
-          'Création d\'équipe en cours...', 
+          this.translationService.t('home.creatingTeam', 'Creating team...'),
           'info'
         );
         this.onCreateTeam();
         break;
       case 'rules':
         this.interactionsService.showGamingNotification(
-          'Chargement des règles...', 
+          this.translationService.t('home.loadingRules', 'Loading rules...'),
           'info'
         );
         this.onViewRules();

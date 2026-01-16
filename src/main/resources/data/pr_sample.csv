@@ -1,0 +1,14 @@
+nickname,region,points,rank,snapshot_date
+# Scenario 1: Classic regions - create players with known region
+pixie,EU,108022,1,2025-01-10
+muz,NAC,125360,2,2025-01-10
+white,BR,82413,2,2025-01-10
+5aald,ME,85869,5,2025-01-10
+# Scenario 2: GLOBAL creates player with UNKNOWN region (player absent)
+newGlobalPlayer,GLOBAL,75000,15,2025-01-10
+# Scenario 3: Known region should replace UNKNOWN (same nickname, run after GLOBAL)
+# To test: first ingest with GLOBAL, then with EU - player should become EU
+regionUpgrade,GLOBAL,70000,20,2025-01-10
+# Scenario 4: GLOBAL should NOT overwrite known region
+# (pixie already EU from line 2 - subsequent GLOBAL should keep EU)
+# To test: ingest pixie with GLOBAL after initial - region stays EU

@@ -49,3 +49,7 @@ fortnite:
     reset: false
   data:
     provider: none
+
+ingestion:
+  local:
+    enabled: true

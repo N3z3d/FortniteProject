@@ -1,6 +1,7 @@
 import { Injectable, Inject, Optional } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
+import { TranslationService } from '../../core/services/translation.service';
 
 // Interface pour MatSnackBar pour éviter l'import direct
 interface SnackBarLike {
@@ -38,8 +39,9 @@ export class NotificationService {
   public connectionStatus$: Observable<boolean> = new BehaviorSubject<boolean>(true);
 
   constructor(
-    private logger: LoggerService,
-    @Optional() @Inject('MatSnackBar') private snackBar?: SnackBarLike
+    private readonly logger: LoggerService,
+    private readonly translationService: TranslationService,
+    @Optional() @Inject('MatSnackBar') private readonly snackBar?: SnackBarLike
   ) {}
 
   /**
@@ -132,7 +134,8 @@ export class NotificationService {
         verticalPosition: 'top'
       };
 
-      const snackBarRef = this.snackBar.open(message, action || 'Fermer', config);
+      const closeLabel = this.translationService.t('notifications.close', 'Close');
+      const snackBarRef = this.snackBar.open(message, action || closeLabel, config);
       this.activeSnackBars.set(id, snackBarRef);
 
       // Handle snackbar dismissal if methods exist
@@ -202,8 +205,9 @@ export class NotificationService {
    * @param message The loading message
    * @returns Notification ID for dismissal
    */
-  showLoading(message: string = 'Chargement en cours...'): string {
-    return this.showInfo(message, undefined, 0);
+  showLoading(message?: string): string {
+    const defaultMessage = this.translationService.t('notifications.loadingDefault', 'Loading...');
+    return this.showInfo(message || defaultMessage, undefined, 0);
   }
 
   /**
@@ -231,21 +235,29 @@ export class NotificationService {
    */
   api = {
     loading: (operation: string): string => {
-      return this.showLoading(`${operation} en cours...`);
+      const template = this.translationService.t('notifications.apiLoading', '{operation} in progress...');
+      return this.showLoading(template.replace('{operation}', operation));
     },
-    
+
     success: (operation: string, loadingId?: string): string => {
+      const template = this.translationService.t('notifications.apiSuccess', '{operation} completed successfully');
+      const message = template.replace('{operation}', operation);
       if (loadingId) {
-        return this.updateLoadingToSuccess(loadingId, `${operation} réalisé avec succès`);
+        return this.updateLoadingToSuccess(loadingId, message);
       }
-      return this.showSuccess(`${operation} réalisé avec succès`);
+      return this.showSuccess(message);
     },
-    
+
     error: (operation: string, error?: string, loadingId?: string): string => {
-      const message = error 
-        ? `Erreur lors de ${operation}: ${error}`
-        : `Erreur lors de ${operation}`;
-      
+      let message: string;
+      if (error) {
+        const template = this.translationService.t('notifications.apiErrorWithDetails', 'Error during {operation}: {error}');
+        message = template.replace('{operation}', operation).replace('{error}', error);
+      } else {
+        const template = this.translationService.t('notifications.apiError', 'Error during {operation}');
+        message = template.replace('{operation}', operation);
+      }
+
       if (loadingId) {
         return this.updateLoadingToError(loadingId, message);
       }
@@ -258,23 +270,32 @@ export class NotificationService {
    */
   game = {
     created: (gameName: string): string => {
-      return this.showSuccess(`Jeu "${gameName}" créé avec succès`, 'Voir');
+      const template = this.translationService.t('notifications.game.created', 'Game "{name}" created successfully');
+      const action = this.translationService.t('notifications.game.viewAction', 'View');
+      return this.showSuccess(template.replace('{name}', gameName), action);
     },
-    
+
     joined: (gameName: string): string => {
-      return this.showSuccess(`Vous avez rejoint "${gameName}"`, 'Voir équipe');
+      const template = this.translationService.t('notifications.game.joined', 'You joined "{name}"');
+      const action = this.translationService.t('notifications.game.viewTeamAction', 'View team');
+      return this.showSuccess(template.replace('{name}', gameName), action);
     },
-    
+
     left: (gameName: string): string => {
-      return this.showInfo(`Vous avez quitté "${gameName}"`);
+      const template = this.translationService.t('notifications.game.left', 'You left "{name}"');
+      return this.showInfo(template.replace('{name}', gameName));
     },
-    
+
     draftStarted: (gameName: string): string => {
-      return this.showInfo(`La draft a commencé pour "${gameName}"`, 'Participer');
+      const template = this.translationService.t('notifications.game.draftStarted', 'Draft started for "{name}"');
+      const action = this.translationService.t('notifications.game.participateAction', 'Participate');
+      return this.showInfo(template.replace('{name}', gameName), action);
     },
-    
+
     yourTurn: (): string => {
-      return this.showWarning('C\'est votre tour de drafter !', 'Aller à la draft');
+      const message = this.translationService.t('notifications.game.yourTurn', 'It\'s your turn to draft!');
+      const action = this.translationService.t('notifications.game.gotoDraftAction', 'Go to draft');
+      return this.showWarning(message, action);
     }
   };
 
@@ -283,15 +304,18 @@ export class NotificationService {
    */
   team = {
     playerAdded: (playerName: string): string => {
-      return this.showSuccess(`${playerName} ajouté à votre équipe`);
+      const template = this.translationService.t('notifications.team.playerAdded', '{player} added to your team');
+      return this.showSuccess(template.replace('{player}', playerName));
     },
-    
+
     playerRemoved: (playerName: string): string => {
-      return this.showInfo(`${playerName} retiré de votre équipe`);
+      const template = this.translationService.t('notifications.team.playerRemoved', '{player} removed from your team');
+      return this.showInfo(template.replace('{player}', playerName));
     },
-    
+
     tradeCompleted: (playerOut: string, playerIn: string): string => {
-      return this.showSuccess(`Trade effectué: ${playerOut} ↔ ${playerIn}`);
+      const template = this.translationService.t('notifications.team.tradeCompleted', 'Trade completed: {out} ↔ {in}');
+      return this.showSuccess(template.replace('{out}', playerOut).replace('{in}', playerIn));
     }
   };
 
@@ -300,19 +324,24 @@ export class NotificationService {
    */
   auth = {
     loginSuccess: (username: string): string => {
-      return this.showSuccess(`Connexion réussie en tant que ${username}`);
+      const template = this.translationService.t('notifications.auth.loginSuccess', 'Successfully logged in as {username}');
+      return this.showSuccess(template.replace('{username}', username));
     },
-    
+
     logoutSuccess: (): string => {
-      return this.showInfo('Déconnexion réussie');
+      const message = this.translationService.t('notifications.auth.logoutSuccess', 'Successfully logged out');
+      return this.showInfo(message);
     },
-    
+
     sessionExpired: (): string => {
-      return this.showWarning('Session expirée, veuillez vous reconnecter', 'Se connecter');
+      const message = this.translationService.t('notifications.auth.sessionExpired', 'Session expired, please log in again');
+      const action = this.translationService.t('notifications.auth.connectAction', 'Log in');
+      return this.showWarning(message, action);
     },
-    
+
     profileSwitched: (username: string): string => {
-      return this.showInfo(`Profil changé vers ${username}`);
+      const template = this.translationService.t('notifications.auth.profileSwitched', 'Profile switched to {username}');
+      return this.showInfo(template.replace('{username}', username));
     }
   };
 

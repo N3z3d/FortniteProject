@@ -78,11 +78,17 @@ class ReferenceGameSeedServiceTest {
     when(seedProperties.isEnabled()).thenReturn(true);
     when(seedProperties.isResetMode()).thenReturn(false);
     when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
+    // Use mock provider instead of csv
+    when(environment.getProperty("fortnite.data.provider", "csv")).thenReturn("mock");
 
     Map<String, User> users = buildUsers();
     when(userRepository.findByUsernameIgnoreCase(anyString()))
         .thenAnswer(invocation -> Optional.of(users.get(invocation.getArgument(0))));
-    when(playerRepository.findAll()).thenReturn(List.of());
+    // Mock players in database (needed for resolveAssignments)
+    List<Player> persistedPlayers =
+        List.of(
+            buildPlayer("alpha"), buildPlayer("beta"), buildPlayer("gamma"), buildPlayer("delta"));
+    when(playerRepository.findAll()).thenReturn(persistedPlayers);
     when(gameRepository.existsByNameAndCreator(anyString(), any(User.class))).thenReturn(false);
     when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(teamRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));

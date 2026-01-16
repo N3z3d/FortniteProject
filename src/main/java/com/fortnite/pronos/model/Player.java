@@ -64,6 +64,7 @@ public class Player {
   private Boolean locked = false;
 
   public enum Region {
+    UNKNOWN,
     EU,
     NAW,
     BR,

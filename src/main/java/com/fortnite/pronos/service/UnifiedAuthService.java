@@ -100,7 +100,7 @@ public class UnifiedAuthService {
       return response;
 
     } catch (RuntimeException e) {
-      if ("Utilisateur non trouvé".equals(e.getMessage())) {
+      if (e instanceof UserNotFoundException) {
         throw e;
       }
       log.warn("Erreur lors du rafraîchissement du token: {}", e.getMessage());
