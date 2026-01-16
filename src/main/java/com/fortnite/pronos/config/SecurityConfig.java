@@ -66,6 +66,9 @@ public class SecurityConfig {
                     .permitAll() // Pour H2 en dev
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                     .permitAll()
+                    // WebSocket endpoints - SockJS requires multiple paths
+                    .requestMatchers("/ws/**")
+                    .permitAll()
 
                     // Endpoints API protégés
                     .requestMatchers("/api/admin/**")

@@ -1,9 +1,9 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { filter } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { UserContextService } from './user-context.service';
 
 export interface TradeNotification {
   type: 'TRADE_PROPOSED' | 'TRADE_ACCEPTED' | 'TRADE_REJECTED' | 'TRADE_CANCELLED' | 'TRADE_COUNTERED';
@@ -29,6 +29,8 @@ export class WebSocketService implements OnDestroy {
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 3000;
 
+  private readonly userContextService = inject(UserContextService);
+
   get isConnected$(): Observable<boolean> {
     return this.connectionStatus$.asObservable();
   }
@@ -43,10 +45,11 @@ export class WebSocketService implements OnDestroy {
     }
 
     const wsUrl = this.getWebSocketUrl();
+    const connectHeaders = this.buildConnectHeaders(token);
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      connectHeaders,
       debug: (str) => {
         if (!environment.production) {
           console.log('[WebSocket]', str);
@@ -138,6 +141,29 @@ export class WebSocketService implements OnDestroy {
       }
     });
     this.subscriptions = [];
+  }
+
+  private buildConnectHeaders(token?: string): Record<string, string> {
+    const headers: Record<string, string> = {};
+
+    // If explicit token provided, use it
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
+    // In dev mode, use X-Test-User header for authentication
+    if (!environment.production) {
+      const currentUser = this.userContextService.getCurrentUser();
+      const lastUser = this.userContextService.getLastUser();
+      const username = currentUser?.username || lastUser?.username || environment.defaultDevUser;
+
+      if (username) {
+        headers['X-Test-User'] = username;
+      }
+    }
+
+    return headers;
   }
 
   private getWebSocketUrl(): string {
