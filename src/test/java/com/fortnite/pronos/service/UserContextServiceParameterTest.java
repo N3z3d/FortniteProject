@@ -17,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 /**
  * Tests TDD pour UserContextService avec paramètres Clean Code : Tests focalisés sur la gestion des
@@ -27,7 +26,7 @@ import com.fortnite.pronos.repository.UserRepository;
 @DisplayName("UserContextService - Gestion des paramètres")
 class UserContextServiceParameterTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserService userService;
 
   @Mock private SecurityContext securityContext;
 
@@ -51,7 +50,7 @@ class UserContextServiceParameterTest {
   void shouldUseUserParameterEvenWithSpringSecurityActive() {
     // Given - Le paramètre user est fourni
     String userParam = "Thibaut";
-    when(userRepository.findByUsernameIgnoreCase("Thibaut")).thenReturn(Optional.of(thibaut));
+    when(userService.findUserByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
 
     // When - On récupère l'utilisateur avec fallback
     User result = userContextService.getCurrentUserWithFallback(userParam);
@@ -62,7 +61,7 @@ class UserContextServiceParameterTest {
     assertEquals(thibaut.getId(), result.getId());
 
     // Vérifier qu'on utilise le paramètre fourni
-    verify(userRepository).findByUsernameIgnoreCase("Thibaut");
+    verify(userService).findUserByUsername("Thibaut");
   }
 
   @Test
@@ -70,7 +69,7 @@ class UserContextServiceParameterTest {
   void shouldUseFindUserByUsernameWhenParameterProvided() {
     // Given
     String userParam = "Thibaut";
-    when(userRepository.findByUsernameIgnoreCase("Thibaut")).thenReturn(Optional.of(thibaut));
+    when(userService.findUserByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
 
     // When
     User result = userContextService.findUserByUsername(userParam);
@@ -78,6 +77,6 @@ class UserContextServiceParameterTest {
     // Then
     assertNotNull(result);
     assertEquals("Thibaut", result.getUsername());
-    verify(userRepository).findByUsernameIgnoreCase("Thibaut");
+    verify(userService).findUserByUsername("Thibaut");
   }
 }

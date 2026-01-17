@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class UserContextService {
 
-  private final UserRepository userRepository;
   private final UnifiedAuthService unifiedAuthService;
+  private final UserService userService;
 
   /**
    * Récupère l'ID de l'utilisateur courant
@@ -42,8 +41,8 @@ public class UserContextService {
     log.debug("Récupération de l'utilisateur courant: {}", username);
 
     User user =
-        userRepository
-            .findByUsernameIgnoreCase(username)
+        userService
+            .findUserByUsername(username)
             .orElseThrow(
                 () -> {
                   log.error("Utilisateur non trouvé en base: {}", username);
@@ -61,8 +60,8 @@ public class UserContextService {
    */
   public User getCurrentUser() {
     UUID userId = getCurrentUserId();
-    return userRepository
-        .findById(userId)
+    return userService
+        .findUserById(userId)
         .orElseThrow(() -> new IllegalStateException("Utilisateur non trouvé: " + userId));
   }
 
@@ -83,8 +82,8 @@ public class UserContextService {
     log.debug("Récupération de l'utilisateur depuis le paramètre: {}", finalUsername);
 
     User user =
-        userRepository
-            .findByUsernameIgnoreCase(finalUsername)
+        userService
+            .findUserByUsername(finalUsername)
             .orElseThrow(
                 () -> {
                   log.error("Utilisateur non trouvé pour le paramètre: {}", finalUsername);
@@ -163,8 +162,8 @@ public class UserContextService {
   public User findUserByUsername(String username) {
     log.debug("Recherche de l'utilisateur par nom: {}", username);
 
-    return userRepository
-        .findByUsernameIgnoreCase(username)
+    return userService
+        .findUserByUsername(username)
         .orElseThrow(
             () -> {
               log.error("Utilisateur non trouvé en base: {}", username);
@@ -183,8 +182,8 @@ public class UserContextService {
     log.debug("Récupération de l'ID utilisateur par nom: {}", username);
 
     User user =
-        userRepository
-            .findByUsernameIgnoreCase(username)
+        userService
+            .findUserByUsername(username)
             .orElseThrow(
                 () -> {
                   log.error("Utilisateur non trouvé en base: {}", username);

@@ -19,7 +19,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 /**
  * Tests TDD pour UserContextService Focus sur la résolution du problème d'authentification par
@@ -28,7 +27,7 @@ import com.fortnite.pronos.repository.UserRepository;
 @ExtendWith(MockitoExtension.class)
 class UserContextServiceTddTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserService userService;
 
   @Mock private UnifiedAuthService unifiedAuthService;
 
@@ -57,7 +56,7 @@ class UserContextServiceTddTest {
   void shouldGetUserFromValidUsernameParam() {
     // Given
     String usernameParam = "Thibaut";
-    when(userRepository.findByUsernameIgnoreCase(usernameParam)).thenReturn(Optional.of(testUser));
+    when(userService.findUserByUsername(usernameParam)).thenReturn(Optional.of(testUser));
 
     // When
     User result = userContextService.getCurrentUserFromParam(usernameParam);
@@ -66,7 +65,7 @@ class UserContextServiceTddTest {
     assertThat(result).isNotNull();
     assertThat(result.getUsername()).isEqualTo("Thibaut");
     assertThat(result.getId()).isEqualTo(testUserId);
-    verify(userRepository).findByUsernameIgnoreCase(usernameParam);
+    verify(userService).findUserByUsername(usernameParam);
   }
 
   @Test
@@ -96,7 +95,7 @@ class UserContextServiceTddTest {
   void shouldThrowExceptionWhenUserNotFoundInDatabase() {
     // Given
     String usernameParam = "UtilisateurInexistant";
-    when(userRepository.findByUsernameIgnoreCase(usernameParam)).thenReturn(Optional.empty());
+    when(userService.findUserByUsername(usernameParam)).thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> userContextService.getCurrentUserFromParam(usernameParam))
@@ -109,14 +108,14 @@ class UserContextServiceTddTest {
   void shouldGetUserIdFromUsernameParam() {
     // Given
     String usernameParam = "Thibaut";
-    when(userRepository.findByUsernameIgnoreCase(usernameParam)).thenReturn(Optional.of(testUser));
+    when(userService.findUserByUsername(usernameParam)).thenReturn(Optional.of(testUser));
 
     // When
     UUID result = userContextService.getCurrentUserIdFromParam(usernameParam);
 
     // Then
     assertThat(result).isEqualTo(testUserId);
-    verify(userRepository).findByUsernameIgnoreCase(usernameParam);
+    verify(userService).findUserByUsername(usernameParam);
   }
 
   @Test
@@ -156,8 +155,8 @@ class UserContextServiceTddTest {
     when(authentication.getName()).thenReturn("Thibaut");
     when(securityContext.getAuthentication()).thenReturn(authentication);
     SecurityContextHolder.setContext(securityContext);
-    when(userRepository.findByUsernameIgnoreCase("Thibaut")).thenReturn(Optional.of(testUser));
-    when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+    when(userService.findUserByUsername("Thibaut")).thenReturn(Optional.of(testUser));
+    when(userService.findUserById(testUserId)).thenReturn(Optional.of(testUser));
 
     // When - Pas de paramètre, doit utiliser l'auth
     User result = userContextService.getCurrentUserWithFallback(null);
@@ -165,8 +164,8 @@ class UserContextServiceTddTest {
     // Then
     assertThat(result).isNotNull();
     assertThat(result.getUsername()).isEqualTo("Thibaut");
-    verify(userRepository).findByUsernameIgnoreCase("Thibaut");
-    verify(userRepository).findById(testUserId);
+    verify(userService).findUserByUsername("Thibaut");
+    verify(userService).findUserById(testUserId);
   }
 
   @Test
@@ -179,7 +178,7 @@ class UserContextServiceTddTest {
     marcel.setUsername("Marcel");
     marcel.setEmail("marcel@test.com");
 
-    when(userRepository.findByUsernameIgnoreCase("Marcel")).thenReturn(Optional.of(marcel));
+    when(userService.findUserByUsername("Marcel")).thenReturn(Optional.of(marcel));
 
     // When
     User result = userContextService.getCurrentUserWithFallback("Marcel");
@@ -187,7 +186,7 @@ class UserContextServiceTddTest {
     // Then
     assertThat(result).isNotNull();
     assertThat(result.getUsername()).isEqualTo("Marcel");
-    verify(userRepository).findByUsernameIgnoreCase("Marcel");
+    verify(userService).findUserByUsername("Marcel");
   }
 
   @Test
@@ -208,14 +207,14 @@ class UserContextServiceTddTest {
   @DisplayName("Devrait récupérer l'ID utilisateur avec fallback")
   void shouldGetUserIdWithFallback() {
     // Given
-    when(userRepository.findByUsernameIgnoreCase("Thibaut")).thenReturn(Optional.of(testUser));
+    when(userService.findUserByUsername("Thibaut")).thenReturn(Optional.of(testUser));
 
     // When
     UUID result = userContextService.getCurrentUserIdWithFallback("Thibaut");
 
     // Then
     assertThat(result).isEqualTo(testUserId);
-    verify(userRepository).findByUsernameIgnoreCase("Thibaut");
+    verify(userService).findUserByUsername("Thibaut");
   }
 
   @Test

@@ -95,10 +95,11 @@ JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
 Type: Task
 Priority: P1
 Status: IN PROGRESS
-Context: Controllers no longer inject repositories; remaining risk is core use cases still depending on infrastructure.
+Context: Controllers and user context now delegate to services; remaining risk is core use cases still depending on repositories.
 Steps:
 - Define repository interfaces (ports) for core use cases.
-- Swap use cases to depend on abstractions.
+- Add adapters in infrastructure to implement those ports.
+- Swap use cases to depend on abstractions only.
 - Enforce dependency rules in ArchitectureTest.
 Acceptance:
 - Use cases depend only on interfaces (ports).
@@ -201,3 +202,4 @@ Acceptance:
 - Invalid dependencies fail at build time.
 Dependencies: JIRA-ARCH-001
 Estimate: 4h
+
