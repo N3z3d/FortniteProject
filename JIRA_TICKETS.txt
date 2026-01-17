@@ -11,14 +11,14 @@ JIRA-POSTGRES-002 - Validate Flyway migrations
 Type: Task
 Priority: P1
 Status: IN PROGRESS
-Context: App startup was blocked earlier by Flyway concurrency; DB now shows V1, V4, V6, V9.1, V10.1, V12-V29 applied.
+Context: Flyway migrations are applied in DB (V1, V4, V6, V9.1, V10.1, V12-V29), but app health was not validated after latest changes.
 Steps:
 - Start app with dev profile.
 - Check http://localhost:8080/actuator/health.
 - Review logs for Flyway warnings/errors.
 Acceptance:
 - Health endpoint returns UP.
-- No Flyway errors.
+- No Flyway errors on startup.
 Dependencies: none
 Estimate: 1h
 
@@ -26,10 +26,11 @@ JIRA-SUPABASE-001 - Configure Supabase
 Type: Task
 Priority: P2
 Status: TODO
-Context: Supabase variables are not configured; cannot validate remote workflows.
+Context: Supabase variables are not configured; remote workflows cannot be validated.
 Steps:
 - Set SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA, SUPABASE_SEED_GAME_ID.
 - Run seed/health check.
+- Validate any dependent endpoints.
 Acceptance:
 - Supabase connectivity verified.
 - Seed completed and endpoints return data.
@@ -40,7 +41,7 @@ JIRA-LOGBACK-001 - Fix logback springProfile nesting
 Type: Task
 Priority: P3
 Status: TODO
-Context: springProfile is nested inside logger, causing warnings.
+Context: springProfile is nested inside a logger, causing warnings.
 Steps:
 - Move springProfile to root of logback-spring.xml.
 - Restart app and verify warnings are gone.
@@ -62,30 +63,6 @@ Acceptance:
 Dependencies: approval of deletion report
 Estimate: 30m
 
-JIRA-TRACK-001 - Resolve untracked files
-Type: Task
-Priority: P2
-Status: TODO
-Context: New service/tests and migration are untracked.
-Files:
-- src/main/java/com/fortnite/pronos/service/UserService.java
-- src/main/java/com/fortnite/pronos/service/TeamQueryService.java
-- src/main/resources/db/migration/V29__create_player_aliases.sql
-- src/test/java/com/fortnite/pronos/service/UserServiceTest.java
-- src/test/java/com/fortnite/pronos/service/TeamQueryServiceTest.java
-- src/test/java/com/fortnite/pronos/config/CommonsLoggingClasspathTest.java
-- src/test/java/com/fortnite/pronos/config/HibernateDialectConfigTest.java
-- src/test/java/com/fortnite/pronos/config/RedisRepositoryConfigTest.java
-- src/test/java/com/fortnite/pronos/model/CompositeIdEqualityTest.java
-- src/test/java/com/fortnite/pronos/model/EnumMappingTest.java
-Steps:
-- Decide add vs remove.
-- Commit intended files.
-Acceptance:
-- Working tree clean of unintended untracked files.
-Dependencies: none
-Estimate: 1h
-
 JIRA-ARCH-001 - Clarify target architecture
 Type: Task
 Priority: P0
@@ -104,28 +81,28 @@ JIRA-ARCH-002 - Separate responsibilities
 Type: Task
 Priority: P0
 Status: TODO
-Context: Controllers mix routing, auth, and business logic.
+Context: Controllers still contain business logic and orchestration beyond routing/validation.
 Steps:
 - Inventory business rules in controllers/entities.
-- Move business logic to services/use cases.
+- Move business logic into services/use cases.
 - Keep controllers as routing + validation.
 Acceptance:
 - Controllers contain no orchestration logic.
 Dependencies: JIRA-ARCH-001
 Estimate: 8h
 
-JIRA-ARCH-003 - Invert dependencies
+JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
 Type: Task
 Priority: P1
 Status: IN PROGRESS
-Context: Controllers no longer inject repositories, but use cases still depend on infrastructure.
+Context: Controllers no longer inject repositories; remaining risk is core use cases still depending on infrastructure.
 Steps:
-- Create repository interfaces (ports) for core use cases.
+- Define repository interfaces (ports) for core use cases.
 - Swap use cases to depend on abstractions.
-- Enforce in architecture tests.
+- Enforce dependency rules in ArchitectureTest.
 Acceptance:
-- No repository injection in controllers.
-- Use cases depend only on interfaces.
+- Use cases depend only on interfaces (ports).
+- Architecture tests enforce dependency inversion.
 Dependencies: JIRA-ARCH-001
 Estimate: 6h
 
@@ -137,8 +114,9 @@ Context: Some classes have too many dependencies and low cohesion.
 Steps:
 - Audit classes with >7 dependencies.
 - Extract focused services or strategies.
+- Reduce cross-cutting dependency graphs.
 Acceptance:
-- Each class has a single responsibility.
+- Each class has a single responsibility and reduced dependency count.
 Dependencies: JIRA-ARCH-001
 Estimate: 8h
 
@@ -146,7 +124,7 @@ JIRA-ARCH-005 - Isolate domain
 Type: Task
 Priority: P1
 Status: TODO
-Context: Domain logic coupled to JPA entities.
+Context: Domain logic remains coupled to JPA entities.
 Steps:
 - Create pure domain objects (no JPA annotations).
 - Add mappers Entity <-> Domain.
@@ -164,6 +142,7 @@ Context: Logic in controllers/entities increases test cost.
 Steps:
 - Extract logic into services.
 - Increase unit test ratio over integration.
+- Add tests for edge cases and error paths.
 Acceptance:
 - Unit tests cover core logic with mocks.
 Dependencies: JIRA-ARCH-002
@@ -175,7 +154,7 @@ Priority: P1
 Status: TODO
 Context: Multiple execution paths for same operations (Game/Draft/Trade).
 Steps:
-- Map current flows.
+- Map current flows (controllers/services/use cases).
 - Pick canonical path per operation.
 - Delete unused branches.
 Acceptance:
@@ -187,7 +166,7 @@ JIRA-ARCH-008 - Reduce structural debt
 Type: Task
 Priority: P1
 Status: TODO
-Context: Dead code in core/domain and permissive arch tests.
+Context: Dead code in core/domain and permissive architecture tests.
 Steps:
 - Remove unused core/domain packages.
 - Tighten architecture tests.
@@ -201,7 +180,7 @@ JIRA-ARCH-009 - Improve onboarding
 Type: Task
 Priority: P2
 Status: TODO
-Context: New devs do not know where to add logic.
+Context: New developers do not know where to add logic.
 Steps:
 - Document naming conventions and package responsibilities.
 - Update README.
