@@ -33,9 +33,9 @@ import com.fortnite.pronos.exception.GameFullException;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.FlexibleAuthenticationService;
 import com.fortnite.pronos.service.GameService;
+import com.fortnite.pronos.service.UserService;
 import com.fortnite.pronos.service.ValidationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,7 +62,7 @@ public class GameController {
   private final GameService gameService;
   private final ValidationService validationService;
   private final FlexibleAuthenticationService flexibleAuthenticationService;
-  private final UserRepository userRepository;
+  private final UserService userService;
   private final com.fortnite.pronos.service.JwtService jwtService;
 
   private final CreateGameUseCase createGameUseCase;
@@ -447,7 +447,7 @@ public class GameController {
     boolean usernameProvided = username != null && !username.isBlank();
 
     if (usernameProvided) {
-      user = userRepository.findByUsernameIgnoreCase(username).orElse(null);
+      user = userService.findUserByUsername(username).orElse(null);
       if (user == null) {
         return null;
       }
@@ -456,14 +456,14 @@ public class GameController {
     if (user == null) {
       String headerUser = request != null ? request.getHeader("X-Test-User") : null;
       if (headerUser != null && !headerUser.isBlank()) {
-        user = userRepository.findByUsernameIgnoreCase(headerUser).orElse(null);
+        user = userService.findUserByUsername(headerUser).orElse(null);
       }
     }
 
     if (user == null) {
       String bearerUser = extractUserFromAuthorization(request);
       if (bearerUser != null) {
-        user = userRepository.findByUsernameIgnoreCase(bearerUser).orElse(null);
+        user = userService.findUserByUsername(bearerUser).orElse(null);
       }
     }
 
@@ -472,7 +472,7 @@ public class GameController {
       if (authentication != null
           && authentication.isAuthenticated()
           && !"anonymousUser".equals(authentication.getName())) {
-        user = userRepository.findByUsernameIgnoreCase(authentication.getName()).orElse(null);
+        user = userService.findUserByUsername(authentication.getName()).orElse(null);
       }
     }
 
@@ -497,8 +497,8 @@ public class GameController {
   }
 
   private User getOrCreateTestUser() {
-    return userRepository
-        .findByUsernameIgnoreCase("testuser")
+    return userService
+        .findUserByUsername("testuser")
         .orElseGet(
             () -> {
               User fallback = new User();
@@ -507,7 +507,7 @@ public class GameController {
               fallback.setPassword("password");
               fallback.setRole(User.UserRole.USER);
               fallback.setCurrentSeason(2025);
-              return userRepository.save(fallback);
+              return userService.saveUser(fallback);
             });
   }
 

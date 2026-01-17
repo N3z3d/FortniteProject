@@ -3,6 +3,21 @@
 -- SECURITY: Protect data from unauthorized access
 -- =====================================================
 
+-- Ensure auth schema and uid() exist for non-Supabase environments.
+CREATE SCHEMA IF NOT EXISTS auth;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+      SELECT 1
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'auth' AND p.proname = 'uid'
+  ) THEN
+    EXECUTE 'CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS ''SELECT NULL::uuid''';
+  END IF;
+END $$;
+
 -- Enable RLS on all tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;

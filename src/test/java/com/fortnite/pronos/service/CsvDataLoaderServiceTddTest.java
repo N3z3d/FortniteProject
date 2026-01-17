@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +62,8 @@ class CsvDataLoaderServiceTddTest {
   @Autowired private TeamRepository teamRepository;
 
   @Autowired private UserRepository userRepository;
+
+  @PersistenceContext private EntityManager entityManager;
 
   @BeforeEach
   void setUp() {
@@ -199,6 +204,18 @@ class CsvDataLoaderServiceTddTest {
     teamInitializationService.createTeamsFromCsvData();
 
     assertThat(playerRepository.count()).isEqualTo(147);
+    assertThat(teamRepository.countBySeason(2025)).isEqualTo(3);
+  }
+
+  @Test
+  @Transactional
+  @DisplayName("Team initialization should handle detached players from CSV")
+  void shouldHandleDetachedPlayersFromCsvAssignments() {
+    csvDataLoaderService.loadAllCsvData();
+    entityManager.clear();
+
+    teamInitializationService.createTeamsFromCsvData();
+
     assertThat(teamRepository.countBySeason(2025)).isEqualTo(3);
   }
 

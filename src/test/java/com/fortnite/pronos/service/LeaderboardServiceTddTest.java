@@ -510,4 +510,93 @@ class LeaderboardServiceTddTest {
       verify(scoreRepository).findAllBySeasonGroupedByPlayer(2025);
     }
   }
+
+  @Nested
+  @DisplayName("Debug Data")
+  class DebugDataTests {
+
+    @Test
+    @DisplayName("Should build debug stats for a season")
+    void shouldBuildDebugStatsForSeason() {
+      int season = 2025;
+      when(teamRepository.findBySeason(season)).thenReturn(Arrays.asList(testTeam1, testTeam2));
+      when(playerRepository.count()).thenReturn(4L);
+      when(scoreRepository.count()).thenReturn(6L);
+
+      UUID playerId1 = UUID.randomUUID();
+      UUID playerId2 = UUID.randomUUID();
+      List<Object[]> rawScores = new ArrayList<>();
+      rawScores.add(new Object[] {playerId1, 10});
+      rawScores.add(new Object[] {playerId2, 20});
+      when(scoreRepository.findAllBySeasonGroupedByPlayerRaw(season)).thenReturn(rawScores);
+
+      Map<UUID, Integer> pointsMap = new HashMap<>();
+      pointsMap.put(playerId1, 10);
+      pointsMap.put(playerId2, 20);
+      when(scoreRepository.findAllBySeasonGroupedByPlayer(season)).thenReturn(pointsMap);
+
+      Map<String, Object> result = leaderboardService.getDebugStats(season);
+
+      assertThat(result.get("totalTeams")).isEqualTo(2L);
+      assertThat(result.get("totalPlayers")).isEqualTo(4L);
+      assertThat(result.get("totalScores")).isEqualTo(6L);
+      assertThat(result.get("rawScoresCount")).isEqualTo(2);
+      assertThat(result.get("playerPointsMapSize")).isEqualTo(2);
+      assertThat(result.get("totalPointsFromMap")).isEqualTo(30);
+
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> sample = (List<Map<String, Object>>) result.get("rawScoresSample");
+      assertThat(sample).hasSize(2);
+      assertThat(sample.get(0))
+          .containsEntry("playerId", playerId1)
+          .containsEntry("totalPoints", 10);
+    }
+
+    @Test
+    @DisplayName("Should build debug samples from repositories")
+    void shouldBuildDebugSamplesFromRepositories() {
+      when(playerRepository.count()).thenReturn(3L);
+      when(teamRepository.count()).thenReturn(2L);
+      when(scoreRepository.count()).thenReturn(4L);
+
+      Player player1 = new Player();
+      player1.setId(UUID.randomUUID());
+      player1.setNickname("Player One");
+      player1.setRegion(Player.Region.EU);
+      player1.setCurrentSeason(2025);
+
+      Player player2 = new Player();
+      player2.setId(UUID.randomUUID());
+      player2.setNickname("Player Two");
+      player2.setRegion(Player.Region.NAW);
+      player2.setCurrentSeason(2025);
+
+      when(playerRepository.findAll()).thenReturn(Arrays.asList(player1, player2));
+
+      Score score = new Score();
+      score.setPlayer(player1);
+      score.setSeason(2025);
+      score.setPoints(120);
+
+      when(scoreRepository.findAll()).thenReturn(Arrays.asList(score));
+
+      Map<String, Object> result = leaderboardService.getDebugSimple();
+
+      assertThat(result.get("totalPlayers")).isEqualTo(3L);
+      assertThat(result.get("totalTeams")).isEqualTo(2L);
+      assertThat(result.get("totalScores")).isEqualTo(4L);
+
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> playersSample =
+          (List<Map<String, Object>>) result.get("playersSample");
+      assertThat(playersSample).hasSize(2);
+      assertThat(playersSample.get(0)).containsEntry("nickname", "Player One");
+
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> scoresSample =
+          (List<Map<String, Object>>) result.get("scoresSample");
+      assertThat(scoresSample).hasSize(1);
+      assertThat(scoresSample.get(0)).containsEntry("points", 120);
+    }
+  }
 }

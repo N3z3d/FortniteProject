@@ -178,19 +178,6 @@
         <appender-ref ref="METRICS_FILE"/>
     </logger>
 
-    <logger name="com.fortnite.pronos.config.DistributedTracingConfig" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_FILE"/>
-        <springProfile name="prod">
-            <appender-ref ref="JSON_FILE"/>
-        </springProfile>
-    </logger>
-
-    <logger name="com.fortnite.pronos.config.DatabaseMonitoringConfig" level="INFO" additivity="false">
-        <appender-ref ref="ASYNC_FILE"/>
-        <springProfile name="prod">
-            <appender-ref ref="JSON_FILE"/>
-        </springProfile>
-    </logger>
 
     <!-- Configuration pour développement -->
     <springProfile name="!prod">
@@ -208,6 +195,13 @@
         
         <!-- Nos packages en DEBUG -->
         <logger name="com.fortnite.pronos" level="DEBUG"/>
+
+        <logger name="com.fortnite.pronos.config.DistributedTracingConfig" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+        </logger>
+        <logger name="com.fortnite.pronos.config.DatabaseMonitoringConfig" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+        </logger>
     </springProfile>
 
     <!-- Configuration pour production -->
@@ -225,5 +219,14 @@
         
         <!-- Notre application en INFO -->
         <logger name="com.fortnite.pronos" level="INFO"/>
+
+        <logger name="com.fortnite.pronos.config.DistributedTracingConfig" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="JSON_FILE"/>
+        </logger>
+        <logger name="com.fortnite.pronos.config.DatabaseMonitoringConfig" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="JSON_FILE"/>
+        </logger>
     </springProfile>
 </configuration> 

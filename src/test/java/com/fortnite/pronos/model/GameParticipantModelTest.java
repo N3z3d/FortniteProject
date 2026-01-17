@@ -2,8 +2,11 @@ package com.fortnite.pronos.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import jakarta.persistence.JoinTable;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -259,5 +262,19 @@ class GameParticipantModelTest {
     assertThat(hasPlayer2).isTrue();
     assertThat(participant.getSelectedPlayers()).hasSize(2);
     assertThat(participant.getSelectedPlayers()).contains(player1, player2);
+  }
+
+  @Test
+  @DisplayName("Devrait mapper la table game_participant_players avec game_participant_id")
+  void shouldMapJoinTableWithGameParticipantId() throws NoSuchFieldException {
+    Field field = GameParticipant.class.getDeclaredField("selectedPlayers");
+    JoinTable joinTable = field.getAnnotation(JoinTable.class);
+
+    assertThat(joinTable).isNotNull();
+    assertThat(joinTable.name()).isEqualTo("game_participant_players");
+    assertThat(joinTable.joinColumns()).hasSize(1);
+    assertThat(joinTable.joinColumns()[0].name()).isEqualTo("game_participant_id");
+    assertThat(joinTable.inverseJoinColumns()).hasSize(1);
+    assertThat(joinTable.inverseJoinColumns()[0].name()).isEqualTo("player_id");
   }
 }

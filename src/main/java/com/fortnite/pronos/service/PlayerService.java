@@ -49,12 +49,22 @@ public class PlayerService {
     return getAllPlayers(PageRequest.of(0, 200));
   }
 
+  public List<Player> findAllPlayers() {
+    return playerRepository.findAll();
+  }
+
+  public java.util.Optional<Player> findPlayerById(UUID id) {
+    return playerRepository.findById(id);
+  }
+
+  public List<Player> findPlayersByRegion(Player.Region region) {
+    return playerRepository.findByRegion(region);
+  }
+
   public PlayerDto getPlayerById(UUID id) {
     log.debug("Récupération du joueur avec l'ID: {}", id);
     Player player =
-        playerRepository
-            .findById(id)
-            .orElseThrow(() -> new RuntimeException("Joueur non trouvé: " + id));
+        findPlayerById(id).orElseThrow(() -> new RuntimeException("Joueur non trouvé: " + id));
 
     // Calculer les points totaux pour la saison courante du joueur
     Integer totalPoints = scoreRepository.sumPointsByPlayerAndSeason(id, player.getCurrentSeason());
@@ -64,7 +74,7 @@ public class PlayerService {
 
   public List<PlayerDto> getPlayersByRegion(Player.Region region) {
     log.debug("Récupération des joueurs de la région: {}", region);
-    return playerRepository.findByRegion(region).stream()
+    return findPlayersByRegion(region).stream()
         .map(PlayerDto::fromEntity)
         .collect(Collectors.toList());
   }
@@ -87,7 +97,7 @@ public class PlayerService {
       Page<Player> playerPage = playerRepository.searchByNickname(query, pageable);
       players = playerPage.getContent();
     } else {
-      players = playerRepository.findAll();
+      players = findAllPlayers();
     }
 
     // Filtrer par région si spécifiée
@@ -118,7 +128,7 @@ public class PlayerService {
     log.debug("Récupération des statistiques des joueurs");
 
     Map<String, Object> stats = new HashMap<>();
-    List<Player> allPlayers = playerRepository.findAll();
+    List<Player> allPlayers = findAllPlayers();
 
     stats.put("totalPlayers", allPlayers.size());
     stats.put("playersByRegion", getPlayerCountByRegion(allPlayers));

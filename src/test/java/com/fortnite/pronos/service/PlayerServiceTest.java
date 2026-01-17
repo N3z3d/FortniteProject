@@ -196,6 +196,50 @@ class PlayerServiceTest {
   }
 
   @Test
+  @DisplayName("Devrait rǸcupǸrer toutes les entitǸs joueurs")
+  void shouldFindAllPlayers() {
+    // Given
+    List<Player> players = Arrays.asList(testPlayer1, testPlayer2, testPlayer3);
+    when(playerRepository.findAll()).thenReturn(players);
+
+    // When
+    List<Player> result = playerService.findAllPlayers();
+
+    // Then
+    assertThat(result).containsExactlyElementsOf(players);
+    verify(playerRepository).findAll();
+  }
+
+  @Test
+  @DisplayName("Devrait rǸcupǸrer une entitǸ joueur par ID")
+  void shouldFindPlayerById() {
+    // Given
+    when(playerRepository.findById(testPlayer1.getId())).thenReturn(Optional.of(testPlayer1));
+
+    // When
+    Optional<Player> result = playerService.findPlayerById(testPlayer1.getId());
+
+    // Then
+    assertThat(result).contains(testPlayer1);
+    verify(playerRepository).findById(testPlayer1.getId());
+  }
+
+  @Test
+  @DisplayName("Devrait rǸcupǸrer les entitǸs joueurs par rǸgion")
+  void shouldFindPlayersByRegion() {
+    // Given
+    List<Player> euPlayers = Arrays.asList(testPlayer1);
+    when(playerRepository.findByRegion(Player.Region.EU)).thenReturn(euPlayers);
+
+    // When
+    List<Player> result = playerService.findPlayersByRegion(Player.Region.EU);
+
+    // Then
+    assertThat(result).containsExactlyElementsOf(euPlayers);
+    verify(playerRepository).findByRegion(Player.Region.EU);
+  }
+
+  @Test
   @DisplayName("Devrait retourner une liste vide pour une région sans joueurs")
   void shouldReturnEmptyListForRegionWithoutPlayers() {
     // Given

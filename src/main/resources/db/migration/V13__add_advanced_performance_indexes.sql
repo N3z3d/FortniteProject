@@ -1,3 +1,4 @@
+-- flyway:executeInTransaction=false
 -- Migration V13: Index avancés pour optimisations critiques identifiées
 -- Optimisations spécifiques pour les requêtes les plus coûteuses
 

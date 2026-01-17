@@ -35,6 +35,10 @@ spring:
       # Configuration Redis (optionnelle, activée si Redis disponible)
       time-to-live: 600000  # 10 minutes par défaut
       cache-null-values: false
+  data:
+    redis:
+      repositories:
+        enabled: false
   datasource:
     # PostgreSQL configuration by default for dev/prod
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fortnite_pronos}
@@ -68,7 +72,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 20
         order_inserts: true

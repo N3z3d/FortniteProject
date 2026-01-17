@@ -7,6 +7,8 @@ import java.util.UUID;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
+import org.hibernate.annotations.ColumnTransformer;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,8 +35,9 @@ public class Player {
   @Column(nullable = false, unique = true)
   private String nickname;
 
-  @Column(nullable = false)
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false, columnDefinition = "region_enum")
+  @ColumnTransformer(write = "CAST(? AS region_enum)")
   private Region region;
 
   @Column(nullable = false)

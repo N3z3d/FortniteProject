@@ -1,3 +1,4 @@
+-- flyway:executeInTransaction=false
 -- Migration V12: Ajout d'index pour optimiser les performances
 -- Corrige les problèmes identifiés de requêtes lentes
 

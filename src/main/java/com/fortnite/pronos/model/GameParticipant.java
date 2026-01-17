@@ -48,7 +48,7 @@ public class GameParticipant {
   @ManyToMany
   @JoinTable(
       name = "game_participant_players",
-      joinColumns = @JoinColumn(name = "participant_id"),
+      joinColumns = @JoinColumn(name = "game_participant_id"),
       inverseJoinColumns = @JoinColumn(name = "player_id"))
   @Builder.Default
   private List<Player> selectedPlayers = new ArrayList<>();

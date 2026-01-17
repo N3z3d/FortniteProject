@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -67,11 +68,12 @@ public class GameControllerAuthenticationTest {
     gameRequest.put("regionRules", regionRules);
 
     // When
-    ResponseEntity<Map> response =
-        restTemplate.postForEntity(
+    ResponseEntity<Map<String, Object>> response =
+        restTemplate.exchange(
             "http://localhost:" + port + "/api/games?user=Thibaut",
+            org.springframework.http.HttpMethod.POST,
             new org.springframework.http.HttpEntity<>(gameRequest, withTestUserHeader("Thibaut")),
-            Map.class);
+            new ParameterizedTypeReference<Map<String, Object>>() {});
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -89,9 +91,12 @@ public class GameControllerAuthenticationTest {
     gameRequest.put("maxParticipants", 4);
 
     // When
-    ResponseEntity<Map> response =
-        restTemplate.postForEntity(
-            "http://localhost:" + port + "/api/games", gameRequest, Map.class);
+    ResponseEntity<Void> response =
+        restTemplate.exchange(
+            "http://localhost:" + port + "/api/games",
+            org.springframework.http.HttpMethod.POST,
+            new org.springframework.http.HttpEntity<>(gameRequest),
+            Void.class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -106,11 +111,12 @@ public class GameControllerAuthenticationTest {
     gameRequest.put("maxParticipants", 4);
 
     // When
-    ResponseEntity<Map> response =
-        restTemplate.postForEntity(
+    ResponseEntity<Void> response =
+        restTemplate.exchange(
             "http://localhost:" + port + "/api/games?user=UtilisateurInexistant",
-            gameRequest,
-            Map.class);
+            org.springframework.http.HttpMethod.POST,
+            new org.springframework.http.HttpEntity<>(gameRequest),
+            Void.class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -130,10 +136,11 @@ public class GameControllerAuthenticationTest {
     regionRules.put("BR", 1);
     gameRequest.put("regionRules", regionRules);
 
-    restTemplate.postForEntity(
+    restTemplate.exchange(
         "http://localhost:" + port + "/api/games?user=Thibaut",
+        org.springframework.http.HttpMethod.POST,
         new org.springframework.http.HttpEntity<>(gameRequest, withTestUserHeader("Thibaut")),
-        Map.class);
+        Void.class);
 
     // When
     ResponseEntity<Object[]> response =

@@ -2,6 +2,7 @@ package com.fortnite.pronos.model;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -45,6 +46,23 @@ public class TeamPlayer {
   public static class TeamPlayerId implements Serializable {
     private UUID team; // Corrigé : UUID au lieu de String
     private UUID player; // Corrigé : UUID au lieu de String
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      TeamPlayerId that = (TeamPlayerId) o;
+      return Objects.equals(team, that.team) && Objects.equals(player, that.player);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(team, player);
+    }
   }
 
   public void endMembership() {

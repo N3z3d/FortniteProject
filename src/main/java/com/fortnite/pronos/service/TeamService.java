@@ -84,6 +84,16 @@ public class TeamService {
     return teams.stream().map(TeamDto::from).collect(Collectors.toList());
   }
 
+  @Transactional(readOnly = true)
+  public List<TeamDto> getTeamsByUsernameAndYear(String username, int year) {
+    log.debug("Recuperation des equipes pour l'utilisateur '{}' et l'annee {}", username, year);
+
+    User user = findUserByUsername(username);
+    Team team = findTeamByUserAndSeason(user, year);
+
+    return List.of(TeamDto.from(team));
+  }
+
   /** Crée une nouvelle équipe pour un utilisateur */
   @Transactional
   public TeamDto createTeam(UUID userId, String name, int season) {
@@ -304,6 +314,12 @@ public class TeamService {
               log.warn("Utilisateur non trouvé avec l'ID: {}", userId);
               return new EntityNotFoundException(USER_NOT_FOUND_MESSAGE);
             });
+  }
+
+  private User findUserByUsername(String username) {
+    return userRepository
+        .findByUsernameIgnoreCase(username)
+        .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouve: " + username));
   }
 
   private Team findTeamByUserAndSeason(User user, int season) {

@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +13,6 @@ import com.fortnite.pronos.dto.LeaderboardEntryDTO;
 import com.fortnite.pronos.dto.LeaderboardStatsDTO;
 import com.fortnite.pronos.dto.PlayerLeaderboardEntryDTO;
 import com.fortnite.pronos.dto.PronostiqueurLeaderboardEntryDTO;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.LeaderboardService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,9 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 public class LeaderboardController {
 
   private final LeaderboardService leaderboardService;
-  private final ScoreRepository scoreRepository;
-  private final PlayerRepository playerRepository;
-  private final TeamRepository teamRepository;
 
   /** Obtenir le leaderboard complet */
   @GetMapping
@@ -229,45 +222,16 @@ public class LeaderboardController {
   public ResponseEntity<Map<String, Object>> getDebugStats() {
     log.info("🔍 Debug des statistiques du leaderboard");
 
-    Map<String, Object> debug = new HashMap<>();
     int season = new Date().getYear() + 1900;
 
     try {
-      // Compter les équipes
-      long teamCount = teamRepository.findBySeason(season).size();
-      debug.put("totalTeams", teamCount);
-      debug.put("season", season);
-
-      // Compter les joueurs
-      long playerCount = playerRepository.count();
-      debug.put("totalPlayers", playerCount);
-
-      // Compter les scores
-      long scoreCount = scoreRepository.count();
-      debug.put("totalScores", scoreCount);
-
-      // Tester la requête groupée
-      List<Object[]> rawScores = scoreRepository.findAllBySeasonGroupedByPlayerRaw(season);
-      debug.put("rawScoresCount", rawScores.size());
-      debug.put(
-          "rawScoresSample",
-          rawScores.stream()
-              .limit(3)
-              .map(row -> Map.of("playerId", row[0], "totalPoints", row[1]))
-              .collect(Collectors.toList()));
-
-      // Tester la map finale
-      Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
-      debug.put("playerPointsMapSize", playerPointsMap.size());
-      debug.put(
-          "totalPointsFromMap",
-          playerPointsMap.values().stream().mapToInt(Integer::intValue).sum());
-
+      Map<String, Object> debug = leaderboardService.getDebugStats(season);
       log.info("🔍 Debug result: {}", debug);
       return ResponseEntity.ok(debug);
 
     } catch (Exception e) {
       log.error("❌ Erreur lors du debug des statistiques", e);
+      Map<String, Object> debug = new HashMap<>();
       debug.put("error", e.getMessage());
       return ResponseEntity.ok(debug);
     }
@@ -276,45 +240,12 @@ public class LeaderboardController {
   /** Debug simple pour vérifier les données de base */
   @GetMapping("/debug/simple")
   public ResponseEntity<Map<String, Object>> getDebugSimple() {
-    Map<String, Object> debug = new HashMap<>();
-
     try {
-      // Vérifier les données de base
-      debug.put("totalPlayers", playerRepository.count());
-      debug.put("totalTeams", teamRepository.count());
-      debug.put("totalScores", scoreRepository.count());
-
-      // Échantillon de joueurs
-      debug.put(
-          "playersSample",
-          playerRepository.findAll().stream()
-              .limit(3)
-              .map(
-                  player ->
-                      Map.of(
-                          "id", player.getId(),
-                          "nickname", player.getNickname(),
-                          "region", player.getRegion().name(),
-                          "season", player.getCurrentSeason()))
-              .collect(Collectors.toList()));
-
-      // Échantillon de scores
-      debug.put(
-          "scoresSample",
-          scoreRepository.findAll().stream()
-              .limit(3)
-              .map(
-                  score ->
-                      Map.of(
-                          "playerNickname", score.getPlayer().getNickname(),
-                          "season", score.getSeason(),
-                          "points", score.getPoints()))
-              .collect(Collectors.toList()));
-
-      return ResponseEntity.ok(debug);
+      return ResponseEntity.ok(leaderboardService.getDebugSimple());
 
     } catch (Exception e) {
       log.error("❌ Erreur lors du debug simple", e);
+      Map<String, Object> debug = new HashMap<>();
       debug.put("error", e.getMessage());
       return ResponseEntity.ok(debug);
     }

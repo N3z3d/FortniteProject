@@ -31,7 +31,6 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         # PHASE 3A: PERFORMANCE OPTIMIZATION FOR 500+ USERS
         jdbc:
           batch_size: 25               # Optimized batch size

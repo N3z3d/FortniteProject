@@ -17,19 +17,12 @@ import org.springframework.http.ResponseEntity;
 
 import com.fortnite.pronos.dto.LeaderboardEntryDTO;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.LeaderboardService;
 
 @ExtendWith(MockitoExtension.class)
 class LeaderboardControllerTest {
 
   @Mock private LeaderboardService leaderboardService;
-  @Mock private ScoreRepository scoreRepository;
-  @Mock private PlayerRepository playerRepository;
-  @Mock private TeamRepository teamRepository;
-
   @InjectMocks private LeaderboardController leaderboardController;
 
   @Test

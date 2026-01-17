@@ -8,8 +8,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.core.usecase.CreateGameUseCase;
+import com.fortnite.pronos.core.usecase.JoinGameUseCase;
+import com.fortnite.pronos.service.FlexibleAuthenticationService;
 import com.fortnite.pronos.service.GameService;
-import com.fortnite.pronos.service.UserContextService;
+import com.fortnite.pronos.service.JwtService;
+import com.fortnite.pronos.service.UserService;
 import com.fortnite.pronos.service.ValidationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -19,7 +23,15 @@ class GameControllerSimpleTest {
 
   @Mock private ValidationService validationService;
 
-  @Mock private UserContextService userContextService;
+  @Mock private FlexibleAuthenticationService flexibleAuthenticationService;
+
+  @Mock private UserService userService;
+
+  @Mock private JwtService jwtService;
+
+  @Mock private CreateGameUseCase createGameUseCase;
+
+  @Mock private JoinGameUseCase joinGameUseCase;
 
   @InjectMocks private GameController gameController;
 

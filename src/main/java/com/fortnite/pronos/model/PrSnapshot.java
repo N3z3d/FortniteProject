@@ -3,6 +3,7 @@ package com.fortnite.pronos.model;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -18,6 +19,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
+
+import org.hibernate.annotations.ColumnTransformer;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,7 +42,8 @@ public class PrSnapshot implements Serializable {
 
   @Id
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "pr_region")
+  @ColumnTransformer(write = "CAST(? AS pr_region)")
   private PrRegion region;
 
   @Id
@@ -77,5 +81,24 @@ public class PrSnapshot implements Serializable {
     private UUID player;
     private PrRegion region;
     private LocalDate snapshotDate;
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      PrSnapshotId that = (PrSnapshotId) o;
+      return Objects.equals(player, that.player)
+          && Objects.equals(region, that.region)
+          && Objects.equals(snapshotDate, that.snapshotDate);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(player, region, snapshotDate);
+    }
   }
 }

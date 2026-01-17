@@ -133,7 +133,8 @@ public class TeamInitializationService {
 
     int position = 1;
     for (Player player : assignedPlayers) {
-      team.addPlayer(player, position++);
+      Player managedPlayer = playerRepository.getReferenceById(player.getId());
+      team.addPlayer(managedPlayer, position++);
     }
 
     return team;

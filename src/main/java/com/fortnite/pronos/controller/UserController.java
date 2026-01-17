@@ -10,30 +10,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
+import com.fortnite.pronos.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Slf4j
 public class UserController {
 
-  private final UserRepository userRepository;
+  private final UserService userService;
 
   @GetMapping
   public ResponseEntity<List<User>> getAllUsers() {
-    List<User> users = userRepository.findAll();
-    log.debug("Returning {} users", users.size());
-    return ResponseEntity.ok(users);
+    return ResponseEntity.ok(userService.getAllUsers());
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<User> getUser(@PathVariable UUID id) {
-    return userRepository
-        .findById(id)
+    return userService
+        .findUserById(id)
         .map(ResponseEntity::ok)
         .orElseGet(() -> ResponseEntity.notFound().build());
   }

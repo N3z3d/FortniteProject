@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import org.hibernate.annotations.ColumnTransformer;
+
 import lombok.Data;
 
 @Data
@@ -28,7 +30,8 @@ public class User {
   @NotBlank private String password;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "user_role")
+  @ColumnTransformer(write = "CAST(? AS user_role)")
   private UserRole role = UserRole.USER;
 
   @Column(name = "current_season", nullable = false)

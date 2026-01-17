@@ -3,6 +3,7 @@ package com.fortnite.pronos.model;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -48,6 +49,23 @@ public class Score implements Serializable {
   public static class ScoreId implements Serializable {
     private UUID player; // UUID pour correspondre à l'entité Player
     private Integer season;
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ScoreId scoreId = (ScoreId) o;
+      return Objects.equals(player, scoreId.player) && Objects.equals(season, scoreId.season);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(player, season);
+    }
   }
 
   @PrePersist

@@ -8,8 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.dto.team.TeamDto;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.TeamService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TeamController {
 
   private final TeamService teamService;
-  private final UserRepository userRepository;
 
   @Operation(
       summary = "Get team by user ID and season",
@@ -105,28 +102,16 @@ public class TeamController {
           String username,
       @Parameter(description = "Year", required = true, example = "2025") @RequestParam("year")
           int year) {
-    log.debug("Récupération des équipes pour l'utilisateur '{}' et l'année {}", username, year);
+    log.debug("Recuperation des equipes pour l'utilisateur '{}' et l'annee {}", username, year);
 
     try {
-      // Recherche de l'utilisateur par nom d'utilisateur
-      User user =
-          userRepository
-              .findByUsernameIgnoreCase(username)
-              .orElseThrow(
-                  () -> new IllegalArgumentException("Utilisateur non trouvé: " + username));
-
-      // Récupération de l'équipe pour cette saison
-      TeamDto team = teamService.getTeam(user.getId(), year);
-
-      // Retour d'une liste contenant une seule équipe (cohérent avec l'interface)
-      return ResponseEntity.ok(List.of(team));
-
+      return ResponseEntity.ok(teamService.getTeamsByUsernameAndYear(username, year));
     } catch (IllegalArgumentException e) {
-      log.warn("Utilisateur non trouvé: {}", username);
+      log.warn("Utilisateur non trouve: {}", username);
       return ResponseEntity.notFound().build();
     } catch (Exception e) {
       log.error(
-          "Erreur lors de la récupération des équipes pour {} ({}): {}",
+          "Erreur lors de la recuperation des equipes pour {} ({}): {}",
           username,
           year,
           e.getMessage());

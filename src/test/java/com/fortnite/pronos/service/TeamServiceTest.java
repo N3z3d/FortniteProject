@@ -128,6 +128,59 @@ class TeamServiceTest {
   }
 
   @Test
+  @DisplayName("Devrait recuperer les equipes par username et annee")
+  void shouldGetTeamsByUsernameAndYear() {
+    // Given
+    when(userRepository.findByUsernameIgnoreCase("TestUser")).thenReturn(Optional.of(testUser));
+    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
+
+    // When
+    List<TeamDto> result = teamService.getTeamsByUsernameAndYear("TestUser", 2025);
+
+    // Then
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getId()).isEqualTo(testTeam.getId());
+    verify(userRepository).findByUsernameIgnoreCase("TestUser");
+    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
+  }
+
+  @Test
+  @DisplayName("Devrait lever une exception quand le username est introuvable")
+  void shouldThrowWhenUserNotFoundByUsername() {
+    // Given
+    when(userRepository.findByUsernameIgnoreCase("missing")).thenReturn(Optional.empty());
+
+    // When & Then
+    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("missing", 2025))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Utilisateur non trouve: missing");
+  }
+
+  @Test
+  @DisplayName("Devrait lever une exception quand le username est vide")
+  void shouldThrowWhenUsernameEmpty() {
+    // Given
+    when(userRepository.findByUsernameIgnoreCase("")).thenReturn(Optional.empty());
+
+    // When & Then
+    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("", 2025))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Utilisateur non trouve: ");
+  }
+
+  @Test
+  @DisplayName("Devrait lever une exception quand l'equipe est introuvable pour username et annee")
+  void shouldThrowWhenTeamNotFoundByUsernameAndYear() {
+    // Given
+    when(userRepository.findByUsernameIgnoreCase("testuser")).thenReturn(Optional.of(testUser));
+    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.empty());
+
+    // When & Then
+    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("testuser", 2025))
+        .isInstanceOf(EntityNotFoundException.class);
+  }
+
+  @Test
   @DisplayName("Devrait récupérer une équipe par son ID")
   void shouldGetTeamById() {
     // Given

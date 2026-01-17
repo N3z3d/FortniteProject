@@ -19,9 +19,9 @@ import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.TeamPlayer;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
+import com.fortnite.pronos.service.PlayerService;
+import com.fortnite.pronos.service.TeamQueryService;
+import com.fortnite.pronos.service.UserService;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +33,14 @@ public class ApiController {
 
   private static final Logger log = LoggerFactory.getLogger(ApiController.class);
 
-  private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
-  private final UserRepository userRepository;
+  private final TeamQueryService teamQueryService;
+  private final PlayerService playerService;
+  private final UserService userService;
   private final org.springframework.core.env.Environment environment;
 
   @GetMapping("/teams")
   public List<TeamDTO> allTeams(@RequestParam(defaultValue = "2025") int season) {
-    List<Team> teams = teamRepository.findBySeasonWithFetch(season);
+    List<Team> teams = teamQueryService.findTeamsBySeasonWithFetch(season);
     return teams.stream().map(TeamDTO::fromTeam).collect(Collectors.toList());
   }
 
@@ -48,8 +48,8 @@ public class ApiController {
   public ResponseEntity<TeamDTO> getTeamById(@PathVariable UUID teamId) {
     try {
       Team team =
-          teamRepository
-              .findByIdWithFetch(teamId)
+          teamQueryService
+              .findTeamByIdWithFetch(teamId)
               .orElseThrow(() -> new RuntimeException("Equipe non trouvee"));
 
       return ResponseEntity.ok(TeamDTO.fromTeam(team));
@@ -64,10 +64,10 @@ public class ApiController {
     try {
       List<Player> players;
       if (region == null || region.isBlank()) {
-        players = playerRepository.findAll();
+        players = playerService.findAllPlayers();
       } else {
         Player.Region regionEnum = Player.Region.valueOf(region.toUpperCase());
-        players = playerRepository.findByRegion(regionEnum);
+        players = playerService.findPlayersByRegion(regionEnum);
       }
 
       List<PlayerDTO> playerDTOs =
@@ -86,8 +86,8 @@ public class ApiController {
 
   @GetMapping("/players/{id}")
   public ResponseEntity<?> one(@PathVariable UUID id) {
-    return playerRepository
-        .findById(id)
+    return playerService
+        .findPlayerById(id)
         .map(player -> ResponseEntity.ok(PlayerDTO.fromPlayer(player)))
         .orElse(ResponseEntity.notFound().build());
   }
@@ -122,11 +122,7 @@ public class ApiController {
 
       log.debug("Looking up user in database");
       // Try to find by email first (auth principal uses email), then by username
-      User currentUser =
-          userRepository
-              .findByEmail(username)
-              .or(() -> userRepository.findByUsernameIgnoreCase(username))
-              .orElse(null);
+      User currentUser = userService.findUserByEmailOrUsername(username).orElse(null);
 
       if (currentUser == null) {
         log.warn("User not found: {}", username);
@@ -139,8 +135,8 @@ public class ApiController {
       log.debug("User found: {}", currentUser.getUsername());
 
       log.debug("Looking up user's team");
-      List<Team> seasonTeams = teamRepository.findBySeasonWithFetch(2025);
-      Team resolvedTeam = teamRepository.findByOwnerAndSeason(currentUser, 2025).orElse(null);
+      List<Team> seasonTeams = teamQueryService.findTeamsBySeasonWithFetch(2025);
+      Team resolvedTeam = teamQueryService.findTeamByOwnerAndSeason(currentUser, 2025).orElse(null);
 
       if (resolvedTeam == null) {
         resolvedTeam =
@@ -184,7 +180,7 @@ public class ApiController {
                       .map(TeamDTO::fromTeam)
                       .collect(Collectors.toList()),
               "allPlayers",
-                  playerRepository.findAll().stream()
+                  playerService.findAllPlayers().stream()
                       .map(PlayerDTO::fromPlayer)
                       .collect(Collectors.toList())));
 

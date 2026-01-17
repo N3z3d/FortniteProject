@@ -19,18 +19,18 @@ import org.springframework.security.core.Authentication;
 
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
+import com.fortnite.pronos.service.PlayerService;
+import com.fortnite.pronos.service.TeamQueryService;
+import com.fortnite.pronos.service.UserService;
 
 @ExtendWith(MockitoExtension.class)
 public class ApiControllerTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserService userService;
 
-  @Mock private TeamRepository teamRepository;
+  @Mock private TeamQueryService teamQueryService;
 
-  @Mock private PlayerRepository playerRepository;
+  @Mock private PlayerService playerService;
 
   @Mock private Authentication authentication;
 
@@ -61,10 +61,11 @@ public class ApiControllerTest {
   void testGetTradeFormData_WithUserParameter_Success() {
     // Given
     String username = "Teddy";
-    when(userRepository.findByUsernameIgnoreCase(username)).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
-    when(playerRepository.findAll()).thenReturn(new ArrayList<>());
+    when(userService.findUserByEmailOrUsername(username)).thenReturn(Optional.of(testUser));
+    when(teamQueryService.findTeamByOwnerAndSeason(testUser, 2025))
+        .thenReturn(Optional.of(testTeam));
+    when(teamQueryService.findTeamsBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
+    when(playerService.findAllPlayers()).thenReturn(new ArrayList<>());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(username, request, null);
@@ -80,32 +81,33 @@ public class ApiControllerTest {
     assertNotNull(body.get("otherTeams"));
     assertNotNull(body.get("allPlayers"));
 
-    verify(userRepository).findByUsernameIgnoreCase(username);
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
+    verify(userService).findUserByEmailOrUsername(username);
+    verify(teamQueryService).findTeamByOwnerAndSeason(testUser, 2025);
   }
 
   @Test
   void testGetTradeFormData_WithUserParameter_CaseInsensitive() {
     // Given
     String username = "TEDDY"; // Majuscules
-    when(userRepository.findByUsernameIgnoreCase(username)).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
-    when(playerRepository.findAll()).thenReturn(new ArrayList<>());
+    when(userService.findUserByEmailOrUsername(username)).thenReturn(Optional.of(testUser));
+    when(teamQueryService.findTeamByOwnerAndSeason(testUser, 2025))
+        .thenReturn(Optional.of(testTeam));
+    when(teamQueryService.findTeamsBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
+    when(playerService.findAllPlayers()).thenReturn(new ArrayList<>());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(username, request, null);
 
     // Then
     assertEquals(200, response.getStatusCodeValue());
-    verify(userRepository).findByUsernameIgnoreCase("TEDDY");
+    verify(userService).findUserByEmailOrUsername("TEDDY");
   }
 
   @Test
   void testGetTradeFormData_UserNotFound_Error() {
     // Given
     String username = "NonExistentUser";
-    when(userRepository.findByUsernameIgnoreCase(username)).thenReturn(Optional.empty());
+    when(userService.findUserByEmailOrUsername(username)).thenReturn(Optional.empty());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(username, request, null);
@@ -130,19 +132,19 @@ public class ApiControllerTest {
     otherTeam.setSeason(2025);
     otherTeam.setPlayers(new ArrayList<>());
 
-    when(userRepository.findByUsernameIgnoreCase(username)).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025))
+    when(userService.findUserByEmailOrUsername(username)).thenReturn(Optional.of(testUser));
+    when(teamQueryService.findTeamByOwnerAndSeason(testUser, 2025))
         .thenReturn(Optional.empty()); // Pas d'équipe trouvée directement
-    when(teamRepository.findBySeasonWithFetch(2025))
+    when(teamQueryService.findTeamsBySeasonWithFetch(2025))
         .thenReturn(Arrays.asList(otherTeam)); // Mais trouvée par propriétaire
-    when(playerRepository.findAll()).thenReturn(new ArrayList<>());
+    when(playerService.findAllPlayers()).thenReturn(new ArrayList<>());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(username, request, null);
 
     // Then
     assertEquals(200, response.getStatusCodeValue());
-    verify(teamRepository, atLeast(1)).findBySeasonWithFetch(2025);
+    verify(teamQueryService, atLeast(1)).findTeamsBySeasonWithFetch(2025);
   }
 
   @Test
@@ -150,10 +152,11 @@ public class ApiControllerTest {
     // Given
     when(authentication.isAuthenticated()).thenReturn(true);
     when(authentication.getName()).thenReturn("Teddy");
-    when(userRepository.findByUsernameIgnoreCase("Teddy")).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
-    when(playerRepository.findAll()).thenReturn(new ArrayList<>());
+    when(userService.findUserByEmailOrUsername("Teddy")).thenReturn(Optional.of(testUser));
+    when(teamQueryService.findTeamByOwnerAndSeason(testUser, 2025))
+        .thenReturn(Optional.of(testTeam));
+    when(teamQueryService.findTeamsBySeasonWithFetch(2025)).thenReturn(Arrays.asList(testTeam));
+    when(playerService.findAllPlayers()).thenReturn(new ArrayList<>());
 
     // When
     ResponseEntity<?> response = apiController.getTradeFormData(null, request, authentication);
@@ -161,7 +164,7 @@ public class ApiControllerTest {
     // Then
     assertEquals(200, response.getStatusCodeValue());
     verify(authentication, atLeast(1)).getName();
-    verify(userRepository).findByUsernameIgnoreCase("Teddy");
+    verify(userService).findUserByEmailOrUsername("Teddy");
   }
 
   @Test
@@ -177,17 +180,17 @@ public class ApiControllerTest {
     defaultTeam.setSeason(2025);
     defaultTeam.setPlayers(new ArrayList<>());
 
-    when(userRepository.findByUsernameIgnoreCase("Thibaut")).thenReturn(Optional.of(defaultUser));
-    when(teamRepository.findByOwnerAndSeason(defaultUser, 2025))
+    when(userService.findUserByEmailOrUsername("Thibaut")).thenReturn(Optional.of(defaultUser));
+    when(teamQueryService.findTeamByOwnerAndSeason(defaultUser, 2025))
         .thenReturn(Optional.of(defaultTeam));
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(Arrays.asList(defaultTeam));
-    when(playerRepository.findAll()).thenReturn(new ArrayList<>());
+    when(teamQueryService.findTeamsBySeasonWithFetch(2025)).thenReturn(Arrays.asList(defaultTeam));
+    when(playerService.findAllPlayers()).thenReturn(new ArrayList<>());
 
     // When (aucun paramètre user, aucune auth)
     ResponseEntity<?> response = apiController.getTradeFormData(null, request, null);
 
     // Then
     assertEquals(200, response.getStatusCodeValue());
-    verify(userRepository).findByUsernameIgnoreCase("Thibaut");
+    verify(userService).findUserByEmailOrUsername("Thibaut");
   }
 }

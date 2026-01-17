@@ -42,7 +42,6 @@ class AuthenticationFlowIntegrationTest {
   @BeforeEach
   void configureRestTemplate() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setBufferRequestBody(true);
     restTemplate
         .getRestTemplate()
         .setRequestFactory(new BufferingClientHttpRequestFactory(factory));

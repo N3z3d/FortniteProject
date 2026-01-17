@@ -293,6 +293,78 @@ public class LeaderboardService {
         .build();
   }
 
+  public Map<String, Object> getDebugStats(int season) {
+    Map<String, Object> debug = new HashMap<>();
+
+    long teamCount = teamRepository.findBySeason(season).size();
+    debug.put("totalTeams", teamCount);
+    debug.put("season", season);
+
+    long playerCount = playerRepository.count();
+    debug.put("totalPlayers", playerCount);
+
+    long scoreCount = scoreRepository.count();
+    debug.put("totalScores", scoreCount);
+
+    List<Object[]> rawScores = scoreRepository.findAllBySeasonGroupedByPlayerRaw(season);
+    debug.put("rawScoresCount", rawScores.size());
+    debug.put(
+        "rawScoresSample",
+        rawScores.stream()
+            .limit(3)
+            .map(row -> Map.of("playerId", row[0], "totalPoints", row[1]))
+            .collect(Collectors.toList()));
+
+    Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
+    debug.put("playerPointsMapSize", playerPointsMap.size());
+    debug.put(
+        "totalPointsFromMap", playerPointsMap.values().stream().mapToInt(Integer::intValue).sum());
+
+    return debug;
+  }
+
+  public Map<String, Object> getDebugSimple() {
+    Map<String, Object> debug = new HashMap<>();
+
+    debug.put("totalPlayers", playerRepository.count());
+    debug.put("totalTeams", teamRepository.count());
+    debug.put("totalScores", scoreRepository.count());
+
+    debug.put(
+        "playersSample",
+        playerRepository.findAll().stream()
+            .limit(3)
+            .map(
+                player ->
+                    Map.of(
+                        "id",
+                        player.getId(),
+                        "nickname",
+                        player.getNickname(),
+                        "region",
+                        player.getRegion().name(),
+                        "season",
+                        player.getCurrentSeason()))
+            .collect(Collectors.toList()));
+
+    debug.put(
+        "scoresSample",
+        scoreRepository.findAll().stream()
+            .limit(3)
+            .map(
+                score ->
+                    Map.of(
+                        "playerNickname",
+                        score.getPlayer().getNickname(),
+                        "season",
+                        score.getSeason(),
+                        "points",
+                        score.getPoints()))
+            .collect(Collectors.toList()));
+
+    return debug;
+  }
+
   /** Obtenir la répartition par région de tous les joueurs */
   @Cacheable(value = "regionDistribution", key = "'all_regions'")
   public Map<String, Integer> getRegionDistribution() {
