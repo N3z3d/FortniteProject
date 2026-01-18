@@ -3,6 +3,7 @@ package com.fortnite.pronos.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -129,6 +130,28 @@ class UserServiceTest {
   }
 
   @Test
+  @DisplayName("Devrait retourner vide quand l'identifiant est null")
+  void shouldReturnEmptyWhenIdentifierNull() {
+    // When
+    Optional<User> result = userService.findUserByEmailOrUsername(null);
+
+    // Then
+    assertThat(result).isEmpty();
+    verifyNoInteractions(userRepository);
+  }
+
+  @Test
+  @DisplayName("Devrait retourner vide quand l'identifiant est vide")
+  void shouldReturnEmptyWhenIdentifierBlank() {
+    // When
+    Optional<User> result = userService.findUserByEmailOrUsername("   ");
+
+    // Then
+    assertThat(result).isEmpty();
+    verifyNoInteractions(userRepository);
+  }
+
+  @Test
   @DisplayName("Devrait fallback sur username quand email introuvable")
   void shouldFallbackToUsernameWhenEmailMissing() {
     // Given
@@ -172,6 +195,28 @@ class UserServiceTest {
     // Then
     assertThat(result).contains(testUser);
     verify(userRepository).findByUsernameIgnoreCase("Tester");
+  }
+
+  @Test
+  @DisplayName("Devrait retourner vide quand le username est null")
+  void shouldReturnEmptyWhenUsernameNull() {
+    // When
+    Optional<User> result = userService.findUserByUsername(null);
+
+    // Then
+    assertThat(result).isEmpty();
+    verifyNoInteractions(userRepository);
+  }
+
+  @Test
+  @DisplayName("Devrait retourner vide quand le username est vide")
+  void shouldReturnEmptyWhenUsernameBlank() {
+    // When
+    Optional<User> result = userService.findUserByUsername("   ");
+
+    // Then
+    assertThat(result).isEmpty();
+    verifyNoInteractions(userRepository);
   }
 
   @Test

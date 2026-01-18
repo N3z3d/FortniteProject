@@ -34,14 +34,32 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public Optional<User> findUserByEmailOrUsername(String identifier) {
+    if (identifier == null) {
+      return Optional.empty();
+    }
+
+    String sanitizedIdentifier = identifier.trim();
+    if (sanitizedIdentifier.isEmpty()) {
+      return Optional.empty();
+    }
+
     return userRepository
-        .findByEmail(identifier)
-        .or(() -> userRepository.findByUsernameIgnoreCase(identifier));
+        .findByEmail(sanitizedIdentifier)
+        .or(() -> userRepository.findByUsernameIgnoreCase(sanitizedIdentifier));
   }
 
   @Transactional(readOnly = true)
   public Optional<User> findUserByUsername(String username) {
-    return userRepository.findByUsernameIgnoreCase(username);
+    if (username == null) {
+      return Optional.empty();
+    }
+
+    String sanitizedUsername = username.trim();
+    if (sanitizedUsername.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return userRepository.findByUsernameIgnoreCase(sanitizedUsername);
   }
 
   @Transactional

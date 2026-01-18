@@ -138,7 +138,8 @@ Estimate: 12h
 JIRA-ARCH-006 - Improve testability
 Type: Task
 Priority: P2
-Status: TODO
+Status: IN PROGRESS
+Assignee: Codex
 Context: Logic in controllers/entities increases test cost.
 Steps:
 - Extract logic into services.
