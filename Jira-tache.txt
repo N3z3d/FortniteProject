@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 21:30
+Last Updated: 2026-01-18 21:45
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -73,7 +73,7 @@ P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
 Type: Task
 Priority: P1
-Status: IN PROGRESS
+Status: TODO
 Assignee: AVAILABLE
 Estimate: 6h
 Context:
@@ -177,23 +177,6 @@ Acceptance:
 Dependencies:
 - JIRA-ARCH-000
 
-JIRA-REFACTOR-003 - Split TeamService (562 lines -> 3 services)
-Type: Refactoring
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 5h
-Context:
-- TeamService mixes CRUD, validation, and roster management.
-Steps:
-1) Extract TeamQueryService for reads.
-2) Extract TeamRosterService for roster changes.
-3) Extract TeamValidationService for business rules.
-Acceptance:
-- TeamService <= 500 lines, responsibilities separated.
-Dependencies:
-- JIRA-ARCH-000
-
 P2 - MEDIUM
 JIRA-SUPABASE-001 - Configure Supabase
 Type: Task
@@ -246,7 +229,10 @@ Criteres d'acceptation:
 Dependencies: none
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-18 21:28
-DERNIERE_MAJ: 2026-01-18 21:28
+DERNIERE_MAJ: 2026-01-18 21:35
 STATUT: IN_PROGRESS
+Notes:
+- Moved metrics logger under prod profile to avoid non-prod appender warnings.
+- App restart still needed to confirm no logback warnings.
 
 P4 - BACKLOG
