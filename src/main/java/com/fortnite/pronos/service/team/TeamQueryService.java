@@ -2,6 +2,7 @@ package com.fortnite.pronos.service.team;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -138,6 +139,23 @@ public class TeamQueryService {
     log.info("{} equipes trouvees pour la game {}", teams.size(), gameId);
 
     return teams.stream().map(TeamDto::from).toList();
+  }
+
+  // Entity-returning methods for legacy compatibility (ApiController)
+
+  /** Returns Team entities for a season (legacy API) */
+  public List<Team> findTeamsBySeasonWithFetch(int season) {
+    return teamRepository.findBySeasonWithFetch(season);
+  }
+
+  /** Returns Team entity by ID (legacy API) */
+  public Optional<Team> findTeamByIdWithFetch(UUID teamId) {
+    return teamRepository.findByIdWithFetch(teamId);
+  }
+
+  /** Returns Team entity by owner and season (legacy API) */
+  public Optional<Team> findTeamByOwnerAndSeason(User owner, int season) {
+    return teamRepository.findByOwnerAndSeason(owner, season);
   }
 
   // Private helpers

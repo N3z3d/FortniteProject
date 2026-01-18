@@ -20,8 +20,8 @@ import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.TeamPlayer;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.PlayerService;
-import com.fortnite.pronos.service.TeamQueryService;
 import com.fortnite.pronos.service.UserService;
+import com.fortnite.pronos.service.team.TeamQueryService;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

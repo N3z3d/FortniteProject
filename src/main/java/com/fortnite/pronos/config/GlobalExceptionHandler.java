@@ -19,6 +19,9 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.fortnite.pronos.core.error.FortnitePronosException;
+import com.fortnite.pronos.exception.GameFullException;
+import com.fortnite.pronos.exception.GameNotFoundException;
+import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UserNotFoundException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -236,6 +239,66 @@ public class GlobalExceptionHandler {
             .build();
 
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+  }
+
+  /** Handle GameNotFoundException */
+  @ExceptionHandler(GameNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleGameNotFoundException(
+      GameNotFoundException ex, HttpServletRequest request) {
+
+    log.warn("Game not found: {}", ex.getMessage());
+
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error("Game Not Found")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .code("GAME_NOT_FOUND")
+            .build();
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+  }
+
+  /** Handle GameFullException */
+  @ExceptionHandler(GameFullException.class)
+  public ResponseEntity<ErrorResponse> handleGameFullException(
+      GameFullException ex, HttpServletRequest request) {
+
+    log.warn("Game is full: {}", ex.getMessage());
+
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error("Game Full")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .code("GAME_FULL")
+            .build();
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  /** Handle InvalidGameStateException */
+  @ExceptionHandler(InvalidGameStateException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidGameStateException(
+      InvalidGameStateException ex, HttpServletRequest request) {
+
+    log.warn("Invalid game state: {}", ex.getMessage());
+
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Invalid Game State")
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .code("INVALID_GAME_STATE")
+            .build();
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
   }
 
   /** Gestion des erreurs génériques */
