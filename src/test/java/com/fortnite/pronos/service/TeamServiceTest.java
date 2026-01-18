@@ -22,12 +22,18 @@ import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
+import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
-/** Tests TDD pour TeamService */
+/**
+ * Tests TDD pour TeamService (commandes uniquement).
+ *
+ * <p>Note: Les tests pour les methodes de lecture (queries) ont ete deplaces vers
+ * TeamQueryServiceTddTest suite a l'extraction de TeamQueryService.
+ */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests TDD - TeamService")
+@DisplayName("Tests TDD - TeamService (Commands)")
 class TeamServiceTest {
 
   @Mock private TeamRepository teamRepository;
@@ -35,6 +41,8 @@ class TeamServiceTest {
   @Mock private PlayerRepository playerRepository;
 
   @Mock private UserRepository userRepository;
+
+  @Mock private TeamPlayerRepository teamPlayerRepository;
 
   @InjectMocks private TeamService teamService;
 
@@ -46,15 +54,15 @@ class TeamServiceTest {
 
   @BeforeEach
   void setUp() {
-    // Créer un utilisateur de test
+    // Creer un utilisateur de test
     testUser = new User();
     testUser.setId(UUID.randomUUID());
     testUser.setUsername("testuser");
     testUser.setEmail("test@example.com");
-    testUser.setPassword("password123"); // Ajout du mot de passe requis
+    testUser.setPassword("password123");
     testUser.setCurrentSeason(2025);
 
-    // Créer des joueurs de test
+    // Creer des joueurs de test
     testPlayer = new Player();
     testPlayer.setId(UUID.randomUUID());
     testPlayer.setUsername("TestPlayer1");
@@ -69,14 +77,14 @@ class TeamServiceTest {
     testPlayer2.setRegion(Player.Region.NAW);
     testPlayer2.setTranche("A");
 
-    // Créer une équipe de test
+    // Creer une equipe de test
     testTeam = new Team();
     testTeam.setId(UUID.randomUUID());
     testTeam.setName("Test Team");
     testTeam.setOwner(testUser);
     testTeam.setSeason(2025);
 
-    // Créer un DTO de test
+    // Creer un DTO de test
     testTeamDto = new TeamDto();
     testTeamDto.setId(testTeam.getId());
     testTeamDto.setName(testTeam.getName());
@@ -85,146 +93,7 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait récupérer l'équipe d'un utilisateur pour une saison")
-  void shouldGetTeamByUserAndSeason() {
-    // Given
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-
-    // When
-    TeamDto result = teamService.getTeam(testUser.getId(), 2025);
-
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(testTeam.getId());
-    assertThat(result.getName()).isEqualTo(testTeam.getName());
-    verify(userRepository).findById(testUser.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand l'utilisateur n'existe pas")
-  void shouldThrowExceptionWhenUserNotFound() {
-    // Given
-    when(userRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeam(UUID.randomUUID(), 2025))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Utilisateur non trouvé");
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand l'équipe n'existe pas")
-  void shouldThrowExceptionWhenTeamNotFound() {
-    // Given
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeam(testUser.getId(), 2025))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Équipe non trouvée");
-  }
-
-  @Test
-  @DisplayName("Devrait recuperer les equipes par username et annee")
-  void shouldGetTeamsByUsernameAndYear() {
-    // Given
-    when(userRepository.findByUsernameIgnoreCase("TestUser")).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-
-    // When
-    List<TeamDto> result = teamService.getTeamsByUsernameAndYear("TestUser", 2025);
-
-    // Then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findByUsernameIgnoreCase("TestUser");
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand le username est introuvable")
-  void shouldThrowWhenUserNotFoundByUsername() {
-    // Given
-    when(userRepository.findByUsernameIgnoreCase("missing")).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("missing", 2025))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Utilisateur non trouve: missing");
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand le username est vide")
-  void shouldThrowWhenUsernameEmpty() {
-    // Given
-    when(userRepository.findByUsernameIgnoreCase("")).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("", 2025))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Utilisateur non trouve: ");
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand l'equipe est introuvable pour username et annee")
-  void shouldThrowWhenTeamNotFoundByUsernameAndYear() {
-    // Given
-    when(userRepository.findByUsernameIgnoreCase("testuser")).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamsByUsernameAndYear("testuser", 2025))
-        .isInstanceOf(EntityNotFoundException.class);
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer une équipe par son ID")
-  void shouldGetTeamById() {
-    // Given
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
-
-    // When
-    TeamDto result = teamService.getTeamById(testTeam.getId());
-
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(teamRepository).findByIdWithFetch(testTeam.getId());
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand l'équipe n'existe pas par ID")
-  void shouldThrowExceptionWhenTeamNotFoundById() {
-    // Given
-    when(teamRepository.findByIdWithFetch(any(UUID.class))).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamById(UUID.randomUUID()))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Équipe non trouvée");
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer toutes les équipes d'une saison")
-  void shouldGetAllTeamsBySeason() {
-    // Given
-    List<Team> teams = Arrays.asList(testTeam);
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(teams);
-
-    // When
-    List<TeamDto> result = teamService.getAllTeams(2025);
-
-    // Then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getId()).isEqualTo(testTeam.getId());
-    verify(teamRepository).findBySeasonWithFetch(2025);
-  }
-
-  @Test
-  @DisplayName("Devrait créer une nouvelle équipe pour un utilisateur")
+  @DisplayName("Devrait creer une nouvelle equipe pour un utilisateur")
   void shouldCreateTeamForUser() {
     // Given
     String teamName = "New Team";
@@ -244,7 +113,7 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'utilisateur a déjà une équipe")
+  @DisplayName("Devrait lever une exception quand l'utilisateur a deja une equipe")
   void shouldThrowExceptionWhenUserAlreadyHasTeam() {
     // Given
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
@@ -253,11 +122,11 @@ class TeamServiceTest {
     // When & Then
     assertThatThrownBy(() -> teamService.createTeam(testUser.getId(), "New Team", 2025))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("L'utilisateur a déjà une équipe pour cette saison");
+        .hasMessage("L'utilisateur a deja une equipe pour cette saison");
   }
 
   @Test
-  @DisplayName("Devrait ajouter un joueur à une équipe")
+  @DisplayName("Devrait ajouter un joueur a une equipe")
   void shouldAddPlayerToTeam() {
     // Given
     int position = 1;
@@ -290,14 +159,14 @@ class TeamServiceTest {
     assertThatThrownBy(
             () -> teamService.addPlayerToTeam(testUser.getId(), UUID.randomUUID(), 1, 2025))
         .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Joueur non trouvé");
+        .hasMessage("Joueur non trouve");
   }
 
   @Test
-  @DisplayName("Devrait retirer un joueur d'une équipe")
+  @DisplayName("Devrait retirer un joueur d'une equipe")
   void shouldRemovePlayerFromTeam() {
     // Given
-    testTeam.addPlayer(testPlayer, 1); // Add player to team first so it can be removed
+    testTeam.addPlayer(testPlayer, 1);
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
     when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
     when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
@@ -319,7 +188,7 @@ class TeamServiceTest {
   @DisplayName("Devrait effectuer des changements de joueurs en lot")
   void shouldMakePlayerChanges() {
     // Given
-    testTeam.addPlayer(testPlayer, 1); // Add player to team first so it can be replaced
+    testTeam.addPlayer(testPlayer, 1);
     Map<UUID, UUID> playerChanges = new HashMap<>();
     playerChanges.put(testPlayer.getId(), testPlayer2.getId());
 
@@ -341,133 +210,7 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait récupérer l'équipe d'un joueur")
-  void shouldGetTeamByPlayer() {
-    // Given
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
-    when(teamRepository.findTeamByPlayerAndSeason(testPlayer.getId(), 2025))
-        .thenReturn(Optional.of(testTeam));
-
-    // When
-    TeamDto result = teamService.getTeamByPlayer(testPlayer.getId(), 2025);
-
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(playerRepository).findById(testPlayer.getId());
-    verify(teamRepository).findTeamByPlayerAndSeason(testPlayer.getId(), 2025);
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand le joueur n'existe pas pour getTeamByPlayer")
-  void shouldThrowExceptionWhenPlayerNotFoundForGetTeamByPlayer() {
-    // Given
-    when(playerRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamByPlayer(UUID.randomUUID(), 2025))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Joueur non trouvé");
-  }
-
-  @Test
-  @DisplayName("Devrait lever une exception quand l'équipe n'existe pas pour getTeamByPlayer")
-  void shouldThrowExceptionWhenTeamNotFoundForGetTeamByPlayer() {
-    // Given
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
-    when(teamRepository.findTeamByPlayerAndSeason(testPlayer.getId(), 2025))
-        .thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.getTeamByPlayer(testPlayer.getId(), 2025))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Équipe non trouvée");
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer les équipes par joueurs")
-  void shouldGetTeamsByPlayers() {
-    // Given
-    List<UUID> playerIds = Arrays.asList(testPlayer.getId(), testPlayer2.getId());
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
-    when(playerRepository.findById(testPlayer2.getId())).thenReturn(Optional.of(testPlayer2));
-    when(teamRepository.findTeamByPlayerAndSeason(testPlayer.getId(), 2025))
-        .thenReturn(Optional.of(testTeam));
-    when(teamRepository.findTeamByPlayerAndSeason(testPlayer2.getId(), 2025))
-        .thenReturn(Optional.of(testTeam));
-
-    // When
-    Map<UUID, TeamDto> result = teamService.getTeamsByPlayers(playerIds, 2025);
-
-    // Then
-    assertThat(result).hasSize(2);
-    assertThat(result.get(testPlayer.getId())).isNotNull();
-    assertThat(result.get(testPlayer2.getId())).isNotNull();
-    verify(playerRepository, times(2)).findById(any(UUID.class));
-    verify(teamRepository, times(2)).findTeamByPlayerAndSeason(any(UUID.class), eq(2025));
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer les équipes par saison")
-  void shouldGetTeamsBySeason() {
-    // Given
-    List<Team> teams = Arrays.asList(testTeam);
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(teams);
-
-    // When
-    List<TeamDto> result = teamService.getTeamsBySeason(2025);
-
-    // Then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getId()).isEqualTo(testTeam.getId());
-    verify(teamRepository).findBySeasonWithFetch(2025);
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer les équipes de participants")
-  void shouldGetParticipantTeams() {
-    // Given
-    List<Team> teams = Arrays.asList(testTeam);
-    when(teamRepository.findParticipantTeamsWithFetch(2025)).thenReturn(teams);
-
-    // When
-    List<TeamDto> result = teamService.getParticipantTeams(2025);
-
-    // Then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getId()).isEqualTo(testTeam.getId());
-    verify(teamRepository).findParticipantTeamsWithFetch(2025);
-  }
-
-  @Test
-  @DisplayName("Devrait retourner une liste vide pour les équipes de Marcel")
-  void shouldReturnEmptyListForMarcelTeams() {
-    // When
-    List<TeamDto> result = teamService.getMarcelTeams(2025);
-
-    // Then
-    assertThat(result).isEmpty();
-  }
-
-  @Test
-  @DisplayName("Devrait récupérer l'équipe d'un utilisateur et saison (nouvelle signature)")
-  void shouldGetTeamByUserAndSeasonNewSignature() {
-    // Given
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-
-    // When
-    TeamDto result = teamService.getTeamByUserAndSeason(testUser.getId(), 2025);
-
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-  }
-
-  @Test
-  @DisplayName("Devrait créer une équipe avec TeamDto")
+  @DisplayName("Devrait creer une equipe avec TeamDto")
   void shouldCreateTeamWithTeamDto() {
     // Given
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
@@ -493,11 +236,11 @@ class TeamServiceTest {
     // When & Then
     assertThatThrownBy(() -> teamService.createTeam(testTeamDto))
         .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Utilisateur non trouvé");
+        .hasMessage("Utilisateur non trouve");
   }
 
   @Test
-  @DisplayName("Devrait mettre à jour une équipe")
+  @DisplayName("Devrait mettre a jour une equipe")
   void shouldUpdateTeam() {
     // Given
     when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
@@ -514,7 +257,7 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'équipe n'existe pas pour updateTeam")
+  @DisplayName("Devrait lever une exception quand l'equipe n'existe pas pour updateTeam")
   void shouldThrowExceptionWhenTeamNotFoundForUpdateTeam() {
     // Given
     when(teamRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
@@ -522,11 +265,11 @@ class TeamServiceTest {
     // When & Then
     assertThatThrownBy(() -> teamService.updateTeam(UUID.randomUUID(), testTeamDto))
         .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Équipe non trouvée");
+        .hasMessage("Equipe non trouvee");
   }
 
   @Test
-  @DisplayName("Devrait supprimer une équipe")
+  @DisplayName("Devrait supprimer une equipe")
   void shouldDeleteTeam() {
     // Given
     when(teamRepository.existsById(testTeam.getId())).thenReturn(true);
@@ -540,7 +283,7 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'équipe n'existe pas pour deleteTeam")
+  @DisplayName("Devrait lever une exception quand l'equipe n'existe pas pour deleteTeam")
   void shouldThrowExceptionWhenTeamNotFoundForDeleteTeam() {
     // Given
     when(teamRepository.existsById(any(UUID.class))).thenReturn(false);
@@ -548,6 +291,6 @@ class TeamServiceTest {
     // When & Then
     assertThatThrownBy(() -> teamService.deleteTeam(UUID.randomUUID()))
         .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Équipe non trouvée");
+        .hasMessage("Equipe non trouvee");
   }
 }

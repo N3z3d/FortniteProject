@@ -31,18 +31,21 @@ import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
 /**
- * TDD Tests for TeamService - Business Critical Component
+ * TDD Tests for TeamService - Business Critical Component (Commands Only)
  *
  * <p>This test suite validates team management, player operations, and complex business workflows
  * using RED-GREEN-REFACTOR TDD methodology. TeamService handles team creation, player management,
  * swapping mechanics, and ownership validation essential for the fantasy league team operations.
  *
+ * <p>Note: Query/retrieval tests have been moved to TeamQueryServiceTddTest following the
+ * extraction of TeamQueryService to respect SRP.
+ *
  * <p>Business Logic Areas: - Team creation and ownership management - Player addition/removal and
  * position management - Complex player swapping between teams - Team validation and business rules
- * enforcement - Performance optimization with fetch strategies
+ * enforcement
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("TeamService - Business Critical TDD Tests")
+@DisplayName("TeamService - Business Critical TDD Tests (Commands)")
 class TeamServiceTddTest {
 
   @Mock private TeamRepository teamRepository;
@@ -184,7 +187,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.createTeam(nonExistentUserId, "Test Team", testSeason))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
+          .hasMessageContaining("Utilisateur non trouve");
 
       verify(userRepository).findById(nonExistentUserId);
       verifyNoInteractions(teamRepository);
@@ -200,7 +203,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.createTeam(userId1, "Duplicate Team", testSeason))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("L'utilisateur a déjà une équipe pour cette saison");
+          .hasMessageContaining("L'utilisateur a deja une equipe pour cette saison");
 
       verify(userRepository).findById(userId1);
       verify(teamRepository).findByOwnerAndSeason(testUser1, testSeason);
@@ -228,86 +231,6 @@ class TeamServiceTddTest {
 
       assertThat(result.getName()).isEqualTo("Season 2024 Team");
       assertThat(result.getSeason()).isEqualTo(differentSeason);
-    }
-  }
-
-  @Nested
-  @DisplayName("Team Retrieval and Queries")
-  class TeamRetrievalTests {
-
-    @Test
-    @DisplayName("Should retrieve team by user and season")
-    void shouldRetrieveTeamByUserAndSeason() {
-      // RED: Test team retrieval by user and season
-      when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
-          .thenReturn(Optional.of(testTeam1));
-
-      TeamDto result = teamService.getTeam(userId1, testSeason);
-
-      assertThat(result.getId()).isEqualTo(teamId1);
-      assertThat(result.getName()).isEqualTo("Champions Team");
-      assertThat(result.getOwnerUsername()).isEqualTo("champion_owner");
-
-      verify(userRepository).findById(userId1);
-      verify(teamRepository).findByOwnerAndSeason(testUser1, testSeason);
-    }
-
-    @Test
-    @DisplayName("Should retrieve team by ID with optimization")
-    void shouldRetrieveTeamByIdWithOptimization() {
-      // RED: Test optimized team retrieval by ID
-      when(teamRepository.findByIdWithFetch(teamId1)).thenReturn(Optional.of(testTeam1));
-
-      TeamDto result = teamService.getTeamById(teamId1);
-
-      assertThat(result.getId()).isEqualTo(teamId1);
-      assertThat(result.getName()).isEqualTo("Champions Team");
-
-      verify(teamRepository).findByIdWithFetch(teamId1);
-      verify(teamRepository, never()).findById(teamId1); // Should use optimized version
-    }
-
-    @Test
-    @DisplayName("Should throw exception for non-existent team")
-    void shouldThrowExceptionForNonExistentTeam() {
-      // RED: Test team not found scenario
-      UUID nonExistentTeamId = UUID.randomUUID();
-      when(teamRepository.findByIdWithFetch(nonExistentTeamId)).thenReturn(Optional.empty());
-
-      assertThatThrownBy(() -> teamService.getTeamById(nonExistentTeamId))
-          .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Équipe non trouvée");
-
-      verify(teamRepository).findByIdWithFetch(nonExistentTeamId);
-    }
-
-    @Test
-    @DisplayName("Should retrieve all teams for season with optimization")
-    void shouldRetrieveAllTeamsForSeasonWithOptimization() {
-      // RED: Test season team retrieval with optimization
-      List<Team> seasonTeams = Arrays.asList(testTeam1, testTeam2);
-      when(teamRepository.findBySeasonWithFetch(testSeason)).thenReturn(seasonTeams);
-
-      List<TeamDto> result = teamService.getAllTeams(testSeason);
-
-      assertThat(result).hasSize(2);
-      assertThat(result.get(0).getName()).isEqualTo("Champions Team");
-      assertThat(result.get(1).getName()).isEqualTo("Competitors Team");
-
-      verify(teamRepository).findBySeasonWithFetch(testSeason);
-    }
-
-    @Test
-    @DisplayName("Should handle empty season team list")
-    void shouldHandleEmptySeasonTeamList() {
-      // RED: Test empty team list
-      when(teamRepository.findBySeasonWithFetch(testSeason)).thenReturn(Collections.emptyList());
-
-      List<TeamDto> result = teamService.getAllTeams(testSeason);
-
-      assertThat(result).isEmpty();
-      verify(teamRepository).findBySeasonWithFetch(testSeason);
     }
   }
 
@@ -364,7 +287,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.addPlayerToTeam(userId1, playerId1, 2, testSeason))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Le joueur est déjà dans l'équipe");
+          .hasMessageContaining("Le joueur est deja dans l'equipe");
 
       verify(teamRepository, never()).save(any(Team.class));
     }
@@ -410,7 +333,7 @@ class TeamServiceTddTest {
       assertThatThrownBy(
               () -> teamService.removePlayerFromTeam(userId1, notInTeamPlayer.getId(), testSeason))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Le joueur n'est pas dans l'équipe");
+          .hasMessageContaining("Le joueur n'est pas dans l'equipe");
 
       verify(teamRepository, never()).save(any(Team.class));
     }
@@ -439,7 +362,7 @@ class TeamServiceTddTest {
       SwapPlayersResponse result = teamService.swapPlayers(userId1, request);
 
       assertThat(result.isSuccess()).isTrue();
-      assertThat(result.getMessage()).contains("Échange effectué avec succès");
+      assertThat(result.getMessage()).contains("Echange effectue avec succes");
       assertThat(result.getSwapDetails()).isNotNull();
 
       verify(teamPlayerRepository).save(testTeamPlayer1);
@@ -463,7 +386,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.swapPlayers(unauthorizedUserId, request))
           .isInstanceOf(UnauthorizedAccessException.class)
-          .hasMessageContaining("Vous devez être propriétaire d'au moins une des équipes");
+          .hasMessageContaining("Vous devez etre proprietaire d'au moins une des equipes");
 
       verifyNoInteractions(teamPlayerRepository);
     }
@@ -486,7 +409,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.swapPlayers(userId1, request))
           .isInstanceOf(InvalidSwapException.class)
-          .hasMessageContaining("Les équipes doivent être dans la même saison");
+          .hasMessageContaining("Les equipes doivent etre dans la meme saison");
 
       verifyNoInteractions(teamPlayerRepository);
     }
@@ -507,7 +430,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.swapPlayers(userId1, request))
           .isInstanceOf(InvalidSwapException.class)
-          .hasMessageContaining("Le joueur Star Player n'est pas dans l'équipe Champions Team");
+          .hasMessageContaining("Le joueur Star Player n'est pas dans l'equipe Champions Team");
 
       verify(teamPlayerRepository, never()).save(any(TeamPlayer.class));
     }
@@ -556,7 +479,7 @@ class TeamServiceTddTest {
 
       assertThatThrownBy(() -> teamService.deleteTeam(nonExistentTeamId))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Équipe non trouvée");
+          .hasMessageContaining("Equipe non trouvee");
 
       verify(teamRepository).existsById(nonExistentTeamId);
       verify(teamRepository, never()).deleteById(any(UUID.class));
@@ -630,20 +553,6 @@ class TeamServiceTddTest {
   class ErrorHandlingTests {
 
     @Test
-    @DisplayName("Should handle repository exceptions gracefully")
-    void shouldHandleRepositoryExceptionsGracefully() {
-      // RED: Test repository exception handling
-      when(userRepository.findById(userId1))
-          .thenThrow(new RuntimeException("Database connection failed"));
-
-      assertThatThrownBy(() -> teamService.getTeam(userId1, testSeason))
-          .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Database connection failed");
-
-      verify(userRepository).findById(userId1);
-    }
-
-    @Test
     @DisplayName("Should handle team creation with invalid data")
     void shouldHandleTeamCreationWithInvalidData() {
       // RED: Test invalid team creation data
@@ -655,112 +564,6 @@ class TeamServiceTddTest {
       assertThatThrownBy(() -> teamService.createTeam(userId1, "Invalid Team", testSeason))
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Constraint violation");
-    }
-
-    @Test
-    @DisplayName("Should validate Marcel teams method returns empty list")
-    void shouldValidateMarcelTeamsMethodReturnsEmptyList() {
-      // RED: Test deprecated Marcel teams method
-      List<TeamDto> result = teamService.getMarcelTeams(testSeason);
-
-      assertThat(result).isEmpty();
-      // No repository interactions expected for deprecated method
-      verifyNoInteractions(teamRepository, userRepository);
-    }
-
-    @Test
-    @DisplayName("Should handle team retrieval by non-existent user")
-    void shouldHandleTeamRetrievalByNonExistentUser() {
-      // RED: Test team retrieval with invalid user
-      UUID nonExistentUserId = UUID.randomUUID();
-      when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
-
-      assertThatThrownBy(() -> teamService.getTeam(nonExistentUserId, testSeason))
-          .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
-
-      verify(userRepository).findById(nonExistentUserId);
-      verifyNoInteractions(teamRepository);
-    }
-
-    @Test
-    @DisplayName("Should handle team not found for user and season")
-    void shouldHandleTeamNotFoundForUserAndSeason() {
-      // RED: Test team not found for user and season
-      when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(teamRepository.findByOwnerAndSeason(testUser1, testSeason)).thenReturn(Optional.empty());
-
-      assertThatThrownBy(() -> teamService.getTeam(userId1, testSeason))
-          .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Équipe non trouvée");
-
-      verify(userRepository).findById(userId1);
-      verify(teamRepository).findByOwnerAndSeason(testUser1, testSeason);
-    }
-  }
-
-  @Nested
-  @DisplayName("Performance and Optimization")
-  class PerformanceTests {
-
-    @Test
-    @DisplayName("Should use optimized queries for team retrieval")
-    void shouldUseOptimizedQueriesForTeamRetrieval() {
-      // RED: Test query optimization
-      when(teamRepository.findBySeasonWithFetch(testSeason))
-          .thenReturn(Arrays.asList(testTeam1, testTeam2));
-
-      List<TeamDto> result = teamService.getAllTeams(testSeason);
-
-      assertThat(result).hasSize(2);
-
-      // Should use optimized query, not regular findAll
-      verify(teamRepository).findBySeasonWithFetch(testSeason);
-      verify(teamRepository, never()).findBySeason(testSeason);
-    }
-
-    @Test
-    @DisplayName("Should use fetch join for individual team retrieval")
-    void shouldUseFetchJoinForIndividualTeamRetrieval() {
-      // RED: Test fetch join optimization
-      when(teamRepository.findByIdWithFetch(teamId1)).thenReturn(Optional.of(testTeam1));
-
-      TeamDto result = teamService.getTeamById(teamId1);
-
-      assertThat(result.getId()).isEqualTo(teamId1);
-
-      // Should use optimized query with fetch join
-      verify(teamRepository).findByIdWithFetch(teamId1);
-      verify(teamRepository, never()).findById(teamId1);
-    }
-
-    @Test
-    @DisplayName("Should handle large team datasets efficiently")
-    void shouldHandleLargeTeamDatasetsEfficiently() {
-      // RED: Test performance with large datasets
-      List<Team> largeTeamList = createLargeTeamList(100);
-      when(teamRepository.findBySeasonWithFetch(testSeason)).thenReturn(largeTeamList);
-
-      List<TeamDto> result = teamService.getAllTeams(testSeason);
-
-      assertThat(result).hasSize(100);
-
-      // Should still make only one optimized query
-      verify(teamRepository, times(1)).findBySeasonWithFetch(testSeason);
-    }
-
-    private List<Team> createLargeTeamList(int size) {
-      List<Team> teams = new ArrayList<>();
-      for (int i = 0; i < size; i++) {
-        Team team = new Team();
-        team.setId(UUID.randomUUID());
-        team.setName("Team " + i);
-        team.setOwner(testUser1);
-        team.setSeason(testSeason);
-        team.setPlayers(new ArrayList<>());
-        teams.add(team);
-      }
-      return teams;
     }
   }
 }

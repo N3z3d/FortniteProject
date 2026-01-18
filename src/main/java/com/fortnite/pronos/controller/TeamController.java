@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.service.TeamService;
+import com.fortnite.pronos.service.team.TeamQueryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TeamController {
 
   private final TeamService teamService;
+  private final TeamQueryService teamQueryService;
 
   @Operation(
       summary = "Get team by user ID and season",
@@ -61,7 +63,7 @@ public class TeamController {
       @Parameter(description = "User unique identifier", required = true) @PathVariable UUID userId,
       @Parameter(description = "Season year", required = true, example = "2025") @PathVariable
           int season) {
-    return ResponseEntity.ok(teamService.getTeam(userId, season));
+    return ResponseEntity.ok(teamQueryService.getTeam(userId, season));
   }
 
   @Operation(
@@ -72,7 +74,7 @@ public class TeamController {
   public ResponseEntity<List<TeamDto>> getAllTeamsForSeason(
       @Parameter(description = "Season year", required = true, example = "2025") @PathVariable
           int season) {
-    return ResponseEntity.ok(teamService.getAllTeams(season));
+    return ResponseEntity.ok(teamQueryService.getAllTeams(season));
   }
 
   @Operation(
@@ -84,7 +86,7 @@ public class TeamController {
       @Parameter(description = "Game unique identifier", required = true) @PathVariable
           UUID gameId) {
     log.debug("Récupération des équipes pour la game {}", gameId);
-    return ResponseEntity.ok(teamService.getTeamsByGame(gameId));
+    return ResponseEntity.ok(teamQueryService.getTeamsByGame(gameId));
   }
 
   @Operation(
@@ -105,7 +107,7 @@ public class TeamController {
     log.debug("Recuperation des equipes pour l'utilisateur '{}' et l'annee {}", username, year);
 
     try {
-      return ResponseEntity.ok(teamService.getTeamsByUsernameAndYear(username, year));
+      return ResponseEntity.ok(teamQueryService.getTeamsByUsernameAndYear(username, year));
     } catch (IllegalArgumentException e) {
       log.warn("Utilisateur non trouve: {}", username);
       return ResponseEntity.notFound().build();

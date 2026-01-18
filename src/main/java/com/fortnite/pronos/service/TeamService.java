@@ -1,9 +1,7 @@
 package com.fortnite.pronos.service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -34,65 +32,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TeamService {
 
-  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvé";
-  private static final String TEAM_NOT_FOUND_MESSAGE = "Équipe non trouvée";
-  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouvé";
+  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouve";
+  private static final String TEAM_NOT_FOUND_MESSAGE = "Equipe non trouvee";
+  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouve";
 
   private final TeamRepository teamRepository;
   private final PlayerRepository playerRepository;
   private final UserRepository userRepository;
   private final TeamPlayerRepository teamPlayerRepository;
 
-  /** Récupère l'équipe d'un utilisateur pour une saison donnée */
-  @Transactional(readOnly = true)
-  public TeamDto getTeam(UUID userId, int season) {
-    log.debug("Récupération de l'équipe pour l'utilisateur {} et la saison {}", userId, season);
-
-    User user = findUserById(userId);
-    Team team = findTeamByUserAndSeason(user, season);
-
-    log.info("Équipe {} récupérée pour l'utilisateur {}", team.getId(), userId);
-    return TeamDto.from(team);
-  }
-
-  /** Récupère une équipe par son ID */
-  @Transactional(readOnly = true)
-  // @Cacheable(value = "teamById", key = "#teamId")
-  public TeamDto getTeamById(UUID teamId) {
-    log.debug("Récupération de l'équipe avec l'ID {} - VERSION OPTIMISÉE", teamId);
-
-    // OPTIMISATION: Utiliser la requête avec FETCH JOIN
-    Team team =
-        teamRepository
-            .findByIdWithFetch(teamId)
-            .orElseThrow(() -> new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE));
-
-    log.info("Équipe {} récupérée (avec optimisation)", team.getId());
-    return TeamDto.from(team);
-  }
-
-  /** Récupère toutes les équipes d'une saison */
-  @Transactional(readOnly = true)
-  // @Cacheable(value = "teamsBySeason", key = "#season")
-  public List<TeamDto> getAllTeams(int season) {
-    log.debug("Récupération de toutes les équipes pour la saison {} - VERSION OPTIMISÉE", season);
-
-    // OPTIMISATION: Utiliser la requête avec FETCH JOIN pour éviter N+1
-    List<Team> teams = teamRepository.findBySeasonWithFetch(season);
-    log.info("{} équipes trouvées pour la saison {} (avec optimisation)", teams.size(), season);
-
-    return teams.stream().map(TeamDto::from).collect(Collectors.toList());
-  }
-
-  @Transactional(readOnly = true)
-  public List<TeamDto> getTeamsByUsernameAndYear(String username, int year) {
-    log.debug("Recuperation des equipes pour l'utilisateur '{}' et l'annee {}", username, year);
-
-    User user = findUserByUsername(username);
-    Team team = findTeamByUserAndSeason(user, year);
-
-    return List.of(TeamDto.from(team));
-  }
+  // Note: Query methods moved to TeamQueryService
 
   /** Crée une nouvelle équipe pour un utilisateur */
   @Transactional
@@ -211,7 +160,7 @@ public class TeamService {
   private Team findTeamOrThrow(UUID teamId) {
     return teamRepository
         .findById(teamId)
-        .orElseThrow(() -> new TeamNotFoundException("Équipe non trouvée : " + teamId));
+        .orElseThrow(() -> new TeamNotFoundException("Equipe non trouvee : " + teamId));
   }
 
   /** Trouve un joueur ou lance une exception Clean Code : méthode focalisée */
@@ -231,7 +180,7 @@ public class TeamService {
 
     if (!isOwnerTeam1 && !isOwnerTeam2) {
       throw new UnauthorizedAccessException(
-          "Vous devez être propriétaire d'au moins une des équipes pour effectuer un échange");
+          "Vous devez etre proprietaire d'au moins une des equipes pour effectuer un echange");
     }
   }
 
@@ -239,7 +188,7 @@ public class TeamService {
   private void validateTeamsCanSwap(Team team1, Team team2) {
     if (!team1.getSeason().equals(team2.getSeason())) {
       throw new InvalidSwapException(
-          "Les équipes doivent être dans la même saison pour échanger des joueurs");
+          "Les equipes doivent etre dans la meme saison pour echanger des joueurs");
     }
   }
 
@@ -276,7 +225,7 @@ public class TeamService {
             () ->
                 new InvalidSwapException(
                     String.format(
-                        "Le joueur %s n'est pas dans l'équipe %s",
+                        "Le joueur %s n'est pas dans l'equipe %s",
                         player.getNickname(), teamName)));
   }
 
@@ -298,7 +247,7 @@ public class TeamService {
             team1.getId(),
             player1.getId(),
             player2.getId(),
-            "Échange effectué avec succès entre " + team1.getName() + " et " + team2.getName());
+            "Echange effectue avec succes entre " + team1.getName() + " et " + team2.getName());
     response.setSwapDetails(details);
 
     return response;
@@ -346,7 +295,7 @@ public class TeamService {
   private void validateTeamCreation(User user, int season) {
     if (teamRepository.findByOwnerAndSeason(user, season).isPresent()) {
       log.warn("L'utilisateur {} a déjà une équipe pour la saison {}", user.getId(), season);
-      throw new IllegalStateException("L'utilisateur a déjà une équipe pour cette saison");
+      throw new IllegalStateException("L'utilisateur a deja une equipe pour cette saison");
     }
   }
 
@@ -361,14 +310,14 @@ public class TeamService {
   private void validatePlayerAddition(Team team, Player player) {
     if (team.hasPlayer(player)) {
       log.warn("Le joueur {} est déjà dans l'équipe {}", player.getId(), team.getId());
-      throw new IllegalStateException("Le joueur est déjà dans l'équipe");
+      throw new IllegalStateException("Le joueur est deja dans l'equipe");
     }
   }
 
   private void validatePlayerRemoval(Team team, Player player) {
     if (!team.hasPlayer(player)) {
       log.warn("Le joueur {} n'est pas dans l'équipe {}", player.getId(), team.getId());
-      throw new IllegalStateException("Le joueur n'est pas dans l'équipe");
+      throw new IllegalStateException("Le joueur n'est pas dans l'equipe");
     }
   }
 
@@ -431,69 +380,8 @@ public class TeamService {
         "Validation des règles de changement pour {} -> {}", playerOut.getId(), playerIn.getId());
   }
 
-  @Transactional(readOnly = true)
-  public TeamDto getTeamByPlayer(UUID playerId, int season) {
-    Player player =
-        playerRepository
-            .findById(playerId)
-            .orElseThrow(() -> new EntityNotFoundException("Joueur non trouvé"));
-
-    Team team =
-        teamRepository
-            .findTeamByPlayerAndSeason(playerId, season)
-            .orElseThrow(() -> new EntityNotFoundException("Équipe non trouvée"));
-
-    return TeamDto.from(team);
-  }
-
-  @Transactional(readOnly = true)
-  public Map<UUID, TeamDto> getTeamsByPlayers(List<UUID> playerIds, int season) {
-    return playerIds.stream()
-        .collect(
-            Collectors.toMap(playerId -> playerId, playerId -> getTeamByPlayer(playerId, season)));
-  }
-
-  @Transactional(readOnly = true)
-  // @Cacheable(value = "teamsBySeason", key = "#season + '_all'")
-  public List<TeamDto> getTeamsBySeason(int season) {
-    // OPTIMISATION: Utiliser la requête optimisée
-    return teamRepository.findBySeasonWithFetch(season).stream()
-        .map(TeamDto::from)
-        .collect(Collectors.toList());
-  }
-
-  @Transactional(readOnly = true)
-  // @Cacheable(value = "participantTeams", key = "#season")
-  public List<TeamDto> getParticipantTeams(int season) {
-    // OPTIMISATION: Utiliser une requête optimisée si disponible
-    return teamRepository.findParticipantTeamsWithFetch(season).stream()
-        .map(TeamDto::from)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Récupère les équipes de Marcel pour une saison donnée Maintenant retourne une liste vide car
-   * Marcel n'est plus un rôle spécial
-   */
-  @Transactional(readOnly = true)
-  public List<TeamDto> getMarcelTeams(int season) {
-    log.debug("Récupération des équipes de Marcel pour la saison {} - rôle obsolète", season);
-
-    // Marcel n'est plus un rôle spécial, retourne liste vide
-    return java.util.Collections.emptyList();
-  }
-
-  /** Récupère l'équipe d'un utilisateur pour une saison donnée (nouvelle signature) */
-  @Transactional(readOnly = true)
-  public TeamDto getTeamByUserAndSeason(UUID userId, int season) {
-    log.debug("Récupération de l'équipe pour l'utilisateur {} et la saison {}", userId, season);
-
-    User user = findUserById(userId);
-    Team team = findTeamByUserAndSeason(user, season);
-
-    log.info("Équipe {} récupérée pour l'utilisateur {}", team.getId(), userId);
-    return TeamDto.from(team);
-  }
+  // Note: Query methods (getTeamByPlayer, getTeamsByPlayers, getTeamsBySeason,
+  // getParticipantTeams, getMarcelTeams, getTeamByUserAndSeason) moved to TeamQueryService
 
   /** Crée une nouvelle équipe */
   @Transactional
@@ -504,7 +392,7 @@ public class TeamService {
     User owner =
         userRepository
             .findById(teamDto.getUserId())
-            .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
+            .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouve"));
 
     Team team = new Team();
     team.setName("Équipe " + owner.getUsername()); // Nom par défaut
@@ -525,7 +413,7 @@ public class TeamService {
     Team team =
         teamRepository
             .findById(teamId)
-            .orElseThrow(() -> new EntityNotFoundException("Équipe non trouvée"));
+            .orElseThrow(() -> new EntityNotFoundException("Equipe non trouvee"));
 
     // Mise à jour simple du nom uniquement
     team.setName("Équipe " + team.getOwner().getUsername());
@@ -549,14 +437,5 @@ public class TeamService {
     log.info("Équipe {} supprimée avec succès", teamId);
   }
 
-  /** Récupère toutes les équipes d'une game spécifique */
-  @Transactional(readOnly = true)
-  public List<TeamDto> getTeamsByGame(UUID gameId) {
-    log.debug("Récupération des équipes pour la game {}", gameId);
-
-    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
-    log.info("{} équipes trouvées pour la game {}", teams.size(), gameId);
-
-    return teams.stream().map(TeamDto::from).toList();
-  }
+  // Note: getTeamsByGame moved to TeamQueryService
 }
