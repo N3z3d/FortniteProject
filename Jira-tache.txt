@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 21:10
+Last Updated: 2026-01-18 21:30
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -28,27 +28,6 @@ Acceptance:
 Dependencies: none
 
 P0 - CRITICAL
-JIRA-OPS-001 - Restore developer toolchain (git/maven/java)
-Type: Task
-Priority: P0
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 30m
-Context:
-- Local environment lacks git, Maven, and Java, blocking TDD and push.
-Steps:
-1) Install git and add to PATH.
-2) Install JDK 21, set JAVA_HOME and PATH.
-3) Install Maven or add mvnw wrapper.
-4) Configure GitHub credentials (PAT + credential helper).
-5) Validate: git status, java -version, mvn -v, git push.
-Acceptance:
-- git status works without errors.
-- java -version reports JDK 21.
-- mvn -v works and builds can run tests.
-- git push works without interactive prompts.
-Dependencies: none
-
 JIRA-ARCH-002 - Separate responsibilities (Controllers/Entities/Services)
 Type: Task
 Priority: P0
@@ -215,25 +194,6 @@ Acceptance:
 Dependencies:
 - JIRA-ARCH-000
 
-JIRA-REFACTOR-005 - Split TradingService (519 lines -> 3 services)
-Type: Refactoring
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 6h
-Context:
-- TradingService handles proposals, execution, validation, notifications.
-Steps:
-1) Extract TradeProposalService.
-2) Extract TradeExecutionService.
-3) Extract TradeValidationService.
-4) Add unit tests per service.
-Acceptance:
-- Each service <= 500 lines.
-- Tests >= 85% for modified code.
-Dependencies:
-- JIRA-ARCH-000
-
 P2 - MEDIUM
 JIRA-SUPABASE-001 - Configure Supabase
 Type: Task
@@ -250,8 +210,7 @@ Steps:
 Acceptance:
 - Supabase connectivity verified.
 - Seed completed and endpoints return data.
-Dependencies:
-- JIRA-OPS-001
+Dependencies: none
 
 JIRA-ARCH-009 - Improve onboarding
 Type: Task
@@ -273,16 +232,21 @@ P3 - LOW
 JIRA-LOGBACK-001 - Fix logback springProfile nesting
 Type: Task
 Priority: P3
-Status: TODO
-Assignee: AVAILABLE
+Status: IN PROGRESS
+Assignee: @Codex
 Estimate: 30m
-Context:
+Objectif: Eliminer les warnings logback lies au nesting springProfile.
+Contexte:
 - springProfile nesting can cause warnings on startup.
-Steps:
+Description:
 1) Ensure springProfile is only at root level.
 2) Restart app and verify no warnings.
-Acceptance:
+Criteres d'acceptation:
 - No logback profile warnings on startup.
 Dependencies: none
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-01-18 21:28
+DERNIERE_MAJ: 2026-01-18 21:28
+STATUT: IN_PROGRESS
 
 P4 - BACKLOG

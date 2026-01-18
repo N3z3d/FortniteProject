@@ -144,6 +144,10 @@ class UserContextServiceTddTest {
   void shouldReturnTrueWhenUserAuthenticated() {
     // Given
     when(authentication.isAuthenticated()).thenReturn(true);
+    doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER")))
+        .when(authentication)
+        .getAuthorities();
+    when(authentication.getName()).thenReturn("Thibaut");
     when(securityContext.getAuthentication()).thenReturn(authentication);
     SecurityContextHolder.setContext(securityContext);
 
