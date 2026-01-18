@@ -1,8 +1,10 @@
 package com.fortnite.pronos.service;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class UserContextService {
 
-  private final UnifiedAuthService unifiedAuthService;
   private final UserService userService;
 
   /**
@@ -30,26 +31,9 @@ public class UserContextService {
    * @throws IllegalStateException si aucun utilisateur n'est authentifié
    */
   public UUID getCurrentUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-    if (authentication == null || !authentication.isAuthenticated()) {
-      log.warn("Aucun utilisateur authentifié trouvé dans le contexte de sécurité");
-      throw new IllegalStateException("Utilisateur non authentifié");
-    }
-
-    String username = authentication.getName();
-    log.debug("Récupération de l'utilisateur courant: {}", username);
-
-    User user =
-        userService
-            .findUserByUsername(username)
-            .orElseThrow(
-                () -> {
-                  log.error("Utilisateur non trouvé en base: {}", username);
-                  return new IllegalStateException("Utilisateur non trouvé: " + username);
-                });
-
-    return user.getId();
+    String username = resolveAuthenticatedUsername();
+    log.debug("Recuperation de l'utilisateur courant: {}", username);
+    return getUserOrIllegalState(username).getId();
   }
 
   /**
@@ -62,7 +46,7 @@ public class UserContextService {
     UUID userId = getCurrentUserId();
     return userService
         .findUserById(userId)
-        .orElseThrow(() -> new IllegalStateException("Utilisateur non trouvé: " + userId));
+        .orElseThrow(() -> new IllegalStateException("Utilisateur non trouve: " + userId));
   }
 
   /**
@@ -74,23 +58,14 @@ public class UserContextService {
    */
   public User getCurrentUserFromParam(String usernameParam) {
     if (usernameParam == null || usernameParam.trim().isEmpty()) {
-      log.error("Paramètre username manquant - authentification requise");
-      throw new IllegalStateException("Paramètre username requis pour l'authentification");
+      log.error("Parametre username manquant - authentification requise");
+      throw new IllegalStateException("Parametre username requis pour l'authentification");
     }
 
-    final String finalUsername = usernameParam.trim();
-    log.debug("Récupération de l'utilisateur depuis le paramètre: {}", finalUsername);
+    String sanitizedUsername = usernameParam.trim();
+    log.debug("Recuperation de l'utilisateur depuis le parametre: {}", sanitizedUsername);
 
-    User user =
-        userService
-            .findUserByUsername(finalUsername)
-            .orElseThrow(
-                () -> {
-                  log.error("Utilisateur non trouvé pour le paramètre: {}", finalUsername);
-                  return new IllegalStateException("Utilisateur non trouvé: " + finalUsername);
-                });
-
-    return user;
+    return getUserOrIllegalState(sanitizedUsername);
   }
 
   /**
@@ -112,9 +87,19 @@ public class UserContextService {
   public boolean isUserAuthenticated() {
     try {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      return authentication != null && authentication.isAuthenticated();
+      if (authentication == null) {
+        return false;
+      }
+      if (!authentication.isAuthenticated()) {
+        return false;
+      }
+      if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
+        return false;
+      }
+      String username = authentication.getName();
+      return username != null && !username.trim().isEmpty();
     } catch (Exception e) {
-      log.warn("Erreur lors de la vérification de l'authentification", e);
+      log.warn("Erreur lors de la verification de l'authentification", e);
       return false;
     }
   }
@@ -162,13 +147,7 @@ public class UserContextService {
   public User findUserByUsername(String username) {
     log.debug("Recherche de l'utilisateur par nom: {}", username);
 
-    return userService
-        .findUserByUsername(username)
-        .orElseThrow(
-            () -> {
-              log.error("Utilisateur non trouvé en base: {}", username);
-              return new UserNotFoundException("Utilisateur non trouvé: " + username);
-            });
+    return getUserOrNotFound(username);
   }
 
   /**
@@ -179,17 +158,58 @@ public class UserContextService {
    * @throws UserNotFoundException si l'utilisateur n'est pas trouvé
    */
   public UUID getUserIdFromUsername(String username) {
-    log.debug("Récupération de l'ID utilisateur par nom: {}", username);
+    log.debug("Recuperation de l'ID utilisateur par nom: {}", username);
 
-    User user =
-        userService
-            .findUserByUsername(username)
-            .orElseThrow(
-                () -> {
-                  log.error("Utilisateur non trouvé en base: {}", username);
-                  return new UserNotFoundException("Utilisateur non trouvé: " + username);
-                });
+    User user = getUserOrNotFound(username);
 
     return user.getId();
   }
+
+  private String resolveAuthenticatedUsername() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+      log.warn("Aucun utilisateur authentifie trouve dans le contexte de securite");
+      throw new IllegalStateException("Utilisateur non authentifie");
+    }
+
+    if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
+      log.warn("Authentification anonyme detectee, refus de continuer");
+      throw new IllegalStateException("Utilisateur non authentifie");
+    }
+
+    String username = authentication.getName();
+    if (username == null || username.trim().isEmpty()) {
+      log.warn("Nom d'utilisateur manquant dans le contexte de securite");
+      throw new IllegalStateException("Nom d'utilisateur manquant dans le contexte de securite");
+    }
+
+    return username.trim();
+  }
+
+  private User getUserOrIllegalState(String username) {
+    return userService
+        .findUserByUsername(username)
+        .orElseThrow(
+            () -> {
+              log.error("Utilisateur non trouve en base: {}", username);
+              return new IllegalStateException("Utilisateur non trouve: " + username);
+            });
+  }
+
+  private User getUserOrNotFound(String username) {
+    return userService
+        .findUserByUsername(username)
+        .orElseThrow(
+            () -> {
+              log.error("Utilisateur non trouve en base: {}", username);
+              return new UserNotFoundException("Utilisateur non trouve: " + username);
+            });
+  }
 }
+
+
+
+
+
+

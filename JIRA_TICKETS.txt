@@ -203,3 +203,48 @@ Acceptance:
 Dependencies: JIRA-ARCH-001
 Estimate: 4h
 
+JIRA-OPS-001 - Restore developer toolchain (git/maven)
+Type: Task
+Priority: P0
+Status: TODO
+Context: Local environment lacks git and Maven binaries, blocking commits, pushes, and TDD execution.
+Steps:
+- Install git and ensure it is on PATH.
+- Install Maven or add mvnw wrapper and document usage.
+- Validate by running `git status` and `mvn -v`.
+Acceptance:
+- `git status` works without errors.
+- `mvn -v` works and build commands can run tests.
+Dependencies: none
+Estimate: 30m
+
+JIRA-CLEANUP-002 - Remove legacy patch/log artifacts
+Type: Task
+Priority: P2
+Status: TODO
+Context: Root contains outdated patch/log files (dashboard-i18n.patch/.code.patch/.tests.patch, temp_gc.txt, test_results.txt, backend.log, backend_output.log, replay_pid*.log, null-device-placeholder) that are not referenced by code.
+Steps:
+- Prepare deletion report (file | raison | références | décision) per AGENTS guidelines.
+- Validate no code/docs references for each candidate.
+- Delete approved files and adjust `.gitignore` if needed.
+Acceptance:
+- Deletion report approved and archived.
+- Files removed and repository clean.
+Dependencies: deletion report approval
+Estimate: 45m
+
+JIRA-ARCH-011 - Deduplicate leaderboard DTOs
+Type: Task
+Priority: P1
+Status: TODO
+Context: Duplicate leaderboard DTOs exist in `dto` root and `dto/leaderboard` packages (e.g., PlayerLeaderboardEntryDTO), creating divergence risk and coupling issues.
+Steps:
+- Inventory usages of each leaderboard DTO across controllers/services/mappers/tests.
+- Select a single canonical DTO and refactor callers to it.
+- Remove redundant DTOs and update serialization tests.
+Acceptance:
+- Only one leaderboard DTO type remains in use across the API surface.
+- Tests updated and passing.
+Dependencies: JIRA-ARCH-001
+Estimate: 2h
+

@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,8 +32,6 @@ import com.fortnite.pronos.model.User;
 class UserContextServiceTddTest {
 
   @Mock private UserService userService;
-
-  @Mock private UnifiedAuthService unifiedAuthService;
 
   @Mock private Authentication authentication;
 
@@ -49,6 +51,11 @@ class UserContextServiceTddTest {
     testUser.setEmail("thibaut@fortnite-pronos.com");
     testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
+  }
+
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
   }
 
   @Test
@@ -76,7 +83,7 @@ class UserContextServiceTddTest {
     // When & Then - getCurrentUserFromParam avec null doit lancer une exception
     assertThatThrownBy(() -> userContextService.getCurrentUserFromParam(null))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Paramètre username requis pour l'authentification");
+        .hasMessage("Parametre username requis pour l'authentification");
   }
 
   @Test
@@ -87,7 +94,7 @@ class UserContextServiceTddTest {
     // When & Then - getCurrentUserFromParam avec espace vide doit lancer une exception
     assertThatThrownBy(() -> userContextService.getCurrentUserFromParam("   "))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Paramètre username requis pour l'authentification");
+        .hasMessage("Parametre username requis pour l'authentification");
   }
 
   @Test
@@ -100,7 +107,7 @@ class UserContextServiceTddTest {
     // When & Then
     assertThatThrownBy(() -> userContextService.getCurrentUserFromParam(usernameParam))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Utilisateur non trouvé: " + usernameParam);
+        .hasMessageContaining("Utilisateur non trouve: " + usernameParam);
   }
 
   @Test
@@ -145,6 +152,19 @@ class UserContextServiceTddTest {
 
     // Then
     assertThat(result).isTrue();
+  }
+
+  @Test
+  @DisplayName("Devrait retourner false pour une authentification anonyme")
+  void shouldReturnFalseForAnonymousAuthentication() {
+    Authentication anonymous =
+        new AnonymousAuthenticationToken(
+            "key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+    SecurityContextHolder.getContext().setAuthentication(anonymous);
+
+    boolean result = userContextService.isUserAuthenticated();
+
+    assertThat(result).isFalse();
   }
 
   @Test
@@ -200,7 +220,7 @@ class UserContextServiceTddTest {
     // When & Then - Doit lancer une exception
     assertThatThrownBy(() -> userContextService.getCurrentUserWithFallback(null))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Authentification requise - aucun utilisateur connecté");
+        .hasMessage("Authentification requise - aucun utilisateur connecte");
   }
 
   @Test
@@ -241,7 +261,7 @@ class UserContextServiceTddTest {
     // When & Then - Doit lancer une exception
     assertThatThrownBy(() -> userContextService.getCurrentUserWithFallback(null))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Authentification requise - aucun utilisateur connecté");
+        .hasMessage("Authentification requise - aucun utilisateur connecte");
   }
 
   @Test
@@ -254,6 +274,18 @@ class UserContextServiceTddTest {
     // When & Then - Doit lancer une exception car paramètre vide équivaut à null
     assertThatThrownBy(() -> userContextService.getCurrentUserWithFallback("   "))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Authentification requise - aucun utilisateur connecté");
+        .hasMessage("Authentification requise - aucun utilisateur connecte");
+  }
+  @Test
+  @DisplayName("Devrait refuser une authentification sans nom d'utilisateur")
+  void shouldRejectAuthenticationWithBlankUsername() {
+    when(authentication.isAuthenticated()).thenReturn(true);
+    when(authentication.getName()).thenReturn("   ");
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    assertThatThrownBy(() -> userContextService.getCurrentUserId())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("nom d'utilisateur");
   }
 }
