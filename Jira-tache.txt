@@ -1,0 +1,328 @@
+JIRA BACKLOG - FORTNITE PRONOS
+Last Updated: 2026-01-18
+Source of Truth: Jira-tache.txt
+
+RULES
+- Single ticket file: Jira-tache.txt
+- Remove DONE tickets from this file
+- Assign before starting work (Assignee + Status = IN PROGRESS)
+
+EPIC
+JIRA-ARCH-000 - Architecture Review and Clean Code Implementation
+Type: Epic
+Priority: P0
+Status: IN PROGRESS
+Assignee: Team
+Estimate: Multi-sprint
+Context:
+- Mixed Layered/Hexagonal boundaries with unclear responsibilities.
+- Goal: enforce SOLID, reduce duplication, and stabilize boundaries.
+Scope:
+- Drive architecture decisions, refactors, and test strategy.
+- Enforce package dependency rules and separation of concerns.
+Acceptance:
+- Architecture target documented and enforced by tests.
+- Core services and controllers respect SRP and DIP.
+Dependencies: none
+
+P0 - CRITICAL
+JIRA-OPS-001 - Restore developer toolchain (git/maven/java)
+Type: Task
+Priority: P0
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 30m
+Context:
+- Local environment lacks git, Maven, and Java, blocking TDD and push.
+Steps:
+1) Install git and add to PATH.
+2) Install JDK 21, set JAVA_HOME and PATH.
+3) Install Maven or add mvnw wrapper.
+4) Configure GitHub credentials (PAT + credential helper).
+5) Validate: git status, java -version, mvn -v, git push.
+Acceptance:
+- git status works without errors.
+- java -version reports JDK 21.
+- mvn -v works and builds can run tests.
+- git push works without interactive prompts.
+Dependencies: none
+
+JIRA-ARCH-002 - Separate responsibilities (Controllers/Entities/Services)
+Type: Task
+Priority: P0
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 8h
+Context:
+- Controllers still contain orchestration and business logic.
+- GameController (530 lines) and DraftController (494 lines) violate SRP.
+Steps:
+1) Inventory business logic in controllers and entities.
+2) Move business logic to services/use cases.
+3) Keep controllers as routing + validation only.
+4) Extract domain rules from JPA entities.
+Acceptance:
+- Controllers contain no orchestration logic.
+- Business rules live in services/use cases.
+- Unit tests run without Spring context.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-REFACTOR-004 - Refactor GameController (530 lines -> slim controller)
+Type: Refactoring
+Priority: P0
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 4h
+Context:
+- GameController exceeds 500 lines and mixes concerns.
+Steps:
+1) Consolidate V1/V2 endpoints or remove obsolete V1.
+2) Move orchestration to use cases/services.
+3) Keep controller focused on routing and DTO validation.
+4) Move exception handling to GlobalExceptionHandler if needed.
+Acceptance:
+- GameController <= 500 lines (target <= 300).
+- Business logic in services/use cases.
+- Tests cover new controller boundaries.
+Dependencies:
+- JIRA-ARCH-002
+
+JIRA-REFACTOR-001 - Split LeaderboardService (708 lines -> focused services)
+Type: Refactoring
+Priority: P0
+Status: IN PROGRESS
+Assignee: 🤖 CLAUDE CODE AGENT (RÉSERVÉ)
+Estimate: 6h
+Context:
+- LeaderboardService is a god service (708 lines) and central hotspot.
+Steps:
+1) Identify responsibilities: query, aggregation, mapping, caching.
+2) Extract dedicated services (ex: LeaderboardQueryService, LeaderboardAggregationService,
+   LeaderboardMappingService, LeaderboardCacheService).
+3) Update controller/service wiring.
+4) Add unit tests for each extracted service.
+Acceptance:
+- Each service <= 500 lines and SRP compliant.
+- Existing API behavior preserved.
+- Unit tests for nominal + edge cases.
+Dependencies:
+- JIRA-ARCH-000
+
+P1 - HIGH
+JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
+Type: Task
+Priority: P1
+Status: IN PROGRESS
+Assignee: AVAILABLE
+Estimate: 6h
+Context:
+- Use cases still depend on concrete repositories.
+Steps:
+1) Define repository interfaces (ports) for core use cases.
+2) Implement adapters in infrastructure.
+3) Swap use cases to depend on interfaces only.
+4) Enforce dependency rules in ArchUnit tests.
+Acceptance:
+- Use cases depend only on abstractions.
+- ArchUnit rules enforce DIP.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-ARCH-004 - Reduce coupling
+Type: Task
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 8h
+Context:
+- Classes with too many dependencies indicate low cohesion.
+Steps:
+1) Identify classes with >7 dependencies.
+2) Extract focused services or strategies.
+3) Reduce cross-cutting dependency graphs.
+Acceptance:
+- Each class has a single responsibility and fewer dependencies.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-ARCH-005 - Isolate domain
+Type: Task
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 12h
+Context:
+- Domain logic is coupled to JPA entities.
+Steps:
+1) Create pure domain objects (no persistence annotations).
+2) Add mappers Entity <-> Domain.
+3) Move rules from entities into domain/services.
+Acceptance:
+- Domain layer independent from persistence.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-ARCH-007 - Remove parallel paths
+Type: Task
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 6h
+Context:
+- Multiple execution paths for the same operations (Game/Draft/Trade).
+Steps:
+1) Map current flows (controllers/services/use cases).
+2) Choose a canonical path per operation.
+3) Delete unused branches.
+Acceptance:
+- Single path per operation.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-ARCH-008 - Reduce structural debt
+Type: Task
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 8h
+Context:
+- Dead code in core/domain and permissive architecture tests.
+Steps:
+1) Remove unused core/domain packages.
+2) Tighten architecture tests.
+3) Unify seeding logic.
+Acceptance:
+- No dead code; architecture rules enforced.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-REFACTOR-002 - Split DataInitializationService (658 lines -> 5 services)
+Type: Refactoring
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 6h
+Context:
+- DataInitializationService is oversized and mixes multiple concerns.
+Steps:
+1) Extract CSV ingestion into CsvInitializationService.
+2) Extract seed loading into SeedInitializationService.
+3) Extract game creation into GameInitializationService.
+4) Extract validation/checks into ValidationInitializationService.
+5) Update wiring and tests.
+Acceptance:
+- Each service <= 500 lines and SRP compliant.
+- Unit tests cover nominal + edges.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-REFACTOR-003 - Split TeamService (562 lines -> 3 services)
+Type: Refactoring
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 5h
+Context:
+- TeamService mixes CRUD, validation, and roster management.
+Steps:
+1) Extract TeamQueryService for reads.
+2) Extract TeamRosterService for roster changes.
+3) Extract TeamValidationService for business rules.
+Acceptance:
+- TeamService <= 500 lines, responsibilities separated.
+Dependencies:
+- JIRA-ARCH-000
+
+JIRA-REFACTOR-005 - Split TradingService (519 lines -> 3 services)
+Type: Refactoring
+Priority: P1
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 6h
+Context:
+- TradingService handles proposals, execution, validation, notifications.
+Steps:
+1) Extract TradeProposalService.
+2) Extract TradeExecutionService.
+3) Extract TradeValidationService.
+4) Add unit tests per service.
+Acceptance:
+- Each service <= 500 lines.
+- Tests >= 85% for modified code.
+Dependencies:
+- JIRA-ARCH-000
+
+P2 - MEDIUM
+JIRA-SUPABASE-001 - Configure Supabase
+Type: Task
+Priority: P2
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 2h
+Context:
+- Supabase variables not configured; remote flows unvalidated.
+Steps:
+1) Set SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SCHEMA, SUPABASE_SEED_GAME_ID.
+2) Run seed/health check.
+3) Validate dependent endpoints.
+Acceptance:
+- Supabase connectivity verified.
+- Seed completed and endpoints return data.
+Dependencies:
+- JIRA-OPS-001
+
+JIRA-ARCH-006 - Improve testability (unit over integration)
+Type: Task
+Priority: P2
+Status: IN PROGRESS
+Assignee: Codex (RESERVED)
+Estimate: 4h
+Context:
+- Logic in controllers/entities increases test cost.
+Steps:
+1) Extract logic into services.
+2) Increase unit test ratio over integration.
+3) Add tests for edge cases and error paths.
+Acceptance:
+- Unit tests cover core logic with mocks.
+Dependencies:
+- JIRA-ARCH-002
+Notes:
+- Started: guards for blank inputs in UserService and auth context hardening.
+- Added tests for null/blank inputs and anonymous auth handling.
+- Added team composition validation guards and tests in ValidationService.
+
+JIRA-ARCH-009 - Improve onboarding
+Type: Task
+Priority: P2
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 4h
+Context:
+- New developers do not know where to add logic.
+Steps:
+1) Document naming conventions and package responsibilities.
+2) Update README with contribution guide.
+Acceptance:
+- Onboarding guide added and referenced.
+Dependencies:
+- JIRA-ARCH-000
+
+P3 - LOW
+JIRA-LOGBACK-001 - Fix logback springProfile nesting
+Type: Task
+Priority: P3
+Status: TODO
+Assignee: AVAILABLE
+Estimate: 30m
+Context:
+- springProfile nesting can cause warnings on startup.
+Steps:
+1) Ensure springProfile is only at root level.
+2) Restart app and verify no warnings.
+Acceptance:
+- No logback profile warnings on startup.
+Dependencies: none
+
+P4 - BACKLOG

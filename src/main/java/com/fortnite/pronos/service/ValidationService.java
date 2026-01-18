@@ -1,5 +1,6 @@
 package com.fortnite.pronos.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -136,6 +137,10 @@ public class ValidationService {
    * @throws BusinessException if validation fails
    */
   public void validateTeamComposition(Team team, List<?> regionRules) {
+    if (team == null) {
+      throw new IllegalArgumentException("Team is required");
+    }
+
     log.info("Validating team composition for team: {}", team.getName());
 
     if (regionRules == null || regionRules.isEmpty()) {
@@ -146,7 +151,10 @@ public class ValidationService {
     // Count active players by region using TeamPlayer mapping
     Map<Player.Region, Long> playersByRegion = new java.util.HashMap<>();
 
-    team.getPlayers().stream()
+    List<TeamPlayer> teamPlayers =
+        team.getPlayers() != null ? team.getPlayers() : Collections.emptyList();
+
+    teamPlayers.stream()
         .filter(tp -> tp != null && tp.getUntil() == null)
         .map(TeamPlayer::getPlayer)
         .filter(p -> p != null && p.getRegion() != null)
@@ -157,18 +165,33 @@ public class ValidationService {
       Player.Region region = null;
       Integer maxPlayers = null;
 
+      if (ruleObj == null) {
+        throw new BusinessException("Region rule cannot be null");
+      }
+
       if (ruleObj instanceof GameRegionRule grr) {
         region = grr.getRegion();
         maxPlayers = grr.getMaxPlayers();
       } else if (ruleObj instanceof RegionRule rr) {
+        if (rr.getRegion() == null || rr.getRegion().trim().isEmpty()) {
+          throw new BusinessException("Region rule requires a region");
+        }
         try {
-          region = rr.getRegion() != null ? Player.Region.valueOf(rr.getRegion()) : null;
+          region = Player.Region.valueOf(rr.getRegion().trim());
         } catch (IllegalArgumentException ex) {
           throw new BusinessException("Unknown region in rule: " + rr.getRegion());
         }
         maxPlayers = rr.getMaxPlayers();
       } else {
         throw new BusinessException("Unsupported region rule type: " + ruleObj);
+      }
+
+      if (region == null) {
+        throw new BusinessException("Region rule requires a region");
+      }
+
+      if (maxPlayers == null || maxPlayers <= 0) {
+        throw new BusinessException("Region rule maxPlayers must be positive");
       }
 
       Long currentCount = playersByRegion.getOrDefault(region, 0L);

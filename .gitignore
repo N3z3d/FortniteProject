@@ -35,6 +35,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+replay_*.log
+backend*.log
 
 # System
 .DS_Store
@@ -62,3 +64,8 @@ Thumbs.db
 *~
 .pgdata/
 .claude/settings.local.json
+
+# Temporary development files
+*.patch
+temp_*.txt
+test_results.txt
