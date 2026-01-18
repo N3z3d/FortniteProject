@@ -17,8 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -289,6 +289,7 @@ class UserContextServiceTddTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Authentification requise - aucun utilisateur connecte");
   }
+
   @Test
   @DisplayName("Devrait refuser une authentification sans nom d'utilisateur")
   void shouldRejectAuthenticationWithBlankUsername() {
@@ -299,7 +300,7 @@ class UserContextServiceTddTest {
 
     assertThatThrownBy(() -> userContextService.getCurrentUserId())
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("nom d'utilisateur");
+        .hasMessageContaining("Nom d'utilisateur");
   }
 
   @Test

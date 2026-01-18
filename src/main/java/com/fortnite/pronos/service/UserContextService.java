@@ -130,7 +130,7 @@ public class UserContextService {
     } else {
       // Aucun utilisateur authentifié - erreur de sécurité
       log.error("Aucun utilisateur authentifié et aucun paramètre user fourni");
-      throw new IllegalStateException("Authentification requise - aucun utilisateur connecté");
+      throw new IllegalStateException("Authentification requise - aucun utilisateur connecte");
     }
   }
 
@@ -218,9 +218,3 @@ public class UserContextService {
             });
   }
 }
-
-
-
-
-
-

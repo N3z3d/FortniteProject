@@ -41,13 +41,13 @@ class LeaderboardDebugServiceTddTest {
     when(playerRepository.count()).thenReturn(2L);
     when(scoreRepository.count()).thenReturn(3L);
     when(scoreRepository.findAllBySeasonGroupedByPlayerRaw(season))
-        .thenReturn(List.of(new Object[] {playerId, 100}));
-    when(scoreRepository.findAllBySeasonGroupedByPlayer(season))
-        .thenReturn(Map.of(playerId, 100));
+        .thenReturn(List.<Object[]>of(new Object[] {playerId, 100}));
+    when(scoreRepository.findAllBySeasonGroupedByPlayer(season)).thenReturn(Map.of(playerId, 100));
 
     Map<String, Object> debug = leaderboardDebugService.getDebugStats(season);
 
-    assertThat(debug).containsKeys("totalTeams", "totalPlayers", "totalScores", "playerPointsMapSize");
+    assertThat(debug)
+        .containsKeys("totalTeams", "totalPlayers", "totalScores", "playerPointsMapSize");
     assertThat(debug.get("totalTeams")).isEqualTo(1L);
     assertThat(debug.get("totalPlayers")).isEqualTo(2L);
     assertThat(debug.get("totalScores")).isEqualTo(3L);

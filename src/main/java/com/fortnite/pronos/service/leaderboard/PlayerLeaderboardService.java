@@ -206,8 +206,7 @@ public class PlayerLeaderboardService {
         entries.get(i).setRank(i + 1);
       }
 
-      log.info(
-          "✅ Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
+      log.info("✅ Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
       return entries;
 
     } catch (Exception e) {

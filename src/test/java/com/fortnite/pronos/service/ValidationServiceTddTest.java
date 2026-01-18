@@ -26,8 +26,8 @@ import com.fortnite.pronos.model.Player;
  * operations in the fantasy league system.
  *
  * <p>Business Logic Areas: - Generic request and input validation - String validation - Game
- * creation and join request validation - Region distribution rules and constraints - Business
- * rules enforcement and error handling
+ * creation and join request validation - Region distribution rules and constraints - Business rules
+ * enforcement and error handling
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ValidationService - Business Critical TDD Tests")

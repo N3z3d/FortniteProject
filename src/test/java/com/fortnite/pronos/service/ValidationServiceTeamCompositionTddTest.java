@@ -49,7 +49,8 @@ class ValidationServiceTeamCompositionTddTest {
   void shouldRejectNullRegionRule() {
     Team team = buildTeamWithPlayers(Player.Region.EU);
 
-    assertThatThrownBy(() -> validationService.validateTeamComposition(team, List.of((Object) null)))
+    assertThatThrownBy(
+            () -> validationService.validateTeamComposition(team, Arrays.asList((Object) null)))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("Region rule cannot be null");
   }
@@ -86,8 +87,7 @@ class ValidationServiceTeamCompositionTddTest {
     Team team = new Team();
     team.setName("InactiveTeam");
     TeamPlayer active = buildTeamPlayer(Player.Region.EU, null, 1);
-    TeamPlayer inactive =
-        buildTeamPlayer(Player.Region.EU, OffsetDateTime.now().minusDays(1), 2);
+    TeamPlayer inactive = buildTeamPlayer(Player.Region.EU, OffsetDateTime.now().minusDays(1), 2);
     team.setPlayers(Arrays.asList(active, inactive));
 
     GameRegionRule rule = new GameRegionRule();

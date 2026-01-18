@@ -45,8 +45,7 @@ class PlayerLeaderboardServiceTddTest {
     Player high = buildPlayer("high", Player.Region.NAC);
 
     Team lowTeam = buildTeam("LowTeam", buildUser("owner-low"), season, activePlayer(low, 1));
-    Team highTeam =
-        buildTeam("HighTeam", buildUser("owner-high"), season, activePlayer(high, 1));
+    Team highTeam = buildTeam("HighTeam", buildUser("owner-high"), season, activePlayer(high, 1));
 
     Map<UUID, Integer> points = new HashMap<>();
     points.put(low.getId(), 10);
@@ -56,8 +55,7 @@ class PlayerLeaderboardServiceTddTest {
     when(teamRepository.findBySeasonWithFetch(season)).thenReturn(List.of(lowTeam, highTeam));
     when(scoreRepository.findAllBySeasonGroupedByPlayer(season)).thenReturn(points);
 
-    List<PlayerLeaderboardEntryDTO> entries =
-        playerLeaderboardService.getPlayerLeaderboard(season);
+    List<PlayerLeaderboardEntryDTO> entries = playerLeaderboardService.getPlayerLeaderboard(season);
 
     assertThat(entries).hasSize(2);
     assertThat(entries.get(0).getPlayerId()).isEqualTo(high.getId().toString());
@@ -83,8 +81,7 @@ class PlayerLeaderboardServiceTddTest {
   void getPlayerLeaderboardByGameIgnoresInactivePlayers() {
     UUID gameId = UUID.randomUUID();
     Player inactive = buildPlayer("inactive", Player.Region.EU);
-    Team team =
-        buildTeam("InactiveTeam", buildUser("owner"), 2025, inactivePlayer(inactive, 1));
+    Team team = buildTeam("InactiveTeam", buildUser("owner"), 2025, inactivePlayer(inactive, 1));
 
     when(teamRepository.findByGameIdWithFetch(gameId)).thenReturn(List.of(team));
     when(playerRepository.findAllById(Set.of())).thenReturn(List.of());
@@ -107,8 +104,7 @@ class PlayerLeaderboardServiceTddTest {
     when(teamRepository.findBySeasonWithFetch(season)).thenReturn(List.of(team));
     when(scoreRepository.findAllBySeasonGroupedByPlayer(season)).thenReturn(Map.of());
 
-    List<PlayerLeaderboardEntryDTO> entries =
-        playerLeaderboardService.getPlayerLeaderboard(season);
+    List<PlayerLeaderboardEntryDTO> entries = playerLeaderboardService.getPlayerLeaderboard(season);
 
     assertThat(entries).hasSize(1);
     assertThat(entries.get(0).getTotalPoints()).isZero();

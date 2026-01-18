@@ -32,8 +32,7 @@ public class LeaderboardStatsService {
   /** Obtenir les statistiques du leaderboard - VERSION OPTIMISÉE SANS N+1 */
   @Cacheable(value = "gameStats", key = "'stats_default'")
   public LeaderboardStatsDTO getLeaderboardStats() {
-    return getLeaderboardStats(
-        2025); // Utiliser saison 2025 par défaut, cohérent avec le front-end
+    return getLeaderboardStats(2025); // Utiliser saison 2025 par défaut, cohérent avec le front-end
   }
 
   /** Obtenir les statistiques du leaderboard pour une saison spécifique */

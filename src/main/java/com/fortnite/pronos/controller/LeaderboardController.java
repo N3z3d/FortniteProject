@@ -13,11 +13,11 @@ import com.fortnite.pronos.dto.LeaderboardEntryDTO;
 import com.fortnite.pronos.dto.LeaderboardStatsDTO;
 import com.fortnite.pronos.dto.PlayerLeaderboardEntryDTO;
 import com.fortnite.pronos.dto.PronostiqueurLeaderboardEntryDTO;
-import com.fortnite.pronos.service.leaderboard.TeamLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardDebugService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardStatsService;
 import com.fortnite.pronos.service.leaderboard.PlayerLeaderboardService;
 import com.fortnite.pronos.service.leaderboard.PronostiqueurLeaderboardService;
-import com.fortnite.pronos.service.leaderboard.LeaderboardStatsService;
-import com.fortnite.pronos.service.leaderboard.LeaderboardDebugService;
+import com.fortnite.pronos.service.leaderboard.TeamLeaderboardService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

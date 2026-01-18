@@ -4,14 +4,15 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.onionArchitecture;
 
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.core.importer.ImportOption;
-import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * Architecture tests enforcing Hexagonal Architecture (Ports & Adapters) principles as defined in
@@ -21,8 +22,8 @@ import org.junit.jupiter.api.Test;
  * ├── service/ (Domain services) └── port/ (Interfaces) ├── in/ (Use cases) └── out/ (Repositories,
  * external services)
  *
- * <p>application/ (Use cases orchestration) ├── usecase/ (Use case implementations) └── dto/ (Public
- * API contracts)
+ * <p>application/ (Use cases orchestration) ├── usecase/ (Use case implementations) └── dto/
+ * (Public API contracts)
  *
  * <p>adapter/ (Infrastructure) ├── in/web/ (REST Controllers) └── out/ ├── persistence/ (JPA) └──
  * external/ (External APIs)
@@ -252,12 +253,7 @@ public class HexagonalArchitectureTest {
 
   @Test
   void portsShouldBeInterfaces() {
-    ArchRule rule =
-        classes()
-            .that()
-            .resideInAPackage("..domain.port..")
-            .should()
-            .beInterfaces();
+    ArchRule rule = classes().that().resideInAPackage("..domain.port..").should().beInterfaces();
 
     rule.because("Ports should be interfaces (contracts)").check(importedClasses);
   }
@@ -313,8 +309,7 @@ public class HexagonalArchitectureTest {
             .doNotHaveSimpleName("package-info")
             .should(new MaximumClassLinesCondition(500));
 
-    rule.because("Classes must not exceed 500 lines (CLAUDE.md constraint)")
-        .check(importedClasses);
+    rule.because("Classes must not exceed 500 lines (CLAUDE.md constraint)").check(importedClasses);
   }
 
   // ============================================================================
@@ -371,8 +366,7 @@ public class HexagonalArchitectureTest {
             .dependOnClassesThat()
             .resideInAnyPackage("..service..", "..controller..", "..adapter..");
 
-    rule.because("Repositories must not depend on services or controllers")
-        .check(importedClasses);
+    rule.because("Repositories must not depend on services or controllers").check(importedClasses);
   }
 
   // ============================================================================

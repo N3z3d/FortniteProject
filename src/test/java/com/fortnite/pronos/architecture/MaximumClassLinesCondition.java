@@ -1,13 +1,14 @@
 package com.fortnite.pronos.architecture;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URI;
+
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URL;
 
 /**
  * ArchUnit condition to enforce maximum lines of code per class.
@@ -52,14 +53,14 @@ public class MaximumClassLinesCondition extends ArchCondition<JavaClass> {
    * @throws IOException If the source file cannot be read
    */
   private int countLines(JavaClass javaClass) throws IOException {
-    URL sourceLocation = javaClass.getSource().map(source -> source.getUri().toURL()).orElse(null);
+    URI sourceUri = javaClass.getSource().map(source -> source.getUri()).orElse(null);
 
-    if (sourceLocation == null) {
+    if (sourceUri == null) {
       // If source is not available (e.g., compiled from JAR), skip validation
       return 0;
     }
 
-    String sourcePath = sourceLocation.getPath();
+    String sourcePath = sourceUri.getPath();
 
     // Convert class file path to source file path
     // Example: /path/to/target/classes/com/fortnite/pronos/Foo.class
