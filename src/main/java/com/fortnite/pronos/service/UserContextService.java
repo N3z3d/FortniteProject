@@ -1,9 +1,10 @@
 package com.fortnite.pronos.service;
 
+import java.util.Collection;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -93,7 +94,11 @@ public class UserContextService {
       if (!authentication.isAuthenticated()) {
         return false;
       }
-      if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
+      Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+      if (authorities == null) {
+        return false;
+      }
+      if (authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
         return false;
       }
       String username = authentication.getName();
@@ -173,7 +178,13 @@ public class UserContextService {
       throw new IllegalStateException("Utilisateur non authentifie");
     }
 
-    if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
+    Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+    if (authorities == null) {
+      log.warn("Aucune autorite dans le contexte de securite");
+      throw new IllegalStateException("Utilisateur non authentifie");
+    }
+
+    if (authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
       log.warn("Authentification anonyme detectee, refus de continuer");
       throw new IllegalStateException("Utilisateur non authentifie");
     }

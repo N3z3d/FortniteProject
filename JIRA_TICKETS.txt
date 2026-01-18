@@ -203,18 +203,22 @@ Acceptance:
 Dependencies: JIRA-ARCH-001
 Estimate: 4h
 
-JIRA-OPS-001 - Restore developer toolchain (git/maven)
+JIRA-OPS-001 - Restore developer toolchain (git/maven/java)
 Type: Task
 Priority: P0
 Status: TODO
-Context: Local environment lacks git and Maven binaries, blocking commits, pushes, and TDD execution.
+Context: Local environment lacks git, Maven, and Java binaries, blocking commits, pushes, and TDD execution.
 Steps:
 - Install git and ensure it is on PATH.
+- Install JDK 21 and set `JAVA_HOME` + PATH.
 - Install Maven or add mvnw wrapper and document usage.
-- Validate by running `git status` and `mvn -v`.
+- Configure GitHub credentials (PAT + credential helper).
+- Validate by running `git status`, `java -version`, and `mvn -v`.
 Acceptance:
 - `git status` works without errors.
+- `java -version` reports JDK 21.
 - `mvn -v` works and build commands can run tests.
+- `git push` works without interactive prompts.
 Dependencies: none
 Estimate: 30m
 

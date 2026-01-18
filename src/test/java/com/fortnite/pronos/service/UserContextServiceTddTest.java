@@ -168,6 +168,19 @@ class UserContextServiceTddTest {
   }
 
   @Test
+  @DisplayName("Devrait retourner false quand les autorites sont nulles")
+  void shouldReturnFalseWhenAuthoritiesAreNull() {
+    when(authentication.isAuthenticated()).thenReturn(true);
+    when(authentication.getAuthorities()).thenReturn(null);
+    when(securityContext.getAuthentication()).thenReturn(authentication);
+    SecurityContextHolder.setContext(securityContext);
+
+    boolean result = userContextService.isUserAuthenticated();
+
+    assertThat(result).isFalse();
+  }
+
+  @Test
   @DisplayName("Devrait utiliser l'authentification quand disponible et aucun paramètre fourni")
   void shouldUseAuthenticationWhenAvailable() {
     // Given - Authentication active mais pas de paramètre
@@ -287,5 +300,18 @@ class UserContextServiceTddTest {
     assertThatThrownBy(() -> userContextService.getCurrentUserId())
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("nom d'utilisateur");
+  }
+
+  @Test
+  @DisplayName("Devrait refuser une authentification anonyme pour l'identifiant utilisateur")
+  void shouldRejectAnonymousAuthenticationForUserId() {
+    Authentication anonymous =
+        new AnonymousAuthenticationToken(
+            "key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+    SecurityContextHolder.getContext().setAuthentication(anonymous);
+
+    assertThatThrownBy(() -> userContextService.getCurrentUserId())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Utilisateur non authentifie");
   }
 }
