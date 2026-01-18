@@ -18,6 +18,7 @@ import com.fortnite.pronos.dto.TradeResponseDto;
 import com.fortnite.pronos.model.Trade;
 import com.fortnite.pronos.service.TradingService;
 import com.fortnite.pronos.service.UserContextService;
+import com.fortnite.pronos.service.trade.TradeQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TradeController {
 
   private final TradingService tradingService;
+  private final TradeQueryService tradeQueryService;
   private final UserContextService userContextService;
 
   /** Propose un nouveau trade */
@@ -120,7 +122,7 @@ public class TradeController {
 
     log.info("User {} requesting trade history for team {}", userDetails.getUsername(), teamId);
 
-    List<Trade> trades = tradingService.getTeamTradeHistory(teamId);
+    List<Trade> trades = tradeQueryService.getTeamTradeHistory(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
     return ResponseEntity.ok(response);
@@ -133,7 +135,7 @@ public class TradeController {
 
     log.info("User {} requesting pending trades for team {}", userDetails.getUsername(), teamId);
 
-    List<Trade> trades = tradingService.getPendingTradesForTeam(teamId);
+    List<Trade> trades = tradeQueryService.getPendingTradesForTeam(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
     return ResponseEntity.ok(response);
@@ -146,7 +148,7 @@ public class TradeController {
 
     log.info("User {} requesting trade statistics for game {}", userDetails.getUsername(), gameId);
 
-    Map<String, Long> stats = tradingService.getGameTradeStatistics(gameId);
+    Map<String, Long> stats = tradeQueryService.getGameTradeStatistics(gameId);
 
     return ResponseEntity.ok(stats);
   }
@@ -158,7 +160,7 @@ public class TradeController {
 
     log.info("User {} requesting details for trade {}", userDetails.getUsername(), tradeId);
 
-    Trade trade = tradingService.getTrade(tradeId);
+    Trade trade = tradeQueryService.getTrade(tradeId);
 
     return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
   }
@@ -178,9 +180,9 @@ public class TradeController {
 
     List<Trade> trades;
     if (status != null) {
-      trades = tradingService.getGameTradesByStatus(gameId, status);
+      trades = tradeQueryService.getGameTradesByStatus(gameId, status);
     } else {
-      trades = tradingService.getAllGameTrades(gameId);
+      trades = tradeQueryService.getAllGameTrades(gameId);
     }
 
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();

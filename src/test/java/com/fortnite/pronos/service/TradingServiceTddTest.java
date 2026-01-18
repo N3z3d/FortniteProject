@@ -417,69 +417,7 @@ class TradingServiceTddTest {
     }
   }
 
-  @Nested
-  @DisplayName("Historique et Requêtes")
-  class TradeHistory {
-
-    @Test
-    @DisplayName("Devrait récupérer l'historique des trades d'une équipe")
-    void shouldGetTeamTradeHistory() {
-      // Given
-      List<Trade> trades =
-          List.of(
-              createTrade(team1, team2, Trade.Status.ACCEPTED),
-              createTrade(team2, team1, Trade.Status.REJECTED),
-              createTrade(team1, team2, Trade.Status.PENDING));
-
-      when(tradeRepository.findByTeamId(team1.getId())).thenReturn(trades);
-
-      // When
-      List<Trade> history = tradingService.getTeamTradeHistory(team1.getId());
-
-      // Then
-      assertEquals(3, history.size());
-      verify(tradeRepository).findByTeamId(team1.getId());
-    }
-
-    @Test
-    @DisplayName("Devrait récupérer les trades en attente pour une équipe")
-    void shouldGetPendingTradesForTeam() {
-      // Given
-      Trade pendingTrade1 = createTrade(team2, team1, Trade.Status.PENDING);
-      Trade pendingTrade2 = createTrade(team2, team1, Trade.Status.PENDING);
-
-      when(tradeRepository.findPendingTradesForTeam(team1.getId()))
-          .thenReturn(List.of(pendingTrade1, pendingTrade2));
-
-      // When
-      List<Trade> pendingTrades = tradingService.getPendingTradesForTeam(team1.getId());
-
-      // Then
-      assertEquals(2, pendingTrades.size());
-      assertTrue(pendingTrades.stream().allMatch(t -> t.getStatus() == Trade.Status.PENDING));
-    }
-
-    @Test
-    @DisplayName("Devrait récupérer les statistiques de trade d'une game")
-    void shouldGetGameTradeStatistics() {
-      // Given
-      when(tradeRepository.countByGameIdAndStatus(game.getId(), Trade.Status.ACCEPTED))
-          .thenReturn(10L);
-      when(tradeRepository.countByGameIdAndStatus(game.getId(), Trade.Status.PENDING))
-          .thenReturn(3L);
-      when(tradeRepository.countByGameIdAndStatus(game.getId(), Trade.Status.REJECTED))
-          .thenReturn(5L);
-
-      // When
-      Map<String, Long> stats = tradingService.getGameTradeStatistics(game.getId());
-
-      // Then
-      assertEquals(10L, stats.get("accepted"));
-      assertEquals(3L, stats.get("pending"));
-      assertEquals(5L, stats.get("rejected"));
-      assertEquals(18L, stats.get("total"));
-    }
-  }
+  // Note: TradeHistory tests moved to TradeQueryServiceTddTest
 
   @Nested
   @DisplayName("Validation de Trade")

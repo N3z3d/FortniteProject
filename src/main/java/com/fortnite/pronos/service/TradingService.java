@@ -2,9 +2,7 @@ package com.fortnite.pronos.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -386,90 +384,6 @@ public class TradingService {
     Trade savedCounter = tradeRepository.save(counterTrade);
     tradeNotificationService.notifyTradeCountered(savedOriginal, savedCounter);
     return savedCounter;
-  }
-
-  /**
-   * Get trade history for a team
-   *
-   * @param teamId ID of the team
-   * @return List of trades involving the team
-   */
-  @Transactional(readOnly = true)
-  public List<Trade> getTeamTradeHistory(UUID teamId) {
-    return tradeRepository.findByTeamId(teamId);
-  }
-
-  /**
-   * Get pending trades for a team
-   *
-   * @param teamId ID of the team
-   * @return List of pending trades for the team
-   */
-  @Transactional(readOnly = true)
-  public List<Trade> getPendingTradesForTeam(UUID teamId) {
-    return tradeRepository.findPendingTradesForTeam(teamId);
-  }
-
-  /**
-   * Get trade statistics for a game
-   *
-   * @param gameId ID of the game
-   * @return Map of trade statistics
-   */
-  @Transactional(readOnly = true)
-  public Map<String, Long> getGameTradeStatistics(UUID gameId) {
-    Map<String, Long> stats = new HashMap<>();
-
-    Long accepted = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.ACCEPTED);
-    Long pending = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.PENDING);
-    Long rejected = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.REJECTED);
-
-    stats.put("accepted", accepted);
-    stats.put("pending", pending);
-    stats.put("rejected", rejected);
-    stats.put("total", accepted + pending + rejected);
-
-    return stats;
-  }
-
-  /**
-   * Get a specific trade by ID
-   *
-   * @param tradeId ID of the trade
-   * @return The trade
-   * @throws BusinessException if trade not found
-   */
-  @Transactional(readOnly = true)
-  public Trade getTrade(UUID tradeId) {
-    log.debug("Getting trade by ID: {}", tradeId);
-    return tradeRepository
-        .findById(tradeId)
-        .orElseThrow(() -> new BusinessException("Trade not found with ID: " + tradeId));
-  }
-
-  /**
-   * Get all trades for a game filtered by status
-   *
-   * @param gameId ID of the game
-   * @param status Status to filter by
-   * @return List of trades with the specified status
-   */
-  @Transactional(readOnly = true)
-  public List<Trade> getGameTradesByStatus(UUID gameId, Trade.Status status) {
-    log.debug("Getting trades for game {} with status {}", gameId, status);
-    return tradeRepository.findByGameIdAndStatus(gameId, status);
-  }
-
-  /**
-   * Get all trades for a game
-   *
-   * @param gameId ID of the game
-   * @return List of all trades for the game
-   */
-  @Transactional(readOnly = true)
-  public List<Trade> getAllGameTrades(UUID gameId) {
-    log.debug("Getting all trades for game {}", gameId);
-    return tradeRepository.findByGameId(gameId);
   }
 
   // Helpers to work with TeamPlayer mapping
