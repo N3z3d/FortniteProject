@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 21:45
+Last Updated: 2026-01-18 22:15
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -36,7 +36,7 @@ Assignee: AVAILABLE
 Estimate: 8h
 Context:
 - Controllers still contain orchestration and business logic.
-- GameController (530 lines) and DraftController (494 lines) violate SRP.
+- GameController (293 lines - DONE) and DraftController (494 lines) violate SRP.
 Steps:
 1) Inventory business logic in controllers and entities.
 2) Move business logic to services/use cases.
@@ -48,26 +48,6 @@ Acceptance:
 - Unit tests run without Spring context.
 Dependencies:
 - JIRA-ARCH-000
-
-JIRA-REFACTOR-004 - Refactor GameController (530 lines -> slim controller)
-Type: Refactoring
-Priority: P0
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 4h
-Context:
-- GameController exceeds 500 lines and mixes concerns.
-Steps:
-1) Consolidate V1/V2 endpoints or remove obsolete V1.
-2) Move orchestration to use cases/services.
-3) Keep controller focused on routing and DTO validation.
-4) Move exception handling to GlobalExceptionHandler if needed.
-Acceptance:
-- GameController <= 500 lines (target <= 300).
-- Business logic in services/use cases.
-- Tests cover new controller boundaries.
-Dependencies:
-- JIRA-ARCH-002
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
@@ -195,44 +175,6 @@ Acceptance:
 - Seed completed and endpoints return data.
 Dependencies: none
 
-JIRA-ARCH-009 - Improve onboarding
-Type: Task
-Priority: P2
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 4h
-Context:
-- New developers do not know where to add logic.
-Steps:
-1) Document naming conventions and package responsibilities.
-2) Update README with contribution guide.
-Acceptance:
-- Onboarding guide added and referenced.
-Dependencies:
-- JIRA-ARCH-000
-
 P3 - LOW
-JIRA-LOGBACK-001 - Fix logback springProfile nesting
-Type: Task
-Priority: P3
-Status: IN PROGRESS
-Assignee: @Codex
-Estimate: 30m
-Objectif: Eliminer les warnings logback lies au nesting springProfile.
-Contexte:
-- springProfile nesting can cause warnings on startup.
-Description:
-1) Ensure springProfile is only at root level.
-2) Restart app and verify no warnings.
-Criteres d'acceptation:
-- No logback profile warnings on startup.
-Dependencies: none
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-01-18 21:28
-DERNIERE_MAJ: 2026-01-18 21:35
-STATUT: IN_PROGRESS
-Notes:
-- Moved metrics logger under prod profile to avoid non-prod appender warnings.
-- App restart still needed to confirm no logback warnings.
 
 P4 - BACKLOG
