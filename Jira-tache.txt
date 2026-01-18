@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 20:47
+Last Updated: 2026-01-18 21:10
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -89,34 +89,6 @@ Acceptance:
 - Tests cover new controller boundaries.
 Dependencies:
 - JIRA-ARCH-002
-
-JIRA-REFACTOR-001 - Split LeaderboardService (708 lines -> focused services)
-Type: Refactoring
-Priority: P0
-Estimate: 6h
-Objectif: Decouper le leaderboard et finaliser l'integration (DTO/tests).
-Contexte:
-- LeaderboardService a ete splitte en services specialises.
-- Tests et references DTO restent a adapter.
-Description:
-1) Mettre a jour PlayerLeaderboardEntryDTO pour la nouvelle TeamInfo.
-2) Mettre a jour LeaderboardControllerTest (mocks des nouveaux services).
-3) Ajouter des tests unitaires pour les services leaderboard.
-4) Verifier les caches et endpoints inchanges.
-Criteres d'acceptation:
-- Tests controller passes avec les nouveaux services.
-- DTO ne reference plus LeaderboardService supprime.
-- Tests unitaires des services leaderboard couverts (nominal + edge cases).
-Dependencies:
-- JIRA-ARCH-000
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-01-18 20:25
-DERNIERE_MAJ: 2026-01-18 20:33
-STATUT: IN_PROGRESS
-Notes:
-- Updated PlayerLeaderboardEntryDTO TeamInfo reference.
-- Updated LeaderboardControllerTest to mock new services.
-- Added TDD tests for leaderboard services (team/player/pronostiqueur/stats/debug).
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
@@ -280,32 +252,6 @@ Acceptance:
 - Seed completed and endpoints return data.
 Dependencies:
 - JIRA-OPS-001
-
-JIRA-ARCH-006 - Improve testability (unit over integration)
-Type: Task
-Priority: P2
-Estimate: 4h
-Objectif: Augmenter la part de tests unitaires et isoler la logique testable.
-Contexte:
-- Logic in controllers/entities increases test cost.
-Description:
-1) Extract logic into services.
-2) Increase unit test ratio over integration.
-3) Add tests for edge cases and error paths.
-Criteres d'acceptation:
-- Unit tests cover core logic with mocks.
-Dependencies:
-- JIRA-ARCH-002
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-01-18 20:25
-DERNIERE_MAJ: 2026-01-18 20:47
-STATUT: IN_PROGRESS
-Notes:
-- Started: guards for blank inputs in UserService and auth context hardening.
-- Added tests for null/blank inputs and anonymous auth handling.
-- Added team composition validation guards and tests in ValidationService.
-- Split team composition tests into a dedicated ValidationService test class.
-- Split email and edge case validation tests into dedicated classes to keep <= 500 lines.
 
 JIRA-ARCH-009 - Improve onboarding
 Type: Task
