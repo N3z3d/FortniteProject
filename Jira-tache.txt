@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 20:33
+Last Updated: 2026-01-18 20:47
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -298,13 +298,14 @@ Dependencies:
 - JIRA-ARCH-002
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-18 20:25
-DERNIERE_MAJ: 2026-01-18 20:33
+DERNIERE_MAJ: 2026-01-18 20:47
 STATUT: IN_PROGRESS
 Notes:
 - Started: guards for blank inputs in UserService and auth context hardening.
 - Added tests for null/blank inputs and anonymous auth handling.
 - Added team composition validation guards and tests in ValidationService.
 - Split team composition tests into a dedicated ValidationService test class.
+- Split email and edge case validation tests into dedicated classes to keep <= 500 lines.
 
 JIRA-ARCH-009 - Improve onboarding
 Type: Task

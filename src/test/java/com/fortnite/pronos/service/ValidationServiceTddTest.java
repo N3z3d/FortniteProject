@@ -22,12 +22,12 @@ import com.fortnite.pronos.model.Player;
  *
  * <p>This test suite validates input validation, business rules, and data integrity using
  * RED-GREEN-REFACTOR TDD methodology. ValidationService handles request validation, region rules,
- * email validation, and business constraints essential for maintaining data quality and preventing
- * invalid operations in the fantasy league system.
+ * and game request validation essential for maintaining data quality and preventing invalid
+ * operations in the fantasy league system.
  *
- * <p>Business Logic Areas: - Generic request and input validation - Email format and string
- * validation - Game creation and join request validation - Region distribution rules and
- * constraints - Business rules enforcement and error handling
+ * <p>Business Logic Areas: - Generic request and input validation - String validation - Game
+ * creation and join request validation - Region distribution rules and constraints - Business
+ * rules enforcement and error handling
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ValidationService - Business Critical TDD Tests")
@@ -35,10 +35,6 @@ class ValidationServiceTddTest {
 
   @InjectMocks private ValidationService validationService;
 
-  private CreateGameRequest testCreateGameRequest;
-  private JoinGameRequest testJoinGameRequest;
-  private String validEmail;
-  private String invalidEmail;
   private String validString;
   private String emptyString;
   private Map<Player.Region, Integer> validRegionRules;
@@ -47,8 +43,6 @@ class ValidationServiceTddTest {
   @BeforeEach
   void setUp() {
     // Test data setup
-    validEmail = "champion@fortnite.com";
-    invalidEmail = "invalid-email";
     validString = "ValidString";
     emptyString = "";
 
@@ -186,83 +180,6 @@ class ValidationServiceTddTest {
       boolean result = validationService.isNotEmpty(unicodeString);
 
       assertThat(result).isTrue();
-    }
-  }
-
-  @Nested
-  @DisplayName("Email Validation")
-  class EmailValidationTests {
-
-    @Test
-    @DisplayName("Should validate correct email format")
-    void shouldValidateCorrectEmailFormat() {
-      // RED: Test valid email validation
-      boolean result = validationService.isValidEmail(validEmail);
-
-      assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("Should reject invalid email format")
-    void shouldRejectInvalidEmailFormat() {
-      // RED: Test invalid email rejection
-      boolean result = validationService.isValidEmail(invalidEmail);
-
-      assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("Should reject null email")
-    void shouldRejectNullEmail() {
-      // RED: Test null email rejection
-      boolean result = validationService.isValidEmail(null);
-
-      assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("Should validate various email formats")
-    void shouldValidateVariousEmailFormats() {
-      // RED: Test different email formats
-      String[] validEmails = {
-        "user@domain.com",
-        "test.email@example.org",
-        "long.email.name@subdomain.domain.co.uk",
-        "user+tag@domain.com"
-      };
-
-      for (String email : validEmails) {
-        boolean result = validationService.isValidEmail(email);
-        assertThat(result).as("Email %s should be valid", email).isTrue();
-      }
-    }
-
-    @Test
-    @DisplayName("Should reject malformed emails")
-    void shouldRejectMalformedEmails() {
-      // RED: Test malformed email rejection
-      String[] invalidEmails = {
-        "invalid", "invalid@", "@domain.com", "invalid.domain", "user@@domain.com", "user@.com", ""
-      };
-
-      for (String email : invalidEmails) {
-        boolean result = validationService.isValidEmail(email);
-        assertThat(result).as("Email %s should be invalid", email).isFalse();
-      }
-    }
-
-    @Test
-    @DisplayName("Should handle edge case email formats")
-    void shouldHandleEdgeCaseEmailFormats() {
-      // RED: Test edge case emails
-      String minimalValidEmail = "a@b.c";
-      String longValidEmail = "very.long.email.address@very.long.domain.name.example.com";
-
-      boolean minimalResult = validationService.isValidEmail(minimalValidEmail);
-      boolean longResult = validationService.isValidEmail(longValidEmail);
-
-      assertThat(minimalResult).isTrue();
-      assertThat(longResult).isTrue();
     }
   }
 
@@ -594,100 +511,6 @@ class ValidationServiceTddTest {
       singleRegion.put(Player.Region.EU, 8);
 
       assertThatCode(() -> validationService.validateRegionRules(singleRegion))
-          .doesNotThrowAnyException();
-    }
-  }
-
-  @Nested
-  @DisplayName("Edge Cases and Error Handling")
-  class EdgeCasesTests {
-
-    @Test
-    @DisplayName("Should handle very long strings")
-    void shouldHandleVeryLongStrings() {
-      // RED: Test long string handling
-      String veryLongString = "A".repeat(1000);
-
-      boolean notEmptyResult = validationService.isNotEmpty(veryLongString);
-      boolean requestResult = validationService.validateRequest(veryLongString);
-
-      assertThat(notEmptyResult).isTrue();
-      assertThat(requestResult).isTrue();
-    }
-
-    @Test
-    @DisplayName("Should handle special email characters")
-    void shouldHandleSpecialEmailCharacters() {
-      // RED: Test special characters in emails
-      String specialEmail = "user+test@domain-name.co.uk";
-
-      boolean result = validationService.isValidEmail(specialEmail);
-
-      assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("Should handle boundary values in region rules")
-    void shouldHandleBoundaryValuesInRegionRules() {
-      // RED: Test exact boundary values
-      Map<Player.Region, Integer> boundaryRules = new HashMap<>();
-      boundaryRules.put(Player.Region.EU, 10); // Max per region
-      boundaryRules.put(Player.Region.NAC, 10); // Max per region
-      // Total: 20 (max allowed)
-
-      assertThatCode(() -> validationService.validateRegionRules(boundaryRules))
-          .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("Should handle minimum values in region rules")
-    void shouldHandleMinimumValuesInRegionRules() {
-      // RED: Test minimum boundary values
-      Map<Player.Region, Integer> minRules = new HashMap<>();
-      minRules.put(Player.Region.EU, 1); // Min per region
-
-      assertThatCode(() -> validationService.validateRegionRules(minRules))
-          .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("Should handle concurrent validation calls")
-    void shouldHandleConcurrentValidationCalls() {
-      // RED: Test thread safety considerations
-      String[] testStrings = {"test1", "test2", "test3", "test4", "test5"};
-
-      for (String testString : testStrings) {
-        boolean result1 = validationService.isNotEmpty(testString);
-        boolean result2 = validationService.validateRequest(testString);
-        boolean result3 = validationService.isValidEmail(testString + "@test.com");
-
-        assertThat(result1).isTrue();
-        assertThat(result2).isTrue();
-        assertThat(result3).isTrue();
-      }
-    }
-
-    @Test
-    @DisplayName("Should maintain validation consistency across calls")
-    void shouldMaintainValidationConsistencyAcrossCalls() {
-      // RED: Test consistency
-      String testValue = "consistent-test";
-
-      // Multiple calls should return same results
-      boolean result1 = validationService.isNotEmpty(testValue);
-      boolean result2 = validationService.isNotEmpty(testValue);
-      boolean result3 = validationService.isNotEmpty(testValue);
-
-      assertThat(result1).isEqualTo(result2).isEqualTo(result3).isTrue();
-    }
-
-    @Test
-    @DisplayName("Should handle validation with immutable collections")
-    void shouldHandleValidationWithImmutableCollections() {
-      // RED: Test immutable collections
-      Map<Player.Region, Integer> immutableRules = Collections.unmodifiableMap(validRegionRules);
-
-      assertThatCode(() -> validationService.validateRegionRules(immutableRules))
           .doesNotThrowAnyException();
     }
   }
