@@ -13,7 +13,11 @@ import com.fortnite.pronos.dto.LeaderboardEntryDTO;
 import com.fortnite.pronos.dto.LeaderboardStatsDTO;
 import com.fortnite.pronos.dto.PlayerLeaderboardEntryDTO;
 import com.fortnite.pronos.dto.PronostiqueurLeaderboardEntryDTO;
-import com.fortnite.pronos.service.LeaderboardService;
+import com.fortnite.pronos.service.leaderboard.TeamLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.PlayerLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.PronostiqueurLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardStatsService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardDebugService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "http://localhost:4200")
 public class LeaderboardController {
 
-  private final LeaderboardService leaderboardService;
+  private final TeamLeaderboardService teamLeaderboardService;
+  private final PlayerLeaderboardService playerLeaderboardService;
+  private final PronostiqueurLeaderboardService pronostiqueurLeaderboardService;
+  private final LeaderboardStatsService statsService;
+  private final LeaderboardDebugService debugService;
 
   /** Obtenir le leaderboard complet */
   @GetMapping
@@ -41,9 +49,9 @@ public class LeaderboardController {
 
       // Si gameId est fourni, filtrer par game (priorité)
       if (gameId != null && !gameId.trim().isEmpty()) {
-        entries = leaderboardService.getLeaderboardByGame(UUID.fromString(gameId));
+        entries = teamLeaderboardService.getLeaderboardByGame(UUID.fromString(gameId));
       } else {
-        entries = leaderboardService.getLeaderboard(season);
+        entries = teamLeaderboardService.getLeaderboard(season);
       }
 
       // Filtrer par région si nécessaire
@@ -90,7 +98,7 @@ public class LeaderboardController {
     log.info("Récupération du classement pour l'équipe: {}", teamId);
 
     try {
-      LeaderboardEntryDTO entry = leaderboardService.getTeamRanking(teamId);
+      LeaderboardEntryDTO entry = teamLeaderboardService.getTeamRanking(teamId);
       return ResponseEntity.ok(entry);
     } catch (Exception e) {
       log.error("Erreur lors de la récupération du classement de l'équipe", e);
@@ -109,9 +117,9 @@ public class LeaderboardController {
       LeaderboardStatsDTO stats;
 
       if (gameId != null && !gameId.trim().isEmpty()) {
-        stats = leaderboardService.getLeaderboardStatsByGame(UUID.fromString(gameId));
+        stats = statsService.getLeaderboardStatsByGame(UUID.fromString(gameId));
       } else {
-        stats = leaderboardService.getLeaderboardStats(season);
+        stats = statsService.getLeaderboardStats(season);
       }
 
       return ResponseEntity.ok(stats);
@@ -131,9 +139,9 @@ public class LeaderboardController {
       Map<String, Integer> distribution;
 
       if (gameId != null && !gameId.trim().isEmpty()) {
-        distribution = leaderboardService.getRegionDistributionByGame(UUID.fromString(gameId));
+        distribution = statsService.getRegionDistributionByGame(UUID.fromString(gameId));
       } else {
-        distribution = leaderboardService.getRegionDistribution();
+        distribution = statsService.getRegionDistribution();
       }
 
       return ResponseEntity.ok(distribution);
@@ -149,7 +157,7 @@ public class LeaderboardController {
     log.info("Récupération de la répartition par tranche");
 
     try {
-      Map<String, Integer> distribution = leaderboardService.getTrancheDistribution();
+      Map<String, Integer> distribution = statsService.getTrancheDistribution();
       return ResponseEntity.ok(distribution);
     } catch (Exception e) {
       log.error("Erreur lors de la récupération de la répartition par tranche", e);
@@ -166,7 +174,7 @@ public class LeaderboardController {
 
     try {
       List<PronostiqueurLeaderboardEntryDTO> entries =
-          leaderboardService.getPronostiqueurLeaderboard(season);
+          pronostiqueurLeaderboardService.getPronostiqueurLeaderboard(season);
       log.info("✅ Classement pronostiqueurs retourné: {} utilisateurs", entries.size());
       return ResponseEntity.ok(entries);
 
@@ -194,9 +202,9 @@ public class LeaderboardController {
 
       // Si gameId est fourni, filtrer par game
       if (gameId != null && !gameId.trim().isEmpty()) {
-        entries = leaderboardService.getPlayerLeaderboardByGame(UUID.fromString(gameId));
+        entries = playerLeaderboardService.getPlayerLeaderboardByGame(UUID.fromString(gameId));
       } else {
-        entries = leaderboardService.getPlayerLeaderboard(season);
+        entries = playerLeaderboardService.getPlayerLeaderboard(season);
       }
 
       // Filtrer par région si nécessaire
@@ -225,7 +233,7 @@ public class LeaderboardController {
     int season = new Date().getYear() + 1900;
 
     try {
-      Map<String, Object> debug = leaderboardService.getDebugStats(season);
+      Map<String, Object> debug = debugService.getDebugStats(season);
       log.info("🔍 Debug result: {}", debug);
       return ResponseEntity.ok(debug);
 
@@ -241,7 +249,7 @@ public class LeaderboardController {
   @GetMapping("/debug/simple")
   public ResponseEntity<Map<String, Object>> getDebugSimple() {
     try {
-      return ResponseEntity.ok(leaderboardService.getDebugSimple());
+      return ResponseEntity.ok(debugService.getDebugSimple());
 
     } catch (Exception e) {
       log.error("❌ Erreur lors du debug simple", e);

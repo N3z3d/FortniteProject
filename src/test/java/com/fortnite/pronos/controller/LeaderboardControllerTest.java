@@ -17,12 +17,20 @@ import org.springframework.http.ResponseEntity;
 
 import com.fortnite.pronos.dto.LeaderboardEntryDTO;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.service.LeaderboardService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardDebugService;
+import com.fortnite.pronos.service.leaderboard.LeaderboardStatsService;
+import com.fortnite.pronos.service.leaderboard.PlayerLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.PronostiqueurLeaderboardService;
+import com.fortnite.pronos.service.leaderboard.TeamLeaderboardService;
 
 @ExtendWith(MockitoExtension.class)
 class LeaderboardControllerTest {
 
-  @Mock private LeaderboardService leaderboardService;
+  @Mock private TeamLeaderboardService teamLeaderboardService;
+  @Mock private PlayerLeaderboardService playerLeaderboardService;
+  @Mock private PronostiqueurLeaderboardService pronostiqueurLeaderboardService;
+  @Mock private LeaderboardStatsService statsService;
+  @Mock private LeaderboardDebugService debugService;
   @InjectMocks private LeaderboardController leaderboardController;
 
   @Test
@@ -30,14 +38,14 @@ class LeaderboardControllerTest {
     int season = 2025;
     List<LeaderboardEntryDTO> serviceEntries = List.of(entryWithRegion(Player.Region.EU));
 
-    when(leaderboardService.getLeaderboard(season)).thenReturn(serviceEntries);
+    when(teamLeaderboardService.getLeaderboard(season)).thenReturn(serviceEntries);
 
     ResponseEntity<List<LeaderboardEntryDTO>> response =
         leaderboardController.getLeaderboard(season, null, null);
 
     assertEquals(200, response.getStatusCodeValue());
     assertEquals(serviceEntries, response.getBody());
-    verify(leaderboardService).getLeaderboard(season);
+    verify(teamLeaderboardService).getLeaderboard(season);
   }
 
   @Test
@@ -46,7 +54,7 @@ class LeaderboardControllerTest {
     LeaderboardEntryDTO euEntry = entryWithRegion(Player.Region.EU);
     LeaderboardEntryDTO nawEntry = entryWithRegion(Player.Region.NAW);
 
-    when(leaderboardService.getLeaderboard(season)).thenReturn(List.of(euEntry, nawEntry));
+    when(teamLeaderboardService.getLeaderboard(season)).thenReturn(List.of(euEntry, nawEntry));
 
     ResponseEntity<List<LeaderboardEntryDTO>> response =
         leaderboardController.getLeaderboard(season, "EU", null);

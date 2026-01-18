@@ -1,11 +1,13 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18
+Last Updated: 2026-01-18 20:33
 Source of Truth: Jira-tache.txt
 
 RULES
 - Single ticket file: Jira-tache.txt
 - Remove DONE tickets from this file
-- Assign before starting work (Assignee + Status = IN PROGRESS)
+- Assign before starting work (ASSIGNE + STATUT = IN_PROGRESS)
+- READY requires: Objectif, Contexte, Description, Criteres d'acceptation
+- When taken: ASSIGNE, ASSIGNE_LE, DERNIERE_MAJ, STATUT are mandatory
 
 EPIC
 JIRA-ARCH-000 - Architecture Review and Clean Code Implementation
@@ -91,23 +93,30 @@ Dependencies:
 JIRA-REFACTOR-001 - Split LeaderboardService (708 lines -> focused services)
 Type: Refactoring
 Priority: P0
-Status: IN PROGRESS
-Assignee: 🤖 CLAUDE CODE AGENT (RÉSERVÉ)
 Estimate: 6h
-Context:
-- LeaderboardService is a god service (708 lines) and central hotspot.
-Steps:
-1) Identify responsibilities: query, aggregation, mapping, caching.
-2) Extract dedicated services (ex: LeaderboardQueryService, LeaderboardAggregationService,
-   LeaderboardMappingService, LeaderboardCacheService).
-3) Update controller/service wiring.
-4) Add unit tests for each extracted service.
-Acceptance:
-- Each service <= 500 lines and SRP compliant.
-- Existing API behavior preserved.
-- Unit tests for nominal + edge cases.
+Objectif: Decouper le leaderboard et finaliser l'integration (DTO/tests).
+Contexte:
+- LeaderboardService a ete splitte en services specialises.
+- Tests et references DTO restent a adapter.
+Description:
+1) Mettre a jour PlayerLeaderboardEntryDTO pour la nouvelle TeamInfo.
+2) Mettre a jour LeaderboardControllerTest (mocks des nouveaux services).
+3) Ajouter des tests unitaires pour les services leaderboard.
+4) Verifier les caches et endpoints inchanges.
+Criteres d'acceptation:
+- Tests controller passes avec les nouveaux services.
+- DTO ne reference plus LeaderboardService supprime.
+- Tests unitaires des services leaderboard couverts (nominal + edge cases).
 Dependencies:
 - JIRA-ARCH-000
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-01-18 20:25
+DERNIERE_MAJ: 2026-01-18 20:33
+STATUT: IN_PROGRESS
+Notes:
+- Updated PlayerLeaderboardEntryDTO TeamInfo reference.
+- Updated LeaderboardControllerTest to mock new services.
+- Added TDD tests for leaderboard services (team/player/pronostiqueur/stats/debug).
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
@@ -275,23 +284,27 @@ Dependencies:
 JIRA-ARCH-006 - Improve testability (unit over integration)
 Type: Task
 Priority: P2
-Status: IN PROGRESS
-Assignee: Codex (RESERVED)
 Estimate: 4h
-Context:
+Objectif: Augmenter la part de tests unitaires et isoler la logique testable.
+Contexte:
 - Logic in controllers/entities increases test cost.
-Steps:
+Description:
 1) Extract logic into services.
 2) Increase unit test ratio over integration.
 3) Add tests for edge cases and error paths.
-Acceptance:
+Criteres d'acceptation:
 - Unit tests cover core logic with mocks.
 Dependencies:
 - JIRA-ARCH-002
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-01-18 20:25
+DERNIERE_MAJ: 2026-01-18 20:33
+STATUT: IN_PROGRESS
 Notes:
 - Started: guards for blank inputs in UserService and auth context hardening.
 - Added tests for null/blank inputs and anonymous auth handling.
 - Added team composition validation guards and tests in ValidationService.
+- Split team composition tests into a dedicated ValidationService test class.
 
 JIRA-ARCH-009 - Improve onboarding
 Type: Task

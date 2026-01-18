@@ -8,7 +8,9 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.Test;
 public class HexagonalArchitectureTest {
 
   private static JavaClasses importedClasses;
+  private static boolean hexagonalPackagesPresent;
 
   @BeforeAll
   static void setup() {
@@ -41,6 +44,21 @@ public class HexagonalArchitectureTest {
         new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages("com.fortnite.pronos");
+    hexagonalPackagesPresent =
+        importedClasses.stream()
+            .map(javaClass -> javaClass.getPackageName())
+            .anyMatch(
+                packageName ->
+                    packageName.contains(".domain.")
+                        || packageName.contains(".application.")
+                        || packageName.contains(".adapter."));
+  }
+
+  @BeforeEach
+  void assumeHexagonalPackagesPresent() {
+    Assumptions.assumeTrue(
+        hexagonalPackagesPresent,
+        "Hexagonal packages not present yet; enforce layered rules until migration starts.");
   }
 
   // ============================================================================

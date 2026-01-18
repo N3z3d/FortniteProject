@@ -3,7 +3,7 @@ package com.fortnite.pronos.dto;
 import java.util.List;
 
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.service.LeaderboardService;
+import com.fortnite.pronos.service.leaderboard.TeamInfo;
 
 import lombok.Data;
 
@@ -19,6 +19,6 @@ public class PlayerLeaderboardEntryDTO {
   private double avgPointsPerGame;
   private int bestScore;
   private int teamsCount;
-  private List<LeaderboardService.TeamInfo> teams;
+  private List<TeamInfo> teams;
   private List<String> pronostiqueurs;
 }
