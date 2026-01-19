@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 07:58
+Last Updated: 2026-01-19 08:15
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -64,19 +64,41 @@ P1 - HIGH
 JIRA-ARCH-005 - Isolate domain
 Type: Task
 Priority: P1
-Status: TODO
-Assignee: AVAILABLE
+Status: IN PROGRESS
+Assignee: @Claude
 Estimate: 12h
-Context:
-- Domain logic is coupled to JPA entities.
-Steps:
-1) Create pure domain objects (no persistence annotations).
-2) Add mappers Entity <-> Domain.
-3) Move rules from entities into domain/services.
-Acceptance:
-- Domain layer independent from persistence.
+Objectif: Separer le domaine metier de la couche persistence pour une architecture hexagonale propre.
+Contexte:
+- La logique metier est couplee aux entites JPA (@Entity, relations).
+- Les regles metier sont dispersees dans les entites au lieu d'etre centralisees.
+- Le domaine devrait etre independant de Spring/JPA pour faciliter les tests.
+Description:
+1) Identifier les entites avec logique metier (Game, Team, Player, Trade, etc.).
+2) Creer des objets domaine purs (sans annotations JPA) dans un package domain/.
+3) Ajouter des mappers Entity <-> Domain (pattern Assembler).
+4) Deplacer les regles metier des entites vers les objets domaine/services.
+5) Adapter les services pour utiliser les objets domaine.
+Criteres d'acceptation:
+- Package domain/ contient les objets metier purs (pas de @Entity).
+- Mappers bidirectionnels Entity <-> Domain existent.
+- Logique metier (validations, calculs) dans le domaine, pas dans les entites.
+- Tests unitaires du domaine sans Spring context.
 Dependencies:
 - JIRA-ARCH-000
+ASSIGNE: @Claude
+ASSIGNE_LE: 2026-01-19 08:00
+DERNIERE_MAJ: 2026-01-19 08:15
+STATUT: IN_PROGRESS
+Notes:
+- Created pure domain package (com.fortnite.pronos.domain) with 5 domain objects
+- GameLifecycle: state transition rules (CREATING->DRAFTING->ACTIVE->FINISHED)
+- ParticipantRules: participant validation and capacity rules
+- InvitationCodeGenerator: code generation with format validation
+- DraftProgression: round/pick calculation, snake draft support
+- DraftStatus: draft state machine transitions
+- Added DomainIsolationTest (ArchUnit): enforces no JPA/Spring/Hibernate/Lombok in domain
+- 71 unit tests for domain logic (no Spring context required)
+- Remaining: Team domain, mappers, service adaptation
 
 P2 - MEDIUM
 JIRA-SUPABASE-001 - Configure Supabase
