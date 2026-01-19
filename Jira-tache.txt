@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 11:30
+Last Updated: 2026-01-19 11:45
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -109,23 +109,6 @@ Steps:
 3) Move rules from entities into domain/services.
 Acceptance:
 - Domain layer independent from persistence.
-Dependencies:
-- JIRA-ARCH-000
-
-JIRA-ARCH-007 - Remove parallel paths
-Type: Task
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 6h
-Context:
-- Multiple execution paths for the same operations (Game/Draft/Trade).
-Steps:
-1) Map current flows (controllers/services/use cases).
-2) Choose a canonical path per operation.
-3) Delete unused branches.
-Acceptance:
-- Single path per operation.
 Dependencies:
 - JIRA-ARCH-000
 
