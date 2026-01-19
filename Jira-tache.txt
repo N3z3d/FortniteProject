@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 07:39
+Last Updated: 2026-01-19 07:58
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -51,32 +51,16 @@ Dependencies:
 - JIRA-ARCH-000
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-19 06:52
-DERNIERE_MAJ: 2026-01-19 07:39
+DERNIERE_MAJ: 2026-01-19 07:48
 STATUT: IN_PROGRESS
 Notes:
 - Moved next-participant calculation into DraftService (controller cleanup).
 - Added unit tests for next-participant response logic.
 - Moved draft order + is-turn logic into DraftService; added DraftOrderEntryResponse DTO and tests.
 - Moved move-to-next orchestration into DraftService; added DraftAdvanceResponse DTO and tests.
+- Moved available-players/complete/finish/handle-timeouts logic into DraftService; added DTOs and tests.
 
 P1 - HIGH
-JIRA-ARCH-004 - Reduce coupling
-Type: Task
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 8h
-Context:
-- Classes with too many dependencies indicate low cohesion.
-Steps:
-1) Identify classes with >7 dependencies.
-2) Extract focused services or strategies.
-3) Reduce cross-cutting dependency graphs.
-Acceptance:
-- Each class has a single responsibility and fewer dependencies.
-Dependencies:
-- JIRA-ARCH-000
-
 JIRA-ARCH-005 - Isolate domain
 Type: Task
 Priority: P1
