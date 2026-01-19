@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-18 22:15
+Last Updated: 2026-01-19 10:55
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -31,23 +31,28 @@ P0 - CRITICAL
 JIRA-ARCH-002 - Separate responsibilities (Controllers/Entities/Services)
 Type: Task
 Priority: P0
-Status: TODO
-Assignee: AVAILABLE
+Status: IN PROGRESS
+Assignee: @Codex
 Estimate: 8h
-Context:
+Objectif: Deplacer la logique metier hors des controllers/entities pour respecter SRP.
+Contexte:
 - Controllers still contain orchestration and business logic.
-- GameController (293 lines - DONE) and DraftController (494 lines) violate SRP.
-Steps:
+- GameController (293 lines - DONE) and DraftController (427 lines) still contain logic metier.
+Description:
 1) Inventory business logic in controllers and entities.
 2) Move business logic to services/use cases.
 3) Keep controllers as routing + validation only.
 4) Extract domain rules from JPA entities.
-Acceptance:
+Criteres d'acceptation:
 - Controllers contain no orchestration logic.
 - Business rules live in services/use cases.
 - Unit tests run without Spring context.
 Dependencies:
 - JIRA-ARCH-000
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-01-19 06:52
+DERNIERE_MAJ: 2026-01-19 06:52
+STATUT: IN_PROGRESS
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
@@ -134,26 +139,6 @@ Steps:
 3) Unify seeding logic.
 Acceptance:
 - No dead code; architecture rules enforced.
-Dependencies:
-- JIRA-ARCH-000
-
-JIRA-REFACTOR-002 - Split DataInitializationService (658 lines -> 5 services)
-Type: Refactoring
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 6h
-Context:
-- DataInitializationService is oversized and mixes multiple concerns.
-Steps:
-1) Extract CSV ingestion into CsvInitializationService.
-2) Extract seed loading into SeedInitializationService.
-3) Extract game creation into GameInitializationService.
-4) Extract validation/checks into ValidationInitializationService.
-5) Update wiring and tests.
-Acceptance:
-- Each service <= 500 lines and SRP compliant.
-- Unit tests cover nominal + edges.
 Dependencies:
 - JIRA-ARCH-000
 
