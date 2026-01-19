@@ -59,7 +59,7 @@ class AuthenticationFlowIntegrationTest {
   @DisplayName("Devrait avoir la chaîne de sécurité Spring Security active")
   void shouldProtectSensitiveEndpointsWithoutAuth() {
     // Given - Test endpoint that requires authentication
-    String url = "http://localhost:" + port + "/api/v1/games/my-games";
+    String url = "http://localhost:" + port + "/api/games/my-games";
 
     // When - Request without authentication headers
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
