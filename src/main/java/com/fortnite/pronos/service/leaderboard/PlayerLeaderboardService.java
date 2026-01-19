@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.dto.PlayerLeaderboardEntryDTO;
+import com.fortnite.pronos.dto.leaderboard.TeamInfoDto;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.*;
 
@@ -46,7 +47,7 @@ public class PlayerLeaderboardService {
 
       // 3. Récupérer toutes les équipes avec leurs joueurs pour cette saison
       List<Team> teams = teamRepository.findBySeasonWithFetch(season);
-      Map<UUID, List<TeamInfo>> playerTeamsMap = new HashMap<>();
+      Map<UUID, List<TeamInfoDto>> playerTeamsMap = new HashMap<>();
       Map<UUID, List<String>> playerPronostiqueurMap = new HashMap<>();
 
       // Construire les maps des équipes et pronostiqueurs par joueur
@@ -59,7 +60,7 @@ public class PlayerLeaderboardService {
             playerTeamsMap
                 .computeIfAbsent(playerId, k -> new ArrayList<>())
                 .add(
-                    new TeamInfo(
+                    new TeamInfoDto(
                         team.getId().toString(), team.getName(), team.getOwner().getUsername()));
 
             // Ajouter le pronostiqueur
@@ -83,7 +84,7 @@ public class PlayerLeaderboardService {
         int bestScore = totalPoints; // Simplification : on utilise le total comme meilleur score
 
         // Récupérer les équipes et pronostiqueurs
-        List<TeamInfo> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
+        List<TeamInfoDto> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
         List<String> playerPronostiqueurs =
             playerPronostiqueurMap.getOrDefault(playerId, new ArrayList<>());
 
@@ -136,7 +137,7 @@ public class PlayerLeaderboardService {
 
       // 2. Extraire tous les joueurs uniques des équipes
       Set<UUID> playerIds = new HashSet<>();
-      Map<UUID, List<TeamInfo>> playerTeamsMap = new HashMap<>();
+      Map<UUID, List<TeamInfoDto>> playerTeamsMap = new HashMap<>();
       Map<UUID, List<String>> playerPronostiqueurMap = new HashMap<>();
 
       for (Team team : teams) {
@@ -149,7 +150,7 @@ public class PlayerLeaderboardService {
             playerTeamsMap
                 .computeIfAbsent(playerId, k -> new ArrayList<>())
                 .add(
-                    new TeamInfo(
+                    new TeamInfoDto(
                         team.getId().toString(), team.getName(), team.getOwner().getUsername()));
 
             // Ajouter le pronostiqueur
@@ -179,7 +180,7 @@ public class PlayerLeaderboardService {
             totalPoints > 0 ? (double) totalPoints / Math.max(1, totalPoints / 1000) : 0.0;
         int bestScore = totalPoints;
 
-        List<TeamInfo> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
+        List<TeamInfoDto> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
         List<String> playerPronostiqueurs =
             playerPronostiqueurMap.getOrDefault(playerId, new ArrayList<>());
 

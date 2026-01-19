@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 11:45
+Last Updated: 2026-01-19 07:39
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -51,32 +51,40 @@ Dependencies:
 - JIRA-ARCH-000
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-19 06:52
-DERNIERE_MAJ: 2026-01-19 07:22
+DERNIERE_MAJ: 2026-01-19 07:39
 STATUT: IN_PROGRESS
 Notes:
 - Moved next-participant calculation into DraftService (controller cleanup).
 - Added unit tests for next-participant response logic.
 - Moved draft order + is-turn logic into DraftService; added DraftOrderEntryResponse DTO and tests.
+- Moved move-to-next orchestration into DraftService; added DraftAdvanceResponse DTO and tests.
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
 Type: Task
 Priority: P1
-Status: TODO
-Assignee: AVAILABLE
+Status: IN PROGRESS
+Assignee: @Claude
 Estimate: 6h
-Context:
-- Use cases still depend on concrete repositories.
-Steps:
-1) Define repository interfaces (ports) for core use cases.
-2) Implement adapters in infrastructure.
-3) Swap use cases to depend on interfaces only.
-4) Enforce dependency rules in ArchUnit tests.
-Acceptance:
-- Use cases depend only on abstractions.
-- ArchUnit rules enforce DIP.
+Objectif: Appliquer DIP (Dependency Inversion Principle) pour que les services metier dependent d'abstractions.
+Contexte:
+- Use cases dependent directement des repositories concrets (Spring Data JPA).
+- Violation du DIP: le domaine depend de l'infrastructure.
+Description:
+1) Identifier les services avec dependances directes aux repositories.
+2) Definir interfaces (ports) dans le package domain/service.
+3) Les repositories existants deviennent les adapters.
+4) Ajouter tests ArchUnit pour enforcer DIP.
+Criteres d'acceptation:
+- Services metier dependent uniquement d'interfaces (ports).
+- Aucune annotation JPA dans les services core.
+- Tests ArchUnit verifient les regles de dependance.
 Dependencies:
 - JIRA-ARCH-000
+ASSIGNE: @Claude
+ASSIGNE_LE: 2026-01-19 12:15
+DERNIERE_MAJ: 2026-01-19 12:15
+STATUT: IN_PROGRESS
 
 JIRA-ARCH-004 - Reduce coupling
 Type: Task

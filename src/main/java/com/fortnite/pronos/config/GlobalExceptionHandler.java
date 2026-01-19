@@ -41,17 +41,20 @@ public class GlobalExceptionHandler {
 
     log.warn("Business exception: {} - {}", ex.getErrorCode(), ex.getMessage());
 
+    int statusCode = ex.getErrorCode().getStatusCode();
+    HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+
     ErrorResponse errorResponse =
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
-            .status(ex.getErrorCode().getHttpStatus().value())
-            .error(ex.getErrorCode().getHttpStatus().getReasonPhrase())
+            .status(statusCode)
+            .error(httpStatus.getReasonPhrase())
             .message(ex.getMessage())
             .path(request.getRequestURI())
             .code(ex.getErrorCode().name())
             .build();
 
-    return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(errorResponse);
+    return ResponseEntity.status(httpStatus).body(errorResponse);
   }
 
   /** Gestion des erreurs d'authentification */

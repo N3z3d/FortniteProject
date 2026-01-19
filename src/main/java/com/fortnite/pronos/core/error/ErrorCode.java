@@ -1,7 +1,5 @@
 package com.fortnite.pronos.core.error;
 
-import org.springframework.http.HttpStatus;
-
 /**
  * Codes d'erreur standardisés pour l'application. Suit la nomenclature NASA-STD-8719.13 pour la
  * gestion des erreurs.
@@ -146,11 +144,15 @@ public enum ErrorCode {
   /**
    * Récupère le code de statut HTTP correspondant à l'erreur.
    *
-   * @return le statut HTTP approprié
+   * <p>Uses standard HTTP status codes (framework-agnostic): - 400: Bad Request - 401: Unauthorized
+   * - 403: Forbidden - 404: Not Found - 409: Conflict - 429: Too Many Requests - 500: Internal
+   * Server Error - 503: Service Unavailable
+   *
+   * @return le code de statut HTTP approprié
    */
-  public HttpStatus getHttpStatus() {
+  public int getStatusCode() {
     if (isValidationError()) {
-      return HttpStatus.BAD_REQUEST;
+      return 400; // BAD_REQUEST
     }
 
     switch (this) {
@@ -159,37 +161,37 @@ public enum ErrorCode {
       case AUTH_SEC_002:
       case AUTH_SEC_004:
       case INVALID_TOKEN_FORMAT:
-        return HttpStatus.UNAUTHORIZED;
+        return 401; // UNAUTHORIZED
 
       case AUTH_BUS_002:
       case AUTH_BUS_003:
       case AUTH_SEC_003:
-        return HttpStatus.FORBIDDEN;
+        return 403; // FORBIDDEN
 
       case PLAYER_BUS_001:
       case TEAM_BUS_001:
       case SCORE_BUS_001:
       case TRADE_BUS_001:
-        return HttpStatus.NOT_FOUND;
+        return 404; // NOT_FOUND
 
       case PLAYER_BUS_002:
       case TEAM_BUS_002:
       case SCORE_BUS_002:
-        return HttpStatus.CONFLICT;
+        return 409; // CONFLICT
 
       case SYS_002:
       case AUTH_SYS_001:
       case AUTHENTICATION_SERVICE_UNAVAILABLE:
-        return HttpStatus.SERVICE_UNAVAILABLE;
+        return 503; // SERVICE_UNAVAILABLE
 
       case SYS_004:
-        return HttpStatus.TOO_MANY_REQUESTS;
+        return 429; // TOO_MANY_REQUESTS
 
       default:
         if (isSystemError()) {
-          return HttpStatus.INTERNAL_SERVER_ERROR;
+          return 500; // INTERNAL_SERVER_ERROR
         }
-        return HttpStatus.BAD_REQUEST;
+        return 400; // BAD_REQUEST
     }
   }
 }
