@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 09:05
+Last Updated: 2026-01-19 09:30
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -87,7 +87,7 @@ Dependencies:
 - JIRA-ARCH-000
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-19 08:00
-DERNIERE_MAJ: 2026-01-19 09:05
+DERNIERE_MAJ: 2026-01-19 09:30
 STATUT: IN_PROGRESS
 Notes:
 - Created pure domain package (com.fortnite.pronos.domain) with 7 domain objects
@@ -99,9 +99,12 @@ Notes:
 - TeamRoster: roster management, position validation, player add/remove rules
 - TradeRules: trade validation, status transitions, deadline enforcement
 - Added DomainIsolationTest (ArchUnit): enforces no JPA/Spring/Hibernate/Lombok in domain
-- 117 unit tests for domain logic (no Spring context required)
+- 126 unit tests for domain logic (no Spring context required)
 - DONE: Pure domain objects for all major entities
-- Remaining: mappers Entity <-> Domain, service layer adaptation
+- Created facade layer (domain/facade/) for entity/domain integration:
+  - GameDomainFacade: integrates Game entity with domain rules
+  - DraftDomainFacade: integrates Draft entity with domain rules
+- Remaining: service layer adaptation to use facades
 
 P2 - MEDIUM
 JIRA-SUPABASE-001 - Configure Supabase
