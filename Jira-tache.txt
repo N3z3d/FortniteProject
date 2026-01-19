@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-19 10:55
+Last Updated: 2026-01-19 11:30
 Source of Truth: Jira-tache.txt
 
 RULES
@@ -51,8 +51,12 @@ Dependencies:
 - JIRA-ARCH-000
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-19 06:52
-DERNIERE_MAJ: 2026-01-19 06:52
+DERNIERE_MAJ: 2026-01-19 07:22
 STATUT: IN_PROGRESS
+Notes:
+- Moved next-participant calculation into DraftService (controller cleanup).
+- Added unit tests for next-participant response logic.
+- Moved draft order + is-turn logic into DraftService; added DraftOrderEntryResponse DTO and tests.
 
 P1 - HIGH
 JIRA-ARCH-003 - Invert dependencies (use cases -> ports)
@@ -122,23 +126,6 @@ Steps:
 3) Delete unused branches.
 Acceptance:
 - Single path per operation.
-Dependencies:
-- JIRA-ARCH-000
-
-JIRA-ARCH-008 - Reduce structural debt
-Type: Task
-Priority: P1
-Status: TODO
-Assignee: AVAILABLE
-Estimate: 8h
-Context:
-- Dead code in core/domain and permissive architecture tests.
-Steps:
-1) Remove unused core/domain packages.
-2) Tighten architecture tests.
-3) Unify seeding logic.
-Acceptance:
-- No dead code; architecture rules enforced.
 Dependencies:
 - JIRA-ARCH-000
 
