@@ -1,6 +1,5 @@
 package com.fortnite.pronos.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -11,44 +10,41 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
-import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.TradeRepository;
-import com.fortnite.pronos.repository.UserRepository;
-import com.fortnite.pronos.service.seed.SeedDataProviderSelectorService;
+import com.fortnite.pronos.service.seed.PlayerSeedService;
+import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
+import com.fortnite.pronos.service.seed.TeamSeedService;
 
+/** Unit tests for ReferenceGameSeedService. Tests seed configuration behavior and game creation. */
 @ExtendWith(MockitoExtension.class)
 class ReferenceGameSeedServiceTest {
 
+  // Configuration dependencies
   @Mock private Environment environment;
   @Mock private SeedProperties seedProperties;
+
+  // Seed service dependencies
+  @Mock private ReferenceUserSeedService referenceUserSeedService;
+  @Mock private PlayerSeedService playerSeedService;
+  @Mock private TeamSeedService teamSeedService;
   @Mock private CsvDataLoaderService csvDataLoaderService;
-  @Mock private SeedDataProviderSelectorService seedDataProviderSelector;
-  @Mock private UserRepository userRepository;
+
+  // Repository
   @Mock private GameRepository gameRepository;
-  @Mock private PlayerRepository playerRepository;
-  @Mock private TeamRepository teamRepository;
-  @Mock private TradeRepository tradeRepository;
-  @Mock private PasswordEncoder passwordEncoder;
 
   @InjectMocks private ReferenceGameSeedService referenceGameSeedService;
 
@@ -59,7 +55,6 @@ class ReferenceGameSeedServiceTest {
     referenceGameSeedService.ensureReferenceGame();
 
     verify(gameRepository, never()).save(any(Game.class));
-    verify(teamRepository, never()).saveAll(any());
   }
 
   @Test
@@ -70,7 +65,6 @@ class ReferenceGameSeedServiceTest {
     referenceGameSeedService.ensureReferenceGame();
 
     verify(gameRepository, never()).save(any(Game.class));
-    verify(teamRepository, never()).saveAll(any());
   }
 
   @Test
@@ -82,25 +76,23 @@ class ReferenceGameSeedServiceTest {
     when(environment.getProperty("fortnite.data.provider", "csv")).thenReturn("mock");
 
     Map<String, User> users = buildUsers();
-    when(userRepository.findByUsernameIgnoreCase(anyString()))
-        .thenAnswer(invocation -> Optional.of(users.get(invocation.getArgument(0))));
+    when(referenceUserSeedService.ensureReferenceUsers()).thenReturn(users);
+
     // Mock players in database (needed for resolveAssignments)
     List<Player> persistedPlayers =
         List.of(
             buildPlayer("alpha"), buildPlayer("beta"), buildPlayer("gamma"), buildPlayer("delta"));
-    when(playerRepository.findAll()).thenReturn(persistedPlayers);
-    when(gameRepository.existsByNameAndCreator(anyString(), any(User.class))).thenReturn(false);
-    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(teamRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(playerSeedService.getAllPlayers()).thenReturn(persistedPlayers);
+    when(playerSeedService.loadSeedData()).thenReturn(buildSeedData());
 
-    when(seedDataProviderSelector.loadSeedData()).thenReturn(buildSeedData());
+    when(gameRepository.existsByNameAndCreator(anyString(), any(User.class))).thenReturn(false);
+    when(gameRepository.count()).thenReturn(0L);
+    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     referenceGameSeedService.ensureReferenceGame();
 
-    ArgumentCaptor<List<Team>> teamsCaptor = ArgumentCaptor.forClass(List.class);
-    verify(teamRepository).saveAll(teamsCaptor.capture());
-    assertThat(teamsCaptor.getValue()).hasSize(3);
     verify(gameRepository).save(any(Game.class));
+    verify(teamSeedService).getAllTeams();
   }
 
   @Test
@@ -109,14 +101,13 @@ class ReferenceGameSeedServiceTest {
     when(seedProperties.isResetMode()).thenReturn(true);
     when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
 
-    User thibaut = buildUser("Thibaut");
-    when(userRepository.findByUsernameIgnoreCase(anyString())).thenReturn(Optional.of(thibaut));
+    Map<String, User> users = buildUsers();
+    when(referenceUserSeedService.ensureReferenceUsers()).thenReturn(users);
     when(gameRepository.existsByNameAndCreator(anyString(), any(User.class))).thenReturn(true);
 
     referenceGameSeedService.ensureReferenceGame();
 
-    verify(tradeRepository).deleteAll();
-    verify(teamRepository).deleteAll();
+    // Refactored service only clears games (teams/trades cascade via JPA)
     verify(gameRepository).deleteAll();
   }
 

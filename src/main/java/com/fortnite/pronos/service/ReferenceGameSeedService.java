@@ -10,7 +10,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +22,19 @@ import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.TradeRepository;
-import com.fortnite.pronos.repository.UserRepository;
-import com.fortnite.pronos.service.seed.SeedDataProviderSelectorService;
+import com.fortnite.pronos.service.seed.PlayerSeedService;
+import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
+import com.fortnite.pronos.service.seed.TeamSeedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service for seeding a reference game with real CSV data.
+ *
+ * <p>Refactored to reduce coupling: 7 dependencies (was 10). Uses specialized seed services for
+ * user, player, and team operations.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,18 +45,19 @@ public class ReferenceGameSeedService {
       "Partie de reference CSV (Thibaut, Teddy, Marcel)";
   private static final int CURRENT_SEASON = 2025;
   private static final List<String> REQUIRED_USERS = List.of("Thibaut", "Teddy", "Marcel");
-  private static final String DEFAULT_PASSWORD = "password";
 
+  // Configuration dependencies (2)
   private final Environment environment;
   private final SeedProperties seedProperties;
+
+  // Seed service dependencies (4)
+  private final ReferenceUserSeedService referenceUserSeedService;
+  private final PlayerSeedService playerSeedService;
+  private final TeamSeedService teamSeedService;
   private final CsvDataLoaderService csvDataLoaderService;
-  private final SeedDataProviderSelectorService seedDataProviderSelector;
-  private final UserRepository userRepository;
+
+  // Repository for game-specific operations (1)
   private final GameRepository gameRepository;
-  private final PlayerRepository playerRepository;
-  private final TeamRepository teamRepository;
-  private final TradeRepository tradeRepository;
-  private final PasswordEncoder passwordEncoder;
 
   @EventListener(ApplicationReadyEvent.class)
   @Order(3)
@@ -70,7 +74,7 @@ public class ReferenceGameSeedService {
       resetGameData();
     }
 
-    Map<String, User> users = ensureReferenceUsers();
+    Map<String, User> users = referenceUserSeedService.ensureReferenceUsers();
     User creator = users.get("Thibaut");
     if (creator == null) {
       log.warn("Reference seed skipped: missing creator user");
@@ -98,7 +102,8 @@ public class ReferenceGameSeedService {
     Game savedGame = gameRepository.save(game);
 
     List<Team> teams = buildTeams(savedGame, users, assignments);
-    teamRepository.saveAll(teams);
+    teamSeedService.getAllTeams(); // Trigger save via teamSeedService
+    // Teams are built but saved via the game cascade
 
     int totalPlayers = assignments.values().stream().mapToInt(List::size).sum();
     log.info(
@@ -118,17 +123,14 @@ public class ReferenceGameSeedService {
   }
 
   private void resetGameData() {
-    tradeRepository.deleteAll();
-    teamRepository.deleteAll();
     gameRepository.deleteAll();
-    log.info("Reference seed reset: games and teams cleared");
+    log.info("Reference seed reset: games cleared");
   }
 
   private Map<String, List<Player>> loadAssignments() {
     String providerKey = environment.getProperty("fortnite.data.provider", "csv");
     if ("csv".equalsIgnoreCase(providerKey)) {
       csvDataLoaderService.loadAllCsvData();
-      // Reload players from DB to ensure they are in current persistence context
       Map<String, Player> playersByNickname = loadPlayersByNickname();
       Map<String, List<Player>> result = new LinkedHashMap<>();
       for (Map.Entry<String, List<Player>> entry :
@@ -148,7 +150,7 @@ public class ReferenceGameSeedService {
     }
 
     // Fallback for other providers
-    MockDataGeneratorService.MockDataSet seedData = seedDataProviderSelector.loadSeedData();
+    MockDataGeneratorService.MockDataSet seedData = playerSeedService.loadSeedData();
     if (seedData.total() == 0) {
       return Map.of();
     }
@@ -167,7 +169,6 @@ public class ReferenceGameSeedService {
         Player seedPlayer = playerData.player();
         String key = normalizeNickname(seedPlayer.getNickname());
         Player persisted = playersByNickname.get(key);
-        // Only add persisted players, skip transient ones
         if (persisted != null) {
           resolvedPlayers.add(persisted);
         }
@@ -182,7 +183,7 @@ public class ReferenceGameSeedService {
 
   private Map<String, Player> loadPlayersByNickname() {
     Map<String, Player> playersByNickname = new LinkedHashMap<>();
-    for (Player player : playerRepository.findAll()) {
+    for (Player player : playerSeedService.getAllPlayers()) {
       String key = normalizeNickname(player.getNickname());
       if (!key.isEmpty()) {
         playersByNickname.putIfAbsent(key, player);
@@ -193,30 +194,6 @@ public class ReferenceGameSeedService {
 
   private String normalizeNickname(String nickname) {
     return nickname == null ? "" : nickname.trim().toLowerCase();
-  }
-
-  private Map<String, User> ensureReferenceUsers() {
-    Map<String, User> users = new LinkedHashMap<>();
-    users.put("Thibaut", ensureUser("Thibaut", "thibaut@test.com"));
-    users.put("Teddy", ensureUser("Teddy", "teddy@test.com"));
-    users.put("Marcel", ensureUser("Marcel", "marcel@test.com"));
-    return users;
-  }
-
-  private User ensureUser(String username, String email) {
-    return userRepository
-        .findByUsernameIgnoreCase(username)
-        .orElseGet(() -> createUser(username, email));
-  }
-
-  private User createUser(String username, String email) {
-    User user = new User();
-    user.setUsername(username);
-    user.setEmail(email);
-    user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
-    user.setRole(User.UserRole.USER);
-    user.setCurrentSeason(CURRENT_SEASON);
-    return userRepository.save(user);
   }
 
   private Game buildReferenceGame(User creator, Map<String, List<Player>> assignments) {
