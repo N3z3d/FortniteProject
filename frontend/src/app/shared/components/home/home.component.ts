@@ -1,10 +1,11 @@
 import { Component, OnInit, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective, PulseDirective } from '../../directives/premium-interactions.directive';
 import { PremiumInteractionsService } from '../../services/premium-interactions.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { PlayerStatsService } from '../../../core/services/player-stats.service';
 
 interface Region {
   id: string;
@@ -20,10 +21,11 @@ interface Region {
   selector: 'app-home',
   standalone: true,
   imports: [
-    CommonModule, 
-    PremiumInteractionsDirective, 
-    TooltipDirective, 
-    RevealOnScrollDirective, 
+    CommonModule,
+    RouterModule,
+    PremiumInteractionsDirective,
+    TooltipDirective,
+    RevealOnScrollDirective,
     PulseDirective
   ],
   templateUrl: './home.component.html',
@@ -41,8 +43,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.eu.name',
       descriptionKey: 'home.regions.eu.description',
       icon: '🏰',
-      playerCount: 32,
-      topTeams: 8
+      playerCount: 21,
+      topTeams: 7
     },
     {
       id: 'nac',
@@ -50,7 +52,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.nac.name',
       descriptionKey: 'home.regions.nac.description',
       icon: '🗽',
-      playerCount: 28,
+      playerCount: 21,
       topTeams: 7
     },
     {
@@ -59,8 +61,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.naw.name',
       descriptionKey: 'home.regions.naw.description',
       icon: '🌄',
-      playerCount: 25,
-      topTeams: 6
+      playerCount: 21,
+      topTeams: 7
     },
     {
       id: 'br',
@@ -68,8 +70,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.br.name',
       descriptionKey: 'home.regions.br.description',
       icon: '🏖️',
-      playerCount: 22,
-      topTeams: 6
+      playerCount: 21,
+      topTeams: 7
     },
     {
       id: 'oce',
@@ -77,8 +79,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.oce.name',
       descriptionKey: 'home.regions.oce.description',
       icon: '🏄‍♂️',
-      playerCount: 18,
-      topTeams: 4
+      playerCount: 21,
+      topTeams: 7
     },
     {
       id: 'me',
@@ -86,8 +88,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.me.name',
       descriptionKey: 'home.regions.me.description',
       icon: '🏛️',
-      playerCount: 22,
-      topTeams: 5
+      playerCount: 21,
+      topTeams: 7
     },
     {
       id: 'asia',
@@ -95,8 +97,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       nameKey: 'home.regions.asia.name',
       descriptionKey: 'home.regions.asia.description',
       icon: '🏯',
-      playerCount: 20,
-      topTeams: 5
+      playerCount: 21,
+      topTeams: 7
     }
   ];
 
@@ -114,12 +116,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
     private readonly interactionsService: PremiumInteractionsService,
     private readonly logger: LoggerService,
     private readonly router: Router,
-    private readonly translationService: TranslationService
+    private readonly translationService: TranslationService,
+    private readonly playerStatsService: PlayerStatsService
   ) { }
 
   ngOnInit(): void {
     // Animations d'entrée retardées
     this.animateOnScroll();
+    // Load dynamic player counts from API
+    this.loadRegionPlayerCounts();
+  }
+
+  private loadRegionPlayerCounts(): void {
+    this.playerStatsService.getPlayerStats().subscribe({
+      next: (stats) => {
+        if (stats.playersByRegion) {
+          this.regions = this.regions.map(region => ({
+            ...region,
+            playerCount: stats.playersByRegion?.[region.code] ?? region.playerCount
+          }));
+          this.logger.debug('Home: region counts updated from API', stats.playersByRegion);
+        }
+      },
+      error: (err) => {
+        this.logger.warn('Home: failed to load player stats, using defaults', err);
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -168,6 +190,16 @@ export class HomeComponent implements OnInit, AfterViewInit {
   onBeginnersGuide(): void {
     this.logger.info('Home: beginners guide clicked');
     this.scrollToSection('features');
+  }
+
+  onLogin(): void {
+    this.logger.info('Home: navigating to login');
+    this.router.navigate(['/login']);
+  }
+
+  onViewLeaderboard(): void {
+    this.logger.info('Home: navigating to leaderboard');
+    this.router.navigate(['/leaderboard']);
   }
 
   // Smooth scroll vers les sections

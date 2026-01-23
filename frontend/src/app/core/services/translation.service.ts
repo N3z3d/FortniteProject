@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-export type SupportedLanguage = 'fr' | 'en';
+export type SupportedLanguage = 'fr' | 'en' | 'es' | 'pt';
 
 export interface Translations {
   [key: string]: string | Translations;
@@ -14,7 +14,9 @@ export class TranslationService {
   private currentLang$ = new BehaviorSubject<SupportedLanguage>('fr');
   private translations: Record<SupportedLanguage, Translations> = {
     fr: {},
-    en: {}
+    en: {},
+    es: {},
+    pt: {}
   };
 
   constructor() {
@@ -36,27 +38,41 @@ export class TranslationService {
   }
 
   translate(key: string, fallback?: string): string {
-    const keys = key.split('.');
-    let result: string | Translations = this.translations[this.currentLang$.value];
-
-    for (const k of keys) {
-      if (result && typeof result === 'object' && k in result) {
-        result = result[k];
-      } else {
-        return fallback ?? key; // Return key if translation not found
-      }
+    const direct = this.resolveTranslation(this.currentLang$.value, key);
+    if (direct !== undefined) {
+      return direct;
     }
 
-    return typeof result === 'string' ? result : (fallback ?? key);
+    const englishFallback = this.resolveTranslation('en', key);
+    if (englishFallback !== undefined) {
+      return englishFallback;
+    }
+
+    return fallback ?? key; // Return key if translation not found
   }
 
   t(key: string, fallback?: string): string {
     return this.translate(key, fallback);
   }
 
+  private resolveTranslation(lang: SupportedLanguage, key: string): string | undefined {
+    const keys = key.split('.');
+    let result: string | Translations = this.translations[lang];
+
+    for (const k of keys) {
+      if (result && typeof result === 'object' && k in result) {
+        result = result[k];
+      } else {
+        return undefined;
+      }
+    }
+
+    return typeof result === 'string' ? result : undefined;
+  }
+
   private restoreLanguagePreference(): void {
     const savedLang = localStorage.getItem('app_language') as SupportedLanguage;
-    if (savedLang && (savedLang === 'fr' || savedLang === 'en')) {
+    if (savedLang && ['fr', 'en', 'es', 'pt'].includes(savedLang)) {
       this.currentLang$.next(savedLang);
     }
   }
@@ -133,6 +149,8 @@ export class TranslationService {
           draftAlertsDesc: 'Me notifier quand c\'est mon tour de drafter',
           tradeNotifications: 'Notifications d\'échanges',
           tradeNotificationsDesc: 'M\'alerter des offres d\'échange',
+          draftTurnNotifications: 'Notifications de tour de draft',
+          draftTurnNotificationsDesc: 'M\'alerter quand c\'est mon tour de drafter',
           privacy: 'Confidentialité',
           privacyData: 'Confidentialité et données',
           account: 'Compte',
@@ -141,6 +159,8 @@ export class TranslationService {
           selectLanguage: 'Sélectionner la langue',
           french: 'Français',
           english: 'Anglais',
+          spanish: 'Espagnol',
+          portuguese: 'Portugais',
           gamePreferences: 'Préférences de jeu',
           autoJoinDraft: 'Rejoindre le draft automatiquement',
           autoJoinDraftDesc: 'Rejoindre automatiquement le draft quand il commence',
@@ -179,7 +199,7 @@ export class TranslationService {
             teams: 'Équipes',
             activeTeams: 'Équipes actives',
             players: 'Joueurs',
-            proPlayers: 'Joueurs pro',
+            proPlayers: 'Joueurs draftés',
             points: 'Points',
             totalPoints: 'Points totaux',
             total: 'Totaux',
@@ -189,7 +209,7 @@ export class TranslationService {
             noTeamsFound: 'Aucune équipe trouvée',
             viewFullLeaderboard: 'Voir le classement complet',
             lastUpdated: 'Dernière mise à jour :',
-            myTeams: 'Mes Équipes',
+            myTeams: 'Mon Équipe',
             participants: 'Participants',
             currentTop5: 'Top 5 actuel',
             rank: 'Rang'
@@ -342,6 +362,73 @@ export class TranslationService {
             rejected: 'Refusé',
             withdrawn: 'Retiré',
             expired: 'Expiré'
+          },
+          errors: {
+            loadTrades: 'Échec du chargement des échanges',
+            loadTeams: 'Échec du chargement des équipes',
+            loadHistory: 'Échec du chargement de l\'historique',
+            loadStats: 'Échec du chargement des statistiques',
+            createOffer: 'Échec de la création de l\'offre',
+            acceptOffer: 'Échec de l\'acceptation de l\'offre',
+            rejectOffer: 'Échec du refus de l\'offre',
+            withdrawOffer: 'Échec du retrait de l\'offre',
+            counterOffer: 'Échec de la contre-offre',
+            refreshFailed: 'Échec du rafraîchissement'
+          },
+          messages: {
+            refreshed: 'Données actualisées',
+            tradeAccepted: 'Échange accepté avec succès !',
+            tradeRejected: 'Échange refusé',
+            tradeWithdrawn: 'Échange retiré'
+          },
+          proposal: {
+            title: 'Créer une proposition d\'échange',
+            subtitle: 'Construisez votre échange en glissant les joueurs entre les équipes',
+            errorTitle: 'Impossible de charger les données',
+            loading: {
+              teamsAndPlayers: 'Chargement des équipes et joueurs...'
+            },
+            form: {
+              tradeSettings: 'Paramètres de l\'échange',
+              targetTeamLabel: 'Sélectionner l\'équipe cible',
+              targetTeamRequired: 'Veuillez sélectionner une équipe avec qui échanger'
+            },
+            search: {
+              label: 'Rechercher des joueurs',
+              placeholder: 'Rechercher par nom, région ou position...'
+            },
+            sections: {
+              yourTeam: 'Votre équipe',
+              availablePlayers: 'Joueurs disponibles',
+              noAvailablePlayers: 'Aucun joueur disponible',
+              offering: 'Proposés',
+              dragToOffer: 'Glissez des joueurs ici pour les proposer',
+              requesting: 'Demandés',
+              dragToRequest: 'Glissez des joueurs ici pour les demander',
+              selectTeamTitle: 'Sélectionner une équipe pour échanger',
+              selectTeamDescription: 'Choisissez une équipe cible dans le menu déroulant ci-dessus pour commencer à construire votre proposition d\'échange.'
+            },
+            labels: {
+              ownerBy: 'par',
+              score: 'Score',
+              teamSelected: 'Équipe sélectionnée',
+              playersOffered: 'Joueurs proposés',
+              playersRequested: 'Joueurs demandés'
+            },
+            actions: {
+              clear: 'Effacer',
+              clearTooltip: 'Effacer toutes les sélections',
+              sending: 'Envoi en cours...',
+              sendOffer: 'Envoyer l\'offre d\'échange',
+              preview: 'Aperçu',
+              previewTooltip: 'Aperçu des détails de l\'échange'
+            },
+            messages: {
+              moveNotAllowed: 'Ce déplacement n\'est pas autorisé',
+              completeProposal: 'Veuillez compléter votre proposition',
+              offerSent: 'Offre d\'échange envoyée avec succès !',
+              offerSendFailed: 'Échec de l\'envoi de l\'offre'
+            }
           }
         },
         leaderboard: {
@@ -368,6 +455,7 @@ export class TranslationService {
           player: 'Joueur',
           region: 'Région',
           points: 'Points',
+          selectedBy: 'Sélectionné par',
           noPlayersFound: 'Aucun joueur trouvé',
           noPlayersFoundDesc: 'Essayez de modifier vos critères de recherche',
           previous: 'Précédent',
@@ -413,7 +501,8 @@ export class TranslationService {
             viewAction: 'Voir',
             viewTeamAction: 'Voir équipe',
             participateAction: 'Participer',
-            gotoDraftAction: 'Aller à la draft'
+            gotoDraftAction: 'Aller à la draft',
+            participantsTooltip: 'Nombre de participants / Maximum'
           },
           team: {
             playerAdded: '{player} ajouté à votre équipe',
@@ -507,6 +596,34 @@ export class TranslationService {
             yourTurn: 'C\'est votre tour de sélectionner un joueur',
             waitingTurn: 'En attente de votre tour',
             draftCompletedMsg: 'Draft terminé, toutes les équipes sont complètes'
+          }
+        },
+        legal: {
+          lastUpdate: 'Dernière mise à jour',
+          contact: {
+            title: 'Contact',
+            emailTitle: 'Email',
+            emailContent: 'Pour toute question, contactez-nous à : [TODO: EMAIL À AJOUTER]',
+            supportTitle: 'Support',
+            supportContent: 'Notre équipe de support est disponible du lundi au vendredi, de 9h à 18h (CET).'
+          },
+          legalNotice: {
+            title: 'Mentions Légales',
+            editorTitle: 'Éditeur',
+            editorContent: 'Ce site est édité à titre personnel dans le cadre d\'un projet de développement.',
+            hostingTitle: 'Hébergement',
+            hostingContent: 'Ce site est hébergé sur une infrastructure cloud sécurisée.',
+            intellectualTitle: 'Propriété Intellectuelle',
+            intellectualContent: 'Fortnite est une marque déposée d\'Epic Games, Inc. Ce site n\'est pas affilié à Epic Games et est un projet fan indépendant.'
+          },
+          privacy: {
+            title: 'Politique de Confidentialité',
+            dataTitle: 'Données Collectées',
+            dataContent: 'Nous collectons uniquement les données nécessaires au fonctionnement du service : nom d\'utilisateur, email, et données de jeu.',
+            cookiesTitle: 'Cookies',
+            cookiesContent: 'Ce site utilise des cookies techniques essentiels au fonctionnement de l\'application. Aucun cookie publicitaire n\'est utilisé.',
+            rightsTitle: 'Vos Droits',
+            rightsContent: 'Conformément au RGPD, vous pouvez demander l\'accès, la rectification ou la suppression de vos données en nous contactant.'
           }
         },
         home: {
@@ -616,6 +733,8 @@ export class TranslationService {
           draftAlertsDesc: 'Notify when it\'s my turn to draft',
           tradeNotifications: 'Trade Notifications',
           tradeNotificationsDesc: 'Alert me about trade offers',
+          draftTurnNotifications: 'Draft Turn Notifications',
+          draftTurnNotificationsDesc: 'Alert me when it\'s my turn to draft',
           privacy: 'Privacy',
           privacyData: 'Privacy & Data',
           account: 'Account',
@@ -624,6 +743,8 @@ export class TranslationService {
           selectLanguage: 'Select display language',
           french: 'French',
           english: 'English',
+          spanish: 'Spanish',
+          portuguese: 'Portuguese',
           gamePreferences: 'Game Preferences',
           autoJoinDraft: 'Auto-Join Draft',
           autoJoinDraftDesc: 'Automatically join draft when it starts',
@@ -662,7 +783,7 @@ export class TranslationService {
             teams: 'Teams',
             activeTeams: 'Active teams',
             players: 'Players',
-            proPlayers: 'Pro players',
+            proPlayers: 'Drafted players',
             points: 'Points',
             totalPoints: 'Total points',
             total: 'Total',
@@ -672,7 +793,7 @@ export class TranslationService {
             noTeamsFound: 'No teams found',
             viewFullLeaderboard: 'View full leaderboard',
             lastUpdated: 'Last updated:',
-            myTeams: 'My Teams',
+            myTeams: 'My Team',
             participants: 'Participants',
             currentTop5: 'Current Top 5',
             rank: 'Rank'
@@ -825,6 +946,73 @@ export class TranslationService {
             rejected: 'Rejected',
             withdrawn: 'Withdrawn',
             expired: 'Expired'
+          },
+          errors: {
+            loadTrades: 'Failed to load trades',
+            loadTeams: 'Failed to load teams',
+            loadHistory: 'Failed to load trade history',
+            loadStats: 'Failed to load trading statistics',
+            createOffer: 'Failed to create trade offer',
+            acceptOffer: 'Failed to accept trade offer',
+            rejectOffer: 'Failed to reject trade offer',
+            withdrawOffer: 'Failed to withdraw trade offer',
+            counterOffer: 'Failed to create counter offer',
+            refreshFailed: 'Failed to refresh data'
+          },
+          messages: {
+            refreshed: 'Data refreshed successfully',
+            tradeAccepted: 'Trade accepted successfully!',
+            tradeRejected: 'Trade rejected',
+            tradeWithdrawn: 'Trade withdrawn'
+          },
+          proposal: {
+            title: 'Create Trade Proposal',
+            subtitle: 'Build your trade by dragging players between teams',
+            errorTitle: 'Unable to load data',
+            loading: {
+              teamsAndPlayers: 'Loading teams and players...'
+            },
+            form: {
+              tradeSettings: 'Trade Settings',
+              targetTeamLabel: 'Select Target Team',
+              targetTeamRequired: 'Please select a team to trade with'
+            },
+            search: {
+              label: 'Search Players',
+              placeholder: 'Search by name, region, or position...'
+            },
+            sections: {
+              yourTeam: 'Your Team',
+              availablePlayers: 'Available Players',
+              noAvailablePlayers: 'No available players',
+              offering: 'Offering',
+              dragToOffer: 'Drag players here to offer',
+              requesting: 'Requesting',
+              dragToRequest: 'Drag players here to request',
+              selectTeamTitle: 'Select a Team to Trade With',
+              selectTeamDescription: 'Choose a target team from the dropdown above to start building your trade proposal.'
+            },
+            labels: {
+              ownerBy: 'by',
+              score: 'Score',
+              teamSelected: 'Team selected',
+              playersOffered: 'Players offered',
+              playersRequested: 'Players requested'
+            },
+            actions: {
+              clear: 'Clear',
+              clearTooltip: 'Clear all selections',
+              sending: 'Sending...',
+              sendOffer: 'Send Trade Offer',
+              preview: 'Preview',
+              previewTooltip: 'Preview trade details'
+            },
+            messages: {
+              moveNotAllowed: 'This move is not allowed',
+              completeProposal: 'Please complete your trade proposal',
+              offerSent: 'Trade offer sent successfully!',
+              offerSendFailed: 'Failed to send trade offer'
+            }
           }
         },
         leaderboard: {
@@ -851,6 +1039,7 @@ export class TranslationService {
           player: 'Player',
           region: 'Region',
           points: 'Points',
+          selectedBy: 'Selected by',
           noPlayersFound: 'No players found',
           noPlayersFoundDesc: 'Try modifying your search criteria',
           previous: 'Previous',
@@ -896,7 +1085,8 @@ export class TranslationService {
             viewAction: 'View',
             viewTeamAction: 'View team',
             participateAction: 'Participate',
-            gotoDraftAction: 'Go to draft'
+            gotoDraftAction: 'Go to draft',
+            participantsTooltip: 'Participants / Maximum'
           },
           team: {
             playerAdded: '{player} added to your team',
@@ -992,6 +1182,34 @@ export class TranslationService {
             draftCompletedMsg: 'Draft completed, all teams are full'
           }
         },
+        legal: {
+          lastUpdate: 'Last updated',
+          contact: {
+            title: 'Contact',
+            emailTitle: 'Email',
+            emailContent: 'For any questions, contact us at: [TODO: EMAIL TO ADD]',
+            supportTitle: 'Support',
+            supportContent: 'Our support team is available Monday to Friday, 9am to 6pm (CET).'
+          },
+          legalNotice: {
+            title: 'Legal Notice',
+            editorTitle: 'Publisher',
+            editorContent: 'This site is published personally as part of a development project.',
+            hostingTitle: 'Hosting',
+            hostingContent: 'This site is hosted on a secure cloud infrastructure.',
+            intellectualTitle: 'Intellectual Property',
+            intellectualContent: 'Fortnite is a registered trademark of Epic Games, Inc. This site is not affiliated with Epic Games and is an independent fan project.'
+          },
+          privacy: {
+            title: 'Privacy Policy',
+            dataTitle: 'Data Collected',
+            dataContent: 'We only collect data necessary for the service operation: username, email, and game data.',
+            cookiesTitle: 'Cookies',
+            cookiesContent: 'This site uses essential technical cookies for the application to function. No advertising cookies are used.',
+            rightsTitle: 'Your Rights',
+            rightsContent: 'In accordance with GDPR, you can request access, rectification or deletion of your data by contacting us.'
+          }
+        },
         home: {
           welcome: 'Welcome to Fortnite Pro League!',
           regionSelected: 'Region {name} selected!',
@@ -1026,6 +1244,184 @@ export class TranslationService {
               name: 'Asia',
               description: 'The region of technological innovation. Precision and excellence.'
             }
+          }
+        }
+      },
+      es: {
+        common: {
+          save: 'Guardar',
+          saving: 'Guardando...',
+          and: 'y',
+          cancel: 'Cancelar',
+          edit: 'Editar',
+          editing: 'Editando...',
+          delete: 'Eliminar',
+          confirm: 'Confirmar',
+          loading: 'Cargando...',
+          error: 'Error',
+          success: 'Éxito',
+          yes: 'Sí',
+          no: 'No',
+          back: 'Volver',
+          next: 'Siguiente',
+          close: 'Cerrar',
+          search: 'Buscar',
+          noData: 'Sin datos',
+          actions: 'Acciones',
+          details: 'Detalles',
+          players: 'Jugadores',
+          player: 'Jugador'
+        },
+        layout: {
+          welcome: 'Bienvenido'
+        },
+        auth: {
+          login: 'Iniciar sesión',
+          logout: 'Cerrar sesión',
+          username: 'Nombre de usuario',
+          password: 'Contraseña',
+          email: 'Correo electrónico',
+          register: 'Registrarse',
+          forgotPassword: '¿Olvidaste tu contraseña?',
+          rememberMe: 'Recordarme'
+        },
+        navigation: {
+          home: 'Inicio',
+          dashboard: 'Panel',
+          games: 'Partidas',
+          teams: 'Equipos',
+          leaderboard: 'Clasificación',
+          draft: 'Draft',
+          trades: 'Intercambios',
+          profile: 'Perfil',
+          settings: 'Configuración'
+        },
+        settings: {
+          title: 'Configuración',
+          language: 'Idioma',
+          theme: 'Tema',
+          themeDesc: 'Elige tu tema preferido',
+          darkMode: 'Modo oscuro',
+          lightMode: 'Modo claro',
+          systemDefault: 'Predeterminado del sistema',
+          notifications: 'Notificaciones',
+          french: 'Francés',
+          english: 'Inglés',
+          spanish: 'Español',
+          portuguese: 'Portugués',
+          selectLanguage: 'Seleccionar idioma',
+          settingsSaved: '¡Configuración guardada!',
+          settingsReset: 'Configuración restablecida'
+        },
+        footer: {
+          legalNotice: 'Aviso legal',
+          privacyPolicy: 'Política de privacidad',
+          contact: 'Contacto',
+          copyright: '© 2025 Fortnite Fantasy. Todos los derechos reservados.',
+          disclaimer: 'Este sitio no está afiliado a Epic Games.'
+        },
+        home: {
+          welcome: '¡Bienvenido a Fortnite Pro League!',
+          regionSelected: '¡Región {name} seleccionada!',
+          creatingTeam: 'Creando equipo...',
+          loadingRules: 'Cargando reglas...',
+          regions: {
+            eu: { name: 'Europa', description: 'El corazón estratégico del competitivo.' },
+            nac: { name: 'Norteamérica Central', description: 'El epicentro del gaming creativo.' },
+            naw: { name: 'Norteamérica Oeste', description: 'Tierra de pioneros.' },
+            br: { name: 'Brasil', description: 'Pasión pura y técnica impresionante.' },
+            oce: { name: 'Oceanía', description: 'Guerreros formidables e impredecibles.' },
+            me: { name: 'Oriente Medio', description: 'Diamantes del desierto.' },
+            asia: { name: 'Asia', description: 'Precisión y excelencia tecnológica.' }
+          }
+        }
+      },
+      pt: {
+        common: {
+          save: 'Salvar',
+          saving: 'Salvando...',
+          and: 'e',
+          cancel: 'Cancelar',
+          edit: 'Editar',
+          editing: 'Editando...',
+          delete: 'Excluir',
+          confirm: 'Confirmar',
+          loading: 'Carregando...',
+          error: 'Erro',
+          success: 'Sucesso',
+          yes: 'Sim',
+          no: 'Não',
+          back: 'Voltar',
+          next: 'Próximo',
+          close: 'Fechar',
+          search: 'Pesquisar',
+          noData: 'Sem dados',
+          actions: 'Ações',
+          details: 'Detalhes',
+          players: 'Jogadores',
+          player: 'Jogador'
+        },
+        layout: {
+          welcome: 'Bem-vindo'
+        },
+        auth: {
+          login: 'Entrar',
+          logout: 'Sair',
+          username: 'Nome de usuário',
+          password: 'Senha',
+          email: 'E-mail',
+          register: 'Registrar',
+          forgotPassword: 'Esqueceu sua senha?',
+          rememberMe: 'Lembrar-me'
+        },
+        navigation: {
+          home: 'Início',
+          dashboard: 'Painel',
+          games: 'Partidas',
+          teams: 'Times',
+          leaderboard: 'Classificação',
+          draft: 'Draft',
+          trades: 'Trocas',
+          profile: 'Perfil',
+          settings: 'Configurações'
+        },
+        settings: {
+          title: 'Configurações',
+          language: 'Idioma',
+          theme: 'Tema',
+          themeDesc: 'Escolha seu tema preferido',
+          darkMode: 'Modo escuro',
+          lightMode: 'Modo claro',
+          systemDefault: 'Padrão do sistema',
+          notifications: 'Notificações',
+          french: 'Francês',
+          english: 'Inglês',
+          spanish: 'Espanhol',
+          portuguese: 'Português',
+          selectLanguage: 'Selecionar idioma',
+          settingsSaved: 'Configurações salvas!',
+          settingsReset: 'Configurações redefinidas'
+        },
+        footer: {
+          legalNotice: 'Aviso legal',
+          privacyPolicy: 'Política de privacidade',
+          contact: 'Contato',
+          copyright: '© 2025 Fortnite Fantasy. Todos os direitos reservados.',
+          disclaimer: 'Este site não é afiliado à Epic Games.'
+        },
+        home: {
+          welcome: 'Bem-vindo ao Fortnite Pro League!',
+          regionSelected: 'Região {name} selecionada!',
+          creatingTeam: 'Criando time...',
+          loadingRules: 'Carregando regras...',
+          regions: {
+            eu: { name: 'Europa', description: 'O coração estratégico do competitivo.' },
+            nac: { name: 'América do Norte Central', description: 'O epicentro do gaming criativo.' },
+            naw: { name: 'América do Norte Oeste', description: 'Terra de pioneiros.' },
+            br: { name: 'Brasil', description: 'Paixão pura e técnica impressionante.' },
+            oce: { name: 'Oceania', description: 'Guerreiros formidáveis e imprevisíveis.' },
+            me: { name: 'Oriente Médio', description: 'Diamantes do deserto.' },
+            asia: { name: 'Ásia', description: 'Precisão e excelência tecnológica.' }
           }
         }
       }

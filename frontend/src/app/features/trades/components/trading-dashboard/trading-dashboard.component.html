@@ -70,7 +70,7 @@
       <mat-card-content>
         <mat-icon class="error-icon">error_outline</mat-icon>
         <h3>{{ t.t('trades.errorTitle') }}</h3>
-        <p>{{ error }}</p>
+        <p>{{ t.t('trades.errors.loadTrades') }}</p>
         <button mat-raised-button color="primary" (click)="refreshData(true)">
           <mat-icon>refresh</mat-icon>
           {{ t.t('trades.tryAgain') }}
@@ -117,15 +117,6 @@
         </div>
       </div>
 
-      <div class="stat-card" [@cardHover]>
-        <div class="stat-icon value-icon">
-          <mat-icon>trending_up</mat-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ formatCurrency(stats.averageTradeValue) }}</div>
-          <div class="stat-label">{{ t.t('trades.stats.avgValue') }}</div>
-        </div>
-      </div>
     </div>
 
     <!-- Main Trading Content -->
@@ -204,20 +195,6 @@
                             +{{ trade.requestedPlayers.length - 3 }} {{ t.t('trades.labels.more') }}
                           </mat-chip>
                         </div>
-                      </div>
-                    </div>
-
-                    <div class="trade-value">
-                      <div class="value-balance" [class]="getValueDisplayClass(trade.valueBalance)">
-                        <mat-icon *ngIf="trade.valueBalance > 0">trending_up</mat-icon>
-                        <mat-icon *ngIf="trade.valueBalance < 0">trending_down</mat-icon>
-                        <mat-icon *ngIf="trade.valueBalance === 0">compare_arrows</mat-icon>
-                        <span class="balance-value">{{ formatCurrency(abs(trade.valueBalance)) }}</span>
-                        <span class="balance-label">
-                          <span *ngIf="trade.valueBalance > 0">{{ t.t('trades.labels.youGetMoreValue') }}</span>
-                          <span *ngIf="trade.valueBalance < 0">{{ t.t('trades.labels.youGiveMoreValue') }}</span>
-                          <span *ngIf="trade.valueBalance === 0">{{ t.t('trades.labels.balancedTrade') }}</span>
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -315,15 +292,6 @@
                       </div>
                     </div>
 
-                    <div class="trade-value-summary">
-                      <div class="value-indicator" [class]="getValueDisplayClass(trade.valueBalance)">
-                        {{ formatCurrency(abs(trade.valueBalance)) }}
-                        <mat-icon *ngIf="trade.valueBalance !== 0">
-                          {{ trade.valueBalance > 0 ? 'trending_up' : 'trending_down' }}
-                        </mat-icon>
-                      </div>
-                    </div>
-
                     <div class="trade-actions">
                       <button
                         *ngIf="canWithdrawTrade(trade)"
@@ -381,15 +349,6 @@
                           {{ trade.requestedPlayers.length }} {{ t.t('trades.labels.wanted') }}, {{ trade.offeredPlayers.length }} {{ t.t('trades.labels.offered') }}
                         </span>
                         <span class="trade-time">{{ getTimeSince(trade.createdAt) }}</span>
-                      </div>
-                    </div>
-
-                    <div class="trade-value-summary">
-                      <div class="value-indicator" [class]="getValueDisplayClass(-trade.valueBalance)">
-                        {{ formatCurrency(abs(trade.valueBalance)) }}
-                        <mat-icon *ngIf="trade.valueBalance !== 0">
-                          {{ trade.valueBalance < 0 ? 'trending_up' : 'trending_down' }}
-                        </mat-icon>
                       </div>
                     </div>
 
@@ -459,10 +418,6 @@
                         <span class="completion-date">{{ formatDate(trade.updatedAt) }}</span>
                         <span class="trade-result">{{ trade.status | titlecase }}</span>
                       </div>
-                    </div>
-
-                    <div class="trade-value-summary">
-                       <span class="final-value">{{ formatCurrency(abs(trade.valueBalance)) }}</span>
                     </div>
 
                     <div class="trade-actions">

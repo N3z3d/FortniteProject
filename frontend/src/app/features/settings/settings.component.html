@@ -25,34 +25,18 @@
 
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">{{ t.translate('settings.pushNotifications') }}</span>
-              <span class="setting-description">{{ t.translate('settings.pushNotificationsDesc') }}</span>
-            </div>
-            <mat-slide-toggle [(ngModel)]="pushNotifications"></mat-slide-toggle>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">{{ t.translate('settings.gameReminders') }}</span>
-              <span class="setting-description">{{ t.translate('settings.gameRemindersDesc') }}</span>
-            </div>
-            <mat-slide-toggle [(ngModel)]="gameReminders"></mat-slide-toggle>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-info">
-              <span class="setting-label">{{ t.translate('settings.draftAlerts') }}</span>
-              <span class="setting-description">{{ t.translate('settings.draftAlertsDesc') }}</span>
-            </div>
-            <mat-slide-toggle [(ngModel)]="draftAlerts"></mat-slide-toggle>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-info">
               <span class="setting-label">{{ t.translate('settings.tradeNotifications') }}</span>
               <span class="setting-description">{{ t.translate('settings.tradeNotificationsDesc') }}</span>
             </div>
             <mat-slide-toggle [(ngModel)]="tradeNotifications"></mat-slide-toggle>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">{{ t.translate('settings.draftTurnNotifications') }}</span>
+              <span class="setting-description">{{ t.translate('settings.draftTurnNotificationsDesc') }}</span>
+            </div>
+            <mat-slide-toggle [(ngModel)]="draftTurnNotifications"></mat-slide-toggle>
           </div>
         </div>
       </mat-card-content>
@@ -91,6 +75,8 @@
               <mat-select [(ngModel)]="language" (selectionChange)="onLanguageChange()">
                 <mat-option value="fr">{{ t.translate('settings.french') }}</mat-option>
                 <mat-option value="en">{{ t.translate('settings.english') }}</mat-option>
+                <mat-option value="es">{{ t.translate('settings.spanish') }}</mat-option>
+                <mat-option value="pt">{{ t.translate('settings.portuguese') }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>

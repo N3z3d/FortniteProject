@@ -14,8 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 class GameDtoSerializationTest {
 
   @Test
-  @DisplayName("should serialize currentParticipantCount without conflict")
-  void shouldSerializeCurrentParticipantCountWithoutConflict() throws Exception {
+  @DisplayName("should serialize participantCount for frontend compatibility")
+  void shouldSerializeParticipantCountForFrontendCompatibility() throws Exception {
     GameDto dto =
         GameDto.builder()
             .id(UUID.randomUUID())
@@ -26,7 +26,8 @@ class GameDtoSerializationTest {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode node = mapper.readTree(mapper.writeValueAsString(dto));
 
-    assertThat(node.get("currentParticipantCount").asInt()).isEqualTo(2);
-    assertThat(node.has("participantCount")).isFalse();
+    // Frontend expects "participantCount" field name
+    assertThat(node.get("participantCount").asInt()).isEqualTo(2);
+    assertThat(node.has("currentParticipantCount")).isFalse();
   }
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
@@ -73,10 +73,14 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   private readonly tradingService = inject(TradingService);
   public readonly userContextService = inject(UserContextService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly notificationService = inject(NotificationService);
   public readonly t = inject(TranslationService);
+
+  // Game context
+  private gameId: string | null = null;
 
   @ViewChild('searchInput', { static: false }) searchInput?: ElementRef<HTMLInputElement>;
 
@@ -106,9 +110,8 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
       totalTrades: stats?.totalTrades || 0,
       pendingOffers: trades.filter(t => t.status === 'pending').length,
       successfulTrades: stats?.successfulTrades || 0,
-      averageTradeValue: stats?.averageTradeValue || 0,
       activeTrades: trades.filter(t => t.status === 'pending').length,
-      recentActivity: trades.filter(t => 
+      recentActivity: trades.filter(t =>
         new Date().getTime() - new Date(t.updatedAt).getTime() < 24 * 60 * 60 * 1000
       ).length
     }))
@@ -139,7 +142,24 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadInitialData();
+    // Extract gameId from parent route (/games/{gameId}/trades)
+    this.route.parent?.params.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      this.gameId = params['id'] || null;
+      this.loadInitialData();
+    });
+
+    // Fallback: also check own route params
+    this.route.params.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      if (params['gameId'] && !this.gameId) {
+        this.gameId = params['gameId'];
+        this.loadInitialData();
+      }
+    });
+
     this.setupAutoRefresh();
     this.handleNotifications();
   }
@@ -213,12 +233,17 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialData(): void {
-    // Load trades and stats
-    this.tradingService.getTrades()
+    if (!this.gameId) {
+      console.warn('TradingDashboard: No gameId available, cannot load trades');
+      return;
+    }
+
+    // Load trades and stats with gameId
+    this.tradingService.getTrades(this.gameId)
       .pipe(takeUntil(this.destroy$))
       .subscribe();
 
-    this.tradingService.getTradingStats()
+    this.tradingService.getTradingStats(this.gameId)
       .pipe(takeUntil(this.destroy$))
       .subscribe();
   }
@@ -269,23 +294,27 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   onCreateTrade(): void {
-    this.router.navigate(['/trades/create']);
+    if (this.gameId) {
+      this.router.navigate(['/games', this.gameId, 'trades', 'create']);
+    }
   }
 
   onViewTradeDetails(trade: TradeOffer): void {
-    this.router.navigate(['/trades', trade.id]);
+    if (this.gameId) {
+      this.router.navigate(['/games', this.gameId, 'trades', trade.id]);
+    }
   }
 
   onAcceptTrade(trade: TradeOffer): void {
     this.tradingService.acceptTradeOffer(trade.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (updatedTrade) => {
-          this.showSuccessMessage(`Trade accepted successfully!`);
+        next: () => {
+          this.showSuccessMessage(this.t.t('trades.messages.tradeAccepted'));
           this.triggerCelebration();
         },
-        error: (error) => {
-          this.notificationService.showError('Failed to accept trade');
+        error: () => {
+          this.notificationService.showError(this.t.t('trades.errors.acceptOffer'));
         }
       });
   }
@@ -294,11 +323,11 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     this.tradingService.rejectTradeOffer(trade.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (updatedTrade) => {
-          this.showSuccessMessage(`Trade rejected`);
+        next: () => {
+          this.showSuccessMessage(this.t.t('trades.messages.tradeRejected'));
         },
-        error: (error) => {
-          this.notificationService.showError('Failed to reject trade');
+        error: () => {
+          this.notificationService.showError(this.t.t('trades.errors.rejectOffer'));
         }
       });
   }
@@ -307,34 +336,43 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     this.tradingService.withdrawTradeOffer(trade.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (updatedTrade) => {
-          this.showSuccessMessage(`Trade withdrawn`);
+        next: () => {
+          this.showSuccessMessage(this.t.t('trades.messages.tradeWithdrawn'));
         },
-        error: (error) => {
-          this.notificationService.showError('Failed to withdraw trade');
+        error: () => {
+          this.notificationService.showError(this.t.t('trades.errors.withdrawOffer'));
         }
       });
   }
 
   refreshData(showLoader: boolean = true): void {
+    if (!this.gameId) return;
+
     if (showLoader) {
       this.isRefreshing.next(true);
     }
 
-    this.tradingService.refreshData()
+    // Clear cache and reload with gameId
+    this.tradingService.clearAllCaches();
+
+    this.tradingService.getTrades(this.gameId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.isRefreshing.next(false);
           if (showLoader) {
-            this.showSuccessMessage('Data refreshed successfully');
+            this.showSuccessMessage(this.t.t('trades.messages.refreshed', 'Données actualisées'));
           }
         },
-        error: (error) => {
+        error: () => {
           this.isRefreshing.next(false);
-          this.notificationService.showError('Failed to refresh data');
+          this.notificationService.showError(this.t.t('trades.errors.refreshFailed', 'Échec du rafraîchissement'));
         }
       });
+
+    this.tradingService.getTradingStats(this.gameId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe();
   }
 
   // Utility Methods
@@ -351,25 +389,6 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
 
   getTradeStatusClass(status: string): string {
     return `status-${status}`;
-  }
-
-  getValueDisplayClass(value: number): string {
-    if (value > 0) return 'value-positive';
-    if (value < 0) return 'value-negative';
-    return 'value-neutral';
-  }
-
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  }
-
-  abs(value: number): number {
-    return Math.abs(value ?? 0);
   }
 
   formatDate(date: Date): string {

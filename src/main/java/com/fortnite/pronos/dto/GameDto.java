@@ -29,7 +29,7 @@ public class GameDto {
   private String creatorUsername;
   private Integer maxParticipants;
 
-  @JsonProperty("currentParticipantCount")
+  @JsonProperty("participantCount")
   private Integer currentParticipantCount;
 
   private GameStatus status;
@@ -38,6 +38,8 @@ public class GameDto {
   private Integer currentSeason;
   private String description;
   private String invitationCode;
+  private LocalDateTime invitationCodeExpiresAt;
+  private Boolean isInvitationCodeExpired;
   private Boolean isPrivate;
   private Boolean autoStartDraft;
   private Integer draftTimeLimit;
@@ -46,6 +48,9 @@ public class GameDto {
   private Map<Player.Region, Integer> regionRules;
   private Map<UUID, String> participants;
   private Map<String, Object> statistics;
+
+  /** Total count of available Fortnite players for draft selection */
+  private Long fortnitePlayerCount;
 
   /** Calculer le nombre de places disponibles */
   public int getAvailableSlots() {
@@ -264,6 +269,9 @@ public class GameDto {
         game.getParticipants() != null ? game.getParticipants().size() : 0);
     dto.setStatus(game.getStatus());
     dto.setInvitationCode(game.getInvitationCode());
+    dto.setInvitationCodeExpiresAt(game.getInvitationCodeExpiresAt());
+    dto.setIsInvitationCodeExpired(game.isInvitationCodeExpired());
+    dto.setCurrentSeason(game.getCurrentSeason());
 
     // Initialiser les collections
     dto.initializeCollections();

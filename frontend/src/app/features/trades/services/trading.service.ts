@@ -70,8 +70,6 @@ export interface TradeStats {
   successfulTrades: number;
   pendingOffers: number;
   receivedOffers: number;
-  averageTradeValue: number;
-  lastTradeDate?: Date;
 }
 
 @Injectable({
@@ -109,16 +107,12 @@ export class TradingService {
   /**
    * Initialize real-time updates using polling
    * In a production app, this could use WebSockets or Server-Sent Events
+   * Note: Real-time updates are disabled by default - they require a gameId context
    */
   private initializeRealTimeUpdates(): void {
-    // Poll for trades updates every 30 seconds
-    timer(0, this.refreshInterval).pipe(
-      switchMap(() => this.loadTrades()),
-      catchError(error => {
-        this.logger.error('TradingService real-time updates failed', error);
-        return throwError(() => error);
-      })
-    ).subscribe();
+    // Real-time polling is disabled since it requires a gameId context
+    // The component should call refreshData() or getTrades(gameId) explicitly
+    this.logger.debug('TradingService initialized - polling disabled, use explicit refresh');
   }
 
   /**
@@ -135,8 +129,8 @@ export class TradingService {
       });
     }
 
-    const url = gameId ? `${this.apiUrl}?gameId=${gameId}` : this.apiUrl;
-    
+    const url = gameId ? `${this.apiUrl}/game/${gameId}` : this.apiUrl;
+
     return this.http.get<TradeOffer[]>(url).pipe(
       map(trades => trades.map(trade => ({
         ...trade,
@@ -236,8 +230,8 @@ export class TradingService {
    */
   acceptTradeOffer(offerId: string): Observable<TradeOffer> {
     this.loadingSubject.next(true);
-    
-    return this.http.post<TradeOffer>(`${this.apiUrl}/${offerId}/accept`, {}).pipe(
+
+    return this.http.put<TradeOffer>(`${this.apiUrl}/${offerId}/accept`, {}).pipe(
       tap(updatedOffer => {
         this.updateTradeInList(updatedOffer);
         this.clearTradesCache();
@@ -256,8 +250,8 @@ export class TradingService {
    */
   rejectTradeOffer(offerId: string, reason?: string): Observable<TradeOffer> {
     this.loadingSubject.next(true);
-    
-    return this.http.post<TradeOffer>(`${this.apiUrl}/${offerId}/reject`, { reason }).pipe(
+
+    return this.http.put<TradeOffer>(`${this.apiUrl}/${offerId}/reject`, { reason }).pipe(
       tap(updatedOffer => {
         this.updateTradeInList(updatedOffer);
         this.clearTradesCache();
@@ -272,12 +266,12 @@ export class TradingService {
   }
 
   /**
-   * Withdraw a trade offer
+   * Cancel/Withdraw a trade offer
    */
   withdrawTradeOffer(offerId: string): Observable<TradeOffer> {
     this.loadingSubject.next(true);
-    
-    return this.http.post<TradeOffer>(`${this.apiUrl}/${offerId}/withdraw`, {}).pipe(
+
+    return this.http.put<TradeOffer>(`${this.apiUrl}/${offerId}/cancel`, {}).pipe(
       tap(updatedOffer => {
         this.updateTradeInList(updatedOffer);
         this.clearTradesCache();
@@ -363,13 +357,9 @@ export class TradingService {
       });
     }
 
-    const url = gameId ? `${this.apiUrl}/stats?gameId=${gameId}` : `${this.apiUrl}/stats`;
-    
+    const url = gameId ? `${this.apiUrl}/game/${gameId}/statistics` : `${this.apiUrl}/statistics`;
+
     return this.http.get<TradeStats>(url).pipe(
-      map(stats => ({
-        ...stats,
-        lastTradeDate: stats.lastTradeDate ? new Date(stats.lastTradeDate) : undefined
-      })),
       tap(stats => {
         this.setCache(cacheKey, stats);
         this.tradingStatsSubject.next(stats);
@@ -398,12 +388,12 @@ export class TradingService {
   isTradeBalanced(offeredPlayers: Player[], requestedPlayers: Player[], maxImbalance: number = 0.15): boolean {
     const offeredValue = offeredPlayers.reduce((sum, player) => sum + player.marketValue, 0);
     const requestedValue = requestedPlayers.reduce((sum, player) => sum + player.marketValue, 0);
-    
+
     if (offeredValue === 0 && requestedValue === 0) return true;
-    
+
     const largerValue = Math.max(offeredValue, requestedValue);
     const imbalance = Math.abs(offeredValue - requestedValue) / largerValue;
-    
+
     return imbalance <= maxImbalance;
   }
 

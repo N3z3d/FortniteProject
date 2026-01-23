@@ -4,9 +4,9 @@
     <div class="header-content">
       <h1 class="proposal-title">
         <mat-icon class="title-icon">handshake</mat-icon>
-        Create Trade Proposal
+        {{ t.t('trades.proposal.title') }}
       </h1>
-      <p class="proposal-subtitle">Build your trade by dragging players between teams</p>
+      <p class="proposal-subtitle">{{ t.t('trades.proposal.subtitle') }}</p>
     </div>
 
     <div class="header-actions">
@@ -15,16 +15,16 @@
         class="cancel-btn"
         (click)="onCancel()">
         <mat-icon>close</mat-icon>
-        Cancel
+        {{ t.t('common.cancel') }}
       </button>
 
       <button 
         mat-stroked-button 
         class="clear-btn"
         (click)="onClearTrade()"
-        matTooltip="Clear all selections">
+        [matTooltip]="t.t('trades.proposal.actions.clearTooltip')">
         <mat-icon>refresh</mat-icon>
-        Clear
+        {{ t.t('trades.proposal.actions.clear') }}
       </button>
     </div>
   </div>
@@ -32,7 +32,7 @@
   <!-- Loading State -->
   <div *ngIf="loading$ | async" class="loading-container">
     <mat-spinner diameter="60"></mat-spinner>
-    <p>Loading teams and players...</p>
+    <p>{{ t.t('trades.proposal.loading.teamsAndPlayers') }}</p>
   </div>
 
   <!-- Error State -->
@@ -40,7 +40,7 @@
     <mat-card class="error-card">
       <mat-card-content>
         <mat-icon class="error-icon">error_outline</mat-icon>
-        <h3>Unable to load data</h3>
+        <h3>{{ t.t('trades.proposal.errorTitle') }}</h3>
         <p>{{ error }}</p>
       </mat-card-content>
     </mat-card>
@@ -53,64 +53,43 @@
     <form [formGroup]="tradeForm" class="trade-form">
       <mat-card class="form-card">
         <mat-card-header>
-          <mat-card-title>Trade Settings</mat-card-title>
+          <mat-card-title>{{ t.t('trades.proposal.form.tradeSettings') }}</mat-card-title>
         </mat-card-header>
         
         <mat-card-content>
           <div class="form-row">
             <mat-form-field appearance="outline" class="target-team-field">
-              <mat-label>Select Target Team</mat-label>
+              <mat-label>{{ t.t('trades.proposal.form.targetTeamLabel') }}</mat-label>
               <mat-select formControlName="targetTeam" required>
-                <mat-option 
-                  *ngFor="let team of teams$ | async" 
+                <mat-option
+                  *ngFor="let team of teams$ | async"
                   [value]="team.id"
                   [disabled]="team.ownerId === (userContextService.getCurrentUser()?.id)">
                   <div class="team-option">
                     <span class="team-name">{{ team.name }}</span>
-                    <span class="owner-name">by {{ team.ownerName }}</span>
+                    <span class="owner-name">{{ t.t('trades.proposal.labels.ownerBy') }} {{ team.ownerName }}</span>
                   </div>
                 </mat-option>
               </mat-select>
-              <mat-error>Please select a team to trade with</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="expires-field">
-              <mat-label>Expires In (Hours)</mat-label>
-              <mat-select formControlName="expiresIn">
-                <mat-option [value]="24">24 Hours</mat-option>
-                <mat-option [value]="48">48 Hours</mat-option>
-                <mat-option [value]="72">72 Hours</mat-option>
-                <mat-option [value]="168">1 Week</mat-option>
-              </mat-select>
+              <mat-error>{{ t.t('trades.proposal.form.targetTeamRequired') }}</mat-error>
             </mat-form-field>
           </div>
-
-          <mat-form-field appearance="outline" class="message-field">
-            <mat-label>Message (Optional)</mat-label>
-            <textarea 
-              matInput 
-              formControlName="message"
-              rows="3"
-              maxlength="500"
-              placeholder="Add a personal message to your trade offer..."></textarea>
-            <mat-hint align="end">{{ tradeForm.get('message')?.value?.length || 0 }}/500</mat-hint>
-          </mat-form-field>
         </mat-card-content>
       </mat-card>
     </form>
 
     <!-- Search Section -->
-    <div class="search-section">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search Players</mat-label>
-        <input 
-          matInput 
-          #playerSearch
-          placeholder="Search by name, region, or position..."
-          (input)="onSearchChange(playerSearch.value)">
-        <mat-icon matPrefix>search</mat-icon>
-      </mat-form-field>
-    </div>
+  <div class="search-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>{{ t.t('trades.proposal.search.label') }}</mat-label>
+      <input 
+        matInput 
+        #playerSearch
+        [placeholder]="t.t('trades.proposal.search.placeholder')"
+        (input)="onSearchChange(playerSearch.value)">
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+  </div>
 
     <!-- Trade Builder -->
     <div class="trade-builder" *ngIf="tradeState$ | async as state">
@@ -118,14 +97,16 @@
       <!-- Your Team Section -->
       <div class="team-section your-team">
         <div class="section-header">
-          <h2>Your Team</h2>
-          <div class="player-count">{{ state.availablePlayers.length + state.offeredPlayers.length }} players</div>
+          <h2>{{ t.t('trades.proposal.sections.yourTeam') }}</h2>
+          <div class="player-count">
+            {{ state.availablePlayers.length + state.offeredPlayers.length }} {{ t.t('common.players') }}
+          </div>
         </div>
 
         <div class="players-container">
           <!-- Available Players -->
           <div class="player-pool available-pool">
-            <h3>Available Players</h3>
+            <h3>{{ t.t('trades.proposal.sections.availablePlayers') }}</h3>
             <div 
               class="drop-zone"
               cdkDropList
@@ -158,7 +139,7 @@
                 
                 <div class="player-stats">
                   <div class="stat-item">
-                    <span class="stat-label">Score</span>
+                    <span class="stat-label">{{ t.t('trades.proposal.labels.score') }}</span>
                     <span class="stat-value">{{ player.averageScore | number:'1.0-1' }}</span>
                   </div>
                   <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
@@ -171,14 +152,14 @@
 
               <div *ngIf="state.availablePlayers.length === 0" class="empty-drop-zone">
                 <mat-icon>inbox</mat-icon>
-                <span>No available players</span>
+                <span>{{ t.t('trades.proposal.sections.noAvailablePlayers') }}</span>
               </div>
             </div>
           </div>
 
           <!-- Offered Players -->
           <div class="player-pool offered-pool">
-            <h3>Offering <span class="count">({{ state.offeredPlayers.length }})</span></h3>
+            <h3>{{ t.t('trades.proposal.sections.offering') }} <span class="count">({{ state.offeredPlayers.length }})</span></h3>
             <div 
               class="drop-zone offering-zone"
               cdkDropList
@@ -211,7 +192,7 @@
                 
                 <div class="player-stats">
                   <div class="stat-item">
-                    <span class="stat-label">Score</span>
+                    <span class="stat-label">{{ t.t('trades.proposal.labels.score') }}</span>
                     <span class="stat-value">{{ player.averageScore | number:'1.0-1' }}</span>
                   </div>
                   <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
@@ -228,41 +209,9 @@
 
               <div *ngIf="state.offeredPlayers.length === 0" class="empty-drop-zone">
                 <mat-icon>add_circle_outline</mat-icon>
-                <span>Drag players here to offer</span>
+                <span>{{ t.t('trades.proposal.sections.dragToOffer') }}</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Trade Balance Section -->
-      <div class="trade-balance-section" *ngIf="tradeValidation$ | async as validation">
-        <div class="balance-card" [@tradeBalanceChange]="getBalanceDisplayClass(state.tradeBalance)">
-          <div class="balance-icon">
-            <mat-icon>{{ getBalanceIcon(state.tradeBalance) }}</mat-icon>
-          </div>
-          
-          <div class="balance-content">
-            <div class="balance-value" [class]="getBalanceDisplayClass(state.tradeBalance)">
-              {{ formatCurrency(abs(state.tradeBalance)) }}
-            </div>
-            
-            <div class="balance-label">
-              <span *ngIf="state.tradeBalance > 0">You receive more value</span>
-              <span *ngIf="state.tradeBalance < 0">You give more value</span>
-              <span *ngIf="state.tradeBalance === 0">Balanced trade</span>
-            </div>
-          </div>
-
-          <div class="balance-indicator">
-            <div class="balance-bar">
-              <div 
-                class="balance-fill" 
-                [class]="getBalanceDisplayClass(state.tradeBalance)"
-                [style.width]="minPercent(validation.balancePercentage) + '%'">
-              </div>
-            </div>
-            <small class="balance-percentage">{{ validation.balancePercentage.toFixed(1) }}% difference</small>
           </div>
         </div>
       </div>
@@ -271,13 +220,15 @@
       <div class="team-section target-team" *ngIf="state.selectedTeam">
         <div class="section-header">
           <h2>{{ state.selectedTeam.name }}</h2>
-          <div class="player-count">{{ state.targetTeamPlayers.length + state.requestedPlayers.length }} players</div>
+          <div class="player-count">
+            {{ state.targetTeamPlayers.length + state.requestedPlayers.length }} {{ t.t('common.players') }}
+          </div>
         </div>
 
         <div class="players-container">
           <!-- Target Team Players -->
           <div class="player-pool target-pool">
-            <h3>Available Players</h3>
+            <h3>{{ t.t('trades.proposal.sections.availablePlayers') }}</h3>
             <div 
               class="drop-zone"
               cdkDropList
@@ -310,7 +261,7 @@
                 
                 <div class="player-stats">
                   <div class="stat-item">
-                    <span class="stat-label">Score</span>
+                    <span class="stat-label">{{ t.t('trades.proposal.labels.score') }}</span>
                     <span class="stat-value">{{ player.averageScore | number:'1.0-1' }}</span>
                   </div>
                   <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
@@ -323,14 +274,14 @@
 
               <div *ngIf="state.targetTeamPlayers.length === 0" class="empty-drop-zone">
                 <mat-icon>inbox</mat-icon>
-                <span>No available players</span>
+                <span>{{ t.t('trades.proposal.sections.noAvailablePlayers') }}</span>
               </div>
             </div>
           </div>
 
           <!-- Requested Players -->
           <div class="player-pool requested-pool">
-            <h3>Requesting <span class="count">({{ state.requestedPlayers.length }})</span></h3>
+            <h3>{{ t.t('trades.proposal.sections.requesting') }} <span class="count">({{ state.requestedPlayers.length }})</span></h3>
             <div 
               class="drop-zone requesting-zone"
               cdkDropList
@@ -363,7 +314,7 @@
                 
                 <div class="player-stats">
                   <div class="stat-item">
-                    <span class="stat-label">Score</span>
+                    <span class="stat-label">{{ t.t('trades.proposal.labels.score') }}</span>
                     <span class="stat-value">{{ player.averageScore | number:'1.0-1' }}</span>
                   </div>
                   <div class="market-value">{{ formatCurrency(player.marketValue) }}</div>
@@ -380,7 +331,7 @@
 
               <div *ngIf="state.requestedPlayers.length === 0" class="empty-drop-zone">
                 <mat-icon>add_circle_outline</mat-icon>
-                <span>Drag players here to request</span>
+                <span>{{ t.t('trades.proposal.sections.dragToRequest') }}</span>
               </div>
             </div>
           </div>
@@ -390,8 +341,8 @@
       <!-- No Target Team Selected -->
       <div *ngIf="!state.selectedTeam" class="no-target-team">
         <mat-icon class="large-icon">groups</mat-icon>
-        <h3>Select a Team to Trade With</h3>
-        <p>Choose a target team from the dropdown above to start building your trade proposal.</p>
+        <h3>{{ t.t('trades.proposal.sections.selectTeamTitle') }}</h3>
+        <p>{{ t.t('trades.proposal.sections.selectTeamDescription') }}</p>
       </div>
     </div>
 
@@ -400,22 +351,17 @@
       <div class="validation-summary">
         <div class="validation-item" [class.completed]="validation.selectedTeam">
           <mat-icon>{{ validation.selectedTeam ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-          <span>Team selected</span>
+          <span>{{ t.t('trades.proposal.labels.teamSelected') }}</span>
         </div>
         
         <div class="validation-item" [class.completed]="validation.hasOfferedPlayers">
           <mat-icon>{{ validation.hasOfferedPlayers ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-          <span>Players offered ({{ ((tradeState$ | async)?.offeredPlayers?.length) || 0 }})</span>
+          <span>{{ t.t('trades.proposal.labels.playersOffered') }} ({{ ((tradeState$ | async)?.offeredPlayers?.length) || 0 }})</span>
         </div>
         
         <div class="validation-item" [class.completed]="validation.hasRequestedPlayers">
           <mat-icon>{{ validation.hasRequestedPlayers ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-          <span>Players requested ({{ ((tradeState$ | async)?.requestedPlayers?.length) || 0 }})</span>
-        </div>
-
-        <div class="validation-item" [class.completed]="validation.isBalanced" [class.warning]="!validation.isBalanced">
-          <mat-icon>{{ validation.isBalanced ? 'check_circle' : 'warning' }}</mat-icon>
-          <span>Trade balance {{ validation.isBalanced ? 'acceptable' : 'may be unfair' }}</span>
+          <span>{{ t.t('trades.proposal.labels.playersRequested') }} ({{ ((tradeState$ | async)?.requestedPlayers?.length) || 0 }})</span>
         </div>
       </div>
 
@@ -428,16 +374,16 @@
           (click)="onSubmitTrade()">
           <mat-spinner *ngIf="isSubmitting | async" diameter="20" class="submit-spinner"></mat-spinner>
           <mat-icon *ngIf="!(isSubmitting | async)">send</mat-icon>
-          {{ (isSubmitting | async) ? 'Sending...' : 'Send Trade Offer' }}
+          {{ (isSubmitting | async) ? t.t('trades.proposal.actions.sending') : t.t('trades.proposal.actions.sendOffer') }}
         </button>
 
         <button 
           mat-stroked-button 
           class="preview-btn"
           [disabled]="!validation.isValid"
-          matTooltip="Preview trade details">
+          [matTooltip]="t.t('trades.proposal.actions.previewTooltip')">
           <mat-icon>preview</mat-icon>
-          Preview
+          {{ t.t('trades.proposal.actions.preview') }}
         </button>
       </div>
     </div>

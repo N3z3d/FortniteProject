@@ -13,6 +13,7 @@ import { MaterialModule } from '../../../../shared/material/material.module';
 import { TradingService, TradeOffer, Player, Team } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 interface TradeProposalState {
   selectedTeam: Team | null;
@@ -107,12 +108,16 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private readonly notificationService = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  public readonly t = inject(TranslationService);
 
   @ViewChild('playerSearch', { static: false }) playerSearchInput?: ElementRef<HTMLInputElement>;
 
   // Form
   tradeForm: FormGroup;
   
+  // Game context
+  private gameId: string | null = null;
+
   // Observable streams
   teams$: Observable<Team[]>;
   loading$: Observable<boolean>;
@@ -161,9 +166,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   constructor() {
     // Initialize form
     this.tradeForm = this.fb.group({
-      targetTeam: ['', Validators.required],
-      message: ['', [Validators.maxLength(500)]],
-      expiresIn: [72, [Validators.required, Validators.min(1), Validators.max(168)]] // Hours
+      targetTeam: ['', Validators.required]
     });
 
     // Initialize observable streams
@@ -175,7 +178,16 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadInitialData();
+    // Extract gameId from parent route (/games/{gameId}/trades/create)
+    this.route.parent?.params.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      this.gameId = params['id'] || null;
+      if (this.gameId) {
+        this.loadInitialData();
+      }
+    });
+
     this.setupFormSubscriptions();
     this.handleRouteParams();
   }
@@ -233,23 +245,24 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
   private loadInitialData(): void {
     // Load teams for the current game
-    const gameId = this.route.snapshot.paramMap.get('gameId');
-    
-    if (gameId) {
-      this.tradingService.getTeams(gameId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(teams => {
-          // Load current user's team players
-          const currentUserId = this.userContextService.getCurrentUser()?.id;
-          const userTeam = teams.find(team => team.ownerId === currentUserId);
-          
-          if (userTeam) {
-            this.updateTradeState({
-              availablePlayers: userTeam.players
-            });
-          }
-        });
+    if (!this.gameId) {
+      console.warn('TradeProposal: No gameId available, cannot load teams');
+      return;
     }
+
+    this.tradingService.getTeams(this.gameId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(teams => {
+        // Load current user's team players
+        const currentUserId = this.userContextService.getCurrentUser()?.id;
+        const userTeam = teams.find(team => team.ownerId === currentUserId);
+
+        if (userTeam) {
+          this.updateTradeState({
+            availablePlayers: userTeam.players
+          });
+        }
+      });
   }
 
   private setupFormSubscriptions(): void {
@@ -311,7 +324,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       
       // Validate the move
       if (!this.canMovePlayer(player, previousContainer.id, container.id)) {
-        this.showErrorMessage('This player cannot be moved to this location');
+        this.showErrorMessage(this.t.t('trades.proposal.messages.moveNotAllowed'));
         return;
       }
 
@@ -436,22 +449,21 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
     const state = this.tradeStateSubject.value;
     if (!state.isValid) {
-      this.showErrorMessage('Please complete the trade proposal');
+      this.showErrorMessage(this.t.t('trades.proposal.messages.completeProposal'));
       return;
     }
 
     this.isSubmitting.next(true);
 
-    const formValue = this.tradeForm.value;
+    // Default expiration: 72 hours from now
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + formValue.expiresIn);
+    expiresAt.setHours(expiresAt.getHours() + 72);
 
     const tradeOffer: Partial<TradeOffer> = {
       toTeamId: state.selectedTeam!.id,
       toUserId: state.selectedTeam!.ownerId,
       offeredPlayers: state.offeredPlayers,
       requestedPlayers: state.requestedPlayers,
-      message: formValue.message || undefined,
       expiresAt,
       valueBalance: state.tradeBalance
     };
@@ -459,7 +471,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
     try {
       const createdTrade = await this.tradingService.createTradeOffer(tradeOffer).toPromise();
       
-      this.showSuccessMessage('Trade offer sent successfully!');
+      this.showSuccessMessage(this.t.t('trades.proposal.messages.offerSent'));
       this.triggerSuccessAnimation();
       
       // Navigate back to dashboard after a delay
@@ -468,7 +480,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       }, 2000);
       
     } catch (error) {
-      this.showErrorMessage('Failed to send trade offer. Please try again.');
+      this.showErrorMessage(this.t.t('trades.proposal.messages.offerSendFailed'));
     } finally {
       this.isSubmitting.next(false);
     }
@@ -537,7 +549,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, this.t.t('common.close'), {
       duration: 4000,
       panelClass: ['success-snackbar'],
       horizontalPosition: 'end',
@@ -546,7 +558,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   private showErrorMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, this.t.t('common.close'), {
       duration: 4000,
       panelClass: ['error-snackbar'],
       horizontalPosition: 'end',
@@ -610,11 +622,6 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       requestedPlayers: [],
       availablePlayers: newAvailable,
       targetTeamPlayers: newTargetPlayers
-    });
-
-    this.tradeForm.patchValue({
-      message: '',
-      expiresIn: 72
     });
   }
 }
