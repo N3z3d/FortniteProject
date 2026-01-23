@@ -255,15 +255,35 @@ public class GameController {
         Map.of("success", true, "message", "Draft demarree avec succes", "draft", draft));
   }
 
-  @Operation(summary = "Delete game", description = "Deletes a game permanently")
+  @Operation(
+      summary = "Delete game",
+      description = "Deletes a game permanently (only creator can delete)")
   @ApiResponses(
       value = {
         @ApiResponse(responseCode = "200", description = "Game deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Game not found")
+        @ApiResponse(responseCode = "403", description = "Not authorized to delete this game"),
+        @ApiResponse(responseCode = "404", description = "Game not found"),
+        @ApiResponse(responseCode = "409", description = "Cannot delete game in progress")
       })
   @DeleteMapping("/{id:" + UUID_PATH_PATTERN + "}")
-  public ResponseEntity<Map<String, Object>> deleteGame(@PathVariable UUID id) {
+  public ResponseEntity<Map<String, Object>> deleteGame(
+      @PathVariable UUID id,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
     log.info("Suppression de la game: {}", id);
+
+    User user = userResolver.resolve(username, httpRequest);
+    if (user == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(Map.of("error", "Utilisateur requis"));
+    }
+
+    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    if (!user.getId().equals(gameDto.getCreatorId())) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(Map.of("error", "Seul le createur peut supprimer cette partie"));
+    }
+
     gameService.deleteGame(id);
     return ResponseEntity.ok(Map.of("success", true, "message", "Game supprimee avec succes"));
   }
@@ -289,5 +309,58 @@ public class GameController {
             .collect(Collectors.toList());
 
     return ResponseEntity.ok(participants);
+  }
+
+  @Operation(
+      summary = "Regenerate invitation code",
+      description =
+          "Generates a new invitation code with optional duration (24h, 48h, 7d, permanent)")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Code regenerated successfully"),
+        @ApiResponse(responseCode = "404", description = "Game not found")
+      })
+  @PostMapping("/{id:" + UUID_PATH_PATTERN + "}/regenerate-code")
+  public ResponseEntity<GameDto> regenerateInvitationCode(
+      @PathVariable UUID id,
+      @RequestParam(name = "duration", required = false, defaultValue = "permanent")
+          String duration) {
+    log.info("Regeneration du code d'invitation pour la game: {} avec duree: {}", id, duration);
+    GameDto game = gameService.regenerateInvitationCode(id, duration);
+    return ResponseEntity.ok(game);
+  }
+
+  @Operation(summary = "Rename game", description = "Renames an existing game")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Game renamed successfully"),
+        @ApiResponse(responseCode = "403", description = "Not authorized to rename"),
+        @ApiResponse(responseCode = "404", description = "Game not found")
+      })
+  @PostMapping("/{id:" + UUID_PATH_PATTERN + "}/rename")
+  public ResponseEntity<GameDto> renameGame(
+      @PathVariable UUID id,
+      @RequestBody Map<String, String> request,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    log.info("Renommage de la game: {}", id);
+
+    User user = userResolver.resolve(username, httpRequest);
+    if (user == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    if (!user.getId().equals(gameDto.getCreatorId())) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    String newName = request.get("name");
+    if (newName == null || newName.isBlank()) {
+      return ResponseEntity.badRequest().build();
+    }
+
+    GameDto updatedGame = gameService.renameGame(id, newName);
+    return ResponseEntity.ok(updatedGame);
   }
 }

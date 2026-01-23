@@ -325,7 +325,7 @@ h1 {
 .table-container {
   @include glass-card-dark();
   @include fade-in-up(0.4s);
-  overflow: hidden;
+  overflow-x: auto; // Changed from overflow: hidden to allow table scrolling
   margin-bottom: var(--space-2xl);
   border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
 }
@@ -483,6 +483,30 @@ h1 {
   font-weight: 700;
   @include gaming-text-gradient();
   font-size: 1.2rem;
+}
+
+.prono-cell {
+  .prono-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .prono-badge {
+    @include glass-card-dark(0.6);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-medium);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--gaming-accent);
+    border: 1px solid var(--gaming-accent);
+    white-space: nowrap;
+  }
+
+  .no-prono {
+    color: var(--gaming-gray-light);
+    font-style: italic;
+  }
 }
 
 // Premium Gaming Pagination

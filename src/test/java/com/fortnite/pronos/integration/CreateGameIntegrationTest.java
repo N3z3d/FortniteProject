@@ -112,7 +112,7 @@ public class CreateGameIntegrationTest {
         .andExpect(jsonPath("$.creatorName").value("testuser"))
         .andExpect(jsonPath("$.status").value("CREATING"));
 
-    log.info("✅ Game creation test passed successfully");
+    log.info("[OK] Game creation test passed successfully");
   }
 
   @Test
@@ -136,7 +136,7 @@ public class CreateGameIntegrationTest {
         .andDo(print())
         .andExpect(status().isBadRequest());
 
-    log.info("✅ Invalid game creation rejection test passed successfully");
+    log.info("[OK] Invalid game creation rejection test passed successfully");
   }
 
   @Test
@@ -158,6 +158,6 @@ public class CreateGameIntegrationTest {
         .andDo(print())
         .andExpect(status().isUnauthorized());
 
-    log.info("✅ Unauthorized game creation rejection test passed successfully");
+    log.info("[OK] Unauthorized game creation rejection test passed successfully");
   }
 }

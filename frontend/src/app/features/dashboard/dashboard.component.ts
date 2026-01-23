@@ -286,6 +286,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           if (data.leaderboard && Array.isArray(data.leaderboard)) {
             this.logger.debug('📈 Leaderboard data', { entriesCount: data.leaderboard.length });
             this.leaderboardEntries = data.leaderboard;
+            // Populate dashboardLeaderboard for the preview section (top 5)
+            this.dashboardLeaderboard = data.leaderboard.slice(0, 5).map((entry: LeaderboardEntryDTO) => ({
+              rank: entry.rank,
+              name: entry.teamName || entry.ownerName || `Equipe ${entry.rank}`,
+              points: entry.totalPoints
+            }));
             this.updateStatsFromLeaderboard(data.leaderboard);
           }
 
@@ -301,6 +307,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.stats.teamComposition = this.stats.teamComposition || { regions: {}, tranches: {} };
             this.stats.teamComposition.regions = data.regionDistribution;
           }
+
+          // Update proPlayersCount - only show drafted players for active games
+          // For games in CREATING/DRAFTING status, no players are drafted yet → show 0
+          const isGameActive = this.selectedGame?.status === 'ACTIVE' || this.selectedGame?.status === 'FINISHED';
+          this.stats.proPlayersCount = isGameActive ? (this.stats.totalPlayers || 0) : 0;
 
           this.lastUpdate = new Date();
           this.isLoadingProgress = 100;
@@ -639,7 +650,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Update live region with navigation announcement
     this.updateLiveRegion(`${this.t.t('dashboard.live.navigatingTo')} ${label}`, 'polite');
 
-    this.router.navigate([route]);
+    // Split route into segments for proper Angular navigation
+    // e.g., '/games/123/trades' -> ['/', 'games', '123', 'trades']
+    const segments = route.split('/').filter(segment => segment.length > 0);
+    this.router.navigate(['/', ...segments]);
   }
 
   // Enhanced navigation with keyboard support
@@ -726,6 +740,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Méthode utilitaire pour le formatage rapide dans le template
+  getParticipantDisplayCount(): number {
+    const explicitCount = this.selectedGame?.participantCount ?? 0;
+    const teamCount = this.selectedGame?.teams?.length ?? this.stats.totalTeams ?? 0;
+    const participantCount = this.selectedGame?.participants?.length ?? 0;
+
+    return Math.max(explicitCount, teamCount, participantCount);
+  }
+
   formatNumber(n: number | undefined | null): string {
     if (n === undefined || n === null) return '0';
     return n.toLocaleString(this.getNumberLocale());

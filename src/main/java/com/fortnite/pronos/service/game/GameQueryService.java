@@ -15,6 +15,7 @@ import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,37 +28,44 @@ import lombok.extern.slf4j.Slf4j;
 public class GameQueryService {
 
   private final GameRepository gameRepository;
+  private final PlayerRepository playerRepository;
 
   /** Gets all games - PHASE 1B: OPTIMIZED with EntityGraph to prevent N+1 */
   public List<GameDto> getAllGames() {
     log.debug("Retrieving all games with optimized fetch strategy");
+    long playerCount = playerRepository.count();
     return gameRepository
         .findAllByOrderByCreatedAtDesc() // Uses EntityGraph for N+1 prevention
         .stream()
         .map(GameDto::fromGame)
+        .peek(dto -> dto.setFortnitePlayerCount(playerCount))
         .collect(Collectors.toList());
   }
 
   /** Gets games with available slots */
   public List<GameDto> getAvailableGames() {
     log.debug("Retrieving games with available slots");
+    long playerCount = playerRepository.count();
     return gameRepository.findGamesWithAvailableSlots().stream()
         .map(GameDto::fromGame)
+        .peek(dto -> dto.setFortnitePlayerCount(playerCount))
         .collect(Collectors.toList());
   }
 
   /** Gets games by user ID */
   public List<GameDto> getGamesByUser(UUID userId) {
     log.debug("Retrieving games for user {}", userId);
+    long playerCount = playerRepository.count();
     return gameRepository.findGamesByUserId(userId).stream()
         .map(GameDto::fromGame)
+        .peek(dto -> dto.setFortnitePlayerCount(playerCount))
         .collect(Collectors.toList());
   }
 
   /** Gets a game by ID - PHASE 1B: OPTIMIZED with full details EntityGraph */
   public Optional<GameDto> getGameById(UUID gameId) {
     log.debug("Retrieving game {} with full details fetch strategy", gameId);
-    return gameRepository.findById(gameId).map(GameDto::fromGame);
+    return gameRepository.findById(gameId).map(GameDto::fromGame).map(this::enrichWithPlayerCount);
   }
 
   /** Gets a game by ID or throws exception */
@@ -135,5 +143,26 @@ public class GameQueryService {
   /** Gets game count by status */
   public long getGameCountByStatus(GameStatus status) {
     return gameRepository.countByStatus(status);
+  }
+
+  /** Gets games by season */
+  public List<GameDto> getGamesBySeason(Integer season) {
+    log.debug("Retrieving games for season {}", season);
+    long playerCount = playerRepository.count();
+    return gameRepository.findByCurrentSeasonWithFetch(season).stream()
+        .map(GameDto::fromGame)
+        .peek(dto -> dto.setFortnitePlayerCount(playerCount))
+        .collect(Collectors.toList());
+  }
+
+  /** Gets the current season (based on current year) */
+  public Integer getCurrentSeason() {
+    return java.time.Year.now().getValue();
+  }
+
+  /** Enriches a GameDto with additional data like fortnitePlayerCount */
+  private GameDto enrichWithPlayerCount(GameDto dto) {
+    dto.setFortnitePlayerCount(playerRepository.count());
+    return dto;
   }
 }

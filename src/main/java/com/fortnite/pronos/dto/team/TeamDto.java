@@ -28,37 +28,52 @@ public class TeamDto {
   }
 
   public static TeamDto from(Team team) {
+    if (team == null) {
+      return null;
+    }
+
     TeamDto dto = new TeamDto();
     dto.id = team.getId();
     dto.name = team.getName();
     dto.season = team.getSeason();
-    dto.ownerUsername = team.getOwner().getUsername();
+    dto.ownerUsername = team.getOwner() != null ? team.getOwner().getUsername() : null;
 
-    dto.totalScore =
-        team.getPlayers().stream()
-            .filter(tp -> tp.getUntil() == null)
-            .mapToInt(
-                tp ->
-                    tp.getPlayer().getScores().stream()
+    if (team.getPlayers() != null) {
+      dto.totalScore =
+          team.getPlayers().stream()
+              .filter(tp -> tp.getUntil() == null)
+              .mapToInt(
+                  tp -> {
+                    if (tp.getPlayer() == null || tp.getPlayer().getScores() == null) {
+                      return 0;
+                    }
+                    return tp.getPlayer().getScores().stream()
                         .filter(s -> java.util.Objects.equals(s.getSeason(), team.getSeason()))
                         .mapToInt(s -> s.getPoints())
-                        .sum())
-            .sum();
+                        .sum();
+                  })
+              .sum();
 
-    dto.players =
-        team.getPlayers().stream()
-            .filter(tp -> tp.getUntil() == null)
-            .map(
-                tp -> {
-                  TeamPlayerDto playerDto = new TeamPlayerDto();
-                  playerDto.playerId = tp.getPlayer().getId();
-                  playerDto.nickname = tp.getPlayer().getNickname();
-                  playerDto.region =
-                      tp.getPlayer().getRegion() != null ? tp.getPlayer().getRegion().name() : null;
-                  playerDto.tranche = tp.getPlayer().getTranche();
-                  return playerDto;
-                })
-            .collect(Collectors.toList());
+      dto.players =
+          team.getPlayers().stream()
+              .filter(tp -> tp.getUntil() == null && tp.getPlayer() != null)
+              .map(
+                  tp -> {
+                    TeamPlayerDto playerDto = new TeamPlayerDto();
+                    playerDto.playerId = tp.getPlayer().getId();
+                    playerDto.nickname = tp.getPlayer().getNickname();
+                    playerDto.region =
+                        tp.getPlayer().getRegion() != null
+                            ? tp.getPlayer().getRegion().name()
+                            : null;
+                    playerDto.tranche = tp.getPlayer().getTranche();
+                    return playerDto;
+                  })
+              .collect(Collectors.toList());
+    } else {
+      dto.totalScore = 0;
+      dto.players = List.of();
+    }
 
     return dto;
   }

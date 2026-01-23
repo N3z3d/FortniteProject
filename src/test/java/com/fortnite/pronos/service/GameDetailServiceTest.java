@@ -2,6 +2,8 @@ package com.fortnite.pronos.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ import com.fortnite.pronos.repository.DraftPickRepository;
 import com.fortnite.pronos.repository.DraftRepository;
 import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.repository.ScoreRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameDetailService - getGameDetails TDD")
@@ -34,6 +37,8 @@ class GameDetailServiceTest {
   @Mock private DraftRepository draftRepository;
 
   @Mock private DraftPickRepository draftPickRepository;
+
+  @Mock private ScoreRepository scoreRepository;
 
   @InjectMocks private GameDetailService gameDetailService;
 
@@ -287,5 +292,84 @@ class GameDetailServiceTest {
     player.setTranche("1-10");
     player.setCurrentSeason(2025);
     return player;
+  }
+
+  // Tests pour l'integration ScoreRepository
+
+  @Test
+  @DisplayName("devrait calculer le score actuel des joueurs via ScoreRepository")
+  void shouldCalculateCurrentScoreViaScoreRepository() {
+    // Given
+    Player bugha = participantThibaut.getSelectedPlayers().get(0);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bugha.getId()), eq(2025))).thenReturn(15000);
+
+    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+    when(gameParticipantRepository.findByGame(testGame))
+        .thenReturn(Arrays.asList(participantThibaut));
+    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+
+    // When
+    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+
+    // Then
+    GameDetailDto.ParticipantInfo thibautInfo = result.getParticipants().get(0);
+    GameDetailDto.PlayerInfo bughaInfo =
+        thibautInfo.getSelectedPlayers().stream()
+            .filter(p -> p.getNickname().equals("Bugha"))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(bughaInfo.getCurrentScore()).isEqualTo(15000);
+  }
+
+  @Test
+  @DisplayName("devrait retourner 0 si aucun score n'existe pour le joueur")
+  void shouldReturnZeroWhenNoScoreExists() {
+    // Given
+    Player bugha = participantThibaut.getSelectedPlayers().get(0);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bugha.getId()), anyInt())).thenReturn(null);
+
+    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+    when(gameParticipantRepository.findByGame(testGame))
+        .thenReturn(Arrays.asList(participantThibaut));
+    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+
+    // When
+    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+
+    // Then
+    GameDetailDto.ParticipantInfo thibautInfo = result.getParticipants().get(0);
+    GameDetailDto.PlayerInfo bughaInfo =
+        thibautInfo.getSelectedPlayers().stream()
+            .filter(p -> p.getNickname().equals("Bugha"))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(bughaInfo.getCurrentScore()).isEqualTo(0);
+  }
+
+  @Test
+  @DisplayName("devrait utiliser la saison du joueur pour le calcul du score")
+  void shouldUsePlayerSeasonForScoreCalculation() {
+    // Given - joueur avec saison 2024
+    Player playerWith2024 = createPlayer("OldPlayer", Player.Region.EU);
+    playerWith2024.setCurrentSeason(2024);
+    participantThibaut.setSelectedPlayers(Arrays.asList(playerWith2024));
+
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(playerWith2024.getId()), eq(2024)))
+        .thenReturn(8500);
+
+    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+    when(gameParticipantRepository.findByGame(testGame))
+        .thenReturn(Arrays.asList(participantThibaut));
+    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+
+    // When
+    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+
+    // Then
+    GameDetailDto.PlayerInfo playerInfo =
+        result.getParticipants().get(0).getSelectedPlayers().get(0);
+    assertThat(playerInfo.getCurrentScore()).isEqualTo(8500);
   }
 }

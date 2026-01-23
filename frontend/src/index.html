@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <title>Fortnite Pronos - Fantasy League pour Fortnite</title>
+  <!-- Polyfill for Node.js globals (fixes "global is not defined" error) -->
+  <script>
+    window.global = window;
+    window.process = window.process || { env: {} };
+  </script>
   <meta name="description" content="Application de fantasy league pour les joueurs Fortnite. Créez votre équipe, participez au draft et grimpez dans le classement.">
   <base href="/">
   

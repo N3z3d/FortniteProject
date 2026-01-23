@@ -13,7 +13,8 @@ const routes: Routes = [
   { path: ':id/draft', loadComponent: () => import('../draft/draft.component').then(c => c.DraftComponent) },
   { path: ':id/teams', loadChildren: () => import('../teams/teams.module').then(m => m.TeamsModule) },
   { path: ':id/leaderboard', loadChildren: () => import('../leaderboard/leaderboard.module').then(m => m.LeaderboardModule) },
-  { path: ':id/dashboard', loadChildren: () => import('../dashboard/dashboard.module').then(m => m.DashboardModule) }
+  { path: ':id/dashboard', loadChildren: () => import('../dashboard/dashboard.module').then(m => m.DashboardModule) },
+  { path: ':id/trades', loadChildren: () => import('../trades/trades.module').then(m => m.TradesModule) }
 ];
 
 @NgModule({

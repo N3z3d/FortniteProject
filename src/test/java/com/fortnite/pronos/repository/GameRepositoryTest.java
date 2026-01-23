@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
@@ -21,6 +23,7 @@ import com.fortnite.pronos.model.User;
 
 /** Tests TDD pour GameRepository */
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = Replace.NONE)
 @ActiveProfiles("test")
 @DisplayName("Tests TDD - GameRepository")
 class GameRepositoryTest {
@@ -250,16 +253,28 @@ class GameRepositoryTest {
   @Test
   @DisplayName("Devrait trouver les games par saison")
   void shouldFindGamesBySeason() {
-    // Note: setCurrentSeason n'existe pas dans le modèle Game
-    // Ce test nécessite une implémentation de la saison dans le modèle Game
-    // Pour l'instant, on teste avec les valeurs par défaut
+    // Given - games already created with default current season (current year)
+    int currentYear = java.time.Year.now().getValue();
+
+    // Create a game with different season
+    Game pastSeasonGame = new Game();
+    pastSeasonGame.setName("Past Season Game");
+    pastSeasonGame.setCreator(testCreator);
+    pastSeasonGame.setMaxParticipants(5);
+    pastSeasonGame.setStatus(GameStatus.FINISHED);
+    pastSeasonGame.setCurrentSeason(2024); // Previous season
+    pastSeasonGame.setCreatedAt(LocalDateTime.now());
+    entityManager.persistAndFlush(pastSeasonGame);
 
     // When
-    List<Game> allGames = gameRepository.findAll();
+    List<Game> currentSeasonGames = gameRepository.findByCurrentSeason(currentYear);
+    List<Game> pastSeasonGames = gameRepository.findByCurrentSeason(2024);
 
     // Then
-    assertThat(allGames).hasSize(2);
-    // TODO: Implémenter la logique de saison dans le modèle Game
+    assertThat(currentSeasonGames).hasSize(2); // testGame and testGame2 have current year
+    assertThat(pastSeasonGames).hasSize(1);
+    assertThat(pastSeasonGames.get(0).getName()).isEqualTo("Past Season Game");
+    assertThat(pastSeasonGames.get(0).getCurrentSeason()).isEqualTo(2024);
   }
 
   @Test

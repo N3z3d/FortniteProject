@@ -151,10 +151,10 @@ public class GameCreationService {
         .build();
   }
 
-  /** Deletes a game Only allowed if the game has not started yet */
+  /** Soft deletes a game. Only allowed if the game has not started yet */
   @Transactional
   public void deleteGame(UUID gameId) {
-    log.debug("Deleting game {}", gameId);
+    log.debug("Soft deleting game {}", gameId);
 
     // Find the game
     Game game =
@@ -167,8 +167,60 @@ public class GameCreationService {
       throw new IllegalStateException("Cannot delete game that has already started");
     }
 
-    // Delete the game (cascade will handle participants)
-    gameRepository.delete(game);
-    log.info("Game {} deleted successfully", gameId);
+    // Soft delete the game (mark as deleted, don't remove from DB)
+    game.softDelete();
+    gameRepository.save(game);
+    log.info("Game {} soft deleted successfully", gameId);
+  }
+
+  /** Regenerates the invitation code for a game (permanent by default) */
+  @Transactional
+  public GameDto regenerateInvitationCode(UUID gameId) {
+    return regenerateInvitationCode(gameId, null);
+  }
+
+  /** Regenerates the invitation code for a game with configurable duration */
+  @Transactional
+  public GameDto regenerateInvitationCode(UUID gameId, String duration) {
+    log.debug("Regenerating invitation code for game {} with duration {}", gameId, duration);
+
+    Game game =
+        gameRepository
+            .findById(gameId)
+            .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
+
+    String newCode = invitationCodeService.generateUniqueCode();
+    game.setInvitationCode(newCode);
+
+    // Calculate and set expiration date based on duration
+    InvitationCodeService.CodeDuration codeDuration =
+        InvitationCodeService.CodeDuration.fromString(duration);
+    game.setInvitationCodeExpiresAt(invitationCodeService.calculateExpirationDate(codeDuration));
+
+    game = gameRepository.save(game);
+
+    log.info(
+        "Invitation code regenerated for game {}: {} (expires: {})",
+        gameId,
+        newCode,
+        game.getInvitationCodeExpiresAt());
+    return GameDto.fromGame(game);
+  }
+
+  /** Renames a game */
+  @Transactional
+  public GameDto renameGame(UUID gameId, String newName) {
+    log.debug("Renaming game {} to {}", gameId, newName);
+
+    Game game =
+        gameRepository
+            .findById(gameId)
+            .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
+
+    game.setName(newName);
+    game = gameRepository.save(game);
+
+    log.info("Game {} renamed to {}", gameId, newName);
+    return GameDto.fromGame(game);
   }
 }

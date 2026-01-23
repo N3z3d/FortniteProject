@@ -18,6 +18,7 @@ import { GameDataService } from '../services/game-data.service';
 import { Game, GameStatus, GameParticipant } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
 import { UserContextService } from '../../../core/services/user-context.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
 
 @Component({
   selector: 'app-game-detail',
@@ -54,7 +55,8 @@ export class GameDetailComponent implements OnInit {
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly snackBar: MatSnackBar,
-    private readonly userContextService: UserContextService
+    private readonly userContextService: UserContextService,
+    private readonly userGamesStore: UserGamesStore
   ) { }
 
   ngOnInit(): void {
@@ -210,10 +212,31 @@ export class GameDetailComponent implements OnInit {
   }
 
   /**
-   * @deprecated Utiliser archiveGame() pour soft delete
+   * Supprime définitivement une partie (uniquement en status CREATING)
+   */
+  permanentlyDeleteGame(): void {
+    if (!this.game) return;
+
+    this.gameService.deleteGame(this.gameId).subscribe({
+      next: (success) => {
+        if (success) {
+          // Rafraîchir la sidebar
+          this.userGamesStore.removeGame(this.gameId);
+          // Rediriger vers la page d'accueil
+          this.router.navigate(['/']);
+        }
+      },
+      error: (error) => {
+        console.error('Error deleting game:', error);
+      }
+    });
+  }
+
+  /**
+   * @deprecated Utiliser permanentlyDeleteGame() pour suppression définitive
    */
   deleteGame(): void {
-    this.archiveGame();
+    this.permanentlyDeleteGame();
   }
 
   joinGame(): void {
@@ -266,10 +289,19 @@ export class GameDetailComponent implements OnInit {
   }
 
   /**
-   * @deprecated Utiliser canArchiveGame() à la place
+   * Vérifie si l'utilisateur peut supprimer définitivement la partie
+   * Conditions: host + status CREATING uniquement
    */
   canDeleteGame(): boolean {
-    return this.canArchiveGame();
+    if (!this.game) return false;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    // Peut supprimer uniquement si host ET status CREATING
+    const isHost = this.gameService.isGameHost(this.game, currentUser.username);
+    const isCreatingStatus = this.game.status === 'CREATING';
+
+    return isHost && isCreatingStatus;
   }
 
   canJoinGame(): boolean {
@@ -352,6 +384,122 @@ export class GameDetailComponent implements OnInit {
     if (confirm('Êtes-vous sûr de vouloir démarrer le draft ? Cette action ne peut pas être annulée.')) {
       this.startDraft();
     }
+  }
+
+  copyInvitationCode(): void {
+    if (!this.game?.invitationCode) return;
+
+    navigator.clipboard.writeText(this.game.invitationCode).then(() => {
+      this.snackBar.open('Code copié dans le presse-papier !', 'OK', {
+        duration: 2000
+      });
+    }).catch(() => {
+      this.snackBar.open('Impossible de copier le code', 'Fermer', {
+        duration: 3000
+      });
+    });
+  }
+
+  /**
+   * Régénère le code d'invitation de la game avec durée configurable
+   */
+  regenerateInvitationCode(duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): void {
+    if (!this.game) return;
+
+    this.gameService.regenerateInvitationCode(this.gameId, duration).subscribe({
+      next: (updatedGame) => {
+        if (this.game) {
+          this.game.invitationCode = updatedGame.invitationCode;
+          this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
+          this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
+        }
+      },
+      error: (error) => {
+        console.error('Error regenerating invitation code:', error);
+      }
+    });
+  }
+
+  /**
+   * Affiche le prompt pour choisir la durée et régénère le code
+   */
+  promptRegenerateCode(): void {
+    const choice = prompt(
+      'Choisissez la durée du code d\'invitation:\n1 = 24 heures\n2 = 48 heures\n3 = 7 jours\n4 = Permanent',
+      '4'
+    );
+
+    if (!choice) return;
+
+    const durationMap: { [key: string]: '24h' | '48h' | '7d' | 'permanent' } = {
+      '1': '24h',
+      '2': '48h',
+      '3': '7d',
+      '4': 'permanent'
+    };
+
+    const duration = durationMap[choice] || 'permanent';
+    this.regenerateInvitationCode(duration);
+  }
+
+  /**
+   * Formate la date d'expiration du code d'invitation
+   */
+  getInvitationCodeExpiry(): string {
+    if (!this.game?.invitationCodeExpiresAt) {
+      return 'Permanent';
+    }
+    if (this.game.isInvitationCodeExpired) {
+      return 'Expiré';
+    }
+    return this.getTimeAgo(this.game.invitationCodeExpiresAt);
+  }
+
+  /**
+   * Vérifie si l'utilisateur peut régénérer le code (host uniquement)
+   */
+  canRegenerateCode(): boolean {
+    if (!this.game) return false;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    return this.gameService.isGameHost(this.game, currentUser.username) &&
+           this.game.status === 'CREATING';
+  }
+
+  /**
+   * Vérifie si l'utilisateur peut renommer la partie (host uniquement)
+   */
+  canRenameGame(): boolean {
+    if (!this.game) return false;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    return this.gameService.isGameHost(this.game, currentUser.username) &&
+           this.game.status === 'CREATING';
+  }
+
+  /**
+   * Renomme la partie
+   */
+  renameGame(): void {
+    if (!this.game) return;
+
+    const newName = prompt('Nouveau nom de la partie:', this.game.name);
+    if (!newName || newName.trim() === '' || newName === this.game.name) {
+      return;
+    }
+
+    this.gameService.renameGame(this.gameId, newName.trim()).subscribe({
+      next: (updatedGame) => {
+        if (this.game) {
+          this.game.name = updatedGame.name;
+        }
+      },
+      error: (error) => {
+        console.error('Error renaming game:', error);
+      }
+    });
   }
 
   getCreator(): GameParticipant | null {

@@ -90,7 +90,7 @@ class DataInitializationServiceTddTest {
     int playersUsedInTeams = 12; // Comportement actuel problématique
     int playersNotUsed = allPlayers.size() - playersUsedInTeams;
 
-    System.err.println("❌ PROBLÈME DÉTECTÉ:");
+    System.err.println("[ERROR] PROBLÈME DÉTECTÉ:");
     System.err.println("   Joueurs en base: " + allPlayers.size());
     System.err.println("   Joueurs utilisés dans les équipes: " + playersUsedInTeams);
     System.err.println("   Joueurs NON utilisés: " + playersNotUsed);
@@ -121,7 +121,7 @@ class DataInitializationServiceTddTest {
     // Équipe Marcel : joueurs 98-146 (49 joueurs)
     // TOTAL = 147 joueurs utilisés !
 
-    System.out.println("✅ SOLUTION PROPOSÉE:");
+    System.out.println("[OK] SOLUTION PROPOSÉE:");
     System.out.println("   Équipe 1: joueurs 0-48 (" + (49) + " joueurs)");
     System.out.println("   Équipe 2: joueurs 49-97 (" + (49) + " joueurs)");
     System.out.println("   Équipe 3: joueurs 98-146 (" + (49) + " joueurs)");

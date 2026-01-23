@@ -20,6 +20,7 @@ public class LayeredArchitectureTest {
 
   @Test
   void shouldFollowLayeredArchitecture() {
+    // Hybrid layered architecture during migration to hexagonal
     Architectures.layeredArchitecture()
         .consideringAllDependencies()
         .layer("Controllers")
@@ -28,6 +29,10 @@ public class LayeredArchitectureTest {
         .definedBy("..core..")
         .optionalLayer("Exceptions")
         .definedBy("..exception..")
+        .optionalLayer("Domain")
+        .definedBy("..domain..")
+        .optionalLayer("Application")
+        .definedBy("..application..")
         .layer("Services")
         .definedBy("..service..")
         .layer("Repositories")
@@ -44,6 +49,10 @@ public class LayeredArchitectureTest {
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
         .whereLayer("Exceptions")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Exceptions")
+        .whereLayer("Domain")
+        .mayOnlyBeAccessedByLayers("Application", "Services", "UseCases", "Domain", "Config")
+        .whereLayer("Application")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Application", "Config")
         .whereLayer("Services")
         .mayOnlyBeAccessedByLayers(
             "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions")
@@ -51,9 +60,18 @@ public class LayeredArchitectureTest {
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
         .whereLayer("Models")
         .mayOnlyBeAccessedByLayers(
-            "Controllers", "Services", "Repositories", "DTOs", "UseCases", "Exceptions", "Config")
+            "Controllers",
+            "Services",
+            "Repositories",
+            "DTOs",
+            "UseCases",
+            "Exceptions",
+            "Config",
+            "Domain",
+            "Application")
         .whereLayer("DTOs")
-        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Exceptions", "Config")
+        .mayOnlyBeAccessedByLayers(
+            "Controllers", "Services", "UseCases", "Exceptions", "Config", "Application")
         .whereLayer("Config")
         .mayOnlyBeAccessedByLayers("Config", "Controllers", "Services", "UseCases", "Exceptions")
         .check(classes);

@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -136,7 +135,7 @@ class DraftWorkflowIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.message").value("Joueur sélectionné avec succès"));
+        .andExpect(jsonPath("$.message").value("Joueur selectionne avec succes"));
   }
 
   @Test
@@ -255,7 +254,7 @@ class DraftWorkflowIntegrationTest {
         .perform(post("/api/draft/{gameId}/handle-timeouts", gameId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.timeoutCount").exists())
-        .andExpect(jsonPath("$.message").value("Timeouts gérés avec succès"));
+        .andExpect(jsonPath("$.message").value("Timeouts geres avec succes"));
   }
 
   @Test
@@ -272,7 +271,7 @@ class DraftWorkflowIntegrationTest {
         .perform(post("/api/draft/{gameId}/finish", gameId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.message").value("Draft terminé avec succès"));
+        .andExpect(jsonPath("$.message").value("Draft termine avec succes"));
 
     // Vérification en base
     Game updatedGame = gameRepository.findById(gameId).orElseThrow();
@@ -280,29 +279,16 @@ class DraftWorkflowIntegrationTest {
   }
 
   /*
-   * TODO: Implement complete draft workflow logic
+   * JIRA-DRAFT-002: Draft /next endpoint logic - FIXED
    *
-   * CONTEXT:
-   * - The /api/draft/{gameId}/next endpoint does NOT actually advance the draft order
-   * - The DraftController.moveToNext() method only returns success without updating state
-   * - The getNextParticipant() always returns the first participant by draft order
-   *
-   * ACTION REQUIRED:
-   * 1. Add currentDraftOrder field to Game entity with migration
-   * 2. Implement DraftController.moveToNext() to increment currentDraftOrder
-   * 3. Modify getNextParticipant() to return participant at currentDraftOrder position
-   * 4. Add business rules: only advance if current participant has selected a player
-   *
-   * ESTIMATED EFFORT: 4-6 hours
-   * - Database migration: 30min
-   * - Entity changes: 30min
-   * - Controller implementation: 2h
-   * - Service logic: 1h
-   * - Integration tests: 1h
+   * FIX IMPLEMENTED:
+   * - DraftService.buildNextParticipantResponse() now uses snake draft position calculation
+   * - DraftService.advanceDraftToNextParticipant() now uses snake draft position calculation
+   * - DraftService.isUserTurnForGame() now uses snake draft position calculation
+   * - The Draft entity already had currentPick/currentRound/totalRounds tracking
+   * - calculateCurrentPosition() handles snake draft: odd rounds normal, even rounds reverse
    */
   @Test
-  @Disabled(
-      "Draft workflow incomplete - /next endpoint does not advance draft order. See TODO above.")
   @DisplayName("Devrait gérer le workflow complet de draft")
   void shouldHandleCompleteDraftWorkflow() throws Exception {
     // Given - Création d'un draft avec 3 participants

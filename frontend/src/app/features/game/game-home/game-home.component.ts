@@ -171,9 +171,8 @@ export class GameHomeComponent implements OnInit, OnDestroy {
   }
 
   getTotalFortnitePlayers(game: Game): number {
-    // Return actual Fortnite player count from the game object
-    // Fallback to 0 if not available
-    return (game as any).fortnitePlayerCount || 0;
+    // Use API value if available, fallback to 147 (7 regions x 21 players)
+    return game.fortnitePlayerCount ?? 147;
   }
 
   getMaxParticipants(): number {

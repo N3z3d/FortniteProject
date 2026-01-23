@@ -478,6 +478,17 @@
           .participants {
             font-size: 0.75rem;
             color: var(--nexus-text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: help;
+
+            .participant-icon {
+              font-size: 14px;
+              width: 14px;
+              height: 14px;
+              opacity: 0.8;
+            }
           }
         }
       }

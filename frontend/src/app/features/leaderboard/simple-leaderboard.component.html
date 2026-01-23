@@ -125,6 +125,7 @@
                 {{ t.t('leaderboard.points') }}
               </button>
             </th>
+            <th scope="col" role="columnheader">{{ t.t('leaderboard.selectedBy') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -155,6 +156,13 @@
             
             <td class="points-cell" role="gridcell">
               <span class="points-value" [attr.aria-label]="(player.totalPoints | number) + ' points'">{{ player.totalPoints | number }}</span>
+            </td>
+
+            <td class="prono-cell" role="gridcell">
+              <div class="prono-list" *ngIf="player.pronostiqueurs && player.pronostiqueurs.length > 0">
+                <span class="prono-badge" *ngFor="let prono of player.pronostiqueurs">{{ prono }}</span>
+              </div>
+              <span class="no-prono" *ngIf="!player.pronostiqueurs || player.pronostiqueurs.length === 0">-</span>
             </td>
           </tr>
         </tbody>

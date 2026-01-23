@@ -94,16 +94,16 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     return '@';
   }
 
-  trackByPlayerId(index: number, player: PlayerLeaderboardEntry): string {
+  trackByPlayerId = (index: number, player: PlayerLeaderboardEntry): string => {
     return player.playerId || `player-${index}`;
   }
 
-  trackByPageNumber(index: number, page: number): number {
+  trackByPageNumber = (index: number, page: number): number => {
     return page;
   }
 
-  trackByPlayer(index: number, player: PlayerLeaderboardEntry): string {
-    return this.trackByPlayerId(index, player);
+  trackByPlayer = (index: number, player: PlayerLeaderboardEntry): string => {
+    return player.playerId || `player-${index}`;
   }
 
   sortBy(column: 'rank' | 'region' | 'points'): void {

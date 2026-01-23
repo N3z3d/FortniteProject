@@ -1,0 +1,29 @@
+<div class="legal-container">
+  <mat-card class="legal-card">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="page-icon">{{ config.icon }}</mat-icon>
+      <mat-card-title>{{ getTitle() }}</mat-card-title>
+      <mat-card-subtitle>Fortnite Fantasy League</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="legal-sections">
+        <section *ngFor="let section of config.sections" class="legal-section">
+          <h3>{{ t.t(section.titleKey, section.titleKey) }}</h3>
+          <p>{{ t.t(section.contentKey, section.contentKey) }}</p>
+        </section>
+      </div>
+
+      <div class="legal-footer">
+        <p class="last-update">{{ t.t('legal.lastUpdate', 'Derniere mise a jour') }}: {{ '2026-01-22' }}</p>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-button routerLink="/games">
+        <mat-icon>arrow_back</mat-icon>
+        {{ t.t('common.back', 'Retour') }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

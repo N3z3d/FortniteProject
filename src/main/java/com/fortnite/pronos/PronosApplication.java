@@ -38,15 +38,15 @@ public class PronosApplication {
     LoggingUtils.logApplicationStart(
         "Fortnite Pronos API", version != null ? version : "DEVELOPMENT", profile);
 
-    log.info("🚀 Application démarrée avec succès sur le profil: {}", profile);
-    log.info("📊 Base de données: {}", environment.getProperty("spring.datasource.url"));
-    log.info("🌐 Port: {}", environment.getProperty("server.port", "8080"));
+    log.info("[START] Application demarree avec succes sur le profil: {}", profile);
+    log.info("[DB] Base de donnees: {}", environment.getProperty("spring.datasource.url"));
+    log.info("[CONFIG] Port: {}", environment.getProperty("server.port", "8080"));
   }
 
   @EventListener(ContextClosedEvent.class)
   public void onApplicationShutdown() {
     LoggingUtils.logApplicationShutdown("Fortnite Pronos API");
-    log.info("🛑 Application arrêtée proprement");
+    log.info("[STOP] Application arretee proprement");
   }
 
   @Bean

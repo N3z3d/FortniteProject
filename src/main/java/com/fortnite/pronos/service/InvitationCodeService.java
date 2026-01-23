@@ -1,9 +1,10 @@
 package com.fortnite.pronos.service;
 
-import java.security.SecureRandom;
+import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.InvitationCodeGenerator;
 import com.fortnite.pronos.repository.GameRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service responsable de la génération des codes d'invitation uniques Principe de responsabilité
- * unique : ne s'occupe que des codes d'invitation
+ * unique : ne s'occupe que des codes d'invitation. Delegates code generation to domain layer.
  */
 @Slf4j
 @Service
@@ -20,11 +21,9 @@ public class InvitationCodeService {
 
   private final GameRepository gameRepository;
 
-  private static final String ALLOWED_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  private static final int CODE_LENGTH = 6;
   private static final int MAX_GENERATION_ATTEMPTS = 100;
 
-  private final SecureRandom secureRandom = new SecureRandom();
+  private final InvitationCodeGenerator codeGenerator = new InvitationCodeGenerator();
 
   /**
    * Génère un code d'invitation unique pour une game
@@ -36,7 +35,7 @@ public class InvitationCodeService {
     log.debug("Génération d'un nouveau code d'invitation");
 
     for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-      String code = generateRandomCode();
+      String code = codeGenerator.generate();
 
       if (!gameRepository.existsByInvitationCode(code)) {
         log.info("Code d'invitation généré avec succès : {} (tentative {})", code, attempt);
@@ -50,30 +49,57 @@ public class InvitationCodeService {
         "Impossible de générer un code unique après " + MAX_GENERATION_ATTEMPTS + " tentatives");
   }
 
-  /** Génère un code aléatoire Utilise SecureRandom pour une meilleure sécurité */
-  private String generateRandomCode() {
-    StringBuilder code = new StringBuilder(CODE_LENGTH);
-
-    for (int i = 0; i < CODE_LENGTH; i++) {
-      int randomIndex = secureRandom.nextInt(ALLOWED_CHARACTERS.length());
-      code.append(ALLOWED_CHARACTERS.charAt(randomIndex));
-    }
-
-    return code.toString();
-  }
-
   /**
-   * Valide le format d'un code d'invitation
+   * Valide le format d'un code d'invitation. Delegates to domain layer.
    *
    * @param code Le code à valider
    * @return true si le code est valide
    */
   public boolean isValidCodeFormat(String code) {
-    if (code == null || code.length() != CODE_LENGTH) {
-      return false;
+    return InvitationCodeGenerator.isValidFormat(code);
+  }
+
+  /**
+   * Calcule la date d'expiration en fonction de la durée choisie
+   *
+   * @param duration La durée du code
+   * @return La date d'expiration, ou null pour un code permanent
+   */
+  public LocalDateTime calculateExpirationDate(CodeDuration duration) {
+    if (duration == null || duration == CodeDuration.PERMANENT) {
+      return null;
+    }
+    return LocalDateTime.now().plusHours(duration.getHours());
+  }
+
+  /** Enum pour les durées de validité du code d'invitation */
+  public enum CodeDuration {
+    HOURS_24(24),
+    HOURS_48(48),
+    DAYS_7(168), // 7 * 24
+    PERMANENT(0);
+
+    private final int hours;
+
+    CodeDuration(int hours) {
+      this.hours = hours;
     }
 
-    return code.matches("^[A-Z0-9]{" + CODE_LENGTH + "}$");
+    public int getHours() {
+      return hours;
+    }
+
+    public static CodeDuration fromString(String value) {
+      if (value == null) {
+        return PERMANENT;
+      }
+      return switch (value.toLowerCase()) {
+        case "24h" -> HOURS_24;
+        case "48h" -> HOURS_48;
+        case "7d", "7days" -> DAYS_7;
+        default -> PERMANENT;
+      };
+    }
   }
 
   /** Exception spécifique à la génération de codes */

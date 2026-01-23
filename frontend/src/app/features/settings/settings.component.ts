@@ -34,12 +34,10 @@ import { LoggerService } from '../../core/services/logger.service';
   styleUrls: ['./settings.component.scss']
 })
 export class SettingsComponent implements OnInit {
-  // Notification settings
+  // Notification settings (email only - simplified)
   emailNotifications = true;
-  pushNotifications = false;
-  gameReminders = true;
-  draftAlerts = true;
   tradeNotifications = true;
+  draftTurnNotifications = true;
 
   // Display settings
   theme: Theme = 'dark';
@@ -92,10 +90,8 @@ export class SettingsComponent implements OnInit {
   saveSettings(): void {
     const settings = {
       emailNotifications: this.emailNotifications,
-      pushNotifications: this.pushNotifications,
-      gameReminders: this.gameReminders,
-      draftAlerts: this.draftAlerts,
       tradeNotifications: this.tradeNotifications,
+      draftTurnNotifications: this.draftTurnNotifications,
       theme: this.theme,
       language: this.language,
       autoJoinDraft: this.autoJoinDraft,
@@ -104,8 +100,8 @@ export class SettingsComponent implements OnInit {
 
     // Save to localStorage (in real app, save to backend)
     localStorage.setItem('userSettings', JSON.stringify(settings));
-    
-    this.snackBar.open('Settings saved successfully!', 'Close', {
+
+    this.snackBar.open(this.t.t('settings.settingsSaved'), this.t.t('common.close'), {
       duration: 3000
     });
   }
@@ -113,15 +109,13 @@ export class SettingsComponent implements OnInit {
   resetSettings(): void {
     // Reset to default settings
     this.emailNotifications = true;
-    this.pushNotifications = false;
-    this.gameReminders = true;
-    this.draftAlerts = true;
     this.tradeNotifications = true;
+    this.draftTurnNotifications = true;
     this.theme = 'dark';
     this.language = 'fr';
     this.autoJoinDraft = false;
     this.showOnlineStatus = true;
-    
+
     this.t.setLanguage(this.language);
     this.snackBar.open(this.t.t('settings.settingsReset'), this.t.t('common.close'), { duration: 3000 });
   }

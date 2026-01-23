@@ -71,8 +71,14 @@ public class Game {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
   @Column(name = "invitation_code", length = 10, unique = true)
   private String invitationCode;
+
+  @Column(name = "invitation_code_expires_at")
+  private LocalDateTime invitationCodeExpiresAt;
 
   @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
@@ -95,6 +101,10 @@ public class Game {
 
   @Column(name = "trade_deadline")
   private LocalDateTime tradeDeadline;
+
+  @Column(name = "current_season")
+  @Builder.Default
+  private Integer currentSeason = java.time.Year.now().getValue();
 
   @PrePersist
   public void ensureId() {
@@ -188,9 +198,39 @@ public class Game {
     return status == GameStatus.ACTIVE;
   }
 
+  /** Vérifie si la game est supprimée (soft delete) */
+  public boolean isDeleted() {
+    return deletedAt != null;
+  }
+
+  /** Marque la game comme supprimée (soft delete) */
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
   /** Retourne le nombre de participants dans la game */
   public int getParticipantCount() {
     return participants.size();
+  }
+
+  /** Vérifie si le code d'invitation est valide (non expiré) */
+  public boolean isInvitationCodeValid() {
+    if (invitationCode == null || invitationCode.isEmpty()) {
+      return false;
+    }
+    // Code permanent (pas de date d'expiration)
+    if (invitationCodeExpiresAt == null) {
+      return true;
+    }
+    return LocalDateTime.now().isBefore(invitationCodeExpiresAt);
+  }
+
+  /** Vérifie si le code d'invitation est expiré */
+  public boolean isInvitationCodeExpired() {
+    if (invitationCodeExpiresAt == null) {
+      return false; // Code permanent
+    }
+    return LocalDateTime.now().isAfter(invitationCodeExpiresAt);
   }
 
   // ===============================

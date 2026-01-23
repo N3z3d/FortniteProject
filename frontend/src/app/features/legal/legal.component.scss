@@ -1,0 +1,80 @@
+.legal-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.legal-card {
+  background: var(--gaming-card-bg, #1a1a2e);
+  border: 1px solid var(--gaming-border, rgba(255, 255, 255, 0.1));
+  border-radius: 16px;
+
+  mat-card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gaming-border, rgba(255, 255, 255, 0.1));
+
+    .page-icon {
+      font-size: 2rem;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gaming-primary, #6366f1);
+      border-radius: 12px;
+      color: white;
+    }
+
+    mat-card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--gaming-text, #fff);
+    }
+
+    mat-card-subtitle {
+      color: var(--gaming-text-secondary, rgba(255, 255, 255, 0.7));
+    }
+  }
+
+  mat-card-content {
+    padding: 1.5rem;
+  }
+
+  mat-card-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--gaming-border, rgba(255, 255, 255, 0.1));
+  }
+}
+
+.legal-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.legal-section {
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gaming-primary, #6366f1);
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: var(--gaming-text-secondary, rgba(255, 255, 255, 0.8));
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+.legal-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gaming-border, rgba(255, 255, 255, 0.1));
+
+  .last-update {
+    font-size: 0.875rem;
+    color: var(--gaming-text-secondary, rgba(255, 255, 255, 0.5));
+    font-style: italic;
+  }
+}

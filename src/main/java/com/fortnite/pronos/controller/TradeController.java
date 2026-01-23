@@ -120,7 +120,8 @@ public class TradeController {
   public ResponseEntity<List<TradeResponseDto>> getTeamTradeHistory(
       @PathVariable UUID teamId, @AuthenticationPrincipal UserDetails userDetails) {
 
-    log.info("User {} requesting trade history for team {}", userDetails.getUsername(), teamId);
+    String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+    log.info("User {} requesting trade history for team {}", username, teamId);
 
     List<Trade> trades = tradeQueryService.getTeamTradeHistory(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
@@ -133,7 +134,8 @@ public class TradeController {
   public ResponseEntity<List<TradeResponseDto>> getPendingTradesForTeam(
       @PathVariable UUID teamId, @AuthenticationPrincipal UserDetails userDetails) {
 
-    log.info("User {} requesting pending trades for team {}", userDetails.getUsername(), teamId);
+    String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+    log.info("User {} requesting pending trades for team {}", username, teamId);
 
     List<Trade> trades = tradeQueryService.getPendingTradesForTeam(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
@@ -143,12 +145,13 @@ public class TradeController {
 
   /** Obtenir les statistiques de trade d'une game */
   @GetMapping("/game/{gameId}/statistics")
-  public ResponseEntity<Map<String, Long>> getGameTradeStatistics(
+  public ResponseEntity<Map<String, Object>> getGameTradeStatistics(
       @PathVariable UUID gameId, @AuthenticationPrincipal UserDetails userDetails) {
 
-    log.info("User {} requesting trade statistics for game {}", userDetails.getUsername(), gameId);
+    String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+    log.info("User {} requesting trade statistics for game {}", username, gameId);
 
-    Map<String, Long> stats = tradeQueryService.getGameTradeStatistics(gameId);
+    Map<String, Object> stats = tradeQueryService.getGameTradeStatistics(gameId);
 
     return ResponseEntity.ok(stats);
   }
@@ -158,7 +161,8 @@ public class TradeController {
   public ResponseEntity<TradeResponseDto> getTrade(
       @PathVariable UUID tradeId, @AuthenticationPrincipal UserDetails userDetails) {
 
-    log.info("User {} requesting details for trade {}", userDetails.getUsername(), tradeId);
+    String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+    log.info("User {} requesting details for trade {}", username, tradeId);
 
     Trade trade = tradeQueryService.getTrade(tradeId);
 
@@ -172,11 +176,8 @@ public class TradeController {
       @RequestParam(required = false) Trade.Status status,
       @AuthenticationPrincipal UserDetails userDetails) {
 
-    log.info(
-        "User {} requesting trades for game {} with status {}",
-        userDetails.getUsername(),
-        gameId,
-        status);
+    String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+    log.info("User {} requesting trades for game {} with status {}", username, gameId, status);
 
     List<Trade> trades;
     if (status != null) {

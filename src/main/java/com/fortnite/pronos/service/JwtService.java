@@ -115,7 +115,7 @@ public class JwtService {
         throw new IllegalStateException(errorMsg);
       }
 
-      log.info("✅ Production JWT security validation passed - JWT_SECRET properly configured");
+      log.info("[OK] Production JWT security validation passed - JWT_SECRET properly configured");
     } else {
       log.info("Development/Test environment detected - using development JWT fallback");
     }
@@ -259,7 +259,7 @@ public class JwtService {
     String devSecret =
         "development-jwt-secret-key-change-in-production-this-is-only-for-local-dev-work-minimum-32-chars";
     log.warn(
-        "⚠️  ATTENTION: Utilisation du secret JWT par défaut pour le développement. "
+        "[WARN]  ATTENTION: Utilisation du secret JWT par défaut pour le développement. "
             + "Configurez JWT_SECRET en production via variable d'environnement!");
     return devSecret;
   }

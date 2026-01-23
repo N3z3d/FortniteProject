@@ -34,16 +34,16 @@ public class PlayerLeaderboardService {
   /** Obtenir le classement des joueurs Fortnite */
   @Cacheable(value = "playerScores", key = "'players_' + #season")
   public List<PlayerLeaderboardEntryDTO> getPlayerLeaderboard(int season) {
-    log.info("🎮 Récupération du classement des joueurs - Saison: {}", season);
+    log.info("[PLAYER] Recuperation du classement des joueurs - Saison: {}", season);
 
     try {
       // 1. Récupérer tous les joueurs
       List<Player> players = playerRepository.findAll();
-      log.info("📊 {} joueurs trouvés", players.size());
+      log.info("[DATA] {} joueurs trouves", players.size());
 
       // 2. Récupérer tous les scores groupés par joueur
       Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
-      log.info("📊 {} scores trouvés pour la saison {}", playerPointsMap.size(), season);
+      log.info("[DATA] {} scores trouves pour la saison {}", playerPointsMap.size(), season);
 
       // 3. Récupérer toutes les équipes avec leurs joueurs pour cette saison
       List<Team> teams = teamRepository.findBySeasonWithFetch(season);
@@ -112,26 +112,26 @@ public class PlayerLeaderboardService {
         entries.get(i).setRank(i + 1);
       }
 
-      log.info("✅ Classement joueurs généré avec {} joueurs", entries.size());
+      log.info("[OK] Classement joueurs généré avec {} joueurs", entries.size());
       return entries;
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors de la génération du classement des joueurs", e);
+      log.error("[ERROR] Erreur lors de la génération du classement des joueurs", e);
       throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
     }
   }
 
   /** Obtenir le classement des joueurs Fortnite pour une game spécifique */
   public List<PlayerLeaderboardEntryDTO> getPlayerLeaderboardByGame(UUID gameId) {
-    log.info("🎮 Récupération du classement des joueurs pour la game {}", gameId);
+    log.info("[PLAYER] Recuperation du classement des joueurs pour la game {}", gameId);
 
     try {
       // 1. Récupérer les équipes de cette game avec leurs joueurs
       List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
-      log.info("📊 {} équipes trouvées pour la game {}", teams.size(), gameId);
+      log.info("[DATA] {} equipes trouvees pour la game {}", teams.size(), gameId);
 
       if (teams.isEmpty()) {
-        log.warn("⚠️ Aucune équipe trouvée pour la game {}", gameId);
+        log.warn("[WARN] Aucune équipe trouvée pour la game {}", gameId);
         return new ArrayList<>();
       }
 
@@ -161,7 +161,7 @@ public class PlayerLeaderboardService {
         }
       }
 
-      log.info("📊 {} joueurs uniques trouvés dans les équipes", playerIds.size());
+      log.info("[DATA] {} joueurs uniques trouves dans les equipes", playerIds.size());
 
       // 3. Récupérer les informations des joueurs
       List<Player> players = playerRepository.findAllById(playerIds);
@@ -207,12 +207,15 @@ public class PlayerLeaderboardService {
         entries.get(i).setRank(i + 1);
       }
 
-      log.info("✅ Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
+      log.info(
+          "[OK] Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
       return entries;
 
     } catch (Exception e) {
       log.error(
-          "❌ Erreur lors de la génération du classement des joueurs pour la game {}", gameId, e);
+          "[ERROR] Erreur lors de la génération du classement des joueurs pour la game {}",
+          gameId,
+          e);
       throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
     }
   }

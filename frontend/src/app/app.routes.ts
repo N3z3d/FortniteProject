@@ -69,6 +69,21 @@ export const routes: Routes = [
       {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.component').then(c => c.SettingsComponent)
+      },
+      {
+        path: 'contact',
+        loadComponent: () => import('./features/legal/legal.component').then(c => c.LegalComponent),
+        data: { pageType: 'contact' }
+      },
+      {
+        path: 'legal-notice',
+        loadComponent: () => import('./features/legal/legal.component').then(c => c.LegalComponent),
+        data: { pageType: 'legal-notice' }
+      },
+      {
+        path: 'privacy',
+        loadComponent: () => import('./features/legal/legal.component').then(c => c.LegalComponent),
+        data: { pageType: 'privacy' }
       }
     ]
   },

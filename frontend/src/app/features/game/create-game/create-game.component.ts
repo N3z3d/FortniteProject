@@ -16,6 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
+import { UserGamesStore } from '../../../core/services/user-games.store';
 
 @Component({
   selector: 'app-create-game',
@@ -64,7 +65,8 @@ export class CreateGameComponent implements OnInit {
     private formBuilder: FormBuilder,
     private gameService: GameService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private userGamesStore: UserGamesStore
   ) { }
 
   ngOnInit(): void {
@@ -140,7 +142,9 @@ export class CreateGameComponent implements OnInit {
     this.gameService.createGame(formData).subscribe({
       next: (game) => {
         this.loading = false;
-        this.snackBar.open('🎉 Game créée ! Invitation envoyée', '', { 
+        // Add the new game to the store so sidebar refreshes immediately
+        this.userGamesStore.addGame(game);
+        this.snackBar.open('🎉 Game créée ! Invitation envoyée', '', {
           duration: 2000,
           panelClass: 'success-snackbar'
         });

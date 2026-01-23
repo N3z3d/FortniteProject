@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,13 +20,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.dto.DraftActionResponse;
+import com.fortnite.pronos.dto.DraftAdvanceResponse;
+import com.fortnite.pronos.dto.DraftAvailablePlayerResponse;
+import com.fortnite.pronos.dto.DraftCompleteResponse;
+import com.fortnite.pronos.dto.DraftNextParticipantResponse;
+import com.fortnite.pronos.dto.DraftOrderEntryResponse;
+import com.fortnite.pronos.dto.DraftTimeoutResponse;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
+import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.DraftRepository;
+import com.fortnite.pronos.repository.GameParticipantRepository;
+import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.repository.PlayerRepository;
 
 /**
  * TDD Tests for DraftService - Business Critical Component
@@ -43,6 +56,9 @@ import com.fortnite.pronos.repository.DraftRepository;
 class DraftServiceTddTest {
 
   @Mock private DraftRepository draftRepository;
+  @Mock private GameParticipantRepository gameParticipantRepository;
+  @Mock private GameRepository gameRepository;
+  @Mock private PlayerRepository playerRepository;
 
   @InjectMocks private DraftService draftService;
 
@@ -82,6 +98,7 @@ class DraftServiceTddTest {
             createParticipant(UUID.randomUUID(), 2),
             createParticipant(UUID.randomUUID(), 3),
             createParticipant(UUID.randomUUID(), 4));
+    testGame.setParticipants(new ArrayList<>(testParticipants));
 
     // Player setup
     testPlayer = new Player();
@@ -98,6 +115,7 @@ class DraftServiceTddTest {
     user.setId(userId);
 
     GameParticipant participant = new GameParticipant();
+    participant.setId(UUID.randomUUID());
     participant.setUser(user);
     participant.setDraftOrder(draftOrder);
     return participant;
@@ -218,7 +236,7 @@ class DraftServiceTddTest {
 
       assertThatThrownBy(() -> draftService.getCurrentPicker(testDraft, testParticipants))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Aucun participant trouvé pour l'ordre");
+          .hasMessageContaining("Aucun participant trouvÃƒÆ’Ã‚Â© pour l'ordre");
     }
   }
 
@@ -486,6 +504,335 @@ class DraftServiceTddTest {
       List<Draft> savedDrafts = draftCaptor.getAllValues();
       assertThat(savedDrafts).hasSize(4);
       assertThat(savedDrafts.get(3).getStatus()).isEqualTo(Draft.Status.FINISHED);
+    }
+  }
+
+  @Nested
+  @DisplayName("Next Participant Response")
+  class NextParticipantResponseTests {
+
+    @Test
+    @DisplayName("Should build response when draft exists")
+    void shouldBuildResponseWhenDraftExists() {
+      testDraft.setCurrentPick(2);
+      testDraft.setCurrentRound(3);
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+
+      DraftNextParticipantResponse response =
+          draftService.buildNextParticipantResponse(testGame, testParticipants);
+
+      GameParticipant expected = testParticipants.get(1);
+      assertThat(response.id()).isEqualTo(expected.getId());
+      assertThat(response.userId()).isEqualTo(expected.getUser().getId());
+      assertThat(response.draftOrder()).isEqualTo(expected.getDraftOrder());
+      assertThat(response.currentPick()).isEqualTo(2);
+      assertThat(response.currentRound()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Should default pick and round when no draft exists")
+    void shouldDefaultPickAndRoundWhenNoDraftExists() {
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+
+      DraftNextParticipantResponse response =
+          draftService.buildNextParticipantResponse(testGame, testParticipants);
+
+      GameParticipant expected = testParticipants.get(0);
+      assertThat(response.id()).isEqualTo(expected.getId());
+      assertThat(response.currentPick()).isEqualTo(1);
+      assertThat(response.currentRound()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Should fallback to first participant when snake position is out of bounds")
+    void shouldFallbackToFirstParticipantWhenSnakePositionOutOfBounds() {
+      testDraft.setCurrentPick(99); // Invalid pick value
+      testDraft.setCurrentRound(2);
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+
+      DraftNextParticipantResponse response =
+          draftService.buildNextParticipantResponse(testGame, testParticipants);
+
+      // Fallback to first participant when snake position calculation yields invalid result
+      GameParticipant expected = testParticipants.get(0);
+      assertThat(response.id()).isEqualTo(expected.getId());
+      assertThat(response.draftOrder()).isEqualTo(expected.getDraftOrder());
+      assertThat(response.currentPick()).isEqualTo(99);
+      assertThat(response.currentRound()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Should use first participant when pick is zero")
+    void shouldUseFirstParticipantWhenPickIsZero() {
+      testDraft.setCurrentPick(0);
+      testDraft.setCurrentRound(2);
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+
+      DraftNextParticipantResponse response =
+          draftService.buildNextParticipantResponse(testGame, testParticipants);
+
+      GameParticipant expected = testParticipants.get(0);
+      assertThat(response.id()).isEqualTo(expected.getId());
+      assertThat(response.draftOrder()).isEqualTo(expected.getDraftOrder());
+      assertThat(response.currentPick()).isEqualTo(0);
+      assertThat(response.currentRound()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Should throw when participants list is empty")
+    void shouldThrowWhenParticipantsListIsEmpty() {
+      assertThatThrownBy(() -> draftService.buildNextParticipantResponse(testGame, List.of()))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("No participants");
+    }
+  }
+
+  @Nested
+  @DisplayName("Draft Order Response")
+  class DraftOrderResponseTests {
+
+    @Test
+    @DisplayName("Should build draft order response from participants")
+    void shouldBuildDraftOrderResponseFromParticipants() {
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+
+      List<DraftOrderEntryResponse> response =
+          draftService.buildDraftOrderResponse(testGame.getId());
+
+      assertThat(response).hasSize(testParticipants.size());
+      DraftOrderEntryResponse first = response.get(0);
+      GameParticipant expected = testParticipants.get(0);
+      assertThat(first.id()).isEqualTo(expected.getId());
+      assertThat(first.draftOrder()).isEqualTo(expected.getDraftOrder());
+      assertThat(first.userId()).isEqualTo(expected.getUser().getId());
+    }
+
+    @Test
+    @DisplayName("Should return empty order when no participants exist")
+    void shouldReturnEmptyOrderWhenNoParticipantsExist() {
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(List.of());
+
+      List<DraftOrderEntryResponse> response =
+          draftService.buildDraftOrderResponse(testGame.getId());
+
+      assertThat(response).isEmpty();
+    }
+  }
+
+  @Nested
+  @DisplayName("User Turn For Game")
+  class UserTurnForGameTests {
+
+    @Test
+    @DisplayName("Should return true when first participant matches user")
+    void shouldReturnTrueWhenFirstParticipantMatchesUser() {
+      UUID userId = testParticipants.get(0).getUser().getId();
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+      when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+
+      boolean result = draftService.isUserTurnForGame(testGame.getId(), userId);
+
+      assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should return false when no participants exist")
+    void shouldReturnFalseWhenNoParticipantsExist() {
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(List.of());
+
+      boolean result = draftService.isUserTurnForGame(testGame.getId(), UUID.randomUUID());
+
+      assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should return false when first participant has no user id")
+    void shouldReturnFalseWhenFirstParticipantHasNoUserId() {
+      GameParticipant participant = new GameParticipant();
+      participant.setId(UUID.randomUUID());
+      participant.setUser(new User());
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(List.of(participant));
+
+      boolean result = draftService.isUserTurnForGame(testGame.getId(), UUID.randomUUID());
+
+      assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should return false when user does not match first participant")
+    void shouldReturnFalseWhenUserDoesNotMatchFirstParticipant() {
+      UUID otherUser = UUID.randomUUID();
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+
+      boolean result = draftService.isUserTurnForGame(testGame.getId(), otherUser);
+
+      assertThat(result).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("Advance Draft")
+  class AdvanceDraftTests {
+
+    @Test
+    @DisplayName("Should advance draft and include next participant when draft exists")
+    void shouldAdvanceDraftAndIncludeNextParticipantWhenDraftExists() {
+      testDraft.setCurrentPick(1);
+      testDraft.setCurrentRound(1);
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+      when(draftRepository.save(any(Draft.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+
+      DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(testGame);
+
+      assertThat(response.success()).isTrue();
+      assertThat(response.currentPick()).isEqualTo(2);
+      assertThat(response.currentRound()).isEqualTo(1);
+      assertThat(response.isComplete()).isFalse();
+      assertThat(response.nextParticipantId()).isEqualTo(testParticipants.get(1).getId());
+      assertThat(response.nextDraftOrder()).isEqualTo(testParticipants.get(1).getDraftOrder());
+    }
+
+    @Test
+    @DisplayName("Should create draft when none exists")
+    void shouldCreateDraftWhenNoneExists() {
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+      when(draftRepository.save(any(Draft.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+
+      DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(testGame);
+
+      assertThat(response.success()).isTrue();
+      assertThat(response.currentPick()).isEqualTo(2);
+      assertThat(response.nextParticipantId()).isEqualTo(testParticipants.get(1).getId());
+    }
+
+    @Test
+    @DisplayName("Should wrap to snake draft position when advancing to next round")
+    void shouldWrapToSnakeDraftPositionWhenAdvancingToNextRound() {
+      // Snake draft: Round 1 goes 1-2-3, Round 2 goes 3-2-1
+      testDraft.setCurrentPick(testParticipants.size()); // Pick 3 (last of round 1)
+      testDraft.setCurrentRound(1);
+      when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
+      when(draftRepository.save(any(Draft.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+      when(gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(testGame.getId()))
+          .thenReturn(testParticipants);
+
+      DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(testGame);
+
+      // After advancing: round becomes 2, pick becomes 1
+      // In snake draft round 2 (even), pick 1 → snakePosition = 3 - 1 + 1 = 3
+      assertThat(response.currentPick()).isEqualTo(1);
+      assertThat(response.currentRound()).isEqualTo(2);
+      // Snake draft: round 2 starts with last participant (position 3)
+      GameParticipant lastParticipant = testParticipants.get(testParticipants.size() - 1);
+      assertThat(response.nextParticipantId()).isEqualTo(lastParticipant.getId());
+      assertThat(response.nextDraftOrder()).isEqualTo(lastParticipant.getDraftOrder());
+    }
+  }
+
+  @Nested
+  @DisplayName("Available Players Response")
+  class AvailablePlayersResponseTests {
+
+    @Test
+    @DisplayName("Should build available players response")
+    void shouldBuildAvailablePlayersResponse() {
+      Player player = new Player();
+      player.setId(UUID.randomUUID());
+      player.setNickname("PlayerOne");
+      player.setRegion(Player.Region.EU);
+      when(playerRepository.findByRegion(Player.Region.EU)).thenReturn(List.of(player));
+
+      List<DraftAvailablePlayerResponse> response =
+          draftService.buildAvailablePlayersResponse(Player.Region.EU);
+
+      assertThat(response).hasSize(1);
+      assertThat(response.get(0).id()).isEqualTo(player.getId());
+      assertThat(response.get(0).nickname()).isEqualTo(player.getNickname());
+      assertThat(response.get(0).region()).isEqualTo(player.getRegion().name());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no players available")
+    void shouldReturnEmptyListWhenNoPlayersAvailable() {
+      when(playerRepository.findByRegion(Player.Region.NAW)).thenReturn(List.of());
+
+      List<DraftAvailablePlayerResponse> response =
+          draftService.buildAvailablePlayersResponse(Player.Region.NAW);
+
+      assertThat(response).isEmpty();
+    }
+  }
+
+  @Nested
+  @DisplayName("Draft Complete Response")
+  class DraftCompleteResponseTests {
+
+    @Test
+    @DisplayName("Should report complete when game is active")
+    void shouldReportCompleteWhenGameIsActive() {
+      testGame.setStatus(GameStatus.ACTIVE);
+
+      DraftCompleteResponse response = draftService.buildDraftCompleteResponse(testGame);
+
+      assertThat(response.isComplete()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should report incomplete when game is not active")
+    void shouldReportIncompleteWhenGameIsNotActive() {
+      testGame.setStatus(GameStatus.CREATING);
+
+      DraftCompleteResponse response = draftService.buildDraftCompleteResponse(testGame);
+
+      assertThat(response.isComplete()).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("Timeout Response")
+  class TimeoutResponseTests {
+
+    @Test
+    @DisplayName("Should build default timeout response")
+    void shouldBuildDefaultTimeoutResponse() {
+      DraftTimeoutResponse response = draftService.buildTimeoutResponse();
+
+      assertThat(response.timeoutCount()).isEqualTo(0);
+      assertThat(response.message()).isEqualTo("Timeouts geres avec succes");
+    }
+  }
+
+  @Nested
+  @DisplayName("Finish Draft Response")
+  class FinishDraftResponseTests {
+
+    @Test
+    @DisplayName("Should finish draft and return response")
+    void shouldFinishDraftAndReturnResponse() {
+      testGame.setStatus(GameStatus.DRAFTING);
+      when(gameRepository.save(any(Game.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      DraftActionResponse response = draftService.finishDraft(testGame);
+
+      assertThat(response.success()).isTrue();
+      assertThat(response.message()).isEqualTo("Draft termine avec succes");
+      assertThat(testGame.getStatus()).isEqualTo(GameStatus.ACTIVE);
+      verify(gameRepository).save(testGame);
     }
   }
 }

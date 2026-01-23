@@ -42,7 +42,7 @@ class ApplicationPortTest {
 
     // When & Then
     assertTrue(port > 0, "L'application devrait démarrer sur un port valide");
-    System.out.println("✅ Application démarrée sur le port: " + port);
+    System.out.println("[OK] Application démarrée sur le port: " + port);
   }
 
   @Test
@@ -61,7 +61,7 @@ class ApplicationPortTest {
         "L'endpoint de santé devrait répondre avec 200 OK");
     assertTrue(response.getBody().contains("UP"), "Le statut de santé devrait être UP");
 
-    System.out.println("✅ Réponse de santé: " + response.getBody());
+    System.out.println("[OK] Réponse de santé: " + response.getBody());
   }
 
   @Test
@@ -77,7 +77,7 @@ class ApplicationPortTest {
     assertEquals(
         HttpStatus.OK, response.getStatusCode(), "L'endpoint d'info devrait répondre avec 200 OK");
 
-    System.out.println("✅ Réponse d'info: " + response.getBody());
+    System.out.println("[OK] Réponse d'info: " + response.getBody());
   }
 
   @Test
@@ -98,7 +98,7 @@ class ApplicationPortTest {
         response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is4xxClientError(),
         "L'endpoint des games devrait répondre");
 
-    System.out.println("✅ Test de base de données réussi");
+    System.out.println("[OK] Test de base de données réussi");
   }
 
   @Test
@@ -116,7 +116,7 @@ class ApplicationPortTest {
         response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is4xxClientError(),
         "L'endpoint devrait être accessible");
 
-    System.out.println("✅ Configuration de sécurité valide");
+    System.out.println("[OK] Configuration de sécurité valide");
   }
 
   @Test
@@ -134,6 +134,6 @@ class ApplicationPortTest {
     assertEquals(
         HttpStatus.OK, response.getStatusCode(), "Les beans de base devraient être chargés");
 
-    System.out.println("✅ Tous les beans nécessaires sont chargés");
+    System.out.println("[OK] Tous les beans nécessaires sont chargés");
   }
 }

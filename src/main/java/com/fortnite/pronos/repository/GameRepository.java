@@ -40,8 +40,9 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
   /** Trouver les games créées après une date */
   List<Game> findByCreatedAtAfter(LocalDateTime date);
 
-  /** Trouver les games avec des places disponibles */
-  @Query("SELECT g FROM Game g WHERE SIZE(g.participants) < g.maxParticipants")
+  /** Trouver les games avec des places disponibles (exclut soft deleted) */
+  @Query(
+      "SELECT g FROM Game g WHERE SIZE(g.participants) < g.maxParticipants AND g.deletedAt IS NULL")
   List<Game> findGamesWithAvailableSlots();
 
   /** Trouver une game par son code d'invitation */
@@ -50,10 +51,23 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
   /** Vérifier si un code d'invitation existe */
   boolean existsByInvitationCode(String invitationCode);
 
-  /** Trouver les games d'une saison spécifique */
+  /** Trouver les games d'une saison spécifique (par date) */
   @Query("SELECT g FROM Game g WHERE g.createdAt >= :seasonStart " + "AND g.createdAt < :seasonEnd")
   List<Game> findGamesBySeason(
       @Param("seasonStart") LocalDateTime seasonStart, @Param("seasonEnd") LocalDateTime seasonEnd);
+
+  /** Trouver les games par saison (par champ currentSeason) */
+  List<Game> findByCurrentSeason(Integer season);
+
+  /** Trouver les games par saison avec fetch join pour éviter N+1 */
+  @Query(
+      "SELECT DISTINCT g FROM Game g "
+          + "LEFT JOIN FETCH g.participants p "
+          + "LEFT JOIN FETCH p.user "
+          + "LEFT JOIN FETCH g.creator "
+          + "WHERE g.currentSeason = :season "
+          + "ORDER BY g.createdAt DESC")
+  List<Game> findByCurrentSeasonWithFetch(@Param("season") Integer season);
 
   /** Trouver les games avec un nom contenant une chaîne */
   List<Game> findByNameContainingIgnoreCase(String namePattern);
@@ -93,13 +107,14 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
           + "WHERE g.id = :gameId")
   Optional<Game> findByIdWithFetch(@Param("gameId") UUID gameId);
 
-  /** OPTIMISÉ: Trouve les games d'un utilisateur (créateur ou participant) */
+  /** OPTIMISÉ: Trouve les games d'un utilisateur (créateur ou participant), exclut soft deleted */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.creator "
-          + "WHERE g.creator.id = :userId OR p.user.id = :userId "
+          + "WHERE (g.creator.id = :userId OR p.user.id = :userId) "
+          + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findGamesByUserId(@Param("userId") UUID userId);
 

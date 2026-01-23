@@ -51,6 +51,21 @@ public class GameService {
     gameCreationService.deleteGame(gameId);
   }
 
+  /** Regenerates the invitation code for a game (permanent by default) */
+  public GameDto regenerateInvitationCode(UUID gameId) {
+    return gameCreationService.regenerateInvitationCode(gameId);
+  }
+
+  /** Regenerates the invitation code for a game with configurable duration */
+  public GameDto regenerateInvitationCode(UUID gameId, String duration) {
+    return gameCreationService.regenerateInvitationCode(gameId, duration);
+  }
+
+  /** Renames a game */
+  public GameDto renameGame(UUID gameId, String newName) {
+    return gameCreationService.renameGame(gameId, newName);
+  }
+
   // Game Query Operations
 
   /** Gets all games */

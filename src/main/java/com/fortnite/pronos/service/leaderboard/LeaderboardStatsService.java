@@ -38,19 +38,19 @@ public class LeaderboardStatsService {
   /** Obtenir les statistiques du leaderboard pour une saison spécifique */
   @Cacheable(value = "gameStats", key = "#season")
   public LeaderboardStatsDTO getLeaderboardStats(int season) {
-    log.info("🔍 Calcul des statistiques pour la saison {}", season);
+    log.info("[STATS] Calcul des statistiques pour la saison {}", season);
 
     List<Team> teams = teamRepository.findBySeason(season);
-    log.info("📊 Équipes trouvées: {}", teams.size());
+    log.info("[DATA] Equipes trouvees: {}", teams.size());
 
     // OPTIMISATION: Une seule requête pour tous les joueurs
     List<Player> allPlayers = playerRepository.findAll();
     int totalPlayers = allPlayers.size();
-    log.info("🎮 Total joueurs trouvés: {}", totalPlayers);
+    log.info("[DATA] Total joueurs trouves: {}", totalPlayers);
 
     // OPTIMISATION CRITIQUE: Récupérer TOUS les scores en UNE SEULE requête
     Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
-    log.info("⚡ Scores récupérés: {} joueurs ont des scores", playerPointsMap.size());
+    log.info("[PERF] Scores recuperes: {} joueurs ont des scores", playerPointsMap.size());
 
     int totalTeams = teams.size();
     long totalPoints = 0;
@@ -70,7 +70,7 @@ public class LeaderboardStatsService {
     double averagePoints = totalTeams > 0 ? (double) totalPoints / totalTeams : 0.0;
 
     log.info(
-        "🎯 Stats calculées pour saison {} - {} équipes, {} joueurs total, {} points total",
+        "[OK] Stats calculees pour saison {} - {} equipes, {} joueurs total, {} points total",
         season,
         totalTeams,
         totalPlayers,
@@ -87,10 +87,10 @@ public class LeaderboardStatsService {
 
   /** Obtenir les statistiques du leaderboard pour une game spécifique */
   public LeaderboardStatsDTO getLeaderboardStatsByGame(UUID gameId) {
-    log.info("🔍 Calcul des statistiques pour la game {}", gameId);
+    log.info("[STATS] Calcul des statistiques pour la game {}", gameId);
 
     List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
-    log.info("📊 Équipes trouvées pour la game: {}", teams.size());
+    log.info("[DATA] Equipes trouvees pour la game: {}", teams.size());
 
     if (teams.isEmpty()) {
       return LeaderboardStatsDTO.builder()
@@ -133,7 +133,7 @@ public class LeaderboardStatsService {
     double averagePoints = totalTeams > 0 ? (double) totalPoints / totalTeams : 0.0;
 
     log.info(
-        "🎯 Stats calculées pour game {} - {} équipes, {} joueurs, {} points",
+        "[OK] Stats calculees pour game {} - {} equipes, {} joueurs, {} points",
         gameId,
         totalTeams,
         totalPlayers,
@@ -159,7 +159,7 @@ public class LeaderboardStatsService {
       regionCounts.merge(region, 1, Integer::sum);
     }
 
-    log.info("🌍 Répartition par région: {}", regionCounts);
+    log.info("[DATA] Repartition par region: {}", regionCounts);
     return regionCounts;
   }
 
@@ -184,7 +184,7 @@ public class LeaderboardStatsService {
       regionCounts.merge(region, 1, Integer::sum);
     }
 
-    log.info("🌍 Répartition par région pour game {}: {}", gameId, regionCounts);
+    log.info("[DATA] Repartition par region pour game {}: {}", gameId, regionCounts);
     return regionCounts;
   }
 
@@ -199,7 +199,7 @@ public class LeaderboardStatsService {
       trancheCounts.merge(tranche, 1, Integer::sum);
     }
 
-    log.info("📊 Répartition par tranche: {}", trancheCounts);
+    log.info("[DATA] Repartition par tranche: {}", trancheCounts);
     return trancheCounts;
   }
 }

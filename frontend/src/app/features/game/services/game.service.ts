@@ -169,6 +169,71 @@ export class GameService {
       );
   }
 
+  /**
+   * Régénère le code d'invitation d'une game avec durée configurable
+   * @param gameId ID de la game
+   * @param duration Durée du code: '24h', '48h', '7d', ou 'permanent' (défaut)
+   */
+  regenerateInvitationCode(gameId: string, duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): Observable<Game> {
+    const url = `${this.apiUrl}/games/${gameId}/regenerate-code?duration=${duration}`;
+    return this.http.post<Game>(url, {})
+      .pipe(
+        tap(game => {
+          const durationLabel = duration === 'permanent' ? 'permanent' : `valide ${duration}`;
+          this.snackBar.open(`Code d'invitation régénéré (${durationLabel})`, 'OK', { duration: 3000 });
+          this.announcer.announce('Le code d\'invitation a été régénéré.');
+        }),
+        catchError(error => {
+          const message = error.error?.message || 'Impossible de régénérer le code';
+          this.snackBar.open(message, 'Fermer', { duration: 5000 });
+          return this.handleError(error);
+        })
+      );
+  }
+
+  /**
+   * Renomme une game
+   */
+  renameGame(gameId: string, newName: string): Observable<Game> {
+    return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName })
+      .pipe(
+        tap(game => {
+          this.snackBar.open('Partie renommée avec succès', 'OK', { duration: 3000 });
+          this.announcer.announce(`La partie a été renommée en ${game.name}.`);
+        }),
+        catchError(error => {
+          const message = error.error?.message || 'Impossible de renommer la partie';
+          this.snackBar.open(message, 'Fermer', { duration: 5000 });
+          return this.handleError(error);
+        })
+      );
+  }
+
+  /**
+   * Supprime une game (uniquement le créateur, et seulement si status CREATING)
+   */
+  deleteGame(gameId: string): Observable<boolean> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/games/${gameId}`)
+      .pipe(
+        map(response => response.success),
+        tap(() => {
+          this.snackBar.open('Partie supprimée avec succès', 'OK', { duration: 3000 });
+          this.announcer.announce('La partie a été supprimée.');
+        }),
+        catchError(error => {
+          let message = 'Impossible de supprimer la partie';
+          if (error.status === 403) {
+            message = 'Seul le créateur peut supprimer cette partie';
+          } else if (error.status === 409) {
+            message = 'Impossible de supprimer une partie déjà démarrée';
+          } else if (error.error?.message) {
+            message = error.error.message;
+          }
+          this.snackBar.open(message, 'Fermer', { duration: 5000 });
+          return this.handleError(error);
+        })
+      );
+  }
 
   /**
    * Démarre le draft d'une game
@@ -201,18 +266,6 @@ export class GameService {
         return this.handleError(error);
       })
     );
-  }
-
-  /**
-   * Supprime une game (hard delete)
-   * @deprecated Use archiveGame for soft delete instead
-   */
-  deleteGame(gameId: string): Observable<boolean> {
-    return this.http.delete<GameResponse>(`${this.apiUrl}/games/${gameId}`)
-      .pipe(
-        map(response => response.success),
-        catchError(this.handleError)
-      );
   }
 
   /**

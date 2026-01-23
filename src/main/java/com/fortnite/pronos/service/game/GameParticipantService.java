@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.facade.GameDomainFacade;
+import com.fortnite.pronos.domain.ParticipantRules;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
 import com.fortnite.pronos.exception.GameNotFoundException;
@@ -16,7 +18,6 @@ import com.fortnite.pronos.exception.UserAlreadyInGameException;
 import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
@@ -38,25 +39,13 @@ public class GameParticipantService {
   private final GameRepository gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
   private final UserRepository userRepository;
+  private final GameDomainFacade gameDomainFacade;
 
   /** Adds a user to a game */
   public boolean joinGame(UUID userId, JoinGameRequest request) {
     log.debug("User {} attempting to join game with code {}", userId, request.getInvitationCode());
 
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseGet(
-                () -> {
-                  User transientUser = new User();
-                  transientUser.setId(userId);
-                  transientUser.setUsername("user-" + userId.toString().substring(0, 8));
-                  transientUser.setEmail("autogen+" + userId + "@example.com");
-                  transientUser.setPassword("password");
-                  transientUser.setRole(User.UserRole.USER);
-                  transientUser.setCurrentSeason(2025);
-                  return userRepository.save(transientUser);
-                });
+    User user = findUserOrThrow(userId);
     Game game = findGameFromRequest(request);
 
     validateUserCanJoinGame(user, game);
@@ -124,19 +113,29 @@ public class GameParticipantService {
   }
 
   private void validateUserCanJoinGame(User user, Game game) {
-    if (isUserAlreadyInGame(user, game)) {
-      throw new UserAlreadyInGameException("User is already in this game");
-    }
-
     ensureCreatorParticipant(game);
 
-    if (!canJoinGame(game)) {
-      throw new InvalidGameStateException("Game is not accepting new participants");
-    }
+    ParticipantRules.ValidationResult result = gameDomainFacade.canAddParticipant(game, user);
 
-    if (isGameFull(game)) {
+    if (!result.valid()) {
+      throwAppropriateException(result.errorMessage());
+    }
+  }
+
+  private void throwAppropriateException(String errorMessage) {
+    if (errorMessage == null) {
+      throw new InvalidGameStateException("Cannot add participant");
+    }
+    if (errorMessage.contains("already a participant") || errorMessage.contains("Creator")) {
+      throw new UserAlreadyInGameException("User is already in this game");
+    }
+    if (errorMessage.contains("full")) {
       throw new GameFullException("Game is full");
     }
+    if (errorMessage.contains("started")) {
+      throw new InvalidGameStateException("Game is not accepting new participants");
+    }
+    throw new InvalidGameStateException(errorMessage);
   }
 
   private void validateUserCanLeaveGame(User user, Game game) {
@@ -153,14 +152,6 @@ public class GameParticipantService {
     return gameParticipantRepository.existsByUserIdAndGameId(user.getId(), game.getId());
   }
 
-  private boolean canJoinGame(Game game) {
-    return game.getStatus() == GameStatus.CREATING;
-  }
-
-  private boolean isGameFull(Game game) {
-    return game.getTotalParticipantCount() >= game.getMaxParticipants();
-  }
-
   private boolean isGameCreator(User user, Game game) {
     return game.getCreator().getId().equals(user.getId());
   }
@@ -175,10 +166,8 @@ public class GameParticipantService {
             .creator(false)
             .build();
 
-    game.addParticipant(participant);
+    // Save directly - callers should reload game from DB to see updated participants
     gameParticipantRepository.save(participant);
-
-    gameRepository.save(game);
   }
 
   private void removeUserFromGame(User user, Game game) {
@@ -205,7 +194,7 @@ public class GameParticipantService {
               .creator(true)
               .joinedAt(LocalDateTime.now())
               .build();
-      game.addParticipant(creatorParticipant);
+      // Save directly - callers should reload game from DB to see updated participants
       gameParticipantRepository.save(creatorParticipant);
     }
   }

@@ -141,7 +141,10 @@
               <mat-chip [attr.data-status]="game.status">
                 {{ getStatusLabel(game.status) }}
               </mat-chip>
-              <span class="participants participant-badge">{{ game.participantCount }}/{{ game.maxParticipants }}</span>
+              <span class="participants participant-badge" [attr.title]="t.t('game.participantsTooltip')">
+                <mat-icon class="participant-icon">group</mat-icon>
+                {{ game.participantCount ?? 0 }}/{{ game.maxParticipants ?? 0 }}
+              </span>
             </div>
           </div>
         </div>
@@ -161,11 +164,11 @@
   <footer class="app-footer" role="contentinfo">
     <div class="footer-content">
       <div class="footer-links">
-        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.legalNotice') }}</a>
+        <a routerLink="/legal-notice" class="footer-link">{{ t.t('footer.legalNotice') }}</a>
         <span class="footer-divider">|</span>
-        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.privacyPolicy') }}</a>
+        <a routerLink="/privacy" class="footer-link">{{ t.t('footer.privacyPolicy') }}</a>
         <span class="footer-divider">|</span>
-        <a href="javascript:void(0)" class="footer-link">{{ t.t('footer.contact') }}</a>
+        <a routerLink="/contact" class="footer-link">{{ t.t('footer.contact') }}</a>
       </div>
       <div class="footer-info">
         <p class="footer-copyright">{{ t.t('footer.copyright') }}</p>

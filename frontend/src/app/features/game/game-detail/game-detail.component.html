@@ -23,7 +23,16 @@
     <!-- Header -->
     <div class="game-header">
       <div class="header-content">
-        <h1>🎮 {{ game.name }}</h1>
+        <div class="title-row">
+          <h1>🎮 {{ game.name }}</h1>
+          <button mat-icon-button
+                  *ngIf="canRenameGame()"
+                  (click)="renameGame()"
+                  matTooltip="Renommer la partie"
+                  class="rename-btn">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
         <p>Créée par {{ game.creatorName }} • {{ getTimeAgo(game.createdAt) }}</p>
       </div>
       <button mat-button (click)="onBack()" class="back-button">
@@ -89,10 +98,20 @@
               Démarrer le Draft
             </button>
 
-            <!-- Archive Game Button (Host only) -->
+            <!-- Delete Game Button (Host only, CREATING status only) -->
             <button mat-raised-button
                     color="warn"
-                    *ngIf="canArchiveGame()"
+                    *ngIf="canDeleteGame()"
+                    (click)="confirmDelete()"
+                    matTooltip="Supprimer définitivement cette partie">
+              <mat-icon>delete_forever</mat-icon>
+              Supprimer
+            </button>
+
+            <!-- Archive Game Button (Host only, for finished games) -->
+            <button mat-raised-button
+                    color="accent"
+                    *ngIf="canArchiveGame() && !canDeleteGame()"
                     (click)="confirmArchive()"
                     matTooltip="Archiver cette partie (elle ne sera plus visible dans la liste)">
               <mat-icon>archive</mat-icon>
@@ -234,6 +253,41 @@
               <div class="info-content">
                 <span class="info-label">Statut</span>
                 <span class="info-value">{{ getStatusLabel(game.status) }}</span>
+              </div>
+            </div>
+
+            <!-- Invitation Code -->
+            <div class="info-item invitation-code-item" *ngIf="game.invitationCode">
+              <mat-icon>vpn_key</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Code d'invitation</span>
+                <div class="invitation-code-wrapper">
+                  <span class="info-value code-value"
+                        [class.expired]="game.isInvitationCodeExpired">
+                    {{ game.invitationCode }}
+                  </span>
+                  <mat-chip *ngIf="game.isInvitationCodeExpired" color="warn" selected class="expired-chip">
+                    Expiré
+                  </mat-chip>
+                  <mat-chip *ngIf="!game.isInvitationCodeExpired && game.invitationCodeExpiresAt"
+                            color="accent" selected class="expiry-chip">
+                    Expire: {{ getInvitationCodeExpiry() }}
+                  </mat-chip>
+                  <button mat-icon-button
+                          (click)="copyInvitationCode()"
+                          [disabled]="game.isInvitationCodeExpired"
+                          matTooltip="Copier le code"
+                          class="copy-btn">
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                  <button mat-icon-button
+                          *ngIf="canRegenerateCode()"
+                          (click)="promptRegenerateCode()"
+                          matTooltip="Régénérer le code (choisir durée)"
+                          class="regenerate-btn">
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

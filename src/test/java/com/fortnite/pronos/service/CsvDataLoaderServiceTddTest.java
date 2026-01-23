@@ -74,7 +74,7 @@ class CsvDataLoaderServiceTddTest {
 
   @Test
   @Transactional
-  @DisplayName("Devrait charger tous les 146 joueurs du fichier CSV")
+  @DisplayName("Devrait charger tous les 147 joueurs du fichier CSV")
   void shouldLoadAll147PlayersFromCsv() {
     // ARRANGE
     long initialPlayerCount = playerRepository.count();
@@ -90,8 +90,8 @@ class CsvDataLoaderServiceTddTest {
     List<Player> allPlayers = playerRepository.findAll();
     List<Score> allScores = scoreRepository.findAll();
 
-    // Le CSV contient 146 lignes de données (hors header)
-    assertThat(allPlayers).hasSize(147).as("Le CSV devrait charger 146 joueurs, pas 12 hardcodés");
+    // Le CSV contient 147 lignes de données (hors header)
+    assertThat(allPlayers).hasSize(147).as("Le CSV devrait charger 147 joueurs, pas 12 hardcodés");
 
     assertThat(allScores).hasSize(147).as("Chaque joueur devrait avoir un score associé");
 
@@ -119,9 +119,10 @@ class CsvDataLoaderServiceTddTest {
         .contains("pixie", "Muz", "White", "5aald", "Nuti")
         .hasSizeGreaterThan(12);
 
-    System.out.println("✅ TEST PASSED: " + allPlayers.size() + " joueurs chargés du CSV");
+    System.out.println("[OK] TEST PASSED: " + allPlayers.size() + " joueurs chargés du CSV");
     System.out.println(
-        "✅ Premiers joueurs: " + loadedNicknames.subList(0, Math.min(5, loadedNicknames.size())));
+        "[OK] Premiers joueurs: "
+            + loadedNicknames.subList(0, Math.min(5, loadedNicknames.size())));
   }
 
   @Test
@@ -154,7 +155,7 @@ class CsvDataLoaderServiceTddTest {
           .as("Muz devrait avoir 125360 points selon le CSV");
     }
 
-    System.out.println("✅ TEST PASSED: Scores avec points réels du CSV créés");
+    System.out.println("[OK] TEST PASSED: Scores avec points réels du CSV créés");
   }
 
   @Test
@@ -180,7 +181,9 @@ class CsvDataLoaderServiceTddTest {
         .as("Le CSV devrait avoir des joueurs de plusieurs régions");
 
     System.out.println(
-        "✅ TEST PASSED: Plus de " + allPlayers.size() + " joueurs chargés (pas les 12 hardcodés)");
+        "[OK] TEST PASSED: Plus de "
+            + allPlayers.size()
+            + " joueurs chargés (pas les 12 hardcodés)");
   }
 
   @Test
@@ -229,13 +232,13 @@ class CsvDataLoaderServiceTddTest {
     List<Player> allPlayers = playerRepository.findAll();
     List<Score> allScores = scoreRepository.findAll();
 
-    System.out.println("🔍 DIAGNOSTIC:");
+    System.out.println("[DIAGNOSTIC]");
     System.out.println("   Players loaded: " + allPlayers.size());
     System.out.println("   Scores created: " + allScores.size());
 
     if (allPlayers.size() == 12) {
-      System.err.println("❌ PROBLÈME DÉTECTÉ: Seulement 12 joueurs chargés");
-      System.err.println("💡 Causes possibles:");
+      System.err.println("[ERROR] PROBLÈME DÉTECTÉ: Seulement 12 joueurs chargés");
+      System.err.println("Causes possibles:");
       System.err.println("   1. Transaction rollback dans DataInitializationService");
       System.err.println("   2. CsvDataLoaderService n'est pas appelé correctement");
       System.err.println("   3. Données hardcodées écrasent les données CSV");
@@ -244,7 +247,7 @@ class CsvDataLoaderServiceTddTest {
       List<String> nicknames = allPlayers.stream().map(Player::getNickname).toList();
       System.err.println("   Joueurs trouvés: " + nicknames);
     } else if (allPlayers.size() >= 147) {
-      System.out.println("✅ SUCCESS: " + allPlayers.size() + " joueurs chargés du CSV");
+      System.out.println("[OK] SUCCESS: " + allPlayers.size() + " joueurs chargés du CSV");
     }
 
     // Ce test ne fait qu'afficher le diagnostic, pas d'assertion

@@ -9,6 +9,8 @@ export interface Game {
   participantCount: number;
   canJoin: boolean;
   invitationCode?: string;
+  invitationCodeExpiresAt?: string;
+  isInvitationCodeExpired?: boolean;
   draftRules?: DraftRules;
   regionRules?: { [region: string]: number };
   // Champs optionnels pour compatibilité
@@ -17,6 +19,8 @@ export interface Game {
   description?: string;
   participants?: GameParticipant[];
   teams?: Team[];
+  /** Total count of available Fortnite players for draft selection */
+  fortnitePlayerCount?: number;
 }
 
 // Interface pour les équipes
@@ -55,6 +59,8 @@ export interface GameResponse {
 }
 
 export type GameStatus = 'CREATING' | 'DRAFTING' | 'ACTIVE' | 'FINISHED' | 'CANCELLED' | 'COMPLETED' | 'DRAFT' | 'RECRUITING';
+
+export type InvitationCodeDuration = '24h' | '48h' | '7d' | 'permanent';
 
 // Interfaces pour les participants
 export interface GameParticipant {

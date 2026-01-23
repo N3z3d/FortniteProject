@@ -172,13 +172,6 @@
     <logger name="http-access" level="INFO" additivity="false">
         <appender-ref ref="ACCESS_FILE"/>
     </logger>
-
-    <!-- SPRINT 4: NEW SPECIALIZED LOGGERS FOR ADVANCED MONITORING -->
-    <logger name="metrics" level="INFO" additivity="false">
-        <appender-ref ref="METRICS_FILE"/>
-    </logger>
-
-
     <!-- Configuration pour développement -->
     <springProfile name="!prod">
         <root level="INFO">
@@ -227,6 +220,10 @@
         <logger name="com.fortnite.pronos.config.DatabaseMonitoringConfig" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="JSON_FILE"/>
+        </logger>
+        <!-- SPRINT 4: NEW SPECIALIZED LOGGERS FOR ADVANCED MONITORING -->
+        <logger name="metrics" level="INFO" additivity="false">
+            <appender-ref ref="METRICS_FILE"/>
         </logger>
     </springProfile>
 </configuration> 

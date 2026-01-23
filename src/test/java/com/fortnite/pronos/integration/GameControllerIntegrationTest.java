@@ -112,9 +112,15 @@ public class GameControllerIntegrationTest {
     request.setName("Test Game Invalid User");
     request.setMaxParticipants(4);
 
-    // When
+    // When - Use a header with non-existent user (don't use postWithUser which adds valid user)
+    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+    headers.add("X-Test-User", "nonexistentuser");
     ResponseEntity<GameDto> response =
-        postWithUser(baseUrl + "?user=nonexistentuser", request, GameDto.class);
+        restTemplate.exchange(
+            baseUrl,
+            org.springframework.http.HttpMethod.POST,
+            new org.springframework.http.HttpEntity<>(request, headers),
+            GameDto.class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -298,9 +304,9 @@ public class GameControllerIntegrationTest {
     CreateGameRequest invalidRequest = new CreateGameRequest();
     // Ne pas définir le nom pour créer une erreur de validation
 
-    // When
-    ResponseEntity<GameDto> response =
-        postWithUser(baseUrl + "?user=" + testUser.getUsername(), invalidRequest, GameDto.class);
+    // When - Use Map.class to handle error response (not GameDto)
+    ResponseEntity<Map> response =
+        postWithUser(baseUrl + "?user=" + testUser.getUsername(), invalidRequest, Map.class);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);

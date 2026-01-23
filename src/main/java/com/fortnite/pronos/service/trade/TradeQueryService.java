@@ -69,7 +69,10 @@ public class TradeQueryService {
    */
   public List<Trade> getGameTradesByStatus(UUID gameId, Trade.Status status) {
     log.debug("Getting trades for game {} with status {}", gameId, status);
-    return tradeRepository.findByGameIdAndStatus(gameId, status);
+    List<Trade> trades = tradeRepository.findByGameIdAndStatus(gameId, status);
+    // Initialize lazy collections within transaction
+    trades.forEach(this::initializeTradeCollections);
+    return trades;
   }
 
   /**
@@ -80,27 +83,49 @@ public class TradeQueryService {
    */
   public List<Trade> getAllGameTrades(UUID gameId) {
     log.debug("Getting all trades for game {}", gameId);
-    return tradeRepository.findByGameId(gameId);
+    List<Trade> trades = tradeRepository.findByGameId(gameId);
+    // Initialize lazy collections within transaction to avoid LazyInitializationException
+    trades.forEach(this::initializeTradeCollections);
+    return trades;
+  }
+
+  /** Initialize lazy collections on a trade to avoid LazyInitializationException */
+  private void initializeTradeCollections(Trade trade) {
+    if (trade.getOfferedPlayers() != null) {
+      trade.getOfferedPlayers().size(); // Force initialization
+    }
+    if (trade.getRequestedPlayers() != null) {
+      trade.getRequestedPlayers().size(); // Force initialization
+    }
+    // Initialize team owners for DTO mapping
+    if (trade.getFromTeam() != null && trade.getFromTeam().getOwner() != null) {
+      trade.getFromTeam().getOwner().getUsername();
+    }
+    if (trade.getToTeam() != null && trade.getToTeam().getOwner() != null) {
+      trade.getToTeam().getOwner().getUsername();
+    }
   }
 
   /**
    * Get trade statistics for a game
    *
    * @param gameId ID of the game
-   * @return Map of trade statistics
+   * @return Map of trade statistics matching frontend TradeStats interface
    */
-  public Map<String, Long> getGameTradeStatistics(UUID gameId) {
+  public Map<String, Object> getGameTradeStatistics(UUID gameId) {
     log.debug("Getting trade statistics for game {}", gameId);
-    Map<String, Long> stats = new HashMap<>();
+    Map<String, Object> stats = new HashMap<>();
 
     Long accepted = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.ACCEPTED);
     Long pending = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.PENDING);
     Long rejected = tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.REJECTED);
+    Long total = accepted + pending + rejected;
 
-    stats.put("accepted", accepted);
-    stats.put("pending", pending);
-    stats.put("rejected", rejected);
-    stats.put("total", accepted + pending + rejected);
+    // Match frontend TradeStats interface
+    stats.put("totalTrades", total);
+    stats.put("successfulTrades", accepted);
+    stats.put("pendingOffers", pending);
+    stats.put("receivedOffers", pending); // Same as pending for now
 
     return stats;
   }

@@ -13,10 +13,10 @@
       <p class="season-info" *ngIf="selectedGame">{{ t.t('dashboard.labels.season') }} 2025 • {{ selectedGame.name }}</p>
     </div>
     <div class="quick-actions">
-      <button mat-stroked-button color="accent" (click)="navigateTo('/trades')">
+      <button mat-stroked-button color="accent" (click)="navigateTo('/games/' + selectedGame?.id + '/trades')">
         <mat-icon>swap_horiz</mat-icon> {{ t.t('navigation.trades') }}
       </button>
-      <button mat-stroked-button (click)="navigateTo('/teams')">
+      <button mat-stroked-button (click)="navigateTo('/games/' + selectedGame?.id + '/teams')">
         <mat-icon>groups</mat-icon> {{ t.t('dashboard.labels.myTeams') }}
       </button>
     </div>
@@ -73,7 +73,7 @@
             </div>
             <div class="hero-divider"></div>
             <div class="hero-stat">
-              <div class="stat-value">{{ selectedGame.participantCount || 0 }}</div>
+              <div class="stat-value">{{ formatNumber(getParticipantDisplayCount()) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.participants') }}</div>
             </div>
           </div>
@@ -83,7 +83,7 @@
               <mat-icon>visibility</mat-icon>
               {{ t.t('common.details', 'Détails') }}
             </button>
-            <button mat-stroked-button class="action-btn" (click)="navigateTo('/games')">
+            <button mat-stroked-button class="action-btn" (click)="viewGameDetails(selectedGame)">
               <mat-icon>settings</mat-icon>
               {{ t.t('games.manage', 'Gérer') }}
             </button>
@@ -105,7 +105,7 @@
         </div>
         <div>
           <div class="stat-value">{{ t.t('dashboard.labels.proPlayers') }}</div>
-          <div class="stat-value-highlight">{{ stats.proPlayersCount || 156 }}</div>
+          <div class="stat-value-highlight">{{ stats.proPlayersCount ?? 147 }}</div>
         </div>
         <div class="stat-trend positive">
           <mat-icon>trending_up</mat-icon> +12%
@@ -222,7 +222,7 @@
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.leaderboardDesc') }}</p>
           </div>
         </div>
-        <div class="nav-card teams-card premium-nav-card" (click)="navigateTo('/teams')"
+        <div class="nav-card teams-card premium-nav-card" (click)="navigateTo('/games/' + selectedGame?.id + '/teams')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>groups</mat-icon></div>
           <div class="nav-card-content">
@@ -230,7 +230,7 @@
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.teamsDesc') }}</p>
           </div>
         </div>
-        <div class="nav-card trades-card premium-nav-card" (click)="navigateTo('/trades')"
+        <div class="nav-card trades-card premium-nav-card" (click)="navigateTo('/games/' + selectedGame?.id + '/trades')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>swap_horiz</mat-icon></div>
           <div class="nav-card-content">

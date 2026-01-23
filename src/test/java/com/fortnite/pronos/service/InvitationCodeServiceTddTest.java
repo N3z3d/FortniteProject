@@ -66,8 +66,8 @@ class InvitationCodeServiceTddTest {
       String result = invitationCodeService.generateUniqueCode();
 
       assertThat(result).isNotNull();
-      assertThat(result).hasSize(6);
-      assertThat(result).matches("^[A-Z0-9]{6}$");
+      assertThat(result).hasSize(8);
+      assertThat(result).matches("^[A-Z0-9]{8}$");
 
       verify(gameRepository).existsByInvitationCode(result);
     }
@@ -84,8 +84,8 @@ class InvitationCodeServiceTddTest {
       String result = invitationCodeService.generateUniqueCode();
 
       assertThat(result).isNotNull();
-      assertThat(result).hasSize(6);
-      assertThat(result).matches("^[A-Z0-9]{6}$");
+      assertThat(result).hasSize(8);
+      assertThat(result).matches("^[A-Z0-9]{8}$");
 
       verify(gameRepository, times(3)).existsByInvitationCode(anyString());
     }
@@ -114,8 +114,8 @@ class InvitationCodeServiceTddTest {
         String code = invitationCodeService.generateUniqueCode();
         generatedCodes.add(code);
 
-        assertThat(code).hasSize(6);
-        assertThat(code).matches("^[A-Z0-9]{6}$");
+        assertThat(code).hasSize(8);
+        assertThat(code).matches("^[A-Z0-9]{8}$");
         assertThat(code).doesNotContainPattern("[a-z]"); // No lowercase letters
         assertThat(code).doesNotContainPattern("[^A-Z0-9]"); // Only allowed characters
       }
@@ -229,12 +229,12 @@ class InvitationCodeServiceTddTest {
     @Test
     @DisplayName("Should reject incorrect length codes")
     void shouldRejectIncorrectLengthCodes() {
-      // RED: Test length validation
-      String shortCode = "ABC12";
-      String longCode = "ABC1234";
+      // RED: Test length validation (domain accepts 4-20 chars)
+      String tooShortCode = "ABC"; // 3 chars - too short
+      String tooLongCode = "ABCDEFGHIJKLMNOPQRSTU"; // 21 chars - too long
 
-      boolean shortResult = invitationCodeService.isValidCodeFormat(shortCode);
-      boolean longResult = invitationCodeService.isValidCodeFormat(longCode);
+      boolean shortResult = invitationCodeService.isValidCodeFormat(tooShortCode);
+      boolean longResult = invitationCodeService.isValidCodeFormat(tooLongCode);
 
       assertThat(shortResult).isFalse();
       assertThat(longResult).isFalse();
@@ -472,8 +472,8 @@ class InvitationCodeServiceTddTest {
         String code = invitationCodeService.generateUniqueCode();
 
         // Every generated code must meet security standards
-        assertThat(code).matches("^[A-Z0-9]{6}$");
-        assertThat(code).hasSize(6);
+        assertThat(code).matches("^[A-Z0-9]{8}$");
+        assertThat(code).hasSize(8);
         assertThat(invitationCodeService.isValidCodeFormat(code)).isTrue();
       }
     }
@@ -558,12 +558,21 @@ class InvitationCodeServiceTddTest {
     @Test
     @DisplayName("Should handle validation edge cases gracefully")
     void shouldHandleValidationEdgeCasesGracefully() {
-      // RED: Test validation edge cases
-      String[] edgeCases = {
-        null, "", " ", "A", "ABCDE", "ABCDEFG", "12345", "1234567", "!@#$%^", "\n\t\r"
+      // RED: Test validation edge cases (domain accepts 4-20 alphanumeric chars)
+      String[] invalidCases = {
+        null,
+        "",
+        " ",
+        "A",
+        "AB",
+        "ABC", // too short (< 4)
+        "!@#$%^",
+        "\n\t\r",
+        "ABC@DEF", // invalid characters
+        "ABCDEFGHIJKLMNOPQRSTUVW" // too long (> 20)
       };
 
-      for (String edgeCase : edgeCases) {
+      for (String edgeCase : invalidCases) {
         boolean result = invitationCodeService.isValidCodeFormat(edgeCase);
         assertThat(result).as("Edge case '%s' should be invalid", edgeCase).isFalse();
       }
@@ -584,7 +593,7 @@ class InvitationCodeServiceTddTest {
       boolean isValid = invitationCodeService.isValidCodeFormat(generatedCode);
 
       assertThat(isValid).isTrue();
-      assertThat(generatedCode).matches("^[A-Z0-9]{6}$");
+      assertThat(generatedCode).matches("^[A-Z0-9]{8}$");
     }
 
     @Test
@@ -600,7 +609,7 @@ class InvitationCodeServiceTddTest {
 
         assertThat(isValidFormat).isTrue();
         assertThat(isValidFormatAgain).isTrue();
-        assertThat(code).hasSize(6);
+        assertThat(code).hasSize(8);
       }
     }
 

@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.HashMap;
 import java.util.UUID;
 
+import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,9 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -47,7 +51,11 @@ class GameWorkflowIntegrationTest {
 
   @Autowired private GameRepository gameRepository;
 
+  @Autowired private GameParticipantRepository gameParticipantRepository;
+
   @Autowired private UserRepository userRepository;
+
+  @Autowired private EntityManager entityManager;
 
   private MockMvc mockMvc;
   private ObjectMapper objectMapper;
@@ -113,10 +121,11 @@ class GameWorkflowIntegrationTest {
                 .content(objectMapper.writeValueAsString(joinRequest)))
         .andExpect(status().isOk());
 
-    // Vérifier que le participant a été ajouté
-    Game updatedGame = gameRepository.findById(testGame.getId()).orElse(null);
-    assertNotNull(updatedGame);
-    assertEquals(2, updatedGame.getParticipants().size());
+    // Flush and clear to see fresh data from DB
+    flushAndClear();
+
+    // Vérifier que le participant a été ajouté (use repository directly to avoid cache)
+    assertEquals(2, getParticipantCount(testGame.getId()));
   }
 
   @Test
@@ -130,9 +139,15 @@ class GameWorkflowIntegrationTest {
     joinGame(testGame.getId(), secondUser.getId());
     joinGame(testGame.getId(), thirdUser.getId());
 
+    // Flush and clear to ensure draft service sees fresh participant count
+    flushAndClear();
+
     // When & Then
-    performWithUser(post("/api/games/{id}/draft/start", testGame.getId()))
+    performWithUser(post("/api/games/{id}/start-draft", testGame.getId()))
         .andExpect(status().isOk());
+
+    // Flush and clear to see updated status
+    flushAndClear();
 
     // Vérifier que le statut a changé
     Game updatedGame = gameRepository.findById(testGame.getId()).orElse(null);
@@ -198,6 +213,9 @@ class GameWorkflowIntegrationTest {
     User secondUser = createTestUser("SecondUser", "second@test.com");
     joinGame(fullGame.getId(), secondUser.getId());
 
+    // Flush and clear so service sees correct participant count
+    flushAndClear();
+
     // Essayer d'ajouter un troisième participant
     User thirdUser = createTestUser("ThirdUser", "third@test.com");
     JoinGameRequest joinRequest = new JoinGameRequest();
@@ -218,7 +236,7 @@ class GameWorkflowIntegrationTest {
     // Given - Game avec seulement 1 participant (le créateur)
 
     // When & Then
-    performWithUser(post("/api/games/{id}/draft/start", testGame.getId()))
+    performWithUser(post("/api/games/{id}/start-draft", testGame.getId()))
         .andExpect(status().isConflict());
   }
 
@@ -233,16 +251,14 @@ class GameWorkflowIntegrationTest {
     joinGame(testGame.getId(), secondUser.getId());
     joinGame(testGame.getId(), thirdUser.getId());
 
-    // Then - Vérifier la cohérence
-    Game updatedGame = gameRepository.findById(testGame.getId()).orElse(null);
-    assertNotNull(updatedGame);
-    assertEquals(3, updatedGame.getParticipants().size());
-    assertTrue(
-        updatedGame.getParticipants().stream()
-            .anyMatch(p -> p.getUser().getId().equals(secondUser.getId())));
-    assertTrue(
-        updatedGame.getParticipants().stream()
-            .anyMatch(p -> p.getUser().getId().equals(thirdUser.getId())));
+    // Flush and clear to see fresh data
+    flushAndClear();
+
+    // Then - Vérifier la cohérence (use repository directly to avoid cache)
+    assertEquals(3, getParticipantCount(testGame.getId()));
+    java.util.List<GameParticipant> participants = getParticipants(testGame.getId());
+    assertTrue(participants.stream().anyMatch(p -> p.getUser().getId().equals(secondUser.getId())));
+    assertTrue(participants.stream().anyMatch(p -> p.getUser().getId().equals(thirdUser.getId())));
   }
 
   @Test
@@ -262,6 +278,23 @@ class GameWorkflowIntegrationTest {
   }
 
   // Méthodes utilitaires
+
+  /** Flush and clear the persistence context to force fresh reads from database */
+  private void flushAndClear() {
+    entityManager.flush();
+    entityManager.clear();
+  }
+
+  /** Get participant count directly from repository (avoids cache issues) */
+  private long getParticipantCount(UUID gameId) {
+    return gameParticipantRepository.countByGameId(gameId);
+  }
+
+  /** Get participants list directly from repository */
+  private java.util.List<GameParticipant> getParticipants(UUID gameId) {
+    return gameParticipantRepository.findByGameIdOrderByJoinedAt(gameId);
+  }
+
   private User createTestUser(String username, String email) {
     User user = new User();
     user.setUsername(username);

@@ -147,7 +147,7 @@ public class PerformanceMonitoringConfig {
 
       if (memoryPercentage > 80) {
         log.warn(
-            "🚨 ALERTE MÉMOIRE: {}% utilisé - Risque de dégradation avec 147 joueurs!",
+            "[ALERT] MEMOIRE: {}% utilise - Risque de degradation avec 147 joueurs!",
             String.format("%.1f", memoryPercentage));
       }
 
@@ -155,7 +155,7 @@ public class PerformanceMonitoringConfig {
       double avgPlayerListTime = playerListTimer.mean(TimeUnit.MILLISECONDS);
       if (avgPlayerListTime > 1000) { // > 1 seconde
         log.warn(
-            "🐌 ALERTE PERFORMANCE: Temps moyen liste joueurs = {}ms - Trop lent pour 147 joueurs!",
+            "[ALERT] PERFORMANCE: Temps moyen liste joueurs = {}ms - Trop lent pour 147 joueurs!",
             String.format("%.0f", avgPlayerListTime));
       }
 
@@ -165,7 +165,7 @@ public class PerformanceMonitoringConfig {
         double hitRatio = cacheHits.count() / totalCacheOps * 100;
         if (hitRatio < 70) { // < 70% hit ratio
           log.warn(
-              "📉 ALERTE CACHE: Hit ratio = {}% - Performance dégradée!",
+              "[ALERT] CACHE: Hit ratio = {}% - Performance degradee!",
               String.format("%.1f", hitRatio));
         }
       }
@@ -174,36 +174,36 @@ public class PerformanceMonitoringConfig {
     /** Rapport de performance détaillé toutes les 5 minutes */
     @Scheduled(fixedRate = 300000) // 5 minutes
     public void detailedPerformanceReport() {
-      log.info("📊 === RAPPORT PERFORMANCE 149 JOUEURS ===");
+      log.info("[PERF] === RAPPORT PERFORMANCE 149 JOUEURS ===");
 
       // Mémoire
       long usedMB = memoryBean.getHeapMemoryUsage().getUsed() / 1024 / 1024;
       long maxMB = memoryBean.getHeapMemoryUsage().getMax() / 1024 / 1024;
       log.info(
-          "💾 Mémoire: {} MB / {} MB ({}%)",
+          "[MEM] Memoire: {} MB / {} MB ({}%)",
           usedMB, maxMB, String.format("%.1f", (double) usedMB / maxMB * 100));
 
       // API Performance
       log.info(
-          "⚡ API Joueurs: {} appels, temps moyen = {}ms",
+          "[API] Joueurs: {} appels, temps moyen = {}ms",
           (long) playerApiCalls.count(),
           String.format("%.0f", playerListTimer.mean(TimeUnit.MILLISECONDS)));
 
       log.info(
-          "🏆 Leaderboard: temps moyen = {}ms",
+          "[LEADERBOARD] temps moyen = {}ms",
           String.format("%.0f", leaderboardTimer.mean(TimeUnit.MILLISECONDS)));
 
       // Cache Performance
       double totalCacheOps = cacheHits.count() + cacheMisses.count();
       if (totalCacheOps > 0) {
         log.info(
-            "🎯 Cache: {}% hit ratio ({} hits, {} misses)",
+            "[CACHE] {}% hit ratio ({} hits, {} misses)",
             String.format("%.1f", cacheHits.count() / totalCacheOps * 100),
             (long) cacheHits.count(),
             (long) cacheMisses.count());
       }
 
-      log.info("📊 === FIN RAPPORT PERFORMANCE ===");
+      log.info("[PERF] === FIN RAPPORT PERFORMANCE ===");
     }
   }
 }

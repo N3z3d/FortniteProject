@@ -32,15 +32,16 @@ public class TeamLeaderboardService {
   /** Obtenir le leaderboard complet - VERSION OPTIMISÉE SANS N+1 + CACHE */
   @Cacheable(value = "leaderboard", key = "#season", unless = "#result.isEmpty()")
   public List<LeaderboardEntryDTO> getLeaderboard(int season) {
-    log.info("🏆 Récupération du leaderboard pour la saison {} - VERSION OPTIMISÉE", season);
+    log.info(
+        "[LEADERBOARD] Recuperation du leaderboard pour la saison {} - VERSION OPTIMISEE", season);
 
     // 1. Récupérer toutes les équipes avec FETCH EAGER optimisé
     List<Team> teams = teamRepository.findBySeasonWithFetch(season);
-    log.debug("📊 {} équipes trouvées", teams.size());
+    log.debug("[DATA] {} equipes trouvees", teams.size());
 
     // 2. OPTIMISATION: Récupérer tous les scores en UNE SEULE requête
     Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
-    log.debug("⚡ {} scores récupérés en une seule requête optimisée", playerPointsMap.size());
+    log.debug("[PERF] {} scores recuperes en une seule requete optimisee", playerPointsMap.size());
 
     // 3. Construire le leaderboard sans requêtes supplémentaires
     List<LeaderboardEntryDTO> entries = new ArrayList<>();
@@ -88,20 +89,20 @@ public class TeamLeaderboardService {
       entries.get(i).setRank(i + 1);
     }
 
-    log.info("✅ Leaderboard généré avec {} équipes - SANS N+1 queries", entries.size());
+    log.info("[OK] Leaderboard généré avec {} équipes - SANS N+1 queries", entries.size());
     return entries;
   }
 
   /** Obtenir le leaderboard pour une game spécifique */
   public List<LeaderboardEntryDTO> getLeaderboardByGame(UUID gameId) {
-    log.info("🏆 Récupération du leaderboard pour la game {}", gameId);
+    log.info("[LEADERBOARD] Recuperation du leaderboard pour la game {}", gameId);
 
     // 1. Récupérer les équipes de cette game avec FETCH EAGER
     List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
-    log.debug("📊 {} équipes trouvées pour la game {}", teams.size(), gameId);
+    log.debug("[DATA] {} equipes trouvees pour la game {}", teams.size(), gameId);
 
     if (teams.isEmpty()) {
-      log.warn("⚠️ Aucune équipe trouvée pour la game {}", gameId);
+      log.warn("[WARN] Aucune équipe trouvée pour la game {}", gameId);
       return new ArrayList<>();
     }
 
@@ -151,7 +152,7 @@ public class TeamLeaderboardService {
       entries.get(i).setRank(i + 1);
     }
 
-    log.info("✅ Leaderboard game {} généré avec {} équipes", gameId, entries.size());
+    log.info("[OK] Leaderboard game {} généré avec {} équipes", gameId, entries.size());
     return entries;
   }
 

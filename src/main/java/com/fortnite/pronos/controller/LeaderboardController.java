@@ -42,7 +42,11 @@ public class LeaderboardController {
       @RequestParam(required = false) String region,
       @RequestParam(required = false) String gameId) {
 
-    log.info("📊 Demande leaderboard - Saison: {}, Région: {}, GameId: {}", season, region, gameId);
+    log.info(
+        "[LEADERBOARD] Demande leaderboard - Saison: {}, Région: {}, GameId: {}",
+        season,
+        region,
+        gameId);
 
     try {
       List<LeaderboardEntryDTO> entries;
@@ -65,14 +69,14 @@ public class LeaderboardController {
                                 player ->
                                     player.getRegion().name().equalsIgnoreCase(region.trim())))
                 .toList();
-        log.info("🌍 Filtrage par région {} -> {} équipes", region, entries.size());
+        log.info("[FILTER] Filtrage par région {} -> {} équipes", region, entries.size());
       }
 
-      log.info("✅ Leaderboard retourné: {} équipes", entries.size());
+      log.info("[OK] Leaderboard retourné: {} équipes", entries.size());
       return ResponseEntity.ok(entries);
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors de la récupération du leaderboard", e);
+      log.error("[ERROR] Erreur lors de la récupération du leaderboard", e);
       return ResponseEntity.internalServerError().build();
     }
   }
@@ -85,7 +89,7 @@ public class LeaderboardController {
       @RequestParam(required = false) String gameId) {
 
     log.info(
-        "📊 Demande leaderboard par path - Saison: {}, Région: {}, GameId: {}",
+        "[LEADERBOARD] Demande leaderboard par path - Saison: {}, Région: {}, GameId: {}",
         season,
         region,
         gameId);
@@ -170,16 +174,16 @@ public class LeaderboardController {
   public ResponseEntity<List<PronostiqueurLeaderboardEntryDTO>> getPronostiqueurLeaderboard(
       @RequestParam(defaultValue = "2025") Integer season) {
 
-    log.info("📊 Demande classement pronostiqueurs - Saison: {}", season);
+    log.info("[LEADERBOARD] Demande classement pronostiqueurs - Saison: {}", season);
 
     try {
       List<PronostiqueurLeaderboardEntryDTO> entries =
           pronostiqueurLeaderboardService.getPronostiqueurLeaderboard(season);
-      log.info("✅ Classement pronostiqueurs retourné: {} utilisateurs", entries.size());
+      log.info("[OK] Classement pronostiqueurs retourné: {} utilisateurs", entries.size());
       return ResponseEntity.ok(entries);
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors de la récupération du classement des pronostiqueurs", e);
+      log.error("[ERROR] Erreur lors de la récupération du classement des pronostiqueurs", e);
       return ResponseEntity.internalServerError().build();
     }
   }
@@ -192,7 +196,7 @@ public class LeaderboardController {
       @RequestParam(required = false) String gameId) {
 
     log.info(
-        "🎮 Demande classement joueurs - Saison: {}, Région: {}, GameId: {}",
+        "[PLAYER] Demande classement joueurs - Saison: {}, Région: {}, GameId: {}",
         season,
         region,
         gameId);
@@ -213,14 +217,14 @@ public class LeaderboardController {
             entries.stream()
                 .filter(entry -> entry.getRegion().name().equalsIgnoreCase(region.trim()))
                 .toList();
-        log.info("🌍 Filtrage par région {} -> {} joueurs", region, entries.size());
+        log.info("[FILTER] Filtrage par région {} -> {} joueurs", region, entries.size());
       }
 
-      log.info("✅ Classement joueurs retourné: {} joueurs", entries.size());
+      log.info("[OK] Classement joueurs retourné: {} joueurs", entries.size());
       return ResponseEntity.ok(entries);
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors de la récupération du classement des joueurs", e);
+      log.error("[ERROR] Erreur lors de la récupération du classement des joueurs", e);
       return ResponseEntity.internalServerError().build();
     }
   }
@@ -228,17 +232,17 @@ public class LeaderboardController {
   /** Debug endpoint pour vérifier pourquoi les stats sont à 0 */
   @GetMapping("/debug/stats")
   public ResponseEntity<Map<String, Object>> getDebugStats() {
-    log.info("🔍 Debug des statistiques du leaderboard");
+    log.info("[DEBUG] Debug des statistiques du leaderboard");
 
     int season = new Date().getYear() + 1900;
 
     try {
       Map<String, Object> debug = debugService.getDebugStats(season);
-      log.info("🔍 Debug result: {}", debug);
+      log.info("[DEBUG] Debug result: {}", debug);
       return ResponseEntity.ok(debug);
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors du debug des statistiques", e);
+      log.error("[ERROR] Erreur lors du debug des statistiques", e);
       Map<String, Object> debug = new HashMap<>();
       debug.put("error", e.getMessage());
       return ResponseEntity.ok(debug);
@@ -252,31 +256,10 @@ public class LeaderboardController {
       return ResponseEntity.ok(debugService.getDebugSimple());
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors du debug simple", e);
+      log.error("[ERROR] Erreur lors du debug simple", e);
       Map<String, Object> debug = new HashMap<>();
       debug.put("error", e.getMessage());
       return ResponseEntity.ok(debug);
-    }
-  }
-
-  private com.fortnite.pronos.model.Player.Region convertStringToRegion(String region) {
-    switch (region.toUpperCase()) {
-      case "EU":
-        return com.fortnite.pronos.model.Player.Region.EU;
-      case "NAC":
-        return com.fortnite.pronos.model.Player.Region.NAC;
-      case "NAW":
-        return com.fortnite.pronos.model.Player.Region.NAW;
-      case "BR":
-        return com.fortnite.pronos.model.Player.Region.BR;
-      case "ASIA":
-        return com.fortnite.pronos.model.Player.Region.ASIA;
-      case "OCE":
-        return com.fortnite.pronos.model.Player.Region.OCE;
-      case "ME":
-        return com.fortnite.pronos.model.Player.Region.ME;
-      default:
-        return com.fortnite.pronos.model.Player.Region.EU;
     }
   }
 }

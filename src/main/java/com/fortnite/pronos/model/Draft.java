@@ -115,8 +115,21 @@ public class Draft {
   }
 
   public void nextPick() {
+    // Use maxParticipants as fallback if participants collection not loaded
+    int participantCount = this.game.getParticipantCount();
+    if (participantCount == 0) {
+      participantCount = this.game.getMaxParticipants();
+    }
+    nextPick(participantCount);
+  }
+
+  /**
+   * Advances to the next pick with an explicit participant count. Use this when you have the
+   * accurate count from a repository query.
+   */
+  public void nextPick(int participantCount) {
     this.currentPick++;
-    if (this.currentPick > this.game.getParticipantCount()) {
+    if (this.currentPick > participantCount) {
       this.currentRound++;
       this.currentPick = 1;
     }

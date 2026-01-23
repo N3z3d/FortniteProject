@@ -43,16 +43,16 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
       displayUserGuidance(databaseType);
 
     } catch (SQLException e) {
-      log.error("❌ Erreur lors de la détection de la base de données: {}", e.getMessage());
+      log.error("[ERROR] Erreur lors de la détection de la base de données: {}", e.getMessage());
       displayDatabaseError(e);
     }
   }
 
   /** Affiche le statut de la base de données de manière UX-friendly */
   private void displayDatabaseStatus(String databaseType, String jdbcUrl) {
-    log.info("🔥 ════════════════════════════════════════════════════════════");
-    log.info("🚀   FORTNITE PRONOS - STATUT BASE DE DONNÉES");
-    log.info("🔥 ════════════════════════════════════════════════════════════");
+    log.info("================================================================");
+    log.info("[START] FORTNITE PRONOS - STATUT BASE DE DONNEES");
+    log.info("================================================================");
 
     if (databaseType.contains("H2")) {
       log.info("BASE DE DONNEES: H2 (profil test)");
@@ -60,16 +60,16 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
       log.info("Utilisez le profil dev pour PostgreSQL persistante");
 
     } else if (databaseType.contains("PostgreSQL")) {
-      log.info("🐘 BASE DE DONNÉES: PostgreSQL (Mode Production)");
-      log.info("🔗 URL: {}", jdbcUrl);
-      log.info("✅ Configuration PostgreSQL détectée et fonctionnelle");
+      log.info("[DB] BASE DE DONNEES: PostgreSQL (Mode Production)");
+      log.info("[DB] URL: {}", jdbcUrl);
+      log.info("[OK] Configuration PostgreSQL detectee et fonctionnelle");
 
     } else {
-      log.info("📊 BASE DE DONNÉES: {} (Mode personnalisé)", databaseType);
-      log.info("🔗 URL: {}", jdbcUrl);
+      log.info("[DB] BASE DE DONNEES: {} (Mode personnalise)", databaseType);
+      log.info("[DB] URL: {}", jdbcUrl);
     }
 
-    log.info("🔥 ════════════════════════════════════════════════════════════");
+    log.info("================================================================");
   }
 
   /** Affiche des conseils UX selon le type de base de données */

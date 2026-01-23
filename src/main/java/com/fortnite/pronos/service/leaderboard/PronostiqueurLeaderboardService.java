@@ -95,7 +95,7 @@ public class PronostiqueurLeaderboardService {
       entries.get(i).setRank(i + 1);
     }
 
-    log.info("✅ Classement pronostiqueurs généré avec {} utilisateurs", entries.size());
+    log.info("[OK] Classement pronostiqueurs généré avec {} utilisateurs", entries.size());
     return entries;
   }
 }

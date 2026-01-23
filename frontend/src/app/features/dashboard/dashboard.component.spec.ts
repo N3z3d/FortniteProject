@@ -114,4 +114,61 @@ describe('DashboardComponent (i18n)', () => {
     const heading = fixture.nativeElement.querySelector('#stats-heading') as HTMLElement;
     expect(heading?.textContent).toContain('General Statistics');
   });
+
+  it('utilise le nombre d’équipes quand participantCount est à zéro', () => {
+    component.selectedGame = {
+      ...component.selectedGame,
+      participantCount: 0,
+      teams: [{ id: 't1' }, { id: 't2' }, { id: 't3' }]
+    } as any;
+    component.stats.totalTeams = 3;
+
+    expect(component.getParticipantDisplayCount()).toBe(3);
+  });
+
+  it('privilégie participantCount quand il est défini', () => {
+    component.selectedGame = {
+      ...component.selectedGame,
+      participantCount: 5,
+      teams: [{ id: 't1' }, { id: 't2' }]
+    } as any;
+    component.stats.totalTeams = 2;
+
+    expect(component.getParticipantDisplayCount()).toBe(5);
+  });
+
+  it('tombe sur la liste de participants quand les équipes sont absentes', () => {
+    component.selectedGame = {
+      ...component.selectedGame,
+      participantCount: 0,
+      participants: [{ id: 'p1' }, { id: 'p2' }]
+    } as any;
+    component.stats.totalTeams = 0;
+
+    expect(component.getParticipantDisplayCount()).toBe(2);
+  });
+
+  it('utilise stats.totalTeams quand il n\'y a pas de teams ni participants', () => {
+    component.selectedGame = {
+      ...component.selectedGame,
+      participantCount: 0,
+      teams: [],
+      participants: []
+    } as any;
+    component.stats.totalTeams = 4;
+
+    expect(component.getParticipantDisplayCount()).toBe(4);
+  });
+
+  it('retourne 0 quand aucune source n\'est disponible', () => {
+    component.selectedGame = {
+      ...component.selectedGame,
+      participantCount: 0,
+      teams: undefined,
+      participants: undefined
+    } as any;
+    component.stats.totalTeams = 0;
+
+    expect(component.getParticipantDisplayCount()).toBe(0);
+  });
 });

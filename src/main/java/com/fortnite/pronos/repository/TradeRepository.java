@@ -49,7 +49,12 @@ public interface TradeRepository extends JpaRepository<Trade, UUID> {
    * @param gameId The game ID
    * @return List of all trades in the game
    */
-  @Query("SELECT t FROM Trade t WHERE t.fromTeam.game.id = :gameId ORDER BY t.proposedAt DESC")
+  @Query(
+      "SELECT DISTINCT t FROM Trade t "
+          + "LEFT JOIN FETCH t.fromTeam ft "
+          + "LEFT JOIN FETCH t.toTeam tt "
+          + "WHERE ft.game.id = :gameId OR tt.game.id = :gameId "
+          + "ORDER BY t.proposedAt DESC")
   List<Trade> findByGameId(@Param("gameId") UUID gameId);
 
   /**
@@ -60,7 +65,12 @@ public interface TradeRepository extends JpaRepository<Trade, UUID> {
    * @return List of trades with the specified status in the game
    */
   @Query(
-      "SELECT t FROM Trade t WHERE t.fromTeam.game.id = :gameId AND t.status = :status ORDER BY t.proposedAt DESC")
+      "SELECT DISTINCT t FROM Trade t "
+          + "LEFT JOIN FETCH t.fromTeam ft "
+          + "LEFT JOIN FETCH t.toTeam tt "
+          + "WHERE (ft.game.id = :gameId OR tt.game.id = :gameId) "
+          + "AND t.status = :status "
+          + "ORDER BY t.proposedAt DESC")
   List<Trade> findByGameIdAndStatus(
       @Param("gameId") UUID gameId, @Param("status") Trade.Status status);
 

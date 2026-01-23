@@ -17,6 +17,7 @@ import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.DraftRepository;
 import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.repository.ScoreRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +37,12 @@ public class GameDetailService {
   private static final String MISSING_PLAYER_TRANCHE = "N/A";
   private static final String MISSING_USER_NAME = "Utilisateur indisponible";
 
+  private static final int DEFAULT_SEASON = 2025;
+
   private final GameRepository gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
   private final DraftRepository draftRepository;
+  private final ScoreRepository scoreRepository;
 
   /**
    * Récupère les détails complets d'une game Clean Code : méthode principale qui orchestre la
@@ -286,11 +290,14 @@ public class GameDetailService {
     return distribution;
   }
 
-  /** Calcule le score actuel d'un joueur Clean Code : méthode d'aide focalisée */
+  /** Calcule le score actuel d'un joueur Clean Code : methode d'aide focalisee */
   private int calculateCurrentScore(Player player) {
-    // Note: Pour l'instant, on retourne 0 car les scores sont dans une table séparée
-    // TODO: Intégrer avec ScoreService quand il sera disponible
-    return 0;
+    if (player == null || player.getId() == null) {
+      return 0;
+    }
+    int season = player.getCurrentSeason() != null ? player.getCurrentSeason() : DEFAULT_SEASON;
+    Integer points = scoreRepository.sumPointsByPlayerAndSeason(player.getId(), season);
+    return points != null ? points : 0;
   }
 
   /**

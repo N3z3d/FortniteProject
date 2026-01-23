@@ -126,10 +126,18 @@
           <!-- Game Card Content -->
           <div class="game-card-content">
             <div class="game-stats">
-              <div class="stat-item">
+              <!-- Only show Fortnite players for games with draft started or completed -->
+              <div class="stat-item" *ngIf="game.status !== 'CREATING'">
                 <mat-icon>sports</mat-icon>
-                <span class="stat-label">Joueurs Fortnite</span>
+                <span class="stat-label">Joueurs disponibles</span>
                 <span class="stat-value">{{ getTotalFortnitePlayers(game) }}</span>
+              </div>
+
+              <!-- For CREATING games, show empty state hint -->
+              <div class="stat-item" *ngIf="game.status === 'CREATING'">
+                <mat-icon>hourglass_empty</mat-icon>
+                <span class="stat-label">En attente</span>
+                <span class="stat-value">du draft</span>
               </div>
 
               <div class="stat-item" *ngIf="game.participantCount > 0">

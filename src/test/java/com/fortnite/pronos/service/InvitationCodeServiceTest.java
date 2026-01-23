@@ -24,8 +24,8 @@ class InvitationCodeServiceTest {
   @InjectMocks private InvitationCodeService invitationCodeService;
 
   @Test
-  @DisplayName("Devrait générer un code d'invitation unique de 6 caractères")
-  void shouldGenerateUniqueCodeWith6Characters() {
+  @DisplayName("Devrait générer un code d'invitation unique de 8 caractères")
+  void shouldGenerateUniqueCodeWith8Characters() {
     // Given
     when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
@@ -34,8 +34,8 @@ class InvitationCodeServiceTest {
 
     // Then
     assertThat(code).isNotNull();
-    assertThat(code).hasSize(6);
-    assertThat(code).matches("^[A-Z0-9]{6}$");
+    assertThat(code).hasSize(8);
+    assertThat(code).matches("^[A-Z0-9]{8}$");
     verify(gameRepository, times(1)).existsByInvitationCode(anyString());
   }
 
@@ -94,10 +94,10 @@ class InvitationCodeServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait rejeter un code trop court")
+  @DisplayName("Devrait rejeter un code trop court (< 4 chars)")
   void shouldRejectShortCode() {
-    // Given
-    String shortCode = "ABC12";
+    // Given - domain accepts 4-20 chars, so 3 is too short
+    String shortCode = "ABC";
 
     // When
     boolean isValid = invitationCodeService.isValidCodeFormat(shortCode);
@@ -107,10 +107,10 @@ class InvitationCodeServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait rejeter un code trop long")
+  @DisplayName("Devrait rejeter un code trop long (> 20 chars)")
   void shouldRejectLongCode() {
-    // Given
-    String longCode = "ABC1234";
+    // Given - domain accepts 4-20 chars, so 21 is too long
+    String longCode = "ABCDEFGHIJKLMNOPQRSTU";
 
     // When
     boolean isValid = invitationCodeService.isValidCodeFormat(longCode);

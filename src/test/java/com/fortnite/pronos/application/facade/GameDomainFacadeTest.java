@@ -1,4 +1,4 @@
-package com.fortnite.pronos.domain.facade;
+package com.fortnite.pronos.application.facade;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

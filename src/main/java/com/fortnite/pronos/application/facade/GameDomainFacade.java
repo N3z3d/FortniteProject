@@ -1,4 +1,4 @@
-package com.fortnite.pronos.domain.facade;
+package com.fortnite.pronos.application.facade;
 
 import java.util.Set;
 import java.util.UUID;

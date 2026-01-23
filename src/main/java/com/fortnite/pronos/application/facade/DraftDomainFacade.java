@@ -1,4 +1,4 @@
-package com.fortnite.pronos.domain.facade;
+package com.fortnite.pronos.application.facade;
 
 import org.springframework.stereotype.Component;
 

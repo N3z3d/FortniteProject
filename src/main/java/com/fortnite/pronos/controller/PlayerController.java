@@ -71,7 +71,7 @@ public class PlayerController {
   @Operation(
       summary = "Get all players (legacy)",
       description =
-          "Legacy endpoint for backward compatibility. ⚠️ Not optimized for 149+ players - use paginated endpoint instead")
+          "Legacy endpoint for backward compatibility. [WARN] Not optimized for 149+ players - use paginated endpoint instead")
   @ApiResponse(responseCode = "200", description = "All players retrieved (non-paginated)")
   @GetMapping("/all")
   public ResponseEntity<List<PlayerDto>> getAllPlayersLegacy() {

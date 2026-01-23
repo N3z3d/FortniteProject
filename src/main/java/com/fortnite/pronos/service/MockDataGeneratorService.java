@@ -33,12 +33,12 @@ public class MockDataGeneratorService {
    */
   public MockDataSet loadMockDataFromCsv() {
     try {
-      log.info("🎮 Chargement des données mock depuis le CSV...");
+      log.info("[MOCK] Chargement des donnees mock depuis le CSV...");
 
       ClassPathResource resource = new ClassPathResource("data/fortnite_data.csv");
 
       if (!resource.exists()) {
-        log.warn("⚠️ Fichier CSV non trouvé: data/fortnite_data.csv");
+        log.warn("[WARN] Fichier CSV non trouvé: data/fortnite_data.csv");
         return MockDataSet.empty();
       }
 
@@ -51,7 +51,7 @@ public class MockDataGeneratorService {
 
         String headerLine = reader.readLine();
         if (headerLine == null || !headerLine.contains("Pronostiqueur")) {
-          log.warn("⚠️ Format CSV invalide - header manquant ou incorrect");
+          log.warn("[WARN] Format CSV invalide - header manquant ou incorrect");
           return MockDataSet.empty();
         }
 
@@ -82,7 +82,7 @@ public class MockDataGeneratorService {
 
       MockDataSet result = new MockDataSet(playersByPronosticator, totalPlayers);
 
-      log.info("✅ Données mock chargées avec succès:");
+      log.info("[OK] Données mock chargées avec succès:");
       log.info("   - {} joueurs au total", totalPlayers);
       log.info("   - Répartition:");
       playersByPronosticator.forEach(
@@ -91,7 +91,7 @@ public class MockDataGeneratorService {
       return result;
 
     } catch (Exception e) {
-      log.error("❌ Erreur lors du chargement des données mock CSV", e);
+      log.error("[ERROR] Erreur lors du chargement des données mock CSV", e);
       return MockDataSet.empty();
     }
   }
