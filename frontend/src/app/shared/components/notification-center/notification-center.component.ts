@@ -1,16 +1,18 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificationService, NotificationMessage } from '../../services/notification.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notification-center',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatBadgeModule, MatButtonModule],
+  imports: [CommonModule, MatIconModule, MatBadgeModule, MatButtonModule, MatTooltipModule],
   templateUrl: './notification-center.component.html',
   styleUrls: ['./notification-center.component.css'],
   animations: [
@@ -32,13 +34,15 @@ import { Subscription } from 'rxjs';
   ]
 })
 export class NotificationCenterComponent implements OnInit, OnDestroy {
+  public readonly t = inject(TranslationService);
+
   notifications: NotificationMessage[] = [];
   unreadCount = 0;
   isOpen = false;
   connectionStatus = false;
-  
+
   private subscriptions: Subscription[] = [];
-  
+
   constructor(public notificationService: NotificationService) {}
   
   ngOnInit() {
@@ -117,27 +121,29 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffMins < 1) return 'À l\'instant';
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
-    if (diffHours < 24) return `Il y a ${diffHours}h`;
-    if (diffDays < 7) return `Il y a ${diffDays}j`;
-    
-    return notifDate.toLocaleDateString('fr-FR');
+
+    if (diffMins < 1) return this.t.t('notificationCenter.time.justNow');
+    if (diffMins < 60) return this.t.t('notificationCenter.time.minutesAgo').replace('{n}', String(diffMins));
+    if (diffHours < 24) return this.t.t('notificationCenter.time.hoursAgo').replace('{n}', String(diffHours));
+    if (diffDays < 7) return this.t.t('notificationCenter.time.daysAgo').replace('{n}', String(diffDays));
+
+    const locale = this.t.currentLanguage === 'fr' ? 'fr-FR' : this.t.currentLanguage === 'es' ? 'es-ES' : this.t.currentLanguage === 'pt' ? 'pt-BR' : 'en-US';
+    return notifDate.toLocaleDateString(locale);
   }
   
   private showToastNotification(notification: NotificationMessage | null) {
     if (!notification) return;
-    
+
     // Créer un toast temporaire
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
+    const notificationTitle = this.t.t('notificationCenter.notification');
     toast.innerHTML = `
       <div class="toast-icon">
         <i class="material-icons">${this.getNotificationIcon(notification.type)}</i>
       </div>
       <div class="toast-content">
-        <h4>Notification</h4>
+        <h4>${notificationTitle}</h4>
         <p>${notification.message}</p>
       </div>
     `;

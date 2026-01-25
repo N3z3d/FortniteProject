@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, UserRepositoryPort {
   Optional<User> findByEmail(String email);
 
   Optional<User> findByUsername(String username);

@@ -133,16 +133,16 @@
               class="player-row" 
               role="row"
               [attr.aria-rowindex]="i + 2"
-              [attr.aria-label]="'Player rank ' + player.rank + ': ' + player.nickname + ' from ' + player.region + ' with ' + (player.totalPoints | number) + ' points'">
+              [attr.aria-label]="getPlayerRowLabel(player)">
             <td class="rank-cell" role="gridcell">
-              <span class="rank-badge" [attr.aria-label]="'Rank ' + player.rank">{{ player.rank }}</span>
+              <span class="rank-badge" [attr.aria-label]="getRankLabel(player.rank)">{{ player.rank }}</span>
             </td>
             
             <td class="player-cell" role="gridcell">
               <div class="player-info">
                 <div class="player-avatar" 
                      role="img" 
-                     [attr.aria-label]="'Avatar for ' + player.nickname">{{ getInitials(player.nickname) }}</div>
+                     [attr.aria-label]="getAvatarLabel(player.nickname)">{{ getInitials(player.nickname) }}</div>
                 <div class="player-details">
                   <div class="player-nickname">{{ player.nickname }}</div>
                   <div class="player-username">{{ getAtSymbol() }}{{ player.username }}</div>
@@ -151,11 +151,11 @@
             </td>
             
             <td class="region-cell" role="gridcell">
-              <span class="region-badge" [attr.aria-label]="'Region: ' + player.region">{{ player.region }}</span>
+              <span class="region-badge" [attr.aria-label]="getRegionLabel(player.region)">{{ player.region }}</span>
             </td>
             
             <td class="points-cell" role="gridcell">
-              <span class="points-value" [attr.aria-label]="(player.totalPoints | number) + ' points'">{{ player.totalPoints | number }}</span>
+              <span class="points-value" [attr.aria-label]="getPointsLabel(player.totalPoints)">{{ player.totalPoints | number }}</span>
             </td>
 
             <td class="prono-cell" role="gridcell">
@@ -179,9 +179,7 @@
         ⬅️ {{ t.t('leaderboard.previous') }}
       </button>
 
-      <span class="page-info" aria-live="polite" aria-atomic="true">
-        Page {{ currentPage }} / {{ getTotalPages() }}
-      </span>
+      <span class="page-info" aria-live="polite" aria-atomic="true">{{ getPageOfLabel() }}</span>
 
       <button
         [disabled]="currentPage === getTotalPages()"

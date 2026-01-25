@@ -20,20 +20,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class H2SeedServiceTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserRepositoryPort userRepository;
   @Mock private PlayerRepository playerRepository;
-  @Mock private GameRepository gameRepository;
+  @Mock private GameRepositoryPort gameRepository;
   @Mock private TeamRepository teamRepository;
   @Mock private Environment environment;
 

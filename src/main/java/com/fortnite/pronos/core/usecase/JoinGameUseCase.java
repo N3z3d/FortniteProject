@@ -6,6 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
 import com.fortnite.pronos.exception.GameNotFoundException;
@@ -16,9 +19,6 @@ import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JoinGameUseCase {
 
-  private final GameRepository gameRepository;
-  private final UserRepository userRepository;
-  private final GameParticipantRepository gameParticipantRepository;
+  private final GameRepositoryPort gameRepositoryPort;
+  private final UserRepositoryPort userRepositoryPort;
+  private final GameParticipantRepositoryPort gameParticipantRepositoryPort;
 
   /** Execute the join game use case */
   @Transactional
@@ -45,12 +45,12 @@ public class JoinGameUseCase {
 
     // 1. Validate inputs and fetch entities
     User user =
-        userRepository
+        userRepositoryPort
             .findById(userId)
             .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
     Game game =
-        gameRepository
+        gameRepositoryPort
             .findById(request.getGameId())
             .orElseThrow(
                 () -> new GameNotFoundException("Game not found with ID: " + request.getGameId()));
@@ -63,7 +63,7 @@ public class JoinGameUseCase {
         GameParticipant.builder().game(game).user(user).joinedAt(LocalDateTime.now()).build();
 
     // 4. Persist the participation
-    gameParticipantRepository.save(participant);
+    gameParticipantRepositoryPort.save(participant);
 
     // 5. Update game state if needed
     updateGameStateIfReady(game);
@@ -80,7 +80,7 @@ public class JoinGameUseCase {
     }
 
     // Rule 2: Game must not be full
-    long currentParticipants = gameParticipantRepository.countByGame(game);
+    long currentParticipants = gameParticipantRepositoryPort.countByGame(game);
     if (currentParticipants >= game.getMaxParticipants()) {
       throw new GameFullException(
           String.format(
@@ -89,7 +89,7 @@ public class JoinGameUseCase {
     }
 
     // Rule 3: User cannot already be in the game
-    boolean alreadyParticipating = gameParticipantRepository.existsByGameAndUser(game, user);
+    boolean alreadyParticipating = gameParticipantRepositoryPort.existsByGameAndUser(game, user);
     if (alreadyParticipating) {
       throw new UserAlreadyInGameException("User is already participating in this game");
     }
@@ -107,9 +107,7 @@ public class JoinGameUseCase {
 
   /** Update game state when conditions are met */
   private void updateGameStateIfReady(Game game) {
-    long participantCount = gameParticipantRepository.countByGame(game);
-
     // Ready flag: keep status as CREATING; draft will explicitly switch to DRAFTING
-    gameRepository.save(game);
+    gameRepositoryPort.save(game);
   }
 }

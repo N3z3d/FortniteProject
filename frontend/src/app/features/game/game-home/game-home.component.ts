@@ -121,17 +121,17 @@ export class GameHomeComponent implements OnInit, OnDestroy {
   getStatusLabel(status: GameStatus): string {
     switch (status) {
       case 'CREATING':
-        return 'En création';
+        return this.t.t('games.home.statusCreating');
       case 'DRAFTING':
-        return 'Draft en cours';
+        return this.t.t('games.home.statusDrafting');
       case 'ACTIVE':
-        return 'Active';
+        return this.t.t('games.home.statusActive');
       case 'FINISHED':
-        return 'Terminée';
+        return this.t.t('games.home.statusFinished');
       case 'CANCELLED':
-        return 'Annulée';
+        return this.t.t('games.home.statusCancelled');
       default:
-        return 'Inconnu';
+        return this.t.t('games.home.statusUnknown');
     }
   }
 
@@ -172,7 +172,7 @@ export class GameHomeComponent implements OnInit, OnDestroy {
 
   getTotalFortnitePlayers(game: Game): number {
     // Use API value if available, fallback to 147 (7 regions x 21 players)
-    return game.fortnitePlayerCount ?? 147;
+    return game.fortnitePlayerCount ? 147;
   }
 
   getMaxParticipants(): number {

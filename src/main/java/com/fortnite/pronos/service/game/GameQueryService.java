@@ -5,16 +5,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.GameQueryUseCase;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,9 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class GameQueryService {
+public class GameQueryService implements GameQueryUseCase {
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final PlayerRepository playerRepository;
 
   /** Gets all games - PHASE 1B: OPTIMIZED with EntityGraph to prevent N+1 */
@@ -104,9 +104,11 @@ public class GameQueryService {
   }
 
   /** Gets games with pagination */
-  public Page<GameDto> getGamesWithPagination(Pageable pageable) {
+  public List<GameDto> getGamesWithPagination(Pageable pageable) {
     log.debug("Retrieving games with pagination");
-    return gameRepository.findAll(pageable).map(GameDto::fromGame);
+    return gameRepository.findAllGames(pageable).stream()
+        .map(GameDto::fromGame)
+        .collect(java.util.stream.Collectors.toList());
   }
 
   /** Searches games by name */

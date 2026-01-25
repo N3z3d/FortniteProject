@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -12,6 +12,7 @@ import { TradingService, TradeOffer, Player } from '../../services/trading.servi
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { LoggerService } from '../../../../core/services/logger.service';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 interface TradeDetailsData {
   trade: TradeOffer;
@@ -120,8 +121,9 @@ interface TradeTimeline {
   ]
 })
 export class TradeDetailsComponent implements OnInit, OnDestroy {
+  public readonly t = inject(TranslationService);
   private readonly destroy$ = new Subject<void>();
-  
+
   // Component state
   trade: TradeOffer;
   currentUserId: string;
@@ -204,7 +206,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     if (isReceiver) {
       actions.push({
         type: 'accept',
-        label: 'Accept Trade',
+        label: this.t.t('trades.details.acceptTrade'),
         icon: 'check_circle',
         color: 'primary',
         enabled: !processing
@@ -212,7 +214,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
       actions.push({
         type: 'reject',
-        label: 'Reject Trade',
+        label: this.t.t('trades.details.rejectTrade'),
         icon: 'cancel',
         color: 'warn',
         enabled: !processing
@@ -220,7 +222,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
       actions.push({
         type: 'counter',
-        label: 'Counter Offer',
+        label: this.t.t('trades.details.counterOffer'),
         icon: 'reply',
         color: 'accent',
         enabled: !processing
@@ -230,7 +232,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     if (isSender) {
       actions.push({
         type: 'withdraw',
-        label: 'Withdraw Offer',
+        label: this.t.t('trades.details.withdrawOffer'),
         icon: 'undo',
         color: 'warn',
         enabled: !processing
@@ -241,72 +243,86 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   private generateTradeTimeline(): TradeTimeline[] {
-    const timeline: TradeTimeline[] = [];
+    const timeline: TradeTimeline[] = [this.buildProposedTimelineEntry()];
 
-    // Trade created
-    timeline.push({
-      date: this.trade.createdAt,
-      action: 'Trade Proposed',
-      actor: this.trade.fromUserName,
-      icon: 'send',
-      description: `${this.trade.fromUserName} proposed a trade to ${this.trade.toUserName}`,
-      status: 'completed'
-    });
-
-    // Current status
     if (this.trade.status === 'pending') {
-      timeline.push({
-        date: new Date(),
-        action: 'Awaiting Response',
-        actor: this.trade.toUserName,
-        icon: 'schedule',
-        description: `Waiting for ${this.trade.toUserName} to respond`,
-        status: 'current'
-      });
-
-      // Expiry
-      timeline.push({
-        date: this.trade.expiresAt,
-        action: 'Trade Expires',
-        actor: 'System',
-        icon: 'access_time',
-        description: 'Trade will automatically expire if no action is taken',
-        status: 'pending'
-      });
+      timeline.push(...this.buildPendingTimelineEntries());
     } else {
-      let statusIcon = 'help_outline';
-      let statusDescription = 'Trade status updated';
-
-      switch (this.trade.status) {
-        case 'accepted':
-          statusIcon = 'check_circle';
-          statusDescription = `Trade accepted by ${this.trade.toUserName}`;
-          break;
-        case 'rejected':
-          statusIcon = 'cancel';
-          statusDescription = `Trade rejected by ${this.trade.toUserName}`;
-          break;
-        case 'withdrawn':
-          statusIcon = 'undo';
-          statusDescription = `Trade withdrawn by ${this.trade.fromUserName}`;
-          break;
-        case 'expired':
-          statusIcon = 'access_time';
-          statusDescription = 'Trade expired without response';
-          break;
-      }
-
-      timeline.push({
-        date: this.trade.updatedAt,
-        action: this.trade.status.charAt(0).toUpperCase() + this.trade.status.slice(1),
-        actor: this.trade.status === 'withdrawn' ? this.trade.fromUserName : this.trade.toUserName,
-        icon: statusIcon,
-        description: statusDescription,
-        status: 'completed'
-      });
+      timeline.push(this.buildStatusTimelineEntry());
     }
 
     return timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+
+  private buildProposedTimelineEntry(): TradeTimeline {
+    return {
+      date: this.trade.createdAt,
+      action: this.t.t('trades.details.timelineProposedAction'),
+      actor: this.trade.fromUserName,
+      icon: 'send',
+      description: this.t.t('trades.details.timelineProposedDesc'),
+      status: 'completed'
+    };
+  }
+
+  private buildPendingTimelineEntries(): TradeTimeline[] {
+    return [
+      {
+        date: new Date(),
+        action: this.t.t('trades.details.timelineAwaitingAction'),
+        actor: this.trade.toUserName,
+        icon: 'schedule',
+        description: this.t.t('trades.details.timelineAwaitingDesc'),
+        status: 'current'
+      },
+      {
+        date: this.trade.expiresAt,
+        action: this.t.t('trades.details.timelineExpiresAction'),
+        actor: this.t.t('trades.details.system'),
+        icon: 'access_time',
+        description: this.t.t('trades.details.timelineExpiresDesc'),
+        status: 'pending'
+      }
+    ];
+  }
+
+  private buildStatusTimelineEntry(): TradeTimeline {
+    const status = this.trade.status;
+
+    return {
+      date: this.trade.updatedAt,
+      action: this.getStatusLabel(status),
+      actor: this.getStatusTimelineActor(status),
+      icon: this.getStatusTimelineIcon(status),
+      description: this.getStatusTimelineDescription(status),
+      status: 'completed'
+    };
+  }
+
+  private getStatusTimelineActor(status: string): string {
+    if (status === 'withdrawn') return this.trade.fromUserName;
+    if (status === 'expired') return this.t.t('trades.details.system');
+    return this.trade.toUserName;
+  }
+
+  private getStatusTimelineIcon(status: string): string {
+    switch (status) {
+      case 'accepted': return 'check_circle';
+      case 'rejected': return 'cancel';
+      case 'withdrawn': return 'undo';
+      case 'expired': return 'access_time';
+      default: return 'help_outline';
+    }
+  }
+
+  private getStatusTimelineDescription(status: string): string {
+    switch (status) {
+      case 'accepted': return this.t.t('trades.details.timelineAcceptedDesc');
+      case 'rejected': return this.t.t('trades.details.timelineRejectedDesc');
+      case 'withdrawn': return this.t.t('trades.details.timelineWithdrawnDesc');
+      case 'expired': return this.t.t('trades.details.timelineExpiredDesc');
+      default: return this.t.t('trades.details.timelineStatusUpdatedDesc');
+    }
   }
 
   private calculateTradeStats() {
@@ -365,12 +381,12 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
         case 'counter':
           this.showCounterOfferForm();
           break;
-        default:
-          this.logger.warn('TradeDetails: unknown action type', { actionType });
+      default:
+        this.logger.warn('TradeDetails: unknown action type', { actionType });
       }
     } catch (error) {
       this.logger.error('TradeDetails: action failed', error);
-      this.showErrorMessage('Action failed. Please try again.');
+      this.showErrorMessage(this.t.t('trades.errors.actionFailed'));
     } finally {
       this.isProcessing.next(false);
     }
@@ -379,7 +395,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   private async acceptTrade(): Promise<void> {
     const updatedTrade = await this.tradingService.acceptTradeOffer(this.trade.id).toPromise();
     this.trade = updatedTrade!;
-    this.showSuccessMessage('Trade accepted successfully!');
+    this.showSuccessMessage(this.t.t('trades.messages.tradeAccepted'));
     this.triggerConfetti();
     this.closeDialogWithResult('accepted');
   }
@@ -387,14 +403,14 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   private async rejectTrade(): Promise<void> {
     const updatedTrade = await this.tradingService.rejectTradeOffer(this.trade.id).toPromise();
     this.trade = updatedTrade!;
-    this.showSuccessMessage('Trade rejected');
+    this.showSuccessMessage(this.t.t('trades.messages.tradeRejected'));
     this.closeDialogWithResult('rejected');
   }
 
   private async withdrawTrade(): Promise<void> {
     const updatedTrade = await this.tradingService.withdrawTradeOffer(this.trade.id).toPromise();
     this.trade = updatedTrade!;
-    this.showSuccessMessage('Trade withdrawn');
+    this.showSuccessMessage(this.t.t('trades.messages.tradeWithdrawn'));
     this.closeDialogWithResult('withdrawn');
   }
 
@@ -422,10 +438,10 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
       };
 
       await this.tradingService.createCounterOffer(this.trade.id, counterOffer).toPromise();
-      this.showSuccessMessage('Counter offer sent successfully!');
+      this.showSuccessMessage(this.t.t('trades.messages.counterOfferSent'));
       this.closeDialogWithResult('counter');
     } catch (error) {
-      this.showErrorMessage('Failed to send counter offer');
+      this.showErrorMessage(this.t.t('trades.errors.counterOffer'));
     } finally {
       this.isProcessing.next(false);
     }
@@ -459,6 +475,11 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     return `status-${status}`;
   }
 
+  getStatusLabel(status: string): string {
+    const key = status?.toLowerCase() ? '';
+    return this.t.t(`trades.status.${key}`, status);
+  }
+
   getBalanceDisplayClass(balance: number): string {
     if (balance > 0) return 'positive';
     if (balance < 0) return 'negative';
@@ -485,7 +506,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   abs(value: number): number {
-    return Math.abs(value ?? 0);
+    return Math.abs(value ? 0);
   }
 
   formatDate(date: Date): string {
@@ -513,7 +534,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     const now = new Date();
     const diffMs = this.trade.expiresAt.getTime() - now.getTime();
     
-    if (diffMs <= 0) return 'Expired';
+    if (diffMs <= 0) return this.t.t('trades.status.expired');
     
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -548,7 +569,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
   // Utility methods
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, this.t.t('common.close'), {
       duration: 4000,
       panelClass: ['success-snackbar'],
       horizontalPosition: 'end',
@@ -557,7 +578,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   private showErrorMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, this.t.t('common.close'), {
       duration: 4000,
       panelClass: ['error-snackbar'],
       horizontalPosition: 'end',

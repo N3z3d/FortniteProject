@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 
 import { TeamService } from '../../../core/services/team.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
 
 interface Player {
@@ -77,7 +78,8 @@ export class TeamEditComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly fb: FormBuilder,
     private readonly teamService: TeamService,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    public readonly t: TranslationService
   ) {
     this.initForm();
   }
@@ -149,7 +151,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   onSave(): void {
     if (this.teamForm.invalid) {
-      this.snackBar.open('Veuillez corriger les erreurs du formulaire', 'Fermer', {
+      this.snackBar.open(this.t.t('teams.edit.snackbar.formInvalid'), this.t.t('common.close'), {
         duration: 3000
       });
       return;
@@ -159,7 +161,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
     // Simuler la sauvegarde
     setTimeout(() => {
-      this.snackBar.open('Équipe mise à jour avec succès !', 'Voir', {
+      this.snackBar.open(this.t.t('teams.edit.snackbar.updated'), this.t.t('teams.edit.snackbar.viewAction'), {
         duration: 3000
       }).onAction().subscribe(() => {
         this.goBack();
@@ -185,12 +187,18 @@ export class TeamEditComponent implements OnInit, OnDestroy {
     const index = this.players.findIndex(p => p.id === player.id);
     if (index > -1) {
       this.players.splice(index, 1);
-      this.snackBar.open(`${player.nickname} retiré de l'équipe`, 'Annuler', {
-        duration: 5000
-      }).onAction().subscribe(() => {
+      this.snackBar.open(
+        this.formatTemplate(this.t.t('teams.edit.snackbar.playerRemoved'), { player: player.nickname }),
+        this.t.t('common.cancel'),
+        {
+          duration: 5000
+        }
+      ).onAction().subscribe(() => {
         // Restaurer le joueur
         this.players.push(player);
-        this.snackBar.open('Joueur restauré', 'Fermer', { duration: 2000 });
+        this.snackBar.open(this.t.t('teams.edit.snackbar.playerRestored'), this.t.t('common.close'), {
+          duration: 2000
+        });
       });
     }
   }
@@ -226,15 +234,31 @@ export class TeamEditComponent implements OnInit, OnDestroy {
   get nameError(): string {
     const control = this.teamForm.get('name');
     if (control?.hasError('required')) {
-      return 'Le nom de l\'équipe est requis';
+      return this.t.t('teams.edit.validation.nameRequired');
     }
     if (control?.hasError('minlength')) {
-      return 'Minimum 3 caractères';
+      return this.t.t('teams.edit.validation.nameMinLength');
     }
     if (control?.hasError('maxlength')) {
-      return 'Maximum 50 caractères';
+      return this.t.t('teams.edit.validation.nameMaxLength');
     }
     return '';
+  }
+
+  getRosterSubtitle(): string {
+    const count = this.players.length;
+    const key = count === 1 ? 'teams.edit.rosterSubtitleSingle' : 'teams.edit.rosterSubtitleMultiple';
+    return this.formatTemplate(this.t.t(key), { count });
+  }
+
+  getRemovePlayerTooltip(nickname: string): string {
+    return this.formatTemplate(this.t.t('teams.edit.removePlayerTooltip'), { nickname });
+  }
+
+  private formatTemplate(template: string, params: Record<string, string | number>): string {
+    return Object.entries(params).reduce((result, [key, value]) => {
+      return result.replace(`{${key}}`, String(value));
+    }, template);
   }
 
   trackByPlayerId(index: number, player: Player): string {

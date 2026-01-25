@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.fortnite.pronos.application.usecase.GameStatisticsUseCase;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.service.GameStatisticsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GameStatisticsController {
 
-  private final GameStatisticsService gameStatisticsService;
+  private final GameStatisticsUseCase gameStatisticsUseCase;
 
   /** Récupère la distribution des joueurs par région Clean Code : méthode courte, nom explicite */
   @GetMapping("/region-distribution")
@@ -33,7 +33,7 @@ public class GameStatisticsController {
     log.debug("Récupération de la distribution par région pour la game {}", gameId);
 
     Map<Player.Region, Integer> distribution =
-        gameStatisticsService.getPlayerDistributionByRegion(gameId);
+        gameStatisticsUseCase.getPlayerDistributionByRegion(gameId);
     return ResponseEntity.ok(distribution);
   }
 
@@ -48,7 +48,7 @@ public class GameStatisticsController {
     log.debug("Récupération de la distribution en pourcentage pour la game {}", gameId);
 
     Map<Player.Region, Double> percentages =
-        gameStatisticsService.getPlayerDistributionByRegionPercentage(gameId);
+        gameStatisticsUseCase.getPlayerDistributionByRegionPercentage(gameId);
     return ResponseEntity.ok(percentages);
   }
 

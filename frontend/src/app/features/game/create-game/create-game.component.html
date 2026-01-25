@@ -1,8 +1,8 @@
 <div class="ultra-fast-create">
   <!-- Simple Header -->
   <div class="create-header">
-    <h1>🎮 Nouvelle partie</h1>
-    <p class="header-subtitle">Crée ta partie en 10 secondes</p>
+    <h1>🎮 {{ t.t('games.create.title') }}</h1>
+    <p class="header-subtitle">{{ t.t('games.create.subtitle') }}</p>
   </div>
 
   <!-- Ultra-Simplified Form -->
@@ -12,17 +12,17 @@
       <!-- Only Required Field: Name -->
       <div class="name-section">
         <mat-form-field appearance="outline" class="game-name-mega">
-          <mat-label>Nom de ta partie</mat-label>
+          <mat-label>{{ t.t('games.create.nameLabel') }}</mat-label>
           <input
             matInput
             formControlName="name"
-            placeholder="Ex: Partie entre amis"
+            [placeholder]="t.t('games.create.namePlaceholder')"
             maxlength="30"
             autofocus
             autocomplete="off">
-          <mat-hint>C'est tout ce dont tu as besoin !</mat-hint>
+          <mat-hint>{{ t.t('games.create.nameHint') }}</mat-hint>
           <mat-error *ngIf="gameForm.get('name')?.hasError('required')">
-            Donne un nom à ta partie
+            {{ t.t('games.create.nameRequired') }}
           </mat-error>
         </mat-form-field>
       </div>
@@ -34,13 +34,13 @@
             <mat-icon>auto_awesome</mat-icon>
           </div>
           <div class="config-details">
-            <h3>Configuration optimale</h3>
+            <h3>{{ t.t('games.create.optimalConfig') }}</h3>
             <div class="config-specs">
-              <span class="spec-item">5 participants max</span>
-              <span class="spec-item">5 joueurs par équipe</span>
-              <span class="spec-item">Draft rapide</span>
+              <span class="spec-item">{{ t.t('games.create.maxParticipants') }}</span>
+              <span class="spec-item">{{ t.t('games.create.playersPerTeam') }}</span>
+              <span class="spec-item">{{ t.t('games.create.quickDraft') }}</span>
             </div>
-            <p class="config-note">Tout est préconfiguré pour une expérience parfaite</p>
+            <p class="config-note">{{ t.t('games.create.preConfigured') }}</p>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@
           class="mega-create-btn">
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
           <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
-          {{ loading ? 'Création...' : 'Créer & Jouer' }}
+          {{ loading ? t.t('games.create.creating') : t.t('games.create.createAndPlay') }}
         </button>
 
         <!-- Advanced Options (Hidden by default) -->
@@ -66,7 +66,7 @@
           type="button"
           (click)="showAdvancedOptions = true"
           class="show-advanced">
-          Personnaliser
+          {{ t.t('games.create.customize') }}
         </button>
       </div>
 
@@ -76,7 +76,7 @@
   <!-- Advanced Mode (Hidden by default) -->
   <div class="advanced-panel" *ngIf="showAdvancedOptions">
     <div class="panel-header">
-      <h3>Custom configuration</h3>
+      <h3>{{ t.t('games.create.advancedConfig') }}</h3>
       <button
         mat-icon-button
         (click)="showAdvancedOptions = false"
@@ -88,25 +88,25 @@
     <div class="advanced-controls">
       <!-- Participants -->
       <mat-form-field appearance="outline">
-        <mat-label>Max participants</mat-label>
+        <mat-label>{{ t.t('games.create.maxParticipantsLabel') }}</mat-label>
         <mat-select formControlName="maxParticipants">
-          <mat-option value="2">2 players</mat-option>
-          <mat-option value="3">3 players</mat-option>
-          <mat-option value="4">4 players</mat-option>
-          <mat-option value="5">5 players</mat-option>
-          <mat-option value="6">6 players</mat-option>
-          <mat-option value="8">8 players</mat-option>
-          <mat-option value="10">10 players</mat-option>
+          <mat-option value="2">{{ t.t('games.create.nPlayers').replace('{n}', '2') }}</mat-option>
+          <mat-option value="3">{{ t.t('games.create.nPlayers').replace('{n}', '3') }}</mat-option>
+          <mat-option value="4">{{ t.t('games.create.nPlayers').replace('{n}', '4') }}</mat-option>
+          <mat-option value="5">{{ t.t('games.create.nPlayers').replace('{n}', '5') }}</mat-option>
+          <mat-option value="6">{{ t.t('games.create.nPlayers').replace('{n}', '6') }}</mat-option>
+          <mat-option value="8">{{ t.t('games.create.nPlayers').replace('{n}', '8') }}</mat-option>
+          <mat-option value="10">{{ t.t('games.create.nPlayers').replace('{n}', '10') }}</mat-option>
         </mat-select>
       </mat-form-field>
 
       <!-- Game Type -->
       <mat-form-field appearance="outline">
-        <mat-label>Game type</mat-label>
+        <mat-label>{{ t.t('games.create.gameTypeLabel') }}</mat-label>
         <mat-select [(ngModel)]="gameType" [ngModelOptions]="{standalone: true}">
-          <mat-option value="casual">Casual (recommended)</mat-option>
-          <mat-option value="competitive">Competitive</mat-option>
-          <mat-option value="tournament">Tournament</mat-option>
+          <mat-option value="casual">{{ t.t('games.create.casualRecommended') }}</mat-option>
+          <mat-option value="competitive">{{ t.t('games.create.competitive') }}</mat-option>
+          <mat-option value="tournament">{{ t.t('games.create.tournament') }}</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -123,15 +123,15 @@
     <div class="trust-stats">
       <div class="stat">
         <span class="number">1.2k</span>
-        <span class="label">Games created</span>
+        <span class="label">{{ t.t('games.create.gamesCreated') }}</span>
       </div>
       <div class="stat">
         <span class="number">98%</span>
-        <span class="label">Satisfaction</span>
+        <span class="label">{{ t.t('games.create.satisfaction') }}</span>
       </div>
       <div class="stat">
         <span class="number">< 30s</span>
-        <span class="label">Average time</span>
+        <span class="label">{{ t.t('games.create.averageTime') }}</span>
       </div>
     </div>
   </div>

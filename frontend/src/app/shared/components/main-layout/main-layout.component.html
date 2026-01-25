@@ -1,8 +1,8 @@
 <div class="ultra-nav-layout">
   <!-- Skip Navigation Links -->
   <div class="skip-links">
-    <a href="#main-content" class="skip-link sr-only-focusable">Skip to main content</a>
-    <a href="#main-navigation" class="skip-link sr-only-focusable">Skip to navigation</a>
+    <a href="#main-content" class="skip-link sr-only-focusable">{{ t.t('layout.skipToContent') }}</a>
+    <a href="#main-navigation" class="skip-link sr-only-focusable">{{ t.t('layout.skipToNavigation') }}</a>
   </div>
 
   <!-- Navigation Header -->
@@ -10,11 +10,11 @@
     <div class="nav-header-content">
       <!-- Logo/Brand - Cliquable pour retour accueil -->
       <button class="brand-section" (click)="goToHome()"
-              [matTooltip]="selectedGame ? 'Back to Home' : 'Home'"
+              [matTooltip]="selectedGame ? t.t('layout.backToHome') : t.t('layout.home')"
               mat-button
               disableRipple>
         <mat-icon class="brand-icon">sports_esports</mat-icon>
-        <span class="brand-text brand-title">Fortnite Fantasy</span>
+        <span class="brand-text brand-title">{{ t.t('layout.brand') }}</span>
         <mat-icon *ngIf="selectedGame" class="home-indicator">home</mat-icon>
       </button>
 
@@ -71,13 +71,13 @@
             (click)="goToHome()">
             <mat-icon>sports_esports</mat-icon>
             <span>
-              {{ t.t('games.myGames') }}
+              {{ t.t('games.home.myGames') }}
               <ng-container *ngIf="!loading && !error">
                 ({{ getGameCount() }})
               </ng-container>
             </span>
           </button>
-          <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? 'Expand' : 'Collapse'">
+          <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? t.t('layout.expand') : t.t('layout.collapse')">
             <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
           </button>
         </h3>
@@ -85,9 +85,9 @@
           <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="t.t('games.createGame')" (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
           </button>
-          <button mat-button class="join-game-btn" [matTooltip]="t.t('games.joinGame')" (click)="openJoinDialog()">
+          <button mat-button class="join-game-btn" [matTooltip]="t.t('games.home.joinWithCode')" (click)="openJoinDialog()">
             <mat-icon>group_add</mat-icon>
-            <span>{{ t.t('games.joinGame') }}</span>
+            <span>{{ t.t('games.home.joinWithCode') }}</span>
           </button>
         </div>
       </div>
@@ -95,7 +95,7 @@
       <!-- Join Code Section -->
       <div class="join-code-section" *ngIf="showJoinCodeInput">
         <mat-form-field appearance="outline">
-          <mat-label>Code</mat-label>
+          <mat-label>{{ t.t('layout.code') }}</mat-label>
           <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" [placeholder]="t.t('games.enterCode')">
           <mat-icon matSuffix>key</mat-icon>
         </mat-form-field>
@@ -141,9 +141,9 @@
               <mat-chip [attr.data-status]="game.status">
                 {{ getStatusLabel(game.status) }}
               </mat-chip>
-              <span class="participants participant-badge" [attr.title]="t.t('game.participantsTooltip')">
+              <span class="participants participant-badge" [attr.title]="t.t('games.participantsTooltip')">
                 <mat-icon class="participant-icon">group</mat-icon>
-                {{ game.participantCount ?? 0 }}/{{ game.maxParticipants ?? 0 }}
+                {{ game.participantCount ? 0 }}/{{ game.maxParticipants ? 0 }}
               </span>
             </div>
           </div>

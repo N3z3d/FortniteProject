@@ -9,12 +9,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 
 @Repository
-public interface TeamRepository extends JpaRepository<Team, UUID> {
+public interface TeamRepository extends JpaRepository<Team, UUID>, TeamRepositoryPort {
   Optional<Team> findByOwnerAndSeason(User owner, int season);
 
   List<Team> findBySeason(int season);

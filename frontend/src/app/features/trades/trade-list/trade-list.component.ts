@@ -65,7 +65,7 @@ export class TradeListComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly logger: LoggerService,
     private readonly tradingService: TradingService,
-    private readonly translationService: TranslationService,
+    public readonly t: TranslationService,
     private readonly webSocketService: WebSocketService
   ) { }
 
@@ -269,11 +269,11 @@ export class TradeListComponent implements OnInit, OnDestroy {
     // Map legacy status values to translation keys
     const statusMap: Record<string, string> = {
       'pending': 'trades.status.pending',
-      'completed': 'trades.status.accepted',
-      'cancelled': 'trades.status.withdrawn'
+      'completed': 'trades.status.completed',
+      'cancelled': 'trades.status.cancelled'
     };
 
     const key = statusMap[statusKey] || translationKey;
-    return this.translationService.t(key, status);
+    return this.t.t(key, status);
   }
 }

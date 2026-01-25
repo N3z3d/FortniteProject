@@ -2,13 +2,13 @@
 <nav class="navbar">
   <div class="container">
     <div class="nav-content">
-      <div class="logo">FORTNITE PRO LEAGUE</div>
+      <div class="logo">{{ t.t('home.navbar.logo') }}</div>
       <ul class="nav-links">
-        <li><a (click)="scrollToSection('home')" class="nav-link">Home</a></li>
-        <li><a (click)="scrollToSection('features')" class="nav-link">Rules</a></li>
-        <li><a routerLink="/leaderboard" class="nav-link">Leaderboard</a></li>
-        <li><a routerLink="/dashboard" class="nav-link">Dashboard</a></li>
-        <li><a routerLink="/login" class="btn btn-ghost">Login</a></li>
+        <li><a (click)="scrollToSection('home')" class="nav-link">{{ t.t('home.navbar.home') }}</a></li>
+        <li><a (click)="scrollToSection('features')" class="nav-link">{{ t.t('home.navbar.rules') }}</a></li>
+        <li><a routerLink="/leaderboard" class="nav-link">{{ t.t('home.navbar.leaderboard') }}</a></li>
+        <li><a routerLink="/dashboard" class="nav-link">{{ t.t('home.navbar.dashboard') }}</a></li>
+        <li><a routerLink="/login" class="btn btn-ghost">{{ t.t('home.navbar.login') }}</a></li>
       </ul>
     </div>
   </div>
@@ -21,29 +21,28 @@
     <div class="hero-content">
       <div class="hero-text animate-in">
         <h1 class="hero-title">
-          BUILD YOUR EMPIRE
-          <span class="hero-subtitle">FORTNITE</span>
+          {{ t.t('home.hero.title') }}
+          <span class="hero-subtitle">{{ t.t('home.hero.subtitle') }}</span>
         </h1>
         <p class="hero-description">
-          Region by region, select the best pro players and dominate the global leaderboard.
-          The ultimate fantasy league for true e-sport enthusiasts.
+          {{ t.t('home.hero.description') }}
         </p>
         <div class="hero-actions">
           <button
             #heroButton
             class="btn btn-primary animate-in-delay-1"
             appPremiumInteractions="magnetic"
-            appTooltip="Create your dream team"
+            [appTooltip]="t.t('home.hero.createTeamTooltip')"
             (click)="onHeroButtonClick('create')">
-            <span>🚀</span> Create my team
+            <span>🚀</span> {{ t.t('home.hero.createTeam') }}
           </button>
           <button
             #heroButton
             class="btn btn-secondary animate-in-delay-2"
             appPremiumInteractions="spring"
-            appTooltip="Discover the game rules"
+            [appTooltip]="t.t('home.hero.viewRulesTooltip')"
             (click)="onHeroButtonClick('rules')">
-            <span>📋</span> View rules
+            <span>📋</span> {{ t.t('home.hero.viewRules') }}
           </button>
         </div>
       </div>
@@ -54,15 +53,15 @@
           <div class="stats">
             <div class="stat">
               <span class="stat-value">147</span>
-              <span class="stat-label">Pro Players</span>
+              <span class="stat-label">{{ t.t('home.hero.stats.proPlayers') }}</span>
             </div>
             <div class="stat">
               <span class="stat-value">7</span>
-              <span class="stat-label">Regions</span>
+              <span class="stat-label">{{ t.t('home.hero.stats.regions') }}</span>
             </div>
             <div class="stat">
               <span class="stat-value">∞</span>
-              <span class="stat-label">Possibilities</span>
+              <span class="stat-label">{{ t.t('home.hero.stats.possibilities') }}</span>
             </div>
           </div>
         </div>
@@ -75,8 +74,8 @@
 <section class="regions" id="regions">
   <div class="container">
     <div class="section-header text-center animate-in">
-      <h2>CHOOSE YOUR BATTLEGROUND</h2>
-      <p>Every region has its legends. Build your dream team by navigating through the continents.</p>
+      <h2>{{ t.t('home.regionsSection.title') }}</h2>
+      <p>{{ t.t('home.regionsSection.subtitle') }}</p>
     </div>
 
     <div class="regions-grid grid grid-3" appRevealOnScroll>
@@ -84,7 +83,7 @@
            #regionCard
            *ngFor="let region of regions; let i = index"
            appPremiumInteractions="glow"
-           appTooltip="{{getRegionDescription(region)}}"
+           [appTooltip]="getRegionDescription(region)"
            (click)="onRegionCardClick(region)"
            [class.animate-in-delay-1]="i < 2"
            [class.animate-in-delay-2]="i >= 2 && i < 4"
@@ -95,18 +94,18 @@
         <div class="region-stats">
           <div class="region-stat">
             <span class="stat-number">{{region.playerCount}}</span>
-            <span class="stat-text">Players</span>
+            <span class="stat-text">{{ t.t('home.regionsSection.stats.players') }}</span>
           </div>
           <div class="region-stat">
             <span class="stat-number">{{region.topTeams}}</span>
-            <span class="stat-text">Top Teams</span>
+            <span class="stat-text">{{ t.t('home.regionsSection.stats.topTeams') }}</span>
           </div>
         </div>
         <button
           class="btn btn-ghost region-btn"
           appPremiumInteractions="ripple"
-          appTooltip="Explore the {{getRegionName(region)}} region">
-          Explore {{region.code}}
+          [appTooltip]="t.t('home.regionsSection.exploreTooltip').replace('{name}', getRegionName(region))">
+          {{ t.t('home.regionsSection.explore') }} {{region.code}}
         </button>
       </div>
     </div>
@@ -117,52 +116,52 @@
 <section class="features">
   <div class="container">
     <div class="section-header text-center animate-in">
-      <h2>ADVANCED FEATURES</h2>
-      <p>A revolutionary fantasy league experience with pro tools.</p>
+      <h2>{{ t.t('home.features.title') }}</h2>
+      <p>{{ t.t('home.features.subtitle') }}</p>
     </div>
 
     <div class="features-grid grid grid-2" appRevealOnScroll>
       <div class="feature-card card" appPremiumInteractions="parallax">
         <div class="feature-icon">⚡</div>
-        <h3>Real-Time Tracking</h3>
-        <p>Live performances, instant notifications, automatic score and ranking updates.</p>
+        <h3>{{ t.t('home.features.realtime.title') }}</h3>
+        <p>{{ t.t('home.features.realtime.description') }}</p>
         <ul class="feature-list">
-          <li>Performance alerts</li>
-          <li>Live updates</li>
-          <li>Detailed statistics</li>
+          <li>{{ t.t('home.features.realtime.alerts') }}</li>
+          <li>{{ t.t('home.features.realtime.updates') }}</li>
+          <li>{{ t.t('home.features.realtime.stats') }}</li>
         </ul>
       </div>
 
       <div class="feature-card card" appPremiumInteractions="parallax">
         <div class="feature-icon">🔄</div>
-        <h3>Trading System</h3>
-        <p>Negotiate with other managers, replace your players and optimize your roster according to the rules.</p>
+        <h3>{{ t.t('home.features.trading.title') }}</h3>
+        <p>{{ t.t('home.features.trading.description') }}</p>
         <ul class="feature-list">
-          <li>Player trades</li>
-          <li>Transfer windows</li>
-          <li>Tier system</li>
+          <li>{{ t.t('home.features.trading.trades') }}</li>
+          <li>{{ t.t('home.features.trading.windows') }}</li>
+          <li>{{ t.t('home.features.trading.tier') }}</li>
         </ul>
       </div>
 
       <div class="feature-card card" appPremiumInteractions="parallax">
         <div class="feature-icon">📊</div>
-        <h3>Advanced Analytics</h3>
-        <p>Comprehensive dashboards, AI predictions and strategic insights to dominate your rivals.</p>
+        <h3>{{ t.t('home.features.analytics.title') }}</h3>
+        <p>{{ t.t('home.features.analytics.description') }}</p>
         <ul class="feature-list">
-          <li>Performance predictions</li>
-          <li>Historical analysis</li>
-          <li>Strategic advice</li>
+          <li>{{ t.t('home.features.analytics.predictions') }}</li>
+          <li>{{ t.t('home.features.analytics.historical') }}</li>
+          <li>{{ t.t('home.features.analytics.advice') }}</li>
         </ul>
       </div>
 
       <div class="feature-card card" appPremiumInteractions="parallax">
         <div class="feature-icon">🏆</div>
-        <h3>Hall of Fame</h3>
-        <p>Immortalize your victories, view champion history and community records.</p>
+        <h3>{{ t.t('home.features.hallOfFame.title') }}</h3>
+        <p>{{ t.t('home.features.hallOfFame.description') }}</p>
         <ul class="feature-list">
-          <li>Season archives</li>
-          <li>Personal records</li>
-          <li>Community achievements</li>
+          <li>{{ t.t('home.features.hallOfFame.archives') }}</li>
+          <li>{{ t.t('home.features.hallOfFame.records') }}</li>
+          <li>{{ t.t('home.features.hallOfFame.achievements') }}</li>
         </ul>
       </div>
     </div>
@@ -174,23 +173,23 @@
   <div class="container">
     <div class="cta-content card">
       <div class="cta-text">
-        <h2>READY TO CONQUER THE WORLD?</h2>
-        <p>Join thousands of managers and prove you have the eye to spot future champions.</p>
+        <h2>{{ t.t('home.cta.title') }}</h2>
+        <p>{{ t.t('home.cta.subtitle') }}</p>
       </div>
       <div class="cta-actions">
         <button
           class="btn btn-primary btn-large"
           appPremiumInteractions="magnetic"
-          appTooltip="Start your adventure now!"
+          [appTooltip]="t.t('home.cta.startNowTooltip')"
           (click)="onStartNow()">
-          <span>⚡</span> Start Now
+          <span>⚡</span> {{ t.t('home.cta.startNow') }}
         </button>
         <button
           class="btn btn-ghost"
           appPremiumInteractions="spring"
-          appTooltip="Learn the basics of the game"
+          [appTooltip]="t.t('home.cta.beginnersGuideTooltip')"
           (click)="onBeginnersGuide()">
-          <span>📖</span> Beginner's Guide
+          <span>📖</span> {{ t.t('home.cta.beginnersGuide') }}
         </button>
       </div>
     </div>
@@ -202,28 +201,28 @@
   <div class="container">
     <div class="footer-content">
       <div class="footer-section">
-        <h4>Fortnite Pro League</h4>
-        <p>The next-generation fantasy league for competitive e-sport enthusiasts.</p>
+        <h4>{{ t.t('home.footer.title') }}</h4>
+        <p>{{ t.t('home.footer.description') }}</p>
       </div>
       <div class="footer-section">
-        <h4>Quick Links</h4>
+        <h4>{{ t.t('home.footer.quickLinks.title') }}</h4>
         <ul class="footer-links">
-          <li><a (click)="scrollToSection('features')">Game Rules</a></li>
-          <li><a routerLink="/leaderboard">Leaderboards</a></li>
-          <li><a routerLink="/dashboard">Dashboard</a></li>
-          <li><a routerLink="/legal/contact">Contact</a></li>
+          <li><a (click)="scrollToSection('features')">{{ t.t('home.footer.quickLinks.rules') }}</a></li>
+          <li><a routerLink="/leaderboard">{{ t.t('home.footer.quickLinks.leaderboards') }}</a></li>
+          <li><a routerLink="/dashboard">{{ t.t('home.footer.quickLinks.dashboard') }}</a></li>
+          <li><a routerLink="/legal/contact">{{ t.t('home.footer.quickLinks.contact') }}</a></li>
         </ul>
       </div>
       <div class="footer-section">
-        <h4>Legal</h4>
+        <h4>{{ t.t('home.footer.legal.title') }}</h4>
         <ul class="footer-links">
-          <li><a routerLink="/legal/notice">Legal Notice</a></li>
-          <li><a routerLink="/legal/privacy">Privacy Policy</a></li>
+          <li><a routerLink="/legal/notice">{{ t.t('home.footer.legal.notice') }}</a></li>
+          <li><a routerLink="/legal/privacy">{{ t.t('home.footer.legal.privacy') }}</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 Fortnite Pro League. Built for tomorrow's champions.</p>
+      <p>{{ t.t('home.footer.copyright') }}</p>
     </div>
   </div>
 </footer> 

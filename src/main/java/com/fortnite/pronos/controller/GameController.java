@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fortnite.pronos.application.usecase.GameQueryUseCase;
 import com.fortnite.pronos.core.usecase.CreateGameUseCase;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
@@ -54,6 +55,7 @@ public class GameController {
       "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 
   private final GameService gameService;
+  private final GameQueryUseCase gameQueryUseCase;
   private final ValidationService validationService;
   private final UserResolver userResolver;
   private final CreateGameUseCase createGameUseCase;
@@ -121,7 +123,7 @@ public class GameController {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    List<GameDto> userGames = gameService.getGamesByUser(user.getId());
+    List<GameDto> userGames = gameQueryUseCase.getGamesByUser(user.getId());
     return ResponseEntity.ok(userGames);
   }
 
@@ -153,7 +155,7 @@ public class GameController {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     return ResponseEntity.ok(gameDto);
   }
 
@@ -172,9 +174,9 @@ public class GameController {
     }
 
     if (username != null && !username.isBlank()) {
-      return ResponseEntity.ok(gameService.getGamesByUser(user.getId()));
+      return ResponseEntity.ok(gameQueryUseCase.getGamesByUser(user.getId()));
     }
-    return ResponseEntity.ok(gameService.getAllGames());
+    return ResponseEntity.ok(gameQueryUseCase.getAllGames());
   }
 
   @Operation(summary = "Get available games", description = "Lists games with available slots")
@@ -189,7 +191,7 @@ public class GameController {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    return ResponseEntity.ok(gameService.getAvailableGames());
+    return ResponseEntity.ok(gameQueryUseCase.getAvailableGames());
   }
 
   @Operation(summary = "Join a game", description = "Allows a user to join an existing game")
@@ -244,7 +246,7 @@ public class GameController {
           .body(Map.of("error", "Utilisateur requis"));
     }
 
-    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (!user.getId().equals(gameDto.getCreatorId())) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body(Map.of("error", "Utilisateur non autorise pour ce draft"));
@@ -278,7 +280,7 @@ public class GameController {
           .body(Map.of("error", "Utilisateur requis"));
     }
 
-    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (!user.getId().equals(gameDto.getCreatorId())) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body(Map.of("error", "Seul le createur peut supprimer cette partie"));
@@ -295,7 +297,7 @@ public class GameController {
   public ResponseEntity<List<Map<String, Object>>> getGameParticipants(@PathVariable UUID id) {
     log.debug("Recuperation des participants de la game: {}", id);
 
-    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
 
     List<Map<String, Object>> participants =
         gameDto.getParticipants().entrySet().stream()
@@ -350,7 +352,7 @@ public class GameController {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    GameDto gameDto = gameService.getGameByIdOrThrow(id);
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (!user.getId().equals(gameDto.getCreatorId())) {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.DraftIncompleteException;
@@ -24,7 +25,6 @@ import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.DraftPickRepository;
 import com.fortnite.pronos.repository.DraftRepository;
 import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.service.draft.DraftService;
 
@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class GameDraftService {
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final DraftRepository draftRepository;
   private final DraftPickRepository draftPickRepository;
   private final PlayerRepository playerRepository;

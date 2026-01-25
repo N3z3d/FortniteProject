@@ -16,10 +16,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.util.AuditLogger;
 
 import io.jsonwebtoken.Claims;
@@ -43,7 +43,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
   private static final String INVALID_TOKEN_MESSAGE = "Token invalide";
   private static final String INVALID_REFRESH_TOKEN_MESSAGE = "Token de rafraîchissement invalide";
 
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
   private final PasswordEncoder passwordEncoder;
   private final AuditLogger auditLogger;
   private final Environment environment;

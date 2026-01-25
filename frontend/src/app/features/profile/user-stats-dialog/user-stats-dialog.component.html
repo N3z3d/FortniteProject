@@ -1,8 +1,8 @@
 <div class="user-stats-dialog">
   <div class="dialog-header">
     <mat-icon class="header-icon">bar_chart</mat-icon>
-    <h2 mat-dialog-title>Statistiques de {{ data.user.username }}</h2>
-    <button mat-icon-button class="close-button" (click)="onClose()" aria-label="Fermer">
+    <h2 mat-dialog-title>{{ getStatsTitle() }}</h2>
+    <button mat-icon-button class="close-button" (click)="onClose()" [attr.aria-label]="t.translate('common.close')">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -11,7 +11,7 @@
     <!-- Loading State -->
     <div *ngIf="loading" class="loading-container">
       <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-      <p>Chargement des statistiques...</p>
+      <p>{{ t.translate('profile.statsDialog.loading') }}</p>
     </div>
 
     <!-- Stats Content -->
@@ -21,14 +21,14 @@
         <div class="stat-card highlight">
           <mat-icon class="stat-icon">emoji_events</mat-icon>
           <div class="stat-value">{{ stats.gamesWon }}</div>
-          <div class="stat-label">Victoires</div>
-          <div class="stat-sublabel">sur {{ stats.gamesPlayed }} parties</div>
+          <div class="stat-label">{{ t.translate('profile.statsDialog.wins') }}</div>
+          <div class="stat-sublabel">{{ getGamesPlayedLabel(stats.gamesPlayed) }}</div>
         </div>
 
         <div class="stat-card">
           <mat-icon class="stat-icon">stars</mat-icon>
           <div class="stat-value">{{ formatNumber(stats.totalPoints) }}</div>
-          <div class="stat-label">Points totaux</div>
+          <div class="stat-label">{{ t.translate('profile.statsDialog.totalPoints') }}</div>
         </div>
 
         <div class="stat-card">
@@ -36,13 +36,13 @@
           <div class="stat-value">
             <span class="rank-badge" [class]="getRankBadgeClass(stats.bestRank)">#{{ stats.bestRank }}</span>
           </div>
-          <div class="stat-label">Meilleur classement</div>
+          <div class="stat-label">{{ t.translate('profile.statsDialog.bestRank') }}</div>
         </div>
 
         <div class="stat-card">
           <mat-icon class="stat-icon">trending_up</mat-icon>
           <div class="stat-value" [class]="getWinRateColor()">{{ stats.winRate }}%</div>
-          <div class="stat-label">Taux de victoire</div>
+          <div class="stat-label">{{ t.translate('profile.statsDialog.winRate') }}</div>
         </div>
       </div>
 
@@ -50,28 +50,28 @@
       <div class="activity-section">
         <h3>
           <mat-icon>sports_esports</mat-icon>
-          Activité
+          {{ t.translate('profile.statsDialog.activityTitle') }}
         </h3>
         <div class="activity-grid">
           <div class="activity-item">
             <mat-icon>groups</mat-icon>
             <div class="activity-info">
               <span class="activity-value">{{ stats.teamsCreated }}</span>
-              <span class="activity-label">Équipes créées</span>
+              <span class="activity-label">{{ t.translate('profile.statsDialog.teamsCreated') }}</span>
             </div>
           </div>
           <div class="activity-item">
             <mat-icon>swap_horiz</mat-icon>
             <div class="activity-info">
               <span class="activity-value">{{ stats.tradesCompleted }}</span>
-              <span class="activity-label">Échanges réalisés</span>
+              <span class="activity-label">{{ t.translate('profile.statsDialog.tradesCompleted') }}</span>
             </div>
           </div>
           <div class="activity-item">
             <mat-icon>how_to_vote</mat-icon>
             <div class="activity-info">
               <span class="activity-value">{{ stats.draftParticipations }}</span>
-              <span class="activity-label">Drafts participés</span>
+              <span class="activity-label">{{ t.translate('profile.statsDialog.draftsParticipations') }}</span>
             </div>
           </div>
         </div>
@@ -81,17 +81,17 @@
       <div class="preferences-section">
         <h3>
           <mat-icon>favorite</mat-icon>
-          Préférences
+          {{ t.translate('profile.statsDialog.preferencesTitle') }}
         </h3>
         <div class="preferences-grid">
           <div class="preference-item">
-            <span class="preference-label">Région favorite</span>
+            <span class="preference-label">{{ t.translate('profile.statsDialog.favoriteRegion') }}</span>
             <span class="preference-value">
-              {{ getRegionFlag(stats.favoriteRegion) }} {{ stats.favoriteRegion }}
+              {{ getRegionFlag(stats.favoriteRegion) }} {{ getFavoriteRegionLabel(stats.favoriteRegion) }}
             </span>
           </div>
           <div class="preference-item">
-            <span class="preference-label">Joueur star</span>
+            <span class="preference-label">{{ t.translate('profile.statsDialog.topPlayer') }}</span>
             <span class="preference-value">⭐ {{ stats.topPlayer }}</span>
           </div>
         </div>
@@ -102,14 +102,14 @@
         <div class="timeline-item">
           <mat-icon>calendar_today</mat-icon>
           <div class="timeline-info">
-            <span class="timeline-label">Membre depuis</span>
+            <span class="timeline-label">{{ t.translate('profile.statsDialog.memberSince') }}</span>
             <span class="timeline-value">{{ stats.memberSince | date:'MMMM yyyy' }}</span>
           </div>
         </div>
         <div class="timeline-item">
           <mat-icon>access_time</mat-icon>
           <div class="timeline-info">
-            <span class="timeline-label">Dernière activité</span>
+            <span class="timeline-label">{{ t.translate('profile.statsDialog.lastActive') }}</span>
             <span class="timeline-value">{{ stats.lastActive | date:'dd/MM/yyyy HH:mm' }}</span>
           </div>
         </div>
@@ -120,7 +120,7 @@
   <mat-dialog-actions align="end">
     <button mat-raised-button color="primary" (click)="onClose()">
       <mat-icon>close</mat-icon>
-      Fermer
+      {{ t.translate('common.close') }}
     </button>
   </mat-dialog-actions>
 </div>

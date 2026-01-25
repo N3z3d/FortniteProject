@@ -16,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.SwapPlayersRequest;
 import com.fortnite.pronos.dto.SwapPlayersResponse;
 import com.fortnite.pronos.dto.team.TeamDto;
@@ -28,7 +30,6 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 /**
  * TDD Tests for TeamService - Business Critical Component (Commands Only)
@@ -50,7 +51,7 @@ class TeamServiceTddTest {
 
   @Mock private TeamRepository teamRepository;
   @Mock private PlayerRepository playerRepository;
-  @Mock private UserRepository userRepository;
+  @Mock private UserRepositoryPort userRepository;
   @Mock private TeamPlayerRepository teamPlayerRepository;
 
   @InjectMocks private TeamService teamService;
@@ -259,7 +260,8 @@ class TeamServiceTddTest {
       emptyTeam.setPlayers(new ArrayList<>());
 
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(playerRepository.findById(newPlayer.getId())).thenReturn(Optional.of(newPlayer));
+      when(((PlayerRepositoryPort) playerRepository).findById(newPlayer.getId()))
+          .thenReturn(Optional.of(newPlayer));
       when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
           .thenReturn(Optional.of(emptyTeam));
       when(teamRepository.save(any(Team.class)))
@@ -278,7 +280,8 @@ class TeamServiceTddTest {
     void shouldRejectAddingDuplicatePlayerToTeam() {
       // RED: Test duplicate player validation
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
+          .thenReturn(Optional.of(testPlayer1));
       when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
           .thenReturn(Optional.of(testTeam1));
 
@@ -297,7 +300,8 @@ class TeamServiceTddTest {
     void shouldRemovePlayerFromTeamSuccessfully() {
       // RED: Test player removal from team
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
+          .thenReturn(Optional.of(testPlayer1));
       when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
           .thenReturn(Optional.of(testTeam1));
       when(teamRepository.save(any(Team.class)))
@@ -325,7 +329,7 @@ class TeamServiceTddTest {
               .build();
 
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
-      when(playerRepository.findById(notInTeamPlayer.getId()))
+      when(((PlayerRepositoryPort) playerRepository).findById(notInTeamPlayer.getId()))
           .thenReturn(Optional.of(notInTeamPlayer));
       when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
           .thenReturn(Optional.of(testTeam1));
@@ -352,8 +356,10 @@ class TeamServiceTddTest {
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
       when(teamRepository.findById(teamId1)).thenReturn(Optional.of(testTeam1));
       when(teamRepository.findById(teamId2)).thenReturn(Optional.of(testTeam2));
-      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
-      when(playerRepository.findById(playerId2)).thenReturn(Optional.of(testPlayer2));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
+          .thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId2))
+          .thenReturn(Optional.of(testPlayer2));
       when(teamPlayerRepository.findByTeamAndPlayer(testTeam1, testPlayer1))
           .thenReturn(Optional.of(testTeamPlayer1));
       when(teamPlayerRepository.findByTeamAndPlayer(testTeam2, testPlayer2))
@@ -423,8 +429,10 @@ class TeamServiceTddTest {
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
       when(teamRepository.findById(teamId1)).thenReturn(Optional.of(testTeam1));
       when(teamRepository.findById(teamId2)).thenReturn(Optional.of(testTeam2));
-      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
-      when(playerRepository.findById(playerId2)).thenReturn(Optional.of(testPlayer2));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
+          .thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId2))
+          .thenReturn(Optional.of(testPlayer2));
       when(teamPlayerRepository.findByTeamAndPlayer(testTeam1, testPlayer1))
           .thenReturn(Optional.empty()); // Player not in team
 
@@ -530,10 +538,14 @@ class TeamServiceTddTest {
       when(userRepository.findById(userId1)).thenReturn(Optional.of(testUser1));
       when(teamRepository.findByOwnerAndSeason(testUser1, testSeason))
           .thenReturn(Optional.of(testTeam1));
-      when(playerRepository.findById(oldPlayer1.getId())).thenReturn(Optional.of(oldPlayer1));
-      when(playerRepository.findById(newPlayer1.getId())).thenReturn(Optional.of(newPlayer1));
-      when(playerRepository.findById(oldPlayer2.getId())).thenReturn(Optional.of(oldPlayer2));
-      when(playerRepository.findById(newPlayer2.getId())).thenReturn(Optional.of(newPlayer2));
+      when(((PlayerRepositoryPort) playerRepository).findById(oldPlayer1.getId()))
+          .thenReturn(Optional.of(oldPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(newPlayer1.getId()))
+          .thenReturn(Optional.of(newPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(oldPlayer2.getId()))
+          .thenReturn(Optional.of(oldPlayer2));
+      when(((PlayerRepositoryPort) playerRepository).findById(newPlayer2.getId()))
+          .thenReturn(Optional.of(newPlayer2));
       when(teamRepository.findTeamByPlayerAndSeason(newPlayer1.getId(), testSeason))
           .thenReturn(Optional.empty());
       when(teamRepository.findTeamByPlayerAndSeason(newPlayer2.getId(), testSeason))

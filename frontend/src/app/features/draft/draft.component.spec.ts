@@ -86,7 +86,7 @@ describe('DraftComponent', () => {
     userContextService = TestBed.inject(UserContextService) as jasmine.SpyObj<UserContextService>;
     snackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
     dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
-    // Ã‰tat de base pour autoriser les actions dans les tests
+    // État de base pour autoriser les actions dans les tests
     component.gameId = '1';
     component.currentUserId = '1';
     component.draftState = mockDraftState;

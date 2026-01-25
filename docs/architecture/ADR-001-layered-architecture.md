@@ -1,8 +1,10 @@
-# ADR-001: Layered Architecture with Spring Boot
+# ADR-001: Pure Hexagonal Architecture (Ports & Adapters) - Incremental Migration
 
-**Status:** Accepted  
-**Date:** 2025-08-03  
-**Deciders:** Development Team  
+**Status:** Accepted (Final)
+**Date:** 2025-08-03
+**Updated:** 2026-01-25
+**Deciders:** Development Team
+**Strategic Decision:** JIRA-ARCH-009 (Pure hexagonal with incremental migration strategy)
 
 ## Context
 
@@ -15,7 +17,106 @@ The Fortnite Pronos application requires a scalable, maintainable architecture t
 
 ## Decision
 
-We adopt a layered architecture using Spring Boot with clear separation of concerns:
+We adopt a hybrid layered and hexagonal architecture using Spring Boot. The layered structure
+remains the primary organization, while use cases depend on ports and adapters implement those
+ports. This supports incremental migration without a big-bang rewrite.
+
+## Decision Update (2026-01-25): Pure Hexagonal Architecture with Incremental Migration
+
+After strategic review (JIRA-ARCH-009), we **adopt pure hexagonal architecture (Ports & Adapters pattern)** as the target, using **incremental migration strategy** to minimize risk.
+
+### Architecture Target: Monolith + Pure Hexagonal
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Monolithic Application                    │
+│                    (Spring Boot Container)                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌───────────────┐         ┌─────────────────┐            │
+│  │  Adapter IN   │────────>│   Application   │            │
+│  │  (Web/REST)   │         │   (Use Cases)   │            │
+│  └───────────────┘         └────────┬────────┘            │
+│         │                           │                       │
+│         │                           v                       │
+│         │                  ┌─────────────────┐            │
+│         └─────────────────>│  Domain Ports   │            │
+│                            │   (Interfaces)  │            │
+│                            └────────┬────────┘            │
+│                                     │                       │
+│                                     v                       │
+│                            ┌─────────────────┐            │
+│                            │  Domain Models  │            │
+│                            │ (Pure Entities) │            │
+│                            └─────────────────┘            │
+│                                     ^                       │
+│                                     │                       │
+│                            ┌────────┴────────┐            │
+│                            │  Adapter OUT    │            │
+│                            │ (Persistence)   │            │
+│                            │  JPA Entities   │            │
+│                            │    + Mappers    │            │
+│                            └─────────────────┘            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Why Pure Hexagonal (No Hybrid)
+
+1. **Long-term maintainability**: Clean separation between domain logic and infrastructure
+2. **Framework independence**: Domain models have ZERO dependencies (no JPA, no Spring)
+3. **Testability**: Domain logic testable without database/framework
+4. **Future-proof**: Easy to swap persistence layer or migrate to microservices if needed
+5. **DDD alignment**: True domain-driven design with pure domain models
+
+### Critical Success Factor: INCREMENTAL MIGRATION
+
+⚠️ **WARNING**: Big-bang migration WILL break things (tests, mappers, integrations)
+
+**Incremental Strategy** (one domain at a time):
+1. **Migrate Domain** (e.g., Game) → Create domain.game.model + adapter.out.persistence.game
+2. **Run ALL Tests** → Verify 1275/1275 passing (zero regression)
+3. **Validate Application** → Manual smoke tests, verify endpoints work
+4. **IF Tests Pass** → Proceed to next domain (Player)
+5. **IF Tests Fail** → Fix issues before moving forward
+6. **Repeat** for each domain: Player → Team → Draft → Trade
+
+**Migration Order** (impact-based):
+1. Game (highest complexity, most dependencies)
+2. Player (medium complexity)
+3. Team (medium complexity)
+4. Draft (draft system, isolated)
+5. Trade (lowest complexity)
+
+### Current Migration Status (Transition Phase)
+
+**Phase 1 - Ports & Use Cases** ✅ DONE:
+- 12 Repository Ports (domain.port.out)
+- 12 Use Case interfaces (application.usecase)
+- 8/14 controllers using DIP pattern
+
+**Phase 2 - Domain Models Migration** 🔄 IN PROGRESS:
+- [ ] Game domain (JIRA-ARCH-011)
+- [ ] Player domain (JIRA-ARCH-012)
+- [ ] Team domain (JIRA-ARCH-013)
+- [ ] Draft domain (JIRA-ARCH-014)
+- [ ] Trade domain (JIRA-ARCH-015)
+
+**Phase 3 - Remaining Controllers** ⏳ PENDING:
+- Migrate 6 remaining controllers to use cases after domain models complete
+
+### Architecture Fitness Functions (Pure Hexagonal Rules)
+
+Enforced via `HexagonalArchitectureTest.java`:
+
+1. **Domain purity**: NO framework dependencies (Spring, JPA, Jackson) in domain.model
+2. **Dependency direction**: Adapters depend on domain, NEVER reverse
+3. **Port contracts**: All persistence through domain.port.out interfaces
+4. **Use case orchestration**: Controllers call application.usecase only
+5. **Mapper isolation**: Domain ↔ Entity mapping ONLY in adapter.out
+6. **Class size**: ≤ 500 lines (CLAUDE.md constraint)
+
+Once migration complete, `shouldFollowOnionArchitecture()` will be enabled and enforced.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -55,12 +156,22 @@ We adopt a layered architecture using Spring Boot with clear separation of conce
 - Database abstraction
 - Entity relationship management
 
+### Hexagonal Additions (Hybrid)
+- Use cases live in `core/usecase` and depend on ports in `domain/port/*`.
+- Ports define persistence contracts; repositories implement those ports.
+- Controllers call use cases (or services) and do not depend on repositories directly.
+
 ## Alternatives Considered
 
-### 1. Hexagonal Architecture (Ports and Adapters)
-- **Pros:** Better testability, domain isolation
-- **Cons:** Increased complexity, longer development time
-- **Rejected:** Overkill for current application size
+### 1. Hybrid Architecture (Layered + Partial Hexagonal) - REJECTED (2026-01-25)
+- **Pros:** Lower migration effort, familiar patterns, incremental DIP adoption
+- **Cons:**
+  - Inconsistent architecture (some controllers use cases, others services)
+  - Domain models coupled to JPA (framework dependency)
+  - Cannot enable `shouldFollowOnionArchitecture()` test (violations)
+  - Long-term technical debt (architectural inconsistency)
+- **Decision:** **REJECTED** after JIRA-ARCH-009 strategic review
+- **Rationale:** While hybrid reduces short-term effort, it creates permanent architectural inconsistency. Pure hexagonal with **incremental migration** achieves clean architecture with controlled risk.
 
 ### 2. Microservices Architecture
 - **Pros:** Independent scaling, technology diversity
@@ -138,10 +249,10 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
 This ADR is enforced through:
 - Package structure conventions
 - Code review checklist
-- Architecture fitness functions
+- Architecture fitness functions (hybrid rules)
 - Dependency direction rules (no upward dependencies)
 
 ## Related ADRs
 - ADR-002: Database Technology Selection
 - ADR-003: API Design Standards
-- ADR-004: Authentication Strategy
+- ADR-004: CQRS Pattern Adoption (selective application within hybrid architecture)

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.config.SeedProperties;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -21,7 +22,6 @@ import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
 import com.fortnite.pronos.service.seed.TeamSeedService;
@@ -57,7 +57,7 @@ public class ReferenceGameSeedService {
   private final CsvDataLoaderService csvDataLoaderService;
 
   // Repository for game-specific operations (1)
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
 
   @EventListener(ApplicationReadyEvent.class)
   @Order(3)

@@ -11,6 +11,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.ScoreCommandUseCase;
+import com.fortnite.pronos.application.usecase.ScoreQueryUseCase;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
 import com.fortnite.pronos.model.Team;
@@ -18,7 +21,6 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ScoreService {
+public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
 
   private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvé";
   private static final String TEAM_NOT_FOUND_MESSAGE = "Équipe non trouvée";
@@ -36,7 +38,7 @@ public class ScoreService {
   private final ScoreRepository scoreRepository;
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
 
   /** Met à jour les scores d'un joueur pour une période donnée */
   @Transactional

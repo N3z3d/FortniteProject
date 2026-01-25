@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface TradeDetail {
   id: string;
@@ -58,7 +59,7 @@ interface TradeDetail {
     <div class="trade-detail-container">
       <div class="loading-container" *ngIf="isLoading">
         <mat-spinner diameter="50"></mat-spinner>
-        <p>Chargement du trade...</p>
+        <p>{{ t.t('trades.detail.loading') }}</p>
       </div>
 
       <div class="trade-content" *ngIf="!isLoading && trade">
@@ -67,7 +68,7 @@ interface TradeDetail {
           <mat-card-header>
             <mat-card-title>
               <mat-icon>swap_horiz</mat-icon>
-              Détail du Trade #{{ trade.id.substring(0, 8) }}
+              {{ t.t('trades.detail.titlePrefix') }}{{ trade.id.substring(0, 8) }}
             </mat-card-title>
             <mat-card-subtitle>
               <mat-chip [color]="getStatusColor(trade.status)">
@@ -79,7 +80,7 @@ interface TradeDetail {
           <mat-card-actions>
             <button mat-button (click)="goBack()">
               <mat-icon>arrow_back</mat-icon>
-              Retour
+              {{ t.t('trades.detail.back') }}
             </button>
             
             <button 
@@ -88,7 +89,7 @@ interface TradeDetail {
               *ngIf="trade.status === 'PENDING'"
               (click)="completeTrade()">
               <mat-icon>check</mat-icon>
-              Valider Trade
+              {{ t.t('trades.detail.validateTrade') }}
             </button>
             
             <button 
@@ -97,7 +98,7 @@ interface TradeDetail {
               *ngIf="trade.status === 'PENDING'"
               (click)="cancelTrade()">
               <mat-icon>cancel</mat-icon>
-              Annuler Trade
+              {{ t.t('trades.detail.cancelTrade') }}
             </button>
           </mat-card-actions>
         </mat-card>
@@ -105,7 +106,7 @@ interface TradeDetail {
         <!-- Trade Details Card -->
         <mat-card class="trade-details-card">
           <mat-card-header>
-            <mat-card-title>Détails de l'échange</mat-card-title>
+            <mat-card-title>{{ t.t('trades.detail.detailsTitle') }}</mat-card-title>
           </mat-card-header>
 
           <mat-card-content>
@@ -114,7 +115,7 @@ interface TradeDetail {
               <div class="player-card player-out">
                 <div class="player-header">
                   <mat-icon color="warn">person_remove</mat-icon>
-                  <h3>Joueur sortant</h3>
+                  <h3>{{ t.t('trades.detail.playerOutTitle') }}</h3>
                 </div>
                 <div class="player-info">
                   <h4>{{ trade.playerOut.username }}</h4>
@@ -122,15 +123,15 @@ interface TradeDetail {
                   
                   <div class="player-stats" *ngIf="trade.playerOut.stats">
                     <div class="stat">
-                      <span class="stat-label">Kills:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.kills') }}:</span>
                       <span class="stat-value">{{ trade.playerOut.stats.kills }}</span>
                     </div>
                     <div class="stat">
-                      <span class="stat-label">Wins:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.wins') }}:</span>
                       <span class="stat-value">{{ trade.playerOut.stats.wins }}</span>
                     </div>
                     <div class="stat">
-                      <span class="stat-label">K/D:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.kd') }}:</span>
                       <span class="stat-value">{{ trade.playerOut.stats.kd }}</span>
                     </div>
                   </div>
@@ -146,7 +147,7 @@ interface TradeDetail {
               <div class="player-card player-in">
                 <div class="player-header">
                   <mat-icon color="primary">person_add</mat-icon>
-                  <h3>Joueur entrant</h3>
+                  <h3>{{ t.t('trades.detail.playerInTitle') }}</h3>
                 </div>
                 <div class="player-info">
                   <h4>{{ trade.playerIn.username }}</h4>
@@ -154,15 +155,15 @@ interface TradeDetail {
                   
                   <div class="player-stats" *ngIf="trade.playerIn.stats">
                     <div class="stat">
-                      <span class="stat-label">Kills:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.kills') }}:</span>
                       <span class="stat-value">{{ trade.playerIn.stats.kills }}</span>
                     </div>
                     <div class="stat">
-                      <span class="stat-label">Wins:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.wins') }}:</span>
                       <span class="stat-value">{{ trade.playerIn.stats.wins }}</span>
                     </div>
                     <div class="stat">
-                      <span class="stat-label">K/D:</span>
+                      <span class="stat-label">{{ t.t('trades.detail.stats.kd') }}:</span>
                       <span class="stat-value">{{ trade.playerIn.stats.kd }}</span>
                     </div>
                   </div>
@@ -176,11 +177,11 @@ interface TradeDetail {
             <div class="team-section">
               <h3>
                 <mat-icon>group</mat-icon>
-                Équipe concernée
+                {{ t.t('trades.detail.teamSectionTitle') }}
               </h3>
               <div class="team-info">
                 <h4>{{ trade.team.name }}</h4>
-                <p>Propriétaire: <strong>{{ trade.team.owner }}</strong></p>
+                <p>{{ t.t('trades.detail.teamOwnerLabel') }}: <strong>{{ trade.team.owner }}</strong></p>
               </div>
             </div>
 
@@ -190,13 +191,13 @@ interface TradeDetail {
             <div class="timeline-section">
               <h3>
                 <mat-icon>timeline</mat-icon>
-                Chronologie
+                {{ t.t('trades.detail.timelineTitle') }}
               </h3>
               <div class="timeline">
                 <div class="timeline-item completed">
                   <mat-icon>add</mat-icon>
                   <div class="timeline-content">
-                    <strong>Trade créé</strong>
+                    <strong>{{ t.t('trades.detail.timelineCreated') }}</strong>
                     <p>{{ trade.createdAt | date:'dd/MM/yyyy à HH:mm' }}</p>
                   </div>
                 </div>
@@ -210,7 +211,7 @@ interface TradeDetail {
                   <div class="timeline-content">
                     <strong>{{ getTimelineLabel(trade.status) }}</strong>
                     <p *ngIf="trade.completedAt">{{ trade.completedAt | date:'dd/MM/yyyy à HH:mm' }}</p>
-                    <p *ngIf="!trade.completedAt && trade.status === 'PENDING'">En attente</p>
+                    <p *ngIf="!trade.completedAt && trade.status === 'PENDING'">{{ t.t('trades.status.pending') }}</p>
                   </div>
                 </div>
               </div>
@@ -221,7 +222,7 @@ interface TradeDetail {
               <mat-divider></mat-divider>
               <h3>
                 <mat-icon>info</mat-icon>
-                Raison de l'annulation
+                {{ t.t('trades.detail.cancelReasonTitle') }}
               </h3>
               <p class="reason-text">{{ trade.reason }}</p>
             </div>
@@ -234,10 +235,10 @@ interface TradeDetail {
         <mat-card-content>
           <div class="error-content">
             <mat-icon color="warn">error</mat-icon>
-            <h3>Trade introuvable</h3>
-            <p>Le trade demandé n'existe pas ou a été supprimé.</p>
+            <h3>{{ t.t('trades.detail.notFoundTitle') }}</h3>
+            <p>{{ t.t('trades.detail.notFoundDesc') }}</p>
             <button mat-raised-button color="primary" (click)="goBack()">
-              Retour à la liste
+              {{ t.t('trades.detail.backToList') }}
             </button>
           </div>
         </mat-card-content>
@@ -444,6 +445,7 @@ export class TradeDetailComponent implements OnInit {
   trade: TradeDetail | null = null;
   isLoading = true;
   tradeId: string = '';
+  public readonly t = inject(TranslationService);
 
   constructor(
     private route: ActivatedRoute,
@@ -517,20 +519,25 @@ export class TradeDetailComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'PENDING': return 'En attente';
-      case 'COMPLETED': return 'Terminé';
-      case 'CANCELLED': return 'Annulé';
-      default: return status;
-    }
+    const statusKey = status.toLowerCase();
+    const statusMap: Record<string, string> = {
+      pending: 'trades.status.pending',
+      completed: 'trades.status.completed',
+      cancelled: 'trades.status.cancelled'
+    };
+
+    const key = statusMap[statusKey] || `trades.status.${statusKey}`;
+    return this.t.t(key, status);
   }
 
   getTimelineLabel(status: string): string {
     switch (status) {
-      case 'PENDING': return 'En attente de validation';
-      case 'COMPLETED': return 'Trade validé';
-      case 'CANCELLED': return 'Trade annulé';
-      default: return 'Statut inconnu';
+      case 'PENDING': return this.t.t('trades.detail.timelinePending');
+      case 'COMPLETED': return this.t.t('trades.detail.timelineCompleted');
+      case 'CANCELLED': return this.t.t('trades.detail.timelineCancelled');
+      default: return status;
     }
   }
 }
+
+

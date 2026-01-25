@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.InvalidDraftStateException;
 import com.fortnite.pronos.model.Draft;
@@ -86,11 +88,12 @@ class GameDraftServiceTddTest {
   @Test
   @DisplayName("selectPlayer doit persister un DraftPick et avancer le draft")
   void selectPlayer_shouldPersistPick_andAdvanceDraft() {
-    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.of(game));
     when(draftRepository.findByGame(game)).thenReturn(Optional.of(draft));
     when(draftService.isUserTurn(draft, userId)).thenReturn(true);
     when(draftPickRepository.existsByDraftAndPlayer(draft, player)).thenReturn(false);
-    when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
+    when(((PlayerRepositoryPort) playerRepository).findById(playerId))
+        .thenReturn(Optional.of(player));
     when(gameParticipantRepository.findByUserIdAndGameId(userId, gameId))
         .thenReturn(Optional.of(participant));
 
@@ -123,7 +126,7 @@ class GameDraftServiceTddTest {
   @Test
   @DisplayName("selectPlayer doit échouer si aucun draft actif n'est trouvé")
   void selectPlayer_shouldFail_whenNoActiveDraft() {
-    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.of(game));
     when(draftRepository.findByGame(game)).thenReturn(Optional.empty());
 
     org.assertj.core.api.Assertions.assertThatThrownBy(

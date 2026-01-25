@@ -10,9 +10,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.fortnite.pronos.application.usecase.PlayerQueryUseCase;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.service.PlayerService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class PlayerController {
-  private final PlayerService playerService;
+  private final PlayerQueryUseCase playerQueryUseCase;
 
   @Operation(
       summary = "Get all players with pagination",
@@ -65,7 +65,7 @@ public class PlayerController {
             Math.min(size, 50), // Max 50 per page
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-    return ResponseEntity.ok(playerService.getAllPlayers(optimizedPageable));
+    return ResponseEntity.ok(playerQueryUseCase.getAllPlayers(optimizedPageable));
   }
 
   @Operation(
@@ -77,7 +77,7 @@ public class PlayerController {
   public ResponseEntity<List<PlayerDto>> getAllPlayersLegacy() {
     // Use pagination internally but return as list for backward compatibility
     Pageable pageable = PageRequest.of(0, 200);
-    return ResponseEntity.ok(playerService.getAllPlayers(pageable).getContent());
+    return ResponseEntity.ok(playerQueryUseCase.getAllPlayers(pageable).getContent());
   }
 
   @Operation(
@@ -94,7 +94,7 @@ public class PlayerController {
   @GetMapping("/{id}")
   public ResponseEntity<PlayerDto> getPlayerById(
       @Parameter(description = "Player unique identifier", required = true) @PathVariable UUID id) {
-    return ResponseEntity.ok(playerService.getPlayerById(id));
+    return ResponseEntity.ok(playerQueryUseCase.getPlayerById(id));
   }
 
   @Operation(
@@ -109,7 +109,7 @@ public class PlayerController {
               example = "EU")
           @PathVariable
           Player.Region region) {
-    return ResponseEntity.ok(playerService.getPlayersByRegion(region));
+    return ResponseEntity.ok(playerQueryUseCase.getPlayersByRegion(region));
   }
 
   @Operation(
@@ -121,7 +121,7 @@ public class PlayerController {
       @Parameter(description = "Skill tranche identifier", required = true, example = "PRO")
           @PathVariable
           String tranche) {
-    return ResponseEntity.ok(playerService.getPlayersByTranche(tranche));
+    return ResponseEntity.ok(playerQueryUseCase.getPlayersByTranche(tranche));
   }
 
   @Operation(
@@ -143,14 +143,14 @@ public class PlayerController {
           boolean available,
       Pageable pageable) {
     return ResponseEntity.ok(
-        playerService.searchPlayers(query, region, tranche, available, pageable));
+        playerQueryUseCase.searchPlayers(query, region, tranche, available, pageable));
   }
 
   @Operation(summary = "Get active players", description = "Retrieve only currently active players")
   @ApiResponse(responseCode = "200", description = "Active players retrieved successfully")
   @GetMapping("/active")
   public ResponseEntity<List<PlayerDto>> getActivePlayers() {
-    return ResponseEntity.ok(playerService.getActivePlayers());
+    return ResponseEntity.ok(playerQueryUseCase.getActivePlayers());
   }
 
   @Operation(
@@ -159,6 +159,6 @@ public class PlayerController {
   @ApiResponse(responseCode = "200", description = "Player statistics retrieved successfully")
   @GetMapping("/stats")
   public ResponseEntity<?> getPlayersStats() {
-    return ResponseEntity.ok(playerService.getPlayersStats());
+    return ResponseEntity.ok(playerQueryUseCase.getPlayersStats());
   }
 }

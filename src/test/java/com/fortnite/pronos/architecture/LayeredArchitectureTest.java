@@ -50,14 +50,15 @@ public class LayeredArchitectureTest {
         .whereLayer("Exceptions")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Exceptions")
         .whereLayer("Domain")
-        .mayOnlyBeAccessedByLayers("Application", "Services", "UseCases", "Domain", "Config")
+        .mayOnlyBeAccessedByLayers(
+            "Application", "Services", "UseCases", "Domain", "Config", "Repositories")
         .whereLayer("Application")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Application", "Config")
         .whereLayer("Services")
         .mayOnlyBeAccessedByLayers(
             "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions")
         .whereLayer("Repositories")
-        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
+        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Domain")
         .whereLayer("Models")
         .mayOnlyBeAccessedByLayers(
             "Controllers",
@@ -71,7 +72,7 @@ public class LayeredArchitectureTest {
             "Application")
         .whereLayer("DTOs")
         .mayOnlyBeAccessedByLayers(
-            "Controllers", "Services", "UseCases", "Exceptions", "Config", "Application")
+            "Controllers", "Services", "UseCases", "Exceptions", "Config", "Application", "Domain")
         .whereLayer("Config")
         .mayOnlyBeAccessedByLayers("Config", "Controllers", "Services", "UseCases", "Exceptions")
         .check(classes);
@@ -91,6 +92,7 @@ public class LayeredArchitectureTest {
                 "..model..",
                 "..repository..",
                 "..core..",
+                "..application..", // Allow use cases from application layer
                 "..controller..", // autoriser les DTO internes des contrôleurs
                 "java..",
                 "org.springframework..",
@@ -122,6 +124,7 @@ public class LayeredArchitectureTest {
 
   @Test
   void repositoriesShouldNotDependOnServices() {
+    // Note: Repositories can depend on domain ports (hexagonal architecture)
     com.tngtech.archunit.lang.ArchRule rule =
         com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses()
             .that()

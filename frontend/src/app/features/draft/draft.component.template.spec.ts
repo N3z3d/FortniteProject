@@ -121,7 +121,7 @@ describe('DraftComponent Progressive Template', () => {
 
     const title = fixture.debugElement.query(By.css('.draft-title'));
     expect(title).toBeTruthy();
-    expect(title.nativeElement.textContent).toContain('Draft');
+    expect(title.nativeElement.textContent).toContain(component.t.t('draft.ui.title'));
     expect(title.nativeElement.textContent).toContain('game-123');
   });
 
@@ -161,7 +161,7 @@ describe('DraftComponent Progressive Template', () => {
 
     const message = fixture.debugElement.query(By.css('.loading-overlay p'));
     expect(message).toBeTruthy();
-    expect(message.nativeElement.textContent).toContain('lection');
+    expect(message.nativeElement.textContent).toContain(component.t.t('draft.ui.loadingSelection'));
   });
 
   it('shows the error state when error is set', () => {
@@ -170,6 +170,7 @@ describe('DraftComponent Progressive Template', () => {
 
     const errorState = fixture.debugElement.query(By.css('.error-state'));
     expect(errorState).toBeTruthy();
+    expect(errorState.nativeElement.textContent).toContain(component.t.t('draft.ui.errorTitle'));
     expect(errorState.nativeElement.textContent).toContain('Erreur de chargement');
 
     const retryButton = fixture.debugElement.query(By.css('.error-state button'));

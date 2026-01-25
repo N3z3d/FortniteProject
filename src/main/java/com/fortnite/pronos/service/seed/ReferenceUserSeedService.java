@@ -6,8 +6,8 @@ import java.util.Map;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class ReferenceUserSeedService {
   private static final String DEFAULT_PASSWORD = "password";
   private static final int CURRENT_SEASON = 2025;
 
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
   private final PasswordEncoder passwordEncoder;
 
   /**

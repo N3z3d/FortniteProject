@@ -11,6 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { TeamService, TeamDto } from '../../../core/services/team.service';
 import { GameSelectionService } from '../../../core/services/game-selection.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface Team {
   id: string;
@@ -50,7 +51,8 @@ export class TeamsListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly teamService: TeamService,
     private readonly gameSelectionService: GameSelectionService,
-    private readonly logger: LoggerService
+    private readonly logger: LoggerService,
+    public readonly t: TranslationService
   ) { }
 
   ngOnInit(): void {
@@ -112,11 +114,11 @@ export class TeamsListComponent implements OnInit, OnDestroy {
           // BE-P0-03: Improve error message based on error type
           const status = error?.status;
           if (status === 404) {
-            this.error = 'Aucune équipe trouvée pour cette partie';
+            this.error = this.t.t('teams.list.errors.noTeamsForGame');
           } else if (status === 0 || !navigator.onLine) {
-            this.error = 'Connexion au serveur impossible';
+            this.error = this.t.t('teams.list.errors.serverUnavailable');
           } else {
-            this.error = 'Erreur lors du chargement des équipes';
+            this.error = this.t.t('teams.list.errors.loadFailed');
           }
           this.logger.error('TeamsListComponent: failed to load teams', { error, gameId: this.gameId });
           this.loading = false;
@@ -133,15 +135,15 @@ export class TeamsListComponent implements OnInit, OnDestroy {
   private mapTeamsData(teams: TeamDto[]): Team[] {
     return teams.map((team: TeamDto) => ({
       id: team.id || '',
-      name: team.name || 'Équipe sans nom',
-      ownerName: team.ownerUsername || 'Inconnu',
+      name: team.name || this.t.t('teams.common.unnamedTeam'),
+      ownerName: team.ownerUsername || this.t.t('teams.common.unknownOwner'),
       playerCount: team.players?.length || 0,
       totalPoints: team.totalScore || 0,
       isActive: true,
       lastUpdate: new Date(),
       players: (team.players || []).map((p: any) => ({
         id: p.playerId || '',
-        name: p.nickname || p.username || 'Joueur',
+        name: p.nickname || p.username || this.t.t('teams.common.unknownPlayer'),
         gamertag: p.nickname || p.username,
         points: p.points || 0
       }))

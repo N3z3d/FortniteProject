@@ -20,14 +20,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests - UserService")
 class UserServiceTest {
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserRepositoryPort userRepository;
 
   @InjectMocks private UserService userService;
 

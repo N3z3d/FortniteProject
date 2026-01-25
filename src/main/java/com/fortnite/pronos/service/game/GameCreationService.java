@@ -7,6 +7,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.GameCreationUseCase;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
@@ -18,10 +22,7 @@ import com.fortnite.pronos.model.GameRegionRule;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRegionRuleRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.InvitationCodeService;
 import com.fortnite.pronos.service.ValidationService;
 
@@ -36,12 +37,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class GameCreationService {
+public class GameCreationService implements GameCreationUseCase {
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final GameRegionRuleRepository gameRegionRuleRepository;
-  private final GameParticipantRepository gameParticipantRepository;
-  private final UserRepository userRepository;
+  private final GameParticipantRepositoryPort gameParticipantRepository;
+  private final UserRepositoryPort userRepository;
   private final ValidationService validationService;
   private final InvitationCodeService invitationCodeService;
 

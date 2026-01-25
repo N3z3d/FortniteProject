@@ -18,16 +18,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import com.fortnite.pronos.application.usecase.GameDetailUseCase;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.dto.GameDetailDto.*;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.service.GameDetailService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameDetailController - TDD")
 class GameDetailControllerTest {
 
-  @Mock private GameDetailService gameDetailService;
+  @Mock private GameDetailUseCase gameDetailService;
 
   @InjectMocks private GameDetailController gameDetailController;
 

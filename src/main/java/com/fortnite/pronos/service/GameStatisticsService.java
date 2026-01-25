@@ -8,11 +8,12 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.GameStatisticsUseCase;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class GameStatisticsService {
+public class GameStatisticsService implements GameStatisticsUseCase {
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
 
   /**

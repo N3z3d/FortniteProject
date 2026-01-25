@@ -218,11 +218,11 @@ export class GameDataService {
   }
 
   private findFallbackGame(gameId: string): Game | null {
-    return MOCK_GAMES.find(game => game.id === gameId) ?? null;
+    return MOCK_GAMES.find(game => game.id === gameId) ? null;
   }
 
   private getFallbackParticipants(gameId: string): GameParticipant[] {
-    return MOCK_GAME_PARTICIPANTS[gameId] ?? [];
+    return MOCK_GAME_PARTICIPANTS[gameId] ? [];
   }
 
 }

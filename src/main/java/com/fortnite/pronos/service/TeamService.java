@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.SwapPlayersRequest;
 import com.fortnite.pronos.dto.SwapPlayersResponse;
 import com.fortnite.pronos.dto.team.TeamDto;
@@ -21,7 +22,6 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class TeamService {
 
   private final TeamRepository teamRepository;
   private final PlayerRepository playerRepository;
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
   private final TeamPlayerRepository teamPlayerRepository;
 
   // Note: Query methods moved to TeamQueryService

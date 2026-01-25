@@ -6,12 +6,13 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.Game;
 
 /** Repository pour la gestion des drafts */
 @Repository
-public interface DraftRepository extends JpaRepository<Draft, UUID> {
+public interface DraftRepository extends JpaRepository<Draft, UUID>, DraftRepositoryPort {
 
   /** Trouver un draft par game */
   Optional<Draft> findByGame(Game game);

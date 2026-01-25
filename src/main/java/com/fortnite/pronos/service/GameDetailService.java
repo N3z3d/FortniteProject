@@ -10,13 +10,14 @@ import org.hibernate.ObjectNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.GameDetailUseCase;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.dto.GameDetailDto.*;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.DraftRepository;
 import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class GameDetailService {
+public class GameDetailService implements GameDetailUseCase {
 
   private static final String MISSING_PLAYER_NICKNAME = "Joueur indisponible";
   private static final String MISSING_PLAYER_REGION = "UNKNOWN";
@@ -39,7 +40,7 @@ public class GameDetailService {
 
   private static final int DEFAULT_SEASON = 2025;
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
   private final DraftRepository draftRepository;
   private final ScoreRepository scoreRepository;

@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.facade.GameDomainFacade;
 import com.fortnite.pronos.domain.ParticipantRules;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
 import com.fortnite.pronos.exception.GameNotFoundException;
@@ -19,9 +22,6 @@ import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class GameParticipantService {
 
-  private final GameRepository gameRepository;
-  private final GameParticipantRepository gameParticipantRepository;
-  private final UserRepository userRepository;
+  private final GameRepositoryPort gameRepository;
+  private final GameParticipantRepositoryPort gameParticipantRepository;
+  private final UserRepositoryPort userRepository;
   private final GameDomainFacade gameDomainFacade;
 
   /** Adds a user to a game */

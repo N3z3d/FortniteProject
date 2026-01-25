@@ -8,6 +8,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.DraftUseCase;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.DraftActionResponse;
 import com.fortnite.pronos.dto.DraftAdvanceResponse;
 import com.fortnite.pronos.dto.DraftAvailablePlayerResponse;
@@ -23,21 +25,20 @@ import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.DraftRepository;
 import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Service pour la gestion des drafts Clean Code : sÃƒÆ’Ã‚Â©paration des responsabilitÃƒÆ’Ã‚Â©s */
+/** Service pour la gestion des drafts Clean Code : sÃƒÆ'Ã‚Â©paration des responsabilitÃƒÆ'Ã‚Â©s */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class DraftService {
+public class DraftService implements DraftUseCase {
 
   private final DraftRepository draftRepository;
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
   private final PlayerRepository playerRepository;
 

@@ -7,13 +7,13 @@
 <!-- Centre de notifications -->
 <div class="notification-center" [class.open]="isOpen" *ngIf="isOpen" @slideIn>
   <div class="notification-header">
-    <h3>Notifications</h3>
+    <h3>{{ t.t('notificationCenter.title') }}</h3>
     <div class="header-actions">
-      <button mat-icon-button (click)="markAllAsRead()" 
-              *ngIf="unreadCount > 0" matTooltip="Tout marquer comme lu">
+      <button mat-icon-button (click)="markAllAsRead()"
+              *ngIf="unreadCount > 0" [matTooltip]="t.t('notificationCenter.markAllAsRead')">
         <mat-icon>done_all</mat-icon>
       </button>
-      <button mat-icon-button (click)="closeNotificationCenter()">
+      <button mat-icon-button (click)="closeNotificationCenter()" [matTooltip]="t.t('notifications.close')">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -22,35 +22,35 @@
   <!-- État de connexion -->
   <div class="connection-status" [class.connected]="connectionStatus">
     <mat-icon>{{ connectionStatus ? 'wifi' : 'wifi_off' }}</mat-icon>
-    <span>{{ connectionStatus ? 'Connecté' : 'Déconnecté' }}</span>
+    <span>{{ connectionStatus ? t.t('notificationCenter.connected') : t.t('notificationCenter.disconnected') }}</span>
   </div>
 
   <!-- Liste des notifications -->
   <div class="notification-list">
     <div *ngIf="notifications.length === 0" class="empty-state" @fadeIn>
       <mat-icon>notifications_none</mat-icon>
-      <p>Aucune notification</p>
+      <p>{{ t.t('notificationCenter.noNotifications') }}</p>
     </div>
 
-    <div *ngFor="let notification of notifications; trackBy: trackByFn" 
-         class="notification-item" 
+    <div *ngFor="let notification of notifications; trackBy: trackByFn"
+         class="notification-item"
          [class.unread]="true"
          [ngClass]="getNotificationClass(notification.type)"
          (click)="markAsRead(notification)"
          @fadeIn>
-      
+
       <div class="notification-icon">
         <mat-icon>{{ getNotificationIcon(notification.type) }}</mat-icon>
       </div>
-      
+
       <div class="notification-content">
-        <h4>Notification</h4>
+        <h4>{{ t.t('notificationCenter.notification') }}</h4>
         <p>{{ notification.message }}</p>
         <span class="notification-time">{{ formatTimestamp(notification.timestamp) }}</span>
       </div>
-      
-      <button mat-icon-button (click)="deleteNotification(notification, $event)" 
-              class="delete-button" matTooltip="Supprimer">
+
+      <button mat-icon-button (click)="deleteNotification(notification, $event)"
+              class="delete-button" [matTooltip]="t.t('common.delete')">
         <mat-icon>delete</mat-icon>
       </button>
     </div>

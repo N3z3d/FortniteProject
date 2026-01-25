@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
 import { UserGamesStore } from '../../../core/services/user-games.store';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-create-game',
@@ -41,6 +42,8 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
   styleUrls: ['./create-game.component.scss']
 })
 export class CreateGameComponent implements OnInit {
+  public readonly t = inject(TranslationService);
+
   gameForm!: FormGroup;
   loading = false;
   error: string | null = null;

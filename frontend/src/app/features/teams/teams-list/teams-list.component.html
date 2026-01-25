@@ -9,19 +9,19 @@
         <div class="hero-content">
             <h1 class="hero-title">
                 <mat-icon class="hero-icon">groups</mat-icon>
-                {{ gameId ? 'Équipes du jeu' : 'Mes Équipes' }}
+                {{ gameId ? t.t('teams.list.titleGame') : t.t('teams.list.titleMine') }}
             </h1>
-            <p class="hero-subtitle">Gérez vos équipes et optimisez votre roster pour dominer le classement</p>
+            <p class="hero-subtitle">{{ t.t('teams.list.subtitle') }}</p>
 
             <div class="hero-stats">
                 <div class="hero-stat">
                     <span class="stat-value">{{ filteredTeams.length }}</span>
-                    <span class="stat-label">Équipes</span>
+                    <span class="stat-label">{{ t.t('teams.common.teams') }}</span>
                 </div>
                 <div class="hero-divider"></div>
                 <div class="hero-stat">
                     <span class="stat-value">{{ getTotalPlayers() }}</span>
-                    <span class="stat-label">Joueurs</span>
+                    <span class="stat-label">{{ t.t('teams.common.players') }}</span>
                 </div>
             </div>
         </div>
@@ -29,7 +29,7 @@
         <div class="hero-actions">
             <button mat-raised-button class="create-btn" routerLink="/teams/create" *ngIf="!gameId">
                 <mat-icon>add</mat-icon>
-                Créer une équipe
+                {{ t.t('teams.list.createTeam') }}
             </button>
         </div>
     </header>
@@ -38,7 +38,7 @@
     <div class="teams-filter-bar">
         <div class="search-input-wrapper">
             <mat-icon>search</mat-icon>
-            <input type="text" placeholder="Rechercher une équipe, un joueur..." [value]="searchTerm"
+            <input type="text" [placeholder]="t.t('teams.list.searchPlaceholder')" [value]="searchTerm"
                 (input)="onSearch($event)" />
         </div>
     </div>
@@ -46,29 +46,31 @@
     <!-- Loading State -->
     <div class="loading-container" *ngIf="loading">
         <mat-spinner diameter="50"></mat-spinner>
-        <p>Chargement de vos équipes...</p>
+        <p>{{ t.t('teams.list.loading') }}</p>
     </div>
 
     <!-- Error State -->
     <div class="error-state" *ngIf="!loading && error">
         <mat-icon>error_outline</mat-icon>
-        <h3>Erreur de chargement</h3>
+        <h3>{{ t.t('teams.list.errorTitle') }}</h3>
         <p>{{ error }}</p>
         <button mat-raised-button color="primary" (click)="refreshTeams()">
             <mat-icon>refresh</mat-icon>
-            Réessayer
+            {{ t.t('common.retry') }}
         </button>
     </div>
 
     <!-- Empty State -->
     <div class="empty-state" *ngIf="!loading && !error && filteredTeams.length === 0">
         <mat-icon>groups</mat-icon>
-        <h3>Aucune équipe trouvée</h3>
-        <p *ngIf="searchTerm">Aucun résultat pour "<span class="highlight">{{ searchTerm }}</span>"</p>
-        <p *ngIf="!searchTerm">Vous n'avez pas encore créé d'équipe. Commencez par en créer une !</p>
+        <h3>{{ t.t('teams.list.emptyTitle') }}</h3>
+        <p *ngIf="searchTerm">
+            {{ t.t('teams.list.emptySearchResults').replace('{term}', searchTerm) }}
+        </p>
+        <p *ngIf="!searchTerm">{{ t.t('teams.list.emptyNoTeams') }}</p>
         <button mat-raised-button color="primary" routerLink="/games" *ngIf="!searchTerm">
             <mat-icon>sports_esports</mat-icon>
-            Voir les jeux disponibles
+            {{ t.t('teams.list.viewGames') }}
         </button>
     </div>
 
@@ -100,12 +102,12 @@
             <div class="card-stats">
                 <div class="stat-item">
                     <span class="stat-val">{{ team.playerCount }}</span>
-                    <span class="stat-lbl">Joueurs</span>
+                    <span class="stat-lbl">{{ t.t('teams.common.players') }}</span>
                 </div>
                 <div class="stat-divider"></div>
                 <div class="stat-item points-stat">
                     <span class="stat-val">{{ team.totalPoints }}</span>
-                    <span class="stat-lbl">Points</span>
+                    <span class="stat-lbl">{{ t.t('teams.common.points') }}</span>
                 </div>
             </div>
 
@@ -123,7 +125,7 @@
             <div class="card-footer">
                 <span class="update-info">{{ team.lastUpdate | date:'dd/MM/yyyy' }}</span>
                 <span class="action-hint">
-                    Voir détails
+                    {{ t.t('teams.list.viewDetails') }}
                     <mat-icon>arrow_forward</mat-icon>
                 </span>
             </div>

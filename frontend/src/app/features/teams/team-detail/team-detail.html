@@ -7,7 +7,7 @@
       </div>
       <div class="team-info">
         <div class="team-meta">
-          <span class="season-badge">Saison {{ team.season }}</span>
+          <span class="season-badge">{{ t.t('teams.common.season') }} {{ team.season }}</span>
           <span class="owner-badge">
             <mat-icon>person</mat-icon> {{ team.owner?.username }}
           </span>
@@ -18,7 +18,7 @@
 
     <div class="hero-actions">
       <button mat-stroked-button color="primary" routerLink="../..">
-        <mat-icon>arrow_back</mat-icon> Retour aux équipes
+        <mat-icon>arrow_back</mat-icon> {{ t.t('teams.detail.backToTeams') }}
       </button>
     </div>
 
@@ -33,7 +33,7 @@
       <div class="stat-icon"><mat-icon>emoji_events</mat-icon></div>
       <div class="stat-content">
         <span class="stat-value">{{ formatPoints(team.totalPoints || 0) }}</span>
-        <span class="stat-label">Points Total</span>
+        <span class="stat-label">{{ t.t('teams.detail.pointsTotal') }}</span>
       </div>
     </div>
 
@@ -41,7 +41,7 @@
       <div class="stat-icon"><mat-icon>bar_chart</mat-icon></div>
       <div class="stat-content">
         <span class="stat-value">{{ getTop10PercentPlayersCount() }}</span>
-        <span class="stat-label">Top 10% Joueurs</span>
+        <span class="stat-label">{{ t.t('teams.detail.topPlayersLabel') }}</span>
       </div>
     </div>
 
@@ -49,7 +49,7 @@
       <div class="stat-icon"><mat-icon>groups</mat-icon></div>
       <div class="stat-content">
         <span class="stat-value">{{ team.players.length }}</span>
-        <span class="stat-label">Effectif</span>
+        <span class="stat-label">{{ t.t('teams.detail.rosterCount') }}</span>
       </div>
     </div>
   </section>
@@ -60,7 +60,7 @@
     <!-- Left Column: Roster -->
     <div class="roster-column">
       <div class="section-header">
-        <h2><mat-icon>group</mat-icon> Roster Actif</h2>
+        <h2><mat-icon>group</mat-icon> {{ t.t('teams.detail.rosterTitle') }}</h2>
       </div>
 
       <div class="roster-grid">
@@ -82,7 +82,7 @@
 
             <div class="player-stats">
               <div class="points-row">
-                <span class="points">{{ formatPoints(teamPlayer.player.points || 0) }} pts</span>
+                <span class="points">{{ formatPoints(teamPlayer.player.points || 0) }} {{ t.t('teams.common.pointsShort') }}</span>
                 <mat-progress-bar mode="determinate" [value]="getProgressPercentage(teamPlayer.player.points || 0)"
                   class="points-bar">
                 </mat-progress-bar>
@@ -96,12 +96,12 @@
     <!-- Right Column: Analytics (Charts) -->
     <div class="analytics-column" *ngIf="stats">
       <div class="section-header">
-        <h2><mat-icon>pie_chart</mat-icon> Analyses</h2>
+        <h2><mat-icon>pie_chart</mat-icon> {{ t.t('teams.detail.analyticsTitle') }}</h2>
       </div>
 
       <!-- Region Distribution Chart -->
       <div class="analytics-card">
-        <h3>Distribution Régionale</h3>
+        <h3>{{ t.t('teams.detail.regionDistribution') }}</h3>
         <div class="chart-container">
           <div class="pie-chart-wrapper">
             <svg viewBox="0 0 100 100" class="pie-svg">
@@ -114,7 +114,7 @@
             <div class="pie-center">
               <span class="center-val">{{ stats.regionDistribution ? Object.keys(stats.regionDistribution).length : 0
                 }}</span>
-              <span class="center-lbl">Régions</span>
+              <span class="center-lbl">{{ t.t('teams.detail.regionsLabel') }}</span>
             </div>
           </div>
 
@@ -130,12 +130,12 @@
 
       <!-- Top Performers Podium (Mini) -->
       <div class="analytics-card podium-card" *ngIf="getTopPlayers().length >= 1">
-        <h3>Meilleur Joueur</h3>
+        <h3>{{ t.t('teams.detail.bestPlayer') }}</h3>
         <div class="mvp-showcase">
           <div class="mvp-crown"><mat-icon>emoji_events</mat-icon></div>
           <div class="mvp-avatar">{{ getTopPlayers()[0].player.nickname.charAt(0) }}</div>
           <div class="mvp-name">{{ getTopPlayers()[0].player.nickname }}</div>
-          <div class="mvp-points">{{ formatPoints(getTopPlayers()[0].player.points || 0) }} pts</div>
+          <div class="mvp-points">{{ formatPoints(getTopPlayers()[0].player.points || 0) }} {{ t.t('teams.common.pointsShort') }}</div>
         </div>
       </div>
 
@@ -147,13 +147,13 @@
 <ng-template #loadingOrError>
   <div class="loading-container" *ngIf="loading">
     <mat-spinner diameter="50"></mat-spinner>
-    <p>Chargement des données de l'équipe...</p>
+    <p>{{ t.t('teams.detail.loadingTeamData') }}</p>
   </div>
 
   <div class="error-state" *ngIf="error">
     <mat-icon>error_outline</mat-icon>
-    <h3>Erreur</h3>
+    <h3>{{ t.t('teams.detail.errorTitle') }}</h3>
     <p>{{ error }}</p>
-    <button mat-stroked-button (click)="retryLoad()">Réessayer</button>
+    <button mat-stroked-button (click)="retryLoad()">{{ t.t('common.retry') }}</button>
   </div>
 </ng-template>

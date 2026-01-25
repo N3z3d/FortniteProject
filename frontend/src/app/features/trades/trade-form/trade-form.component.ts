@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface Player {
   id: string;
@@ -47,10 +48,10 @@ interface Team {
         <mat-card-header>
           <mat-card-title>
             <mat-icon>swap_horiz</mat-icon>
-            {{ isEditMode ? 'Modifier Trade' : 'Nouveau Trade' }}
+            {{ isEditMode ? t.t('trades.form.titleEdit') : t.t('trades.form.titleNew') }}
           </mat-card-title>
           <mat-card-subtitle>
-            Créez un échange de joueurs entre équipes
+            {{ t.t('trades.form.subtitle') }}
           </mat-card-subtitle>
         </mat-card-header>
 
@@ -61,11 +62,11 @@ interface Team {
             <div class="form-section">
               <h3>
                 <mat-icon>group</mat-icon>
-                Équipe concernée
+                {{ t.t('trades.form.teamSectionTitle') }}
               </h3>
               
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Sélectionner l'équipe</mat-label>
+                <mat-label>{{ t.t('trades.form.teamSelectLabel') }}</mat-label>
                 <mat-select formControlName="teamId" (selectionChange)="onTeamChange($event.value)">
                   <mat-option *ngFor="let team of availableTeams" [value]="team.id">
                     {{ team.name }} ({{ team.owner }})
@@ -78,11 +79,11 @@ interface Team {
             <div class="form-section" *ngIf="selectedTeam">
               <h3>
                 <mat-icon color="warn">person_remove</mat-icon>
-                Joueur à échanger (sortant)
+                {{ t.t('trades.form.playerOutTitle') }}
               </h3>
               
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Joueur à faire sortir</mat-label>
+                <mat-label>{{ t.t('trades.form.playerOutLabel') }}</mat-label>
                 <mat-select formControlName="playerOutId">
                   <mat-option *ngFor="let player of selectedTeam.players" [value]="player.id">
                     {{ player.username }} ({{ player.region }})
@@ -95,11 +96,11 @@ interface Team {
             <div class="form-section">
               <h3>
                 <mat-icon color="primary">person_add</mat-icon>
-                Joueur à récupérer (entrant)
+                {{ t.t('trades.form.playerInTitle') }}
               </h3>
               
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Joueur à faire entrer</mat-label>
+                <mat-label>{{ t.t('trades.form.playerInLabel') }}</mat-label>
                 <mat-select formControlName="playerInId">
                   <mat-option *ngFor="let player of availablePlayers" [value]="player.id">
                     {{ player.username }} ({{ player.region }})
@@ -112,7 +113,7 @@ interface Team {
             <div class="trade-preview" *ngIf="tradeForm.get('playerOutId')?.value && tradeForm.get('playerInId')?.value">
               <h3>
                 <mat-icon>preview</mat-icon>
-                Aperçu du trade
+                {{ t.t('trades.form.previewTitle') }}
               </h3>
               
               <div class="preview-content">
@@ -121,7 +122,7 @@ interface Team {
                     <div class="player-info">
                       <strong>{{ getPlayerUsername(tradeForm.get('playerOutId')?.value) }}</strong>
                       <span class="region">{{ getPlayerRegion(tradeForm.get('playerOutId')?.value) }}</span>
-                      <span class="status out">Sortant</span>
+                      <span class="status out">{{ t.t('trades.form.previewOut') }}</span>
                     </div>
                   </div>
                   
@@ -131,14 +132,14 @@ interface Team {
                     <div class="player-info">
                       <strong>{{ getPlayerUsername(tradeForm.get('playerInId')?.value) }}</strong>
                       <span class="region">{{ getPlayerRegion(tradeForm.get('playerInId')?.value) }}</span>
-                      <span class="status in">Entrant</span>
+                      <span class="status in">{{ t.t('trades.form.previewIn') }}</span>
                     </div>
                   </div>
                 </div>
                 
                 <div class="team-info" *ngIf="selectedTeam">
-                  <p><strong>Équipe:</strong> {{ selectedTeam.name }}</p>
-                  <p><strong>Propriétaire:</strong> {{ selectedTeam.owner }}</p>
+                  <p><strong>{{ t.t('trades.form.teamLabel') }}:</strong> {{ selectedTeam.name }}</p>
+                  <p><strong>{{ t.t('trades.form.ownerLabel') }}:</strong> {{ selectedTeam.owner }}</p>
                 </div>
               </div>
             </div>
@@ -148,16 +149,16 @@ interface Team {
               <mat-icon color="warn">warning</mat-icon>
               <div class="error-messages">
                 <p *ngIf="tradeForm.get('teamId')?.hasError('required')">
-                  Veuillez sélectionner une équipe
+                  {{ t.t('trades.form.validation.selectTeam') }}
                 </p>
                 <p *ngIf="tradeForm.get('playerOutId')?.hasError('required')">
-                  Veuillez sélectionner un joueur sortant
+                  {{ t.t('trades.form.validation.selectPlayerOut') }}
                 </p>
                 <p *ngIf="tradeForm.get('playerInId')?.hasError('required')">
-                  Veuillez sélectionner un joueur entrant
+                  {{ t.t('trades.form.validation.selectPlayerIn') }}
                 </p>
                 <p *ngIf="hasSamePlayerError()">
-                  Le joueur sortant et entrant ne peuvent pas être identiques
+                  {{ t.t('trades.form.validation.samePlayer') }}
                 </p>
               </div>
             </div>
@@ -167,7 +168,7 @@ interface Team {
         <mat-card-actions>
           <button mat-button (click)="goBack()" [disabled]="isSubmitting">
             <mat-icon>arrow_back</mat-icon>
-            Annuler
+            {{ t.t('common.cancel') }}
           </button>
           
           <button 
@@ -177,7 +178,7 @@ interface Team {
             [disabled]="!tradeForm.valid || isSubmitting || hasSamePlayerError()">
             <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
             <mat-icon *ngIf="!isSubmitting">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
-            {{ isSubmitting ? 'Création...' : (isEditMode ? 'Sauvegarder' : 'Créer Trade') }}
+            {{ isSubmitting ? (isEditMode ? t.t('common.saving') : t.t('trades.form.creating')) : (isEditMode ? t.t('common.save') : t.t('trades.form.create')) }}
           </button>
         </mat-card-actions>
       </mat-card>
@@ -371,6 +372,7 @@ export class TradeFormComponent implements OnInit {
   availableTeams: Team[] = [];
   availablePlayers: Player[] = [];
   selectedTeam: Team | null = null;
+  public readonly t = inject(TranslationService);
 
   constructor(
     private fb: FormBuilder,
@@ -443,7 +445,7 @@ export class TradeFormComponent implements OnInit {
       // Simulate API call
       setTimeout(() => {
         this.isSubmitting = false;
-        this.snackBar.open('Trade créé avec succès!', 'Fermer', {
+        this.snackBar.open(this.t.t('trades.form.createdSuccess'), this.t.t('common.close'), {
           duration: 3000,
           panelClass: ['success-snackbar']
         });

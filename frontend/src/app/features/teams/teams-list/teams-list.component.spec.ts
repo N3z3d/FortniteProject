@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 
 import { TeamsListComponent } from './teams-list.component';
 import { TeamDto, TeamService } from '../../../core/services/team.service';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
 import { LoggerService } from '../../../core/services/logger.service';
 
 describe('TeamsListComponent', () => {
@@ -13,21 +13,21 @@ describe('TeamsListComponent', () => {
   let component: TeamsListComponent;
   let teamServiceSpy: jasmine.SpyObj<TeamService>;
   let loggerSpy: jasmine.SpyObj<LoggerService>;
-  let activatedRouteStub: { params: unknown; parent?: { params: unknown } | null };
+  let gameSelectionService: GameSelectionService;
 
   beforeEach(async () => {
     teamServiceSpy = jasmine.createSpyObj<TeamService>('TeamService', ['getTeamsByGame', 'getUserTeams']);
-    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['warn', 'error']);
-    activatedRouteStub = { params: of({}), parent: null };
+    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'warn', 'error']);
 
     await TestBed.configureTestingModule({
       imports: [TeamsListComponent, RouterTestingModule, NoopAnimationsModule],
       providers: [
         { provide: TeamService, useValue: teamServiceSpy },
-        { provide: LoggerService, useValue: loggerSpy },
-        { provide: ActivatedRoute, useValue: activatedRouteStub }
+        { provide: LoggerService, useValue: loggerSpy }
       ]
     }).compileComponents();
+
+    gameSelectionService = TestBed.inject(GameSelectionService);
   });
 
   it('mappe ownerUsername, totalScore et nickname depuis TeamDto', () => {
@@ -56,8 +56,8 @@ describe('TeamsListComponent', () => {
     expect(component.teams[0].players[0].gamertag).toBe('Mero');
   });
 
-  it("utilise l'id du parent route comme gameId", () => {
-    activatedRouteStub.parent = { params: of({ id: 'game-123' }) };
+  it('utilise la game selectionnee comme gameId', () => {
+    gameSelectionService.setSelectedGame({ id: 'game-123' } as any);
     teamServiceSpy.getTeamsByGame.and.returnValue(of([]));
     teamServiceSpy.getUserTeams.and.returnValue(of([]));
 
@@ -76,7 +76,7 @@ describe('TeamsListComponent', () => {
     fixture.detectChanges();
 
     expect(loggerSpy.error).toHaveBeenCalled();
-    expect(component.error).toBe('Donn\u00e9es indisponibles (CSV non charg\u00e9)');
+    expect(component.error).toBe(component.t.t('teams.list.errors.loadFailed'));
     expect(component.teams.length).toBe(0);
     expect(component.loading).toBe(false);
   });

@@ -289,7 +289,7 @@ class PlayerServiceTest {
     String query = "TP";
     Pageable pageable = PageRequest.of(0, 10);
     Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1, testPlayer2), pageable, 2);
-    when(playerRepository.searchByNickname(query, pageable)).thenReturn(playerPage);
+    when(playerRepository.searchPlayers(query, null, null, false, pageable)).thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result = playerService.searchPlayers(query, null, null, false, pageable);
@@ -297,7 +297,7 @@ class PlayerServiceTest {
     // Then
     assertThat(result.getContent()).hasSize(2);
     assertThat(result.getTotalElements()).isEqualTo(2);
-    verify(playerRepository).searchByNickname(query, pageable);
+    verify(playerRepository).searchPlayers(query, null, null, false, pageable);
   }
 
   @Test
@@ -307,14 +307,32 @@ class PlayerServiceTest {
     String query = "";
     Pageable pageable = PageRequest.of(0, 10);
     List<Player> allPlayers = Arrays.asList(testPlayer1, testPlayer2, testPlayer3);
-    when(playerRepository.findAll()).thenReturn(allPlayers);
+    Page<Player> playerPage = new PageImpl<>(allPlayers, pageable, allPlayers.size());
+    when(playerRepository.searchPlayers(null, null, null, false, pageable)).thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result = playerService.searchPlayers(query, null, null, false, pageable);
 
     // Then
     assertThat(result.getContent()).hasSize(3);
-    verify(playerRepository).findAll();
+    verify(playerRepository).searchPlayers(null, null, null, false, pageable);
+  }
+
+  @Test
+  @DisplayName("Devrait normaliser une requÃªte d'espaces en null")
+  void shouldNormalizeWhitespaceQueryToNull() {
+    // Given
+    String query = "   ";
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(null, null, null, false, pageable)).thenReturn(playerPage);
+
+    // When
+    Page<PlayerDto> result = playerService.searchPlayers(query, null, null, false, pageable);
+
+    // Then
+    assertThat(result.getContent()).hasSize(1);
+    verify(playerRepository).searchPlayers(null, null, null, false, pageable);
   }
 
   @Test
@@ -323,14 +341,15 @@ class PlayerServiceTest {
     // Given
     Pageable pageable = PageRequest.of(0, 10);
     List<Player> allPlayers = Arrays.asList(testPlayer1, testPlayer2, testPlayer3);
-    when(playerRepository.findAll()).thenReturn(allPlayers);
+    Page<Player> playerPage = new PageImpl<>(allPlayers, pageable, allPlayers.size());
+    when(playerRepository.searchPlayers(null, null, null, false, pageable)).thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result = playerService.searchPlayers(null, null, null, false, pageable);
 
     // Then
     assertThat(result.getContent()).hasSize(3);
-    verify(playerRepository).findAll();
+    verify(playerRepository).searchPlayers(null, null, null, false, pageable);
   }
 
   @Test
@@ -339,8 +358,9 @@ class PlayerServiceTest {
     // Given
     String query = "TP";
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1, testPlayer2), pageable, 2);
-    when(playerRepository.searchByNickname(query, pageable)).thenReturn(playerPage);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(query, Player.Region.EU, null, false, pageable))
+        .thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result =
@@ -348,7 +368,7 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result.getContent()).hasSize(1);
-    verify(playerRepository).searchByNickname(query, pageable);
+    verify(playerRepository).searchPlayers(query, Player.Region.EU, null, false, pageable);
   }
 
   @Test
@@ -357,15 +377,15 @@ class PlayerServiceTest {
     // Given
     String query = "TP";
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1, testPlayer2), pageable, 2);
-    when(playerRepository.searchByNickname(query, pageable)).thenReturn(playerPage);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(query, null, "S", false, pageable)).thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result = playerService.searchPlayers(query, null, "S", false, pageable);
 
     // Then
     assertThat(result.getContent()).hasSize(1);
-    verify(playerRepository).searchByNickname(query, pageable);
+    verify(playerRepository).searchPlayers(query, null, "S", false, pageable);
   }
 
   @Test
@@ -374,8 +394,9 @@ class PlayerServiceTest {
     // Given
     String query = "TP";
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1, testPlayer2), pageable, 2);
-    when(playerRepository.searchByNickname(query, pageable)).thenReturn(playerPage);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(query, Player.Region.EU, "S", false, pageable))
+        .thenReturn(playerPage);
 
     // When
     Page<PlayerDto> result =
@@ -383,7 +404,41 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result.getContent()).hasSize(1);
-    verify(playerRepository).searchByNickname(query, pageable);
+    verify(playerRepository).searchPlayers(query, Player.Region.EU, "S", false, pageable);
+  }
+
+  @Test
+  @DisplayName("Devrait propager le filtre available vers le repository")
+  void shouldPropagateAvailableFilterInSearch() {
+    // Given
+    String query = "TP";
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(query, null, null, true, pageable)).thenReturn(playerPage);
+
+    // When
+    Page<PlayerDto> result = playerService.searchPlayers(query, null, null, true, pageable);
+
+    // Then
+    assertThat(result.getContent()).hasSize(1);
+    verify(playerRepository).searchPlayers(query, null, null, true, pageable);
+  }
+
+  @Test
+  @DisplayName("Devrait renseigner isAvailable selon locked")
+  void shouldMapAvailabilityFromLocked() {
+    // Given
+    testPlayer1.setLocked(true);
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<Player> playerPage = new PageImpl<>(Arrays.asList(testPlayer1), pageable, 1);
+    when(playerRepository.searchPlayers(null, null, null, false, pageable)).thenReturn(playerPage);
+
+    // When
+    Page<PlayerDto> result = playerService.searchPlayers(null, null, null, false, pageable);
+
+    // Then
+    assertThat(result.getContent()).hasSize(1);
+    assertThat(result.getContent().get(0).isAvailable()).isFalse();
   }
 
   @Test

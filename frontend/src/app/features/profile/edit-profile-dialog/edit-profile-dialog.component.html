@@ -1,8 +1,8 @@
 <div class="edit-profile-dialog">
   <div class="dialog-header">
     <mat-icon class="header-icon">edit</mat-icon>
-    <h2 mat-dialog-title>Modifier le profil</h2>
-    <button mat-icon-button class="close-button" (click)="onCancel()" aria-label="Fermer">
+    <h2 mat-dialog-title>{{ t.translate('profile.editProfile') }}</h2>
+    <button mat-icon-button class="close-button" (click)="onCancel()" [attr.aria-label]="t.translate('common.close')">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -10,11 +10,11 @@
   <mat-dialog-content>
     <form [formGroup]="profileForm" class="profile-form">
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Nom d'utilisateur</mat-label>
+        <mat-label>{{ t.translate('profile.username') }}</mat-label>
         <input
           matInput
           formControlName="username"
-          placeholder="Votre nom d'utilisateur"
+          [placeholder]="t.translate('profile.editDialog.usernamePlaceholder')"
           required
           autocomplete="username">
         <mat-icon matPrefix>person</mat-icon>
@@ -22,12 +22,12 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Email</mat-label>
+        <mat-label>{{ t.translate('auth.email') }}</mat-label>
         <input
           matInput
           formControlName="email"
           type="email"
-          placeholder="votre.email@exemple.com"
+          [placeholder]="t.translate('profile.editDialog.emailPlaceholder')"
           required
           autocomplete="email">
         <mat-icon matPrefix>email</mat-icon>
@@ -36,17 +36,17 @@
 
       <div class="info-box">
         <mat-icon class="info-icon">info</mat-icon>
-        <p>Les modifications seront enregistrées immédiatement après validation.</p>
+        <p>{{ t.translate('profile.editDialog.infoText') }}</p>
       </div>
     </form>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button
-      mat-stroked-button
-      (click)="onCancel()"
-      [disabled]="saving">
-      Annuler
+      <button
+        mat-stroked-button
+        (click)="onCancel()"
+        [disabled]="saving">
+      {{ t.translate('common.cancel') }}
     </button>
     <button
       mat-raised-button
@@ -55,7 +55,7 @@
       [disabled]="profileForm.invalid || saving"
       class="save-button">
       <mat-icon *ngIf="!saving">save</mat-icon>
-      <span>{{ saving ? 'Enregistrement...' : 'Enregistrer' }}</span>
+      <span>{{ saving ? t.translate('common.saving') : t.translate('common.save') }}</span>
     </button>
   </mat-dialog-actions>
 </div>

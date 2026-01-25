@@ -12,13 +12,13 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import com.fortnite.pronos.application.usecase.TradeQueryUseCase;
 import com.fortnite.pronos.dto.CounterTradeRequestDto;
 import com.fortnite.pronos.dto.TradeRequestDto;
 import com.fortnite.pronos.dto.TradeResponseDto;
 import com.fortnite.pronos.model.Trade;
 import com.fortnite.pronos.service.TradingService;
 import com.fortnite.pronos.service.UserContextService;
-import com.fortnite.pronos.service.trade.TradeQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TradeController {
 
   private final TradingService tradingService;
-  private final TradeQueryService tradeQueryService;
+  private final TradeQueryUseCase tradeQueryUseCase;
   private final UserContextService userContextService;
 
   /** Propose un nouveau trade */
@@ -123,7 +123,7 @@ public class TradeController {
     String username = userDetails != null ? userDetails.getUsername() : "anonymous";
     log.info("User {} requesting trade history for team {}", username, teamId);
 
-    List<Trade> trades = tradeQueryService.getTeamTradeHistory(teamId);
+    List<Trade> trades = tradeQueryUseCase.getTeamTradeHistory(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
     return ResponseEntity.ok(response);
@@ -137,7 +137,7 @@ public class TradeController {
     String username = userDetails != null ? userDetails.getUsername() : "anonymous";
     log.info("User {} requesting pending trades for team {}", username, teamId);
 
-    List<Trade> trades = tradeQueryService.getPendingTradesForTeam(teamId);
+    List<Trade> trades = tradeQueryUseCase.getPendingTradesForTeam(teamId);
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
     return ResponseEntity.ok(response);
@@ -151,7 +151,7 @@ public class TradeController {
     String username = userDetails != null ? userDetails.getUsername() : "anonymous";
     log.info("User {} requesting trade statistics for game {}", username, gameId);
 
-    Map<String, Object> stats = tradeQueryService.getGameTradeStatistics(gameId);
+    Map<String, Object> stats = tradeQueryUseCase.getGameTradeStatistics(gameId);
 
     return ResponseEntity.ok(stats);
   }
@@ -164,7 +164,7 @@ public class TradeController {
     String username = userDetails != null ? userDetails.getUsername() : "anonymous";
     log.info("User {} requesting details for trade {}", username, tradeId);
 
-    Trade trade = tradeQueryService.getTrade(tradeId);
+    Trade trade = tradeQueryUseCase.getTrade(tradeId);
 
     return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
   }
@@ -181,9 +181,9 @@ public class TradeController {
 
     List<Trade> trades;
     if (status != null) {
-      trades = tradeQueryService.getGameTradesByStatus(gameId, status);
+      trades = tradeQueryUseCase.getGameTradesByStatus(gameId, status);
     } else {
-      trades = tradeQueryService.getAllGameTrades(gameId);
+      trades = tradeQueryUseCase.getAllGameTrades(gameId);
     }
 
     List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();

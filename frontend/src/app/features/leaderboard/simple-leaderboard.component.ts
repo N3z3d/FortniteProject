@@ -60,7 +60,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Erreur lors du chargement du leaderboard:', err);
-        this.error = 'Données indisponibles (CSV non chargé)';
+        this.error = this.t.t('leaderboard.errors.dataUnavailable');
         this.allPlayers = [];
         this.filteredPlayers = [];
         this.loading = false;
@@ -92,6 +92,40 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
 
   getAtSymbol(): string {
     return '@';
+  }
+
+  getPageOfLabel(): string {
+    return this.formatTemplate('leaderboard.pageOf', {
+      current: this.currentPage,
+      total: this.getTotalPages()
+    });
+  }
+
+  getPlayerRowLabel(player: PlayerLeaderboardEntry): string {
+    return this.formatTemplate('leaderboard.aria.playerRow', {
+      rank: player.rank,
+      nickname: player.nickname,
+      region: player.region,
+      points: this.formatNumber(player.totalPoints)
+    });
+  }
+
+  getRankLabel(rank: number): string {
+    return this.formatTemplate('leaderboard.aria.rank', { rank });
+  }
+
+  getAvatarLabel(nickname: string): string {
+    return this.formatTemplate('leaderboard.aria.avatar', { nickname });
+  }
+
+  getRegionLabel(region: string): string {
+    return this.formatTemplate('leaderboard.aria.region', { region });
+  }
+
+  getPointsLabel(points: number): string {
+    return this.formatTemplate('leaderboard.aria.points', {
+      points: this.formatNumber(points)
+    });
   }
 
   trackByPlayerId = (index: number, player: PlayerLeaderboardEntry): string => {
@@ -145,19 +179,56 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     });
 
     const sortLabel = this.getSortLabel(column);
-    const directionLabel = this.sortDirection === 'asc' ? 'ascending' : 'descending';
-    this.accessibilityService.announce(`Table sorted by ${sortLabel} in ${directionLabel} order`);
+    const directionLabel = this.getSortDirectionLabel(this.sortDirection);
+    this.accessibilityService.announce(
+      this.formatTemplate('leaderboard.aria.sortAnnouncement', {
+        column: sortLabel,
+        direction: directionLabel
+      })
+    );
 
     this.currentPage = 1;
     this.cdr.markForCheck();
   }
 
-  private getSortLabel(column: string): string {
+  private getSortLabel(column: 'rank' | 'region' | 'points'): string {
     switch (column) {
-      case 'rank': return 'rank';
-      case 'region': return 'region';
-      case 'points': return 'points';
+      case 'rank': return this.t.t('leaderboard.sort.rank');
+      case 'region': return this.t.t('leaderboard.sort.region');
+      case 'points': return this.t.t('leaderboard.sort.points');
       default: return column;
+    }
+  }
+
+  private getSortDirectionLabel(direction: 'asc' | 'desc'): string {
+    return direction === 'asc'
+      ? this.t.t('leaderboard.sort.ascending')
+      : this.t.t('leaderboard.sort.descending');
+  }
+
+  private formatTemplate(key: string, params: Record<string, string | number>): string {
+    let value = this.t.t(key);
+    for (const [param, paramValue] of Object.entries(params)) {
+      const token = new RegExp(`\\{${param}\\}`, 'g');
+      value = value.replace(token, String(paramValue));
+    }
+    return value;
+  }
+
+  private formatNumber(value: number): string {
+    return new Intl.NumberFormat(this.getLocale()).format(value);
+  }
+
+  private getLocale(): string {
+    switch (this.t.currentLanguage) {
+      case 'fr':
+        return 'fr-FR';
+      case 'es':
+        return 'es-ES';
+      case 'pt':
+        return 'pt-BR';
+      default:
+        return 'en-US';
     }
   }
 
@@ -186,14 +257,16 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
 
   private announceFilterResults(): void {
     const resultCount = this.filteredPlayers.length;
-    let message = `${resultCount} player${resultCount !== 1 ? 's' : ''} found`;
+    let message = resultCount === 1
+      ? this.t.t('leaderboard.aria.filterResultsSingle')
+      : this.formatTemplate('leaderboard.aria.filterResultsMultiple', { count: resultCount });
 
     if (this.searchTerm) {
-      message += ` for search term "${this.searchTerm}"`;
+      message += this.formatTemplate('leaderboard.aria.filterSearchSuffix', { term: this.searchTerm });
     }
 
     if (this.selectedRegion) {
-      message += ` in ${this.selectedRegion} region`;
+      message += this.formatTemplate('leaderboard.aria.filterRegionSuffix', { region: this.selectedRegion });
     }
 
     this.accessibilityService.announce(message);
@@ -202,7 +275,12 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
   goToPage(page: number) {
     if (page >= 1 && page <= this.getTotalPages()) {
       this.currentPage = page;
-      this.accessibilityService.announce(`Navigated to page ${page} of ${this.getTotalPages()}`);
+      this.accessibilityService.announce(
+        this.formatTemplate('leaderboard.aria.pageNavigation', {
+          page,
+          total: this.getTotalPages()
+        })
+      );
       this.cdr.markForCheck();
     }
   }
@@ -211,6 +289,6 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.selectedRegion = '';
     this.filterPlayers();
-    this.accessibilityService.announce('All filters have been reset');
+    this.accessibilityService.announce(this.t.t('leaderboard.aria.filtersReset'));
   }
 }

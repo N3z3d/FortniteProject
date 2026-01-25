@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserProfile } from '../../../core/services/user-context.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-edit-profile-dialog',
@@ -33,7 +34,8 @@ export class EditProfileDialogComponent {
     private readonly dialogRef: MatDialogRef<EditProfileDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { user: UserProfile },
     private readonly fb: FormBuilder,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    public readonly t: TranslationService
   ) {
     this.profileForm = this.fb.group({
       username: [data.user.username, [Validators.required, Validators.minLength(3)]],
@@ -43,7 +45,7 @@ export class EditProfileDialogComponent {
 
   onSave(): void {
     if (this.profileForm.invalid) {
-      this.snackBar.open('Veuillez corriger les erreurs du formulaire', 'Fermer', {
+      this.snackBar.open(this.t.t('profile.editDialog.formInvalid'), this.t.t('common.close'), {
         duration: 3000
       });
       return;
@@ -59,7 +61,7 @@ export class EditProfileDialogComponent {
         email: this.profileForm.value.email
       };
 
-      this.snackBar.open('Profil mis à jour avec succès !', 'Fermer', {
+      this.snackBar.open(this.t.t('profile.editDialog.success'), this.t.t('common.close'), {
         duration: 3000
       });
 
@@ -75,10 +77,10 @@ export class EditProfileDialogComponent {
   get usernameError(): string {
     const control = this.profileForm.get('username');
     if (control?.hasError('required')) {
-      return 'Le nom d\'utilisateur est requis';
+      return this.t.t('profile.editDialog.errors.usernameRequired');
     }
     if (control?.hasError('minlength')) {
-      return 'Minimum 3 caractères';
+      return this.t.t('profile.editDialog.errors.usernameMinLength');
     }
     return '';
   }
@@ -86,10 +88,10 @@ export class EditProfileDialogComponent {
   get emailError(): string {
     const control = this.profileForm.get('email');
     if (control?.hasError('required')) {
-      return 'L\'email est requis';
+      return this.t.t('profile.editDialog.errors.emailRequired');
     }
     if (control?.hasError('email')) {
-      return 'Email invalide';
+      return this.t.t('profile.editDialog.errors.emailInvalid');
     }
     return '';
   }

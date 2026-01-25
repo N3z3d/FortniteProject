@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.DraftPick;
 import com.fortnite.pronos.model.GameParticipant;
@@ -15,7 +16,8 @@ import com.fortnite.pronos.model.Player;
 
 /** Repository pour la gestion des picks de draft */
 @Repository
-public interface DraftPickRepository extends JpaRepository<DraftPick, UUID> {
+public interface DraftPickRepository
+    extends JpaRepository<DraftPick, UUID>, DraftPickRepositoryPort {
 
   /** Trouver les picks d'un draft */
   List<DraftPick> findByDraft(Draft draft);

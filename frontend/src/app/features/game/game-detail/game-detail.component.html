@@ -2,7 +2,7 @@
   <!-- Loading Spinner -->
   <div class="loading-container" *ngIf="loading">
     <mat-spinner></mat-spinner>
-    <p>Chargement des détails de la partie...</p>
+    <p>{{ t.t('games.detail.loading') }}</p>
   </div>
 
   <!-- Error Message -->
@@ -12,7 +12,7 @@
         <mat-icon color="warn">error</mat-icon>
         <p>{{ error }}</p>
         <button mat-button color="primary" (click)="retryLoad()">
-          Réessayer
+          {{ t.t('games.detail.retry') }}
         </button>
       </mat-card-content>
     </mat-card>
@@ -28,16 +28,16 @@
           <button mat-icon-button
                   *ngIf="canRenameGame()"
                   (click)="renameGame()"
-                  matTooltip="Renommer la partie"
+                  [matTooltip]="t.t('games.detail.renameTooltip')"
                   class="rename-btn">
             <mat-icon>edit</mat-icon>
           </button>
         </div>
-        <p>Créée par {{ game.creatorName }} • {{ getTimeAgo(game.createdAt) }}</p>
+        <p>{{ t.t('games.detail.createdBy') }} {{ game.creatorName }} • {{ getTimeAgo(game.createdAt) }}</p>
       </div>
       <button mat-button (click)="onBack()" class="back-button">
         <mat-icon>arrow_back</mat-icon>
-        Retour
+        {{ t.t('games.detail.back') }}
       </button>
     </div>
 
@@ -54,7 +54,7 @@
             <div class="game-stats">
               <div class="stat-item">
                 <mat-icon>group</mat-icon>
-                <span>{{ game.participantCount }}/{{ game.maxParticipants }} participants</span>
+                <span>{{ game.participantCount }}/{{ game.maxParticipants }} {{ t.t('games.detail.participants') }}</span>
               </div>
               <div class="stat-item">
                 <mat-icon>schedule</mat-icon>
@@ -66,10 +66,10 @@
           <!-- Participants Progress -->
           <div class="participants-progress-section">
             <div class="progress-header">
-              <span>Remplissage de la partie</span>
+              <span>{{ t.t('games.detail.fillProgress') }}</span>
               <span>{{ getParticipantPercentage() }}%</span>
             </div>
-            <mat-progress-bar 
+            <mat-progress-bar
               [value]="getParticipantPercentage()"
               [color]="getParticipantColor()"
               class="participants-progress">
@@ -79,23 +79,23 @@
           <!-- Action Buttons -->
           <div class="action-buttons">
             <!-- Join Game Button -->
-            <button mat-raised-button 
-                    color="accent" 
+            <button mat-raised-button
+                    color="accent"
                     *ngIf="canJoinGame()"
                     (click)="joinGame()"
-                    matTooltip="Rejoindre cette partie">
+                    [matTooltip]="t.t('games.detail.joinTooltip')">
               <mat-icon>group_add</mat-icon>
-              Rejoindre
+              {{ t.t('games.detail.join') }}
             </button>
 
             <!-- Start Draft Button -->
-            <button mat-raised-button 
-                    color="primary" 
+            <button mat-raised-button
+                    color="primary"
                     *ngIf="canStartDraft()"
                     (click)="confirmStartDraft()"
-                    matTooltip="Démarrer le draft">
+                    [matTooltip]="t.t('games.detail.startDraftTooltip')">
               <mat-icon>play_arrow</mat-icon>
-              Démarrer le Draft
+              {{ t.t('games.detail.startDraft') }}
             </button>
 
             <!-- Delete Game Button (Host only, CREATING status only) -->
@@ -103,9 +103,9 @@
                     color="warn"
                     *ngIf="canDeleteGame()"
                     (click)="confirmDelete()"
-                    matTooltip="Supprimer définitivement cette partie">
+                    [matTooltip]="t.t('games.detail.deleteTooltip')">
               <mat-icon>delete_forever</mat-icon>
-              Supprimer
+              {{ t.t('games.detail.delete') }}
             </button>
 
             <!-- Archive Game Button (Host only, for finished games) -->
@@ -113,9 +113,9 @@
                     color="accent"
                     *ngIf="canArchiveGame() && !canDeleteGame()"
                     (click)="confirmArchive()"
-                    matTooltip="Archiver cette partie (elle ne sera plus visible dans la liste)">
+                    [matTooltip]="t.t('games.detail.archiveTooltip')">
               <mat-icon>archive</mat-icon>
-              Archiver
+              {{ t.t('games.detail.archive') }}
             </button>
 
             <!-- Leave Game Button (Participant non-host) -->
@@ -123,15 +123,15 @@
                     color="accent"
                     *ngIf="canLeaveGame()"
                     (click)="confirmLeave()"
-                    matTooltip="Quitter cette partie">
+                    [matTooltip]="t.t('games.detail.leaveTooltip')">
               <mat-icon>exit_to_app</mat-icon>
-              Quitter
+              {{ t.t('games.detail.leave') }}
             </button>
 
             <!-- Game Full Message -->
             <div class="game-full-message" *ngIf="!canJoinGame() && game.participantCount >= game.maxParticipants">
               <mat-icon color="warn">block</mat-icon>
-              <span>Game complète</span>
+              <span>{{ t.t('games.detail.gameFull') }}</span>
             </div>
           </div>
         </mat-card-content>
@@ -144,25 +144,25 @@
         <mat-card-header>
           <mat-card-title>
             <mat-icon>group</mat-icon>
-            Participants ({{ participants.length }})
+            {{ t.t('games.detail.participantsTitle') }} ({{ participants.length }})
           </mat-card-title>
           <mat-card-subtitle>
-            Liste des joueurs participant à cette partie
+            {{ t.t('games.detail.participantsSubtitle') }}
           </mat-card-subtitle>
         </mat-card-header>
-        
+
         <mat-card-content>
           <div class="participants-error" *ngIf="participantsError">
             <mat-icon color="warn">error_outline</mat-icon>
             <p>{{ participantsError }}</p>
             <button mat-button color="primary" (click)="loadParticipants()">
-              RÇ¸essayer
+              {{ t.t('games.detail.retry') }}
             </button>
           </div>
 
           <!-- Creator -->
           <div class="creator-section" *ngIf="getCreator()">
-            <h3>👑 Créateur</h3>
+            <h3>👑 {{ t.t('games.detail.creator') }}</h3>
             <mat-list>
               <mat-list-item class="creator-item">
                 <mat-icon matListItemIcon [color]="getParticipantStatusColor(getCreator()!)">
@@ -179,7 +179,7 @@
 
           <!-- Other Participants -->
           <div class="other-participants-section" *ngIf="getNonCreatorParticipants().length > 0">
-            <h3>👥 Participants</h3>
+            <h3>👥 {{ t.t('games.detail.participantsTitle') }}</h3>
             <mat-list>
               <mat-list-item *ngFor="let participant of getNonCreatorParticipants()" class="participant-item">
                 <mat-icon matListItemIcon [color]="getParticipantStatusColor(participant)">
@@ -197,8 +197,8 @@
           <!-- Empty State -->
           <div class="empty-participants" *ngIf="participants.length === 0 && !participantsError">
             <mat-icon class="empty-icon">group_off</mat-icon>
-            <h3>Aucun participant</h3>
-            <p>Soyez le premier à rejoindre cette partie !</p>
+            <h3>{{ t.t('games.detail.noParticipants') }}</h3>
+            <p>{{ t.t('games.detail.beFirst') }}</p>
           </div>
         </mat-card-content>
       </mat-card>
@@ -210,48 +210,48 @@
         <mat-card-header>
           <mat-card-title>
             <mat-icon>info</mat-icon>
-            Informations de la Game
+            {{ t.t('games.detail.gameInfo') }}
           </mat-card-title>
         </mat-card-header>
-        
+
         <mat-card-content>
           <div class="info-grid">
             <div class="info-item">
               <mat-icon>title</mat-icon>
               <div class="info-content">
-                <span class="info-label">Nom</span>
+                <span class="info-label">{{ t.t('games.detail.name') }}</span>
                 <span class="info-value">{{ game.name }}</span>
               </div>
             </div>
-            
+
             <div class="info-item">
               <mat-icon>person</mat-icon>
               <div class="info-content">
-                <span class="info-label">Créateur</span>
+                <span class="info-label">{{ t.t('games.detail.creatorLabel') }}</span>
                 <span class="info-value">{{ game.creatorName }}</span>
               </div>
             </div>
-            
+
             <div class="info-item">
               <mat-icon>group</mat-icon>
               <div class="info-content">
-                <span class="info-label">Participants</span>
+                <span class="info-label">{{ t.t('games.detail.participantsTitle') }}</span>
                 <span class="info-value">{{ game.participantCount }}/{{ game.maxParticipants }}</span>
               </div>
             </div>
-            
+
             <div class="info-item">
               <mat-icon>schedule</mat-icon>
               <div class="info-content">
-                <span class="info-label">Créée le</span>
+                <span class="info-label">{{ t.t('games.detail.createdOn') }}</span>
                 <span class="info-value">{{ getTimeAgo(game.createdAt) }}</span>
               </div>
             </div>
-            
+
             <div class="info-item">
               <mat-icon>flag</mat-icon>
               <div class="info-content">
-                <span class="info-label">Statut</span>
+                <span class="info-label">{{ t.t('games.detail.status') }}</span>
                 <span class="info-value">{{ getStatusLabel(game.status) }}</span>
               </div>
             </div>
@@ -260,30 +260,30 @@
             <div class="info-item invitation-code-item" *ngIf="game.invitationCode">
               <mat-icon>vpn_key</mat-icon>
               <div class="info-content">
-                <span class="info-label">Code d'invitation</span>
+                <span class="info-label">{{ t.t('games.detail.invitationCode') }}</span>
                 <div class="invitation-code-wrapper">
                   <span class="info-value code-value"
                         [class.expired]="game.isInvitationCodeExpired">
                     {{ game.invitationCode }}
                   </span>
                   <mat-chip *ngIf="game.isInvitationCodeExpired" color="warn" selected class="expired-chip">
-                    Expiré
+                    {{ t.t('games.detail.expired') }}
                   </mat-chip>
                   <mat-chip *ngIf="!game.isInvitationCodeExpired && game.invitationCodeExpiresAt"
                             color="accent" selected class="expiry-chip">
-                    Expire: {{ getInvitationCodeExpiry() }}
+                    {{ t.t('games.detail.expiresOn') }} {{ getInvitationCodeExpiry() }}
                   </mat-chip>
                   <button mat-icon-button
                           (click)="copyInvitationCode()"
                           [disabled]="game.isInvitationCodeExpired"
-                          matTooltip="Copier le code"
+                          [matTooltip]="t.t('games.detail.copyCode')"
                           class="copy-btn">
                     <mat-icon>content_copy</mat-icon>
                   </button>
                   <button mat-icon-button
                           *ngIf="canRegenerateCode()"
                           (click)="promptRegenerateCode()"
-                          matTooltip="Régénérer le code (choisir durée)"
+                          [matTooltip]="t.t('games.detail.regenerateCode')"
                           class="regenerate-btn">
                     <mat-icon>refresh</mat-icon>
                   </button>
@@ -301,21 +301,21 @@
         <mat-card-header>
           <mat-card-title>
             <mat-icon>shuffle</mat-icon>
-            Phase de Draft
+            {{ t.t('games.detail.draftPhase') }}
           </mat-card-title>
           <mat-card-subtitle>
-            Les participants sélectionnent leurs joueurs
+            {{ t.t('games.detail.draftSubtitle') }}
           </mat-card-subtitle>
         </mat-card-header>
-        
+
         <mat-card-content>
-          <p>Le draft est en cours. Les participants peuvent maintenant sélectionner leurs joueurs.</p>
+          <p>{{ t.t('games.detail.draftInProgress') }}</p>
           <button mat-raised-button color="primary" routerLink="/draft/{{ game.id }}">
             <mat-icon>visibility</mat-icon>
-            Voir le Draft
+            {{ t.t('games.detail.viewDraft') }}
           </button>
         </mat-card-content>
       </mat-card>
     </div>
   </div>
-</div> 
+</div>

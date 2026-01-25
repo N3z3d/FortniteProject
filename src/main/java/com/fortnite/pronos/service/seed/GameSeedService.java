@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -12,7 +13,6 @@ import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameSeedService {
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
 
   /**
    * Creates test games with real teams based on CSV assignments.

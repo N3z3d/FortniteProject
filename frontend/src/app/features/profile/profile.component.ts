@@ -62,7 +62,7 @@ export class ProfileComponent implements OnInit {
       if (result) {
         this.currentUser = result;
         this.userContextService.login(result);
-        this.snackBar.open('Profil mis à jour !', 'Fermer', { duration: 3000 });
+        this.snackBar.open(this.t.t('profile.snackbar.profileUpdated'), this.t.t('common.close'), { duration: 3000 });
       }
     });
   }
@@ -76,7 +76,7 @@ export class ProfileComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((success: boolean) => {
       if (success) {
-        this.snackBar.open('Mot de passe modifié avec succès !', 'Fermer', { duration: 3000 });
+        this.snackBar.open(this.t.t('profile.snackbar.passwordChanged'), this.t.t('common.close'), { duration: 3000 });
       }
     });
   }

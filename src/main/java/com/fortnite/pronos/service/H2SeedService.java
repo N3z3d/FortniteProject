@@ -12,6 +12,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -19,10 +21,8 @@ import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,9 +39,9 @@ public class H2SeedService {
   private static final String H2_GAME_NAME = "H2 Test Game";
   private static final int PLAYERS_PER_USER = 5;
 
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
   private final PlayerRepository playerRepository;
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final TeamRepository teamRepository;
   private final Environment environment;
 

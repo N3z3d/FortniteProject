@@ -10,13 +10,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.TeamPlayerRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.TeamPlayer;
 
 /** Repository pour gérer les relations entre équipes et joueurs */
 @Repository
-public interface TeamPlayerRepository extends JpaRepository<TeamPlayer, TeamPlayer.TeamPlayerId> {
+public interface TeamPlayerRepository
+    extends JpaRepository<TeamPlayer, TeamPlayer.TeamPlayerId>, TeamPlayerRepositoryPort {
 
   /** Trouve une relation TeamPlayer par équipe et joueur */
   Optional<TeamPlayer> findByTeamAndPlayer(Team team, Player player);

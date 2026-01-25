@@ -10,13 +10,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.User;
 
 /** Repository pour la gestion des participants des games */
 @Repository
-public interface GameParticipantRepository extends JpaRepository<GameParticipant, UUID> {
+public interface GameParticipantRepository
+    extends JpaRepository<GameParticipant, UUID>, GameParticipantRepositoryPort {
 
   /** Trouver les participants par game */
   List<GameParticipant> findByGame(Game game);

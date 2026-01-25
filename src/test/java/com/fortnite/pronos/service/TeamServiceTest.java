@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
@@ -24,7 +26,6 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 /**
  * Tests TDD pour TeamService (commandes uniquement).
@@ -40,7 +41,7 @@ class TeamServiceTest {
 
   @Mock private PlayerRepository playerRepository;
 
-  @Mock private UserRepository userRepository;
+  @Mock private UserRepositoryPort userRepository;
 
   @Mock private TeamPlayerRepository teamPlayerRepository;
 
@@ -131,7 +132,8 @@ class TeamServiceTest {
     // Given
     int position = 1;
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
+        .thenReturn(Optional.of(testPlayer));
     when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
     when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
 
@@ -143,7 +145,7 @@ class TeamServiceTest {
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
     verify(userRepository).findById(testUser.getId());
-    verify(playerRepository).findById(testPlayer.getId());
+    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer.getId());
     verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
     verify(teamRepository).save(testTeam);
   }
@@ -153,7 +155,8 @@ class TeamServiceTest {
   void shouldThrowExceptionWhenPlayerNotFound() {
     // Given
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(playerRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
+    when(((PlayerRepositoryPort) playerRepository).findById(any(UUID.class)))
+        .thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(
@@ -168,7 +171,8 @@ class TeamServiceTest {
     // Given
     testTeam.addPlayer(testPlayer, 1);
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
+        .thenReturn(Optional.of(testPlayer));
     when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
     when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
 
@@ -179,7 +183,7 @@ class TeamServiceTest {
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
     verify(userRepository).findById(testUser.getId());
-    verify(playerRepository).findById(testPlayer.getId());
+    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer.getId());
     verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
     verify(teamRepository).save(testTeam);
   }
@@ -193,8 +197,10 @@ class TeamServiceTest {
     playerChanges.put(testPlayer.getId(), testPlayer2.getId());
 
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(playerRepository.findById(testPlayer.getId())).thenReturn(Optional.of(testPlayer));
-    when(playerRepository.findById(testPlayer2.getId())).thenReturn(Optional.of(testPlayer2));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
+        .thenReturn(Optional.of(testPlayer));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer2.getId()))
+        .thenReturn(Optional.of(testPlayer2));
     when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
     when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
 

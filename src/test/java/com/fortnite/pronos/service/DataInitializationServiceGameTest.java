@@ -19,6 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
@@ -57,11 +60,16 @@ class DataInitializationServiceGameTest {
   @DisplayName("Doit créer une game avec Marcel, Thibaut et Teddy comme participants")
   void shouldCreateGameWithMarcelThibautTeddy() {
     // Given
-    when(userRepository.findByUsername("Marcel")).thenReturn(Optional.of(marcel));
-    when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
-    when(userRepository.findByUsername("Teddy")).thenReturn(Optional.of(teddy));
-    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(gameParticipantRepository.save(any(GameParticipant.class)))
+    when(((UserRepositoryPort) userRepository).findByUsername("Marcel"))
+        .thenReturn(Optional.of(marcel));
+    when(((UserRepositoryPort) userRepository).findByUsername("Thibaut"))
+        .thenReturn(Optional.of(thibaut));
+    when(((UserRepositoryPort) userRepository).findByUsername("Teddy"))
+        .thenReturn(Optional.of(teddy));
+    when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(((GameParticipantRepositoryPort) gameParticipantRepository)
+            .save(any(GameParticipant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     // When
@@ -79,11 +87,16 @@ class DataInitializationServiceGameTest {
   @DisplayName("Doit ajouter les bons participants à la game")
   void shouldAddCorrectParticipantsToGame() {
     // Given
-    when(userRepository.findByUsername("Marcel")).thenReturn(Optional.of(marcel));
-    when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
-    when(userRepository.findByUsername("Teddy")).thenReturn(Optional.of(teddy));
-    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    when(gameParticipantRepository.save(any(GameParticipant.class)))
+    when(((UserRepositoryPort) userRepository).findByUsername("Marcel"))
+        .thenReturn(Optional.of(marcel));
+    when(((UserRepositoryPort) userRepository).findByUsername("Thibaut"))
+        .thenReturn(Optional.of(thibaut));
+    when(((UserRepositoryPort) userRepository).findByUsername("Teddy"))
+        .thenReturn(Optional.of(teddy));
+    when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(((GameParticipantRepositoryPort) gameParticipantRepository)
+            .save(any(GameParticipant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     // When
@@ -98,10 +111,14 @@ class DataInitializationServiceGameTest {
   @DisplayName("Sarah ne doit pas être dans la game")
   void sarahShouldNotBeInGame() {
     // Given
-    when(userRepository.findByUsername("Marcel")).thenReturn(Optional.of(marcel));
-    when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
-    when(userRepository.findByUsername("Teddy")).thenReturn(Optional.of(teddy));
-    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(((UserRepositoryPort) userRepository).findByUsername("Marcel"))
+        .thenReturn(Optional.of(marcel));
+    when(((UserRepositoryPort) userRepository).findByUsername("Thibaut"))
+        .thenReturn(Optional.of(thibaut));
+    when(((UserRepositoryPort) userRepository).findByUsername("Teddy"))
+        .thenReturn(Optional.of(teddy));
+    when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     // When
     Game testGame = createTestGame();
@@ -129,7 +146,7 @@ class DataInitializationServiceGameTest {
     game.setCreator(marcel);
     game.setMaxParticipants(4);
     game.setStatus(GameStatus.CREATING);
-    return gameRepository.save(game);
+    return ((GameRepositoryPort) gameRepository).save(game);
   }
 
   private void addParticipantsToGame(Game game, java.util.List<User> participants) {
@@ -137,7 +154,7 @@ class DataInitializationServiceGameTest {
       GameParticipant gameParticipant = new GameParticipant();
       gameParticipant.setGame(game);
       gameParticipant.setUser(participant);
-      gameParticipantRepository.save(gameParticipant);
+      ((GameParticipantRepositoryPort) gameParticipantRepository).save(gameParticipant);
     }
   }
 }

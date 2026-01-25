@@ -13,8 +13,8 @@ import com.fortnite.pronos.dto.DraftCompleteResponse;
 import com.fortnite.pronos.dto.DraftNextParticipantResponse;
 import com.fortnite.pronos.dto.DraftOrderEntryResponse;
 import com.fortnite.pronos.dto.DraftTimeoutResponse;
+import com.fortnite.pronos.application.usecase.DraftUseCase;
 import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.service.draft.DraftService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @SecurityRequirement(name = "bearerAuth")
 public class DraftController {
 
-  private final DraftService draftService;
+  private final DraftUseCase draftUseCase;
 
   @Operation(
       summary = "Get draft information",
@@ -272,7 +272,7 @@ public class DraftController {
       @PathVariable UUID gameId, @RequestBody Map<String, String> request) {
     log.debug("Selecting player for game {}", gameId);
 
-    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
@@ -288,7 +288,7 @@ public class DraftController {
       return ResponseEntity.badRequest().body(Map.of("error", "Invalid playerId format"));
     }
 
-    if (draftService.findPlayerByIdOptional(playerId).isEmpty()) {
+    if (draftUseCase.findPlayerByIdOptional(playerId).isEmpty()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Player not found"));
     }
 
@@ -301,20 +301,20 @@ public class DraftController {
   public ResponseEntity<Object> getNextParticipant(@PathVariable UUID gameId) {
     log.debug("Getting next participant for game {}", gameId);
 
-    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
+    Optional<Game> gameOpt = draftUseCase.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
     Game game = gameOpt.get();
-    List<GameParticipant> participants = draftService.getParticipantsOrderedByDraftOrder(gameId);
+    List<GameParticipant> participants = draftUseCase.getParticipantsOrderedByDraftOrder(gameId);
 
     if (participants.isEmpty()) {
       return ResponseEntity.ok(Map.of("message", "No participants found"));
     }
 
     DraftNextParticipantResponse response =
-        draftService.buildNextParticipantResponse(game, participants);
+        draftUseCase.buildNextParticipantResponse(game, participants);
 
     return ResponseEntity.ok(response);
   }
@@ -324,11 +324,11 @@ public class DraftController {
   public ResponseEntity<List<DraftOrderEntryResponse>> getDraftOrder(@PathVariable UUID gameId) {
     log.debug("Getting draft order for game {}", gameId);
 
-    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
-    List<DraftOrderEntryResponse> result = draftService.buildDraftOrderResponse(gameId);
+    List<DraftOrderEntryResponse> result = draftUseCase.buildDraftOrderResponse(gameId);
 
     return ResponseEntity.ok(result);
   }
@@ -339,11 +339,11 @@ public class DraftController {
       @PathVariable UUID gameId, @PathVariable UUID userId) {
     log.debug("Checking if it's user {} turn in game {}", userId, gameId);
 
-    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
-    boolean isTurn = draftService.isUserTurnForGame(gameId, userId);
+    boolean isTurn = draftUseCase.isUserTurnForGame(gameId, userId);
 
     return ResponseEntity.ok(Map.of("isTurn", isTurn));
   }
@@ -353,13 +353,13 @@ public class DraftController {
   public ResponseEntity<DraftAdvanceResponse> moveToNext(@PathVariable UUID gameId) {
     log.debug("Moving to next participant in game {}", gameId);
 
-    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
+    Optional<Game> gameOpt = draftUseCase.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     Game game = gameOpt.get();
-    DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(game);
+    DraftAdvanceResponse response = draftUseCase.advanceDraftToNextParticipant(game);
 
     return ResponseEntity.ok(response);
   }
@@ -369,13 +369,13 @@ public class DraftController {
   public ResponseEntity<Object> checkDraftComplete(@PathVariable UUID gameId) {
     log.debug("Checking if draft is complete for game {}", gameId);
 
-    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
+    Optional<Game> gameOpt = draftUseCase.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
     Game game = gameOpt.get();
-    DraftCompleteResponse response = draftService.buildDraftCompleteResponse(game);
+    DraftCompleteResponse response = draftUseCase.buildDraftCompleteResponse(game);
 
     return ResponseEntity.ok(response);
   }
@@ -386,7 +386,7 @@ public class DraftController {
       @PathVariable UUID gameId, @PathVariable String region) {
     log.debug("Getting available players for region {} in game {}", region, gameId);
 
-    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
@@ -398,7 +398,7 @@ public class DraftController {
     }
 
     List<DraftAvailablePlayerResponse> result =
-        draftService.buildAvailablePlayersResponse(playerRegion);
+        draftUseCase.buildAvailablePlayersResponse(playerRegion);
 
     return ResponseEntity.ok(result);
   }
@@ -408,11 +408,11 @@ public class DraftController {
   public ResponseEntity<Object> handleTimeouts(@PathVariable UUID gameId) {
     log.debug("Handling timeouts for game {}", gameId);
 
-    if (draftService.findGameByIdOptional(gameId).isEmpty()) {
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
-    DraftTimeoutResponse response = draftService.buildTimeoutResponse();
+    DraftTimeoutResponse response = draftUseCase.buildTimeoutResponse();
     return ResponseEntity.ok(response);
   }
 
@@ -421,13 +421,13 @@ public class DraftController {
   public ResponseEntity<Object> finishDraft(@PathVariable UUID gameId) {
     log.debug("Finishing draft for game {}", gameId);
 
-    Optional<Game> gameOpt = draftService.findGameByIdOptional(gameId);
+    Optional<Game> gameOpt = draftUseCase.findGameByIdOptional(gameId);
     if (gameOpt.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
     }
 
     Game game = gameOpt.get();
-    DraftActionResponse response = draftService.finishDraft(game);
+    DraftActionResponse response = draftUseCase.finishDraft(game);
 
     return ResponseEntity.ok(response);
   }

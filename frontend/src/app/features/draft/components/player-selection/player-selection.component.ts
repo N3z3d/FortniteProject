@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, TrackByFunction } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, TrackByFunction, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +15,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 
 import { Player, PlayerRegion } from '../../models/draft.interface';
 import { REGION_LABELS, FILTER_OPTIONS, PERFORMANCE_CONFIG } from '../../constants/draft.constants';
+import { TranslationService } from '../../../../core/services/translation.service';
 
 /**
  * COMPONENT OPTIMISÉ POUR 149 JOUEURS
@@ -45,6 +46,8 @@ import { REGION_LABELS, FILTER_OPTIONS, PERFORMANCE_CONFIG } from '../../constan
   ]
 })
 export class PlayerSelectionComponent implements OnInit, OnDestroy {
+  public readonly t = inject(TranslationService);
+
   // Inputs
   @Input() players: Player[] = [];
   @Input() canSelect = false;
@@ -98,6 +101,33 @@ export class PlayerSelectionComponent implements OnInit, OnDestroy {
 
   // ===== MÉTHODES PUBLIQUES PRINCIPALES =====
 
+  getResultsSummary(): string {
+    return this.formatTemplate(this.t.t('draft.selection.countSummary'), {
+      filtered: this.getFilteredCount(),
+      total: this.getTotalCount()
+    });
+  }
+
+  getListAriaLabel(): string {
+    return this.formatTemplate(this.t.t('draft.selection.listAria'), {
+      count: this.getFilteredCount()
+    });
+  }
+
+  getPlayerAriaLabel(player: Player): string {
+    return this.formatTemplate(this.t.t('draft.selection.playerAria'), {
+      nickname: player.nickname,
+      region: this.getRegionLabel(player.region),
+      tranche: this.getTrancheDisplayValue(player.tranche)
+    });
+  }
+
+  getPaginationInfoLabel(): string {
+    return this.formatTemplate(this.t.t('draft.selection.performanceOptimized'), {
+      count: this.getTotalCount()
+    });
+  }
+
   getFilteredPlayers(): Player[] {
     const currentFilterHash = this.getCurrentFilterHash();
     
@@ -150,7 +180,8 @@ export class PlayerSelectionComponent implements OnInit, OnDestroy {
   // ===== MÉTHODES UTILITAIRES =====
 
   getRegionLabel(region: any): string {
-    return REGION_LABELS[region] || region;
+    const key = REGION_LABELS[region as PlayerRegion];
+    return key ? this.t.t(key, region) : region;
   }
 
   getRegionColor(region: any): string {
@@ -158,7 +189,9 @@ export class PlayerSelectionComponent implements OnInit, OnDestroy {
   }
 
   getTrancheLabel(tranche: string): string {
-    return `Tranche ${tranche}`;
+    return this.formatTemplate(this.t.t('draft.selection.trancheValue'), {
+      value: this.getTrancheDisplayValue(tranche)
+    });
   }
 
   getTotalCount(): number {
@@ -226,5 +259,16 @@ export class PlayerSelectionComponent implements OnInit, OnDestroy {
       }
     }
     return a.nickname.localeCompare(b.nickname);
+  }
+
+  private getTrancheDisplayValue(tranche: string): string {
+    const match = /^T(\d+)$/i.exec(tranche);
+    return match ? match[1] : tranche;
+  }
+
+  private formatTemplate(template: string, params: Record<string, string | number>): string {
+    return Object.entries(params).reduce((result, [key, value]) => {
+      return result.replace(`{${key}}`, String(value));
+    }, template);
   }
 }

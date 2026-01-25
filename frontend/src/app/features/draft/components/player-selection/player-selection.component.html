@@ -1,11 +1,11 @@
 <!-- PLAYER SELECTION COMPONENT - OPTIMIZED FOR 149 PLAYERS -->
-<div class="player-selection-container" role="region" aria-label="Sélection de joueur">
+<div class="player-selection-container" role="region" [attr.aria-label]="t.t('draft.selection.ariaLabel')">
   
   <!-- Header avec statistiques et filtres -->
   <div class="selection-header">
     <div class="player-stats">
       <span class="stats-badge">
-        {{ getFilteredCount() }} / {{ getTotalCount() }} joueurs
+        {{ getResultsSummary() }}
       </span>
       <button 
         mat-stroked-button 
@@ -14,29 +14,29 @@
         [disabled]="!hasActiveFilters()"
         class="clear-filters-btn">
         <mat-icon>filter_alt_off</mat-icon>
-        Effacer filtres
+        {{ t.t('draft.selection.clearFilters') }}
       </button>
     </div>
   </div>
 
   <!-- Filtres optimisés -->
-  <div class="filters-container" role="group" aria-label="Filtres de joueurs">
+  <div class="filters-container" role="group" [attr.aria-label]="t.t('draft.selection.filtersAriaLabel')">
     <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Recherche</mat-label>
+      <mat-label>{{ t.t('draft.selection.searchLabel') }}</mat-label>
       <input 
         matInput 
         [value]="searchTerm"
         (input)="onSearchChange($event)"
-        placeholder="Nom du joueur..."
+        [placeholder]="t.t('draft.selection.searchPlaceholder')"
         [attr.aria-describedby]="'search-help'"
         autocomplete="off">
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Région</mat-label>
+      <mat-label>{{ t.t('draft.selection.regionLabel') }}</mat-label>
       <mat-select [(value)]="selectedRegion">
-        <mat-option value="ALL">Toutes les régions</mat-option>
+        <mat-option value="ALL">{{ t.t('draft.filters.allRegions') }}</mat-option>
         <mat-option 
           *ngFor="let region of getAvailableRegions()" 
           [value]="region">
@@ -46,9 +46,9 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="filter-field">
-      <mat-label>Tranche</mat-label>
+      <mat-label>{{ t.t('draft.selection.trancheLabel') }}</mat-label>
       <mat-select [(value)]="selectedTranche">
-        <mat-option value="ALL">Toutes les tranches</mat-option>
+        <mat-option value="ALL">{{ t.t('draft.selection.allTranches') }}</mat-option>
         <mat-option 
           *ngFor="let tranche of getAvailableTranches()" 
           [value]="tranche">
@@ -66,7 +66,7 @@
       role="status" 
       aria-live="polite">
       <mat-spinner diameter="40"></mat-spinner>
-      <span>Chargement des joueurs...</span>
+      <span>{{ t.t('draft.selection.loadingPlayers') }}</span>
     </div>
 
     <div 
@@ -82,13 +82,13 @@
       *ngIf="!isLoading && !error"
       itemSize="80" 
       class="players-viewport"
-      [attr.aria-label]="'Liste de ' + getFilteredCount() + ' joueurs'">
+      [attr.aria-label]="getListAriaLabel()">
       
       <div 
         *cdkVirtualFor="let player of getFilteredPlayers(); trackBy: trackByPlayerId"
         class="player-item"
         [class.selectable]="canSelect"
-        [attr.aria-label]="'Joueur ' + player.nickname + ', région ' + getRegionLabel(player.region) + ', tranche ' + player.tranche"
+        [attr.aria-label]="getPlayerAriaLabel(player)"
         (click)="onPlayerSelect(player)"
         (keydown.enter)="onPlayerSelect(player)"
         (keydown.space)="onPlayerSelect(player)"
@@ -119,7 +119,7 @@
           </div>
           
           <div class="player-stats" *ngIf="player.totalPoints !== undefined">
-            <span class="points">{{ player.totalPoints | number }} pts</span>
+            <span class="points">{{ player.totalPoints | number }} {{ t.t('draft.ui.pointsShort') }}</span>
           </div>
         </div>
 
@@ -134,8 +134,8 @@
         class="empty-state"
         role="status">
         <mat-icon>search_off</mat-icon>
-        <h3>Aucun joueur trouvé</h3>
-        <p>Essayez de modifier vos critères de recherche</p>
+        <h3>{{ t.t('draft.selection.emptyTitle') }}</h3>
+        <p>{{ t.t('draft.selection.emptyDescription') }}</p>
       </div>
     </cdk-virtual-scroll-viewport>
   </div>
@@ -143,7 +143,7 @@
   <!-- Footer avec pagination info (si implémentée) -->
   <div class="selection-footer" *ngIf="showPaginationInfo">
     <span class="pagination-info">
-      Performance optimisée pour {{ getTotalCount() }} joueurs
+      {{ getPaginationInfoLabel() }}
     </span>
   </div>
 </div>

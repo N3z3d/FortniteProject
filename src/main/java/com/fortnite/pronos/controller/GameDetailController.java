@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.fortnite.pronos.application.usecase.GameDetailUseCase;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.service.GameDetailService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GameDetailController {
 
-  private final GameDetailService gameDetailService;
+  private final GameDetailUseCase gameDetailUseCase;
 
   /** Récupère les détails complets d'une game Clean Code : méthode simple et claire */
   @GetMapping("/{gameId}/details")
   public ResponseEntity<GameDetailDto> getGameDetails(@PathVariable UUID gameId) {
     log.debug("Récupération des détails de la game {}", gameId);
 
-    GameDetailDto gameDetails = gameDetailService.getGameDetails(gameId);
+    GameDetailDto gameDetails = gameDetailUseCase.getGameDetails(gameId);
 
     log.info("Détails de la game {} récupérés avec succès", gameId);
     return ResponseEntity.ok(gameDetails);

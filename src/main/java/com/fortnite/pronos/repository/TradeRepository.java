@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.TradeRepositoryPort;
 import com.fortnite.pronos.model.Trade;
 
 @Repository
-public interface TradeRepository extends JpaRepository<Trade, UUID> {
+public interface TradeRepository extends JpaRepository<Trade, UUID>, TradeRepositoryPort {
 
   /**
    * Find all trades involving a specific team (as either from or to team)

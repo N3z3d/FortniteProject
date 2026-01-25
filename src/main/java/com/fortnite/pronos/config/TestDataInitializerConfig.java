@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -21,10 +23,8 @@ import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.TeamPlayer;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,10 +36,10 @@ public class TestDataInitializerConfig {
 
   private static final Logger log = LoggerFactory.getLogger(TestDataInitializerConfig.class);
 
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final TransactionTemplate transactionTemplate;
 
   private static final List<Player.Region> ALLOWED_REGIONS =

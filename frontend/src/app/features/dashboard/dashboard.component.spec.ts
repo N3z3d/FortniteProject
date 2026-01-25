@@ -115,6 +115,20 @@ describe('DashboardComponent (i18n)', () => {
     expect(heading?.textContent).toContain('General Statistics');
   });
 
+  it('retourne le statut traduit pour une game active', () => {
+    const status = component.getGameStatus({ ...component.selectedGame, status: 'ACTIVE' } as any);
+
+    expect(status).toBe('En cours');
+  });
+
+  it('retourne un statut inconnu par defaut', () => {
+    translationService.setLanguage('en');
+
+    const status = component.getGameStatus({ ...component.selectedGame, status: 'UNKNOWN' } as any);
+
+    expect(status).toBe('Unknown');
+  });
+
   it('utilise le nombre d’équipes quand participantCount est à zéro', () => {
     component.selectedGame = {
       ...component.selectedGame,
@@ -123,7 +137,9 @@ describe('DashboardComponent (i18n)', () => {
     } as any;
     component.stats.totalTeams = 3;
 
-    expect(component.getParticipantDisplayCount()).toBe(3);
+    expect(
+      component.formatter.getParticipantDisplayCount(component.selectedGame, component.stats.totalTeams)
+    ).toBe(3);
   });
 
   it('privilégie participantCount quand il est défini', () => {
@@ -134,7 +150,9 @@ describe('DashboardComponent (i18n)', () => {
     } as any;
     component.stats.totalTeams = 2;
 
-    expect(component.getParticipantDisplayCount()).toBe(5);
+    expect(
+      component.formatter.getParticipantDisplayCount(component.selectedGame, component.stats.totalTeams)
+    ).toBe(5);
   });
 
   it('tombe sur la liste de participants quand les équipes sont absentes', () => {
@@ -145,7 +163,9 @@ describe('DashboardComponent (i18n)', () => {
     } as any;
     component.stats.totalTeams = 0;
 
-    expect(component.getParticipantDisplayCount()).toBe(2);
+    expect(
+      component.formatter.getParticipantDisplayCount(component.selectedGame, component.stats.totalTeams)
+    ).toBe(2);
   });
 
   it('utilise stats.totalTeams quand il n\'y a pas de teams ni participants', () => {
@@ -157,7 +177,9 @@ describe('DashboardComponent (i18n)', () => {
     } as any;
     component.stats.totalTeams = 4;
 
-    expect(component.getParticipantDisplayCount()).toBe(4);
+    expect(
+      component.formatter.getParticipantDisplayCount(component.selectedGame, component.stats.totalTeams)
+    ).toBe(4);
   });
 
   it('retourne 0 quand aucune source n\'est disponible', () => {
@@ -169,6 +191,26 @@ describe('DashboardComponent (i18n)', () => {
     } as any;
     component.stats.totalTeams = 0;
 
-    expect(component.getParticipantDisplayCount()).toBe(0);
+    expect(
+      component.formatter.getParticipantDisplayCount(component.selectedGame, component.stats.totalTeams)
+    ).toBe(0);
+  });
+
+  it('formate les nombres en espagnol', () => {
+    translationService.setLanguage('es');
+
+    const formatted = component.formatter.formatNumber(1234);
+    const expected = new Intl.NumberFormat('es-ES').format(1234);
+
+    expect(formatted).toBe(expected);
+  });
+
+  it('formate les nombres en portugais', () => {
+    translationService.setLanguage('pt');
+
+    const formatted = component.formatter.formatNumber(1234);
+    const expected = new Intl.NumberFormat('pt-PT').format(1234);
+
+    expect(formatted).toBe(expected);
   });
 });

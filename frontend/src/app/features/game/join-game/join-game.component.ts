@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { GameService } from '../services/game.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-join-game',
@@ -30,6 +31,7 @@ import { GameService } from '../services/game.service';
   styleUrls: ['./join-game.component.scss']
 })
 export class JoinGameComponent {
+  public readonly t = inject(TranslationService);
   invitationCode = '';
   joiningGame = false;
 
@@ -41,7 +43,7 @@ export class JoinGameComponent {
 
   joinWithCode(): void {
     if (!this.invitationCode.trim()) {
-      this.snackBar.open('Veuillez entrer un code d\'invitation', 'Fermer', {
+      this.snackBar.open(this.t.t('games.join.enterCodeError'), this.t.t('games.join.close'), {
         duration: 3000
       });
       return;
@@ -50,9 +52,11 @@ export class JoinGameComponent {
     this.joiningGame = true;
     this.gameService.joinGameWithCode(this.invitationCode.trim()).subscribe({
       next: (game) => {
-        this.snackBar.open(`Partie ${game.name} rejointe avec succès !`, 'Voir', {
-          duration: 5000
-        }).onAction().subscribe(() => {
+        this.snackBar.open(
+          this.t.t('games.join.successJoined').replace('{name}', game.name),
+          this.t.t('games.join.view'),
+          { duration: 5000 }
+        ).onAction().subscribe(() => {
           this.router.navigate(['/games', game.id, 'dashboard']);
         });
 
@@ -63,8 +67,8 @@ export class JoinGameComponent {
       },
       error: (error) => {
         this.snackBar.open(
-          error.error?.message || 'Code d\'invitation invalide',
-          'Fermer',
+          error.error?.message || this.t.t('games.join.invalidCode'),
+          this.t.t('games.join.close'),
           { duration: 5000 }
         );
         this.joiningGame = false;

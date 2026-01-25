@@ -20,11 +20,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
 import com.fortnite.pronos.config.SeedProperties;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
 import com.fortnite.pronos.service.seed.TeamSeedService;
@@ -44,7 +44,7 @@ class ReferenceGameSeedServiceTest {
   @Mock private CsvDataLoaderService csvDataLoaderService;
 
   // Repository
-  @Mock private GameRepository gameRepository;
+  @Mock private GameRepositoryPort gameRepository;
 
   @InjectMocks private ReferenceGameSeedService referenceGameSeedService;
 

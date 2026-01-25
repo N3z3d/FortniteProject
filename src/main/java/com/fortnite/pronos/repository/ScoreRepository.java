@@ -14,11 +14,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
 
 @Repository
-public interface ScoreRepository extends JpaRepository<Score, Score.ScoreId> {
+public interface ScoreRepository extends JpaRepository<Score, Score.ScoreId>, ScoreRepositoryPort {
 
   Optional<Score> findByPlayerAndSeason(Player player, int season);
 

@@ -76,7 +76,7 @@ describe('SimpleLeaderboardComponent', () => {
 
     component.loadData();
 
-    const expectedError = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
+    const expectedError = component.t.t('leaderboard.errors.dataUnavailable');
     expect(component.error).toBe(expectedError);
     expect(component.allPlayers.length).toBe(0);
     expect(component.loading).toBe(false);

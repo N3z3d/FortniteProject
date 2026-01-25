@@ -12,6 +12,7 @@ import { UserContextService } from '../../../core/services/user-context.service'
 import { TeamService, TeamDto } from '../../../core/services/team.service';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { LeaderboardService } from '../../../core/services/leaderboard.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
 
 interface Player {
@@ -83,13 +84,16 @@ export class TeamDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly teamService = inject(TeamService);
   private readonly leaderboardService = inject(LeaderboardService);
+  public readonly t = inject(TranslationService);
 
   team: Team | null = null;
   loading = true;
   error: string | null = null;
   stats: TeamStats | null = null;
   allTeams: any[] = []; // Pour stocker toutes les équipes pour le calcul Top 10%
-  private readonly loadErrorMessage = 'Donn\u00e9es indisponibles (CSV non charg\u00e9)';
+  private get loadErrorMessage(): string {
+    return this.t.t('teams.detail.dataUnavailable');
+  }
 
   // Expose Object for template use
   Object = Object;
@@ -121,7 +125,7 @@ export class TeamDetailComponent implements OnInit {
           this.team = this.convertLeaderboardToTeam(userTeam);
           this.calculateStats();
         } else {
-          this.error = 'Équipe non trouvée pour cet utilisateur';
+          this.error = this.t.t('teams.detail.notFoundForUser');
         }
         this.loading = false;
       },
@@ -144,7 +148,7 @@ export class TeamDetailComponent implements OnInit {
           this.team = this.convertLeaderboardToTeam(team);
           this.calculateStats();
         } else {
-          this.error = 'Équipe non trouvée';
+          this.error = this.t.t('teams.detail.notFound');
         }
         this.loading = false;
       },
@@ -398,7 +402,7 @@ export class TeamDetailComponent implements OnInit {
       season: teamDto.season,
       owner: {
         id: 'unknown',
-        username: teamDto.ownerUsername || 'Propriétaire inconnu'
+        username: teamDto.ownerUsername || this.t.t('teams.common.unknownOwner')
       },
       players: teamDto.players.map((player, index) => ({
         player: {
@@ -421,7 +425,7 @@ export class TeamDetailComponent implements OnInit {
       season: 2025,
       owner: {
         id: leaderboardEntry.ownerId || 'unknown',
-        username: leaderboardEntry.ownerUsername || 'Propriétaire inconnu'
+        username: leaderboardEntry.ownerUsername || this.t.t('teams.common.unknownOwner')
       },
       players: leaderboardEntry.players.map((player: any, index: number) => ({
         player: {

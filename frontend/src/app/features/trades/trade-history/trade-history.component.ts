@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslationService } from '../../../core/services/translation.service';
 
 export interface TradeHistoryItem {
   id: string;
@@ -59,21 +60,21 @@ export interface TradeHistoryItem {
         <mat-card-header>
           <mat-card-title>
             <mat-icon>history</mat-icon>
-            Historique des Trades
+            {{ t.t('trades.history.title') }}
           </mat-card-title>
           <mat-card-subtitle>
-            Consultez l'historique complet des échanges
+            {{ t.t('trades.history.subtitle') }}
           </mat-card-subtitle>
         </mat-card-header>
         
         <mat-card-actions>
           <button mat-button (click)="goBack()">
             <mat-icon>arrow_back</mat-icon>
-            Retour aux trades
+            {{ t.t('trades.history.backToTrades') }}
           </button>
           <button mat-raised-button color="primary" (click)="createNewTrade()">
             <mat-icon>add</mat-icon>
-            Nouveau Trade
+            {{ t.t('trades.history.newTrade') }}
           </button>
         </mat-card-actions>
       </mat-card>
@@ -81,25 +82,25 @@ export interface TradeHistoryItem {
       <!-- Filters Card -->
       <mat-card class="filters-card">
         <mat-card-header>
-          <mat-card-title>Filtres</mat-card-title>
+          <mat-card-title>{{ t.t('trades.history.filtersTitle') }}</mat-card-title>
         </mat-card-header>
         
         <mat-card-content>
           <form [formGroup]="filtersForm" class="filters-form">
             <mat-form-field appearance="outline">
-              <mat-label>Statut</mat-label>
+              <mat-label>{{ t.t('trades.history.statusLabel') }}</mat-label>
               <mat-select formControlName="status" (selectionChange)="applyFilters()">
-                <mat-option value="">Tous</mat-option>
-                <mat-option value="PENDING">En attente</mat-option>
-                <mat-option value="COMPLETED">Terminés</mat-option>
-                <mat-option value="CANCELLED">Annulés</mat-option>
+                <mat-option value="">{{ t.t('common.all') }}</mat-option>
+                <mat-option value="PENDING">{{ t.t('trades.status.pending') }}</mat-option>
+                <mat-option value="COMPLETED">{{ t.t('trades.status.completed') }}</mat-option>
+                <mat-option value="CANCELLED">{{ t.t('trades.status.cancelled') }}</mat-option>
               </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Équipe</mat-label>
+              <mat-label>{{ t.t('trades.history.teamLabel') }}</mat-label>
               <mat-select formControlName="team" (selectionChange)="applyFilters()">
-                <mat-option value="">Toutes</mat-option>
+                <mat-option value="">{{ t.t('common.all') }}</mat-option>
                 <mat-option *ngFor="let team of availableTeams" [value]="team.id">
                   {{ team.name }}
                 </mat-option>
@@ -107,10 +108,10 @@ export interface TradeHistoryItem {
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Joueur</mat-label>
+              <mat-label>{{ t.t('trades.history.playerLabel') }}</mat-label>
               <mat-input 
                 formControlName="player" 
-                placeholder="Nom du joueur"
+                [placeholder]="t.t('trades.history.playerPlaceholder')"
                 (input)="applyFilters()">
               </mat-input>
             </mat-form-field>
@@ -121,7 +122,7 @@ export interface TradeHistoryItem {
               (click)="clearFilters()"
               [disabled]="!hasActiveFilters()">
               <mat-icon>clear</mat-icon>
-              Effacer
+              {{ t.t('trades.history.clearFilters') }}
             </button>
           </form>
         </mat-card-content>
@@ -131,9 +132,9 @@ export interface TradeHistoryItem {
       <mat-card class="history-table-card">
         <mat-card-header>
           <mat-card-title>
-            Historique 
+            {{ t.t('trades.tabs.history') }}
             <span class="results-count" *ngIf="!isLoading">
-              ({{ filteredTrades.length }} résultat{{ filteredTrades.length !== 1 ? 's' : '' }})
+              ({{ filteredTrades.length }} {{ filteredTrades.length !== 1 ? t.t('trades.history.resultsPlural') : t.t('trades.history.resultsSingle') }})
             </span>
           </mat-card-title>
         </mat-card-header>
@@ -141,20 +142,20 @@ export interface TradeHistoryItem {
         <mat-card-content>
           <div class="loading-container" *ngIf="isLoading">
             <mat-spinner diameter="50"></mat-spinner>
-            <p>Chargement de l'historique...</p>
+            <p>{{ t.t('trades.history.loading') }}</p>
           </div>
 
           <div class="no-results" *ngIf="!isLoading && filteredTrades.length === 0">
             <mat-icon>search_off</mat-icon>
-            <h3>Aucun résultat</h3>
-            <p>Aucun trade ne correspond aux critères sélectionnés</p>
+            <h3>{{ t.t('trades.history.noResultsTitle') }}</h3>
+            <p>{{ t.t('trades.history.noResultsDesc') }}</p>
           </div>
 
           <div class="history-table" *ngIf="!isLoading && filteredTrades.length > 0">
             <table mat-table [dataSource]="filteredTrades" class="full-width-table">
               <!-- Status Column -->
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>Statut</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.status') }}</th>
                 <td mat-cell *matCellDef="let trade">
                   <mat-chip 
                     [color]="getStatusColor(trade.status)">
@@ -165,7 +166,7 @@ export interface TradeHistoryItem {
 
               <!-- Trade Details Column -->
               <ng-container matColumnDef="details">
-                <th mat-header-cell *matHeaderCellDef>Échange</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.trade') }}</th>
                 <td mat-cell *matCellDef="let trade" class="trade-details">
                   <div class="trade-info">
                     <div class="player-change">
@@ -184,7 +185,7 @@ export interface TradeHistoryItem {
 
               <!-- Team Column -->
               <ng-container matColumnDef="team">
-                <th mat-header-cell *matHeaderCellDef>Équipe</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.team') }}</th>
                 <td mat-cell *matCellDef="let trade">
                   <div class="team-info">
                     <strong>{{ trade.team.name }}</strong>
@@ -195,7 +196,7 @@ export interface TradeHistoryItem {
 
               <!-- Created Date Column -->
               <ng-container matColumnDef="createdAt">
-                <th mat-header-cell *matHeaderCellDef>Créé</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.created') }}</th>
                 <td mat-cell *matCellDef="let trade">
                   {{ trade.createdAt | date:'dd/MM/yyyy HH:mm' }}
                 </td>
@@ -203,7 +204,7 @@ export interface TradeHistoryItem {
 
               <!-- Completed Date Column -->
               <ng-container matColumnDef="completedAt">
-                <th mat-header-cell *matHeaderCellDef>Finalisé</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.completed') }}</th>
                 <td mat-cell *matCellDef="let trade">
                   <span *ngIf="trade.completedAt">
                     {{ trade.completedAt | date:'dd/MM/yyyy HH:mm' }}
@@ -214,9 +215,9 @@ export interface TradeHistoryItem {
 
               <!-- Actions Column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.actions') }}</th>
                 <td mat-cell *matCellDef="let trade">
-                  <button mat-icon-button (click)="viewTrade(trade.id)" matTooltip="Voir détails">
+                  <button mat-icon-button (click)="viewTrade(trade.id)" [matTooltip]="t.t('trades.history.viewDetails')">
                     <mat-icon>visibility</mat-icon>
                   </button>
                 </td>
@@ -231,24 +232,24 @@ export interface TradeHistoryItem {
           <div class="statistics-section" *ngIf="!isLoading && allTrades.length > 0">
             <h3>
               <mat-icon>bar_chart</mat-icon>
-              Statistiques
+              {{ t.t('trades.history.statisticsTitle') }}
             </h3>
             <div class="stats-grid">
               <div class="stat-card">
                 <div class="stat-number">{{ getTotalTrades() }}</div>
-                <div class="stat-label">Total trades</div>
+                <div class="stat-label">{{ t.t('trades.history.statsTotalTrades') }}</div>
               </div>
               <div class="stat-card">
                 <div class="stat-number">{{ getCompletedTrades() }}</div>
-                <div class="stat-label">Terminés</div>
+                <div class="stat-label">{{ t.t('trades.history.statsCompleted') }}</div>
               </div>
               <div class="stat-card">
                 <div class="stat-number">{{ getPendingTrades() }}</div>
-                <div class="stat-label">En attente</div>
+                <div class="stat-label">{{ t.t('trades.history.statsPending') }}</div>
               </div>
               <div class="stat-card">
                 <div class="stat-number">{{ getCancelledTrades() }}</div>
-                <div class="stat-label">Annulés</div>
+                <div class="stat-label">{{ t.t('trades.history.statsCancelled') }}</div>
               </div>
             </div>
           </div>
@@ -468,6 +469,7 @@ export class TradeHistoryComponent implements OnInit {
   isLoading = true;
   filtersForm: FormGroup;
   displayedColumns = ['status', 'details', 'team', 'createdAt', 'completedAt', 'actions'];
+  public readonly t = inject(TranslationService);
 
   availableTeams = [
     { id: '1', name: 'Team Alpha' },
@@ -578,12 +580,15 @@ export class TradeHistoryComponent implements OnInit {
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'PENDING': return 'En attente';
-      case 'COMPLETED': return 'Terminé';
-      case 'CANCELLED': return 'Annulé';
-      default: return status;
-    }
+    const statusKey = status.toLowerCase();
+    const statusMap: Record<string, string> = {
+      pending: 'trades.status.pending',
+      completed: 'trades.status.completed',
+      cancelled: 'trades.status.cancelled'
+    };
+
+    const key = statusMap[statusKey] || `trades.status.${statusKey}`;
+    return this.t.t(key, status);
   }
 
   getTotalTrades(): number {
@@ -602,3 +607,5 @@ export class TradeHistoryComponent implements OnInit {
     return this.allTrades.filter(trade => trade.status === 'CANCELLED').length;
   }
 }
+
+

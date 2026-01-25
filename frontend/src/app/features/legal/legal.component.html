@@ -3,7 +3,7 @@
     <mat-card-header>
       <mat-icon mat-card-avatar class="page-icon">{{ config.icon }}</mat-icon>
       <mat-card-title>{{ getTitle() }}</mat-card-title>
-      <mat-card-subtitle>Fortnite Fantasy League</mat-card-subtitle>
+      <mat-card-subtitle>{{ t.t('legal.subtitle') }}</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -15,7 +15,7 @@
       </div>
 
       <div class="legal-footer">
-        <p class="last-update">{{ t.t('legal.lastUpdate', 'Derniere mise a jour') }}: {{ '2026-01-22' }}</p>
+        <p class="last-update">{{ t.t('legal.lastUpdate') }}: {{ lastUpdateDate }}</p>
       </div>
     </mat-card-content>
 

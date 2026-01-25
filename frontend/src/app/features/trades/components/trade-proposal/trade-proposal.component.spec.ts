@@ -39,7 +39,7 @@ describe('TradeProposalComponent (i18n)', () => {
     tradingServiceSpy.createTradeOffer.and.returnValue(of({} as any));
 
     const userContextSpy = jasmine.createSpyObj<UserContextService>('UserContextService', ['getCurrentUser']);
-    userContextSpy.getCurrentUser.and.returnValue({ id: 'user-1' });
+    userContextSpy.getCurrentUser.and.returnValue({ id: 'user-1', username: 'testuser', email: 'test@test.com' });
 
     const snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
     const dialogSpy = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);

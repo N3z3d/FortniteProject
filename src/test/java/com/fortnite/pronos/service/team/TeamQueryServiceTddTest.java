@@ -18,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
@@ -54,8 +56,10 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getTeam returns team for user and season")
   void getTeamReturnsTeamForUserAndSeason() {
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
+    when(((UserRepositoryPort) userRepository).findById(testUser.getId()))
+        .thenReturn(Optional.of(testUser));
+    when(((TeamRepositoryPort) teamRepository).findByOwnerAndSeason(testUser, 2025))
+        .thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamQueryService.getTeam(testUser.getId(), 2025);
 
@@ -67,7 +71,8 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeam throws exception when user not found")
   void getTeamThrowsExceptionWhenUserNotFound() {
     UUID unknownUserId = UUID.randomUUID();
-    when(userRepository.findById(unknownUserId)).thenReturn(Optional.empty());
+    when(((UserRepositoryPort) userRepository).findById(unknownUserId))
+        .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> teamQueryService.getTeam(unknownUserId, 2025))
         .isInstanceOf(EntityNotFoundException.class);
@@ -76,7 +81,8 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getTeamById returns team when found")
   void getTeamByIdReturnsTeamWhenFound() {
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
+    when(((TeamRepositoryPort) teamRepository).findByIdWithFetch(testTeam.getId()))
+        .thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamQueryService.getTeamById(testTeam.getId());
 
@@ -88,7 +94,8 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeamById throws exception when not found")
   void getTeamByIdThrowsExceptionWhenNotFound() {
     UUID unknownTeamId = UUID.randomUUID();
-    when(teamRepository.findByIdWithFetch(unknownTeamId)).thenReturn(Optional.empty());
+    when(((TeamRepositoryPort) teamRepository).findByIdWithFetch(unknownTeamId))
+        .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> teamQueryService.getTeamById(unknownTeamId))
         .isInstanceOf(EntityNotFoundException.class);
@@ -102,7 +109,8 @@ class TeamQueryServiceTddTest {
     team2.setName("Team 2");
     team2.setOwner(testUser);
 
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(List.of(testTeam, team2));
+    when(((TeamRepositoryPort) teamRepository).findBySeasonWithFetch(2025))
+        .thenReturn(List.of(testTeam, team2));
 
     List<TeamDto> result = teamQueryService.getAllTeams(2025);
 
@@ -113,7 +121,8 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeamsByGame returns teams for game")
   void getTeamsByGameReturnsTeamsForGame() {
     UUID gameId = UUID.randomUUID();
-    when(teamRepository.findByGameIdWithFetch(gameId)).thenReturn(List.of(testTeam));
+    when(((TeamRepositoryPort) teamRepository).findByGameIdWithFetch(gameId))
+        .thenReturn(List.of(testTeam));
 
     List<TeamDto> result = teamQueryService.getTeamsByGame(gameId);
 
@@ -132,7 +141,8 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getTeamsBySeason returns teams for season")
   void getTeamsBySeasonReturnsTeamsForSeason() {
-    when(teamRepository.findBySeasonWithFetch(2025)).thenReturn(List.of(testTeam));
+    when(((TeamRepositoryPort) teamRepository).findBySeasonWithFetch(2025))
+        .thenReturn(List.of(testTeam));
 
     List<TeamDto> result = teamQueryService.getTeamsBySeason(2025);
 
@@ -142,7 +152,8 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getParticipantTeams returns participant teams")
   void getParticipantTeamsReturnsParticipantTeams() {
-    when(teamRepository.findParticipantTeamsWithFetch(2025)).thenReturn(List.of(testTeam));
+    when(((TeamRepositoryPort) teamRepository).findParticipantTeamsWithFetch(2025))
+        .thenReturn(List.of(testTeam));
 
     List<TeamDto> result = teamQueryService.getParticipantTeams(2025);
 

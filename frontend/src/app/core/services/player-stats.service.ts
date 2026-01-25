@@ -25,8 +25,8 @@ export class PlayerStatsService {
     const url = gameId ? `${this.statsUrl}?gameId=${gameId}` : this.statsUrl;
     return this.http.get<PlayerStats>(url).pipe(
       map(stats => {
-        const playersByRegion = stats?.playersByRegion ?? {};
-        const playersByTranche = stats?.playersByTranche ?? {};
+        const playersByRegion = stats?.playersByRegion ? {};
+        const playersByTranche = stats?.playersByTranche ? {};
         const resolvedTotal = this.resolveTotalPlayers(stats?.totalPlayers, playersByRegion);
         return {
           totalPlayers: resolvedTotal,
@@ -57,7 +57,7 @@ export class PlayerStatsService {
       return parsedTotal;
     }
 
-    const sumFromRegions = Object.values(playersByRegion ?? {}).reduce<number>(
+    const sumFromRegions = Object.values(playersByRegion ? {}).reduce<number>(
       (sum, value) => sum + (Number(value) || 0),
       0
     );

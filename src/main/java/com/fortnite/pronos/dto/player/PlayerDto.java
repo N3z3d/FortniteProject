@@ -27,6 +27,7 @@ public class PlayerDto {
     dto.region = player.getRegion();
     dto.tranche = player.getTranche();
     dto.currentSeason = player.getCurrentSeason();
+    dto.isAvailable = !player.isLocked();
     return dto;
   }
 
@@ -40,7 +41,7 @@ public class PlayerDto {
     dto.tranche = player.getTranche();
     dto.totalPoints = totalPoints;
     dto.currentSeason = player.getCurrentSeason();
-    dto.isAvailable = includeDetails;
+    dto.isAvailable = !player.isLocked();
 
     return dto;
   }

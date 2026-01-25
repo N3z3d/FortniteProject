@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +19,7 @@ import { Game, GameStatus, GameParticipant } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
 import { UserContextService } from '../../../core/services/user-context.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-game-detail',
@@ -42,6 +43,8 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
   styleUrls: ['./game-detail.component.css']
 })
 export class GameDetailComponent implements OnInit {
+  public readonly t = inject(TranslationService);
+
   game: Game | null = null;
   participants: GameParticipant[] = [];
   loading = false;
@@ -329,15 +332,15 @@ export class GameDetailComponent implements OnInit {
   getStatusLabel(status: GameStatus): string {
     switch (status) {
       case 'CREATING':
-        return 'En création';
+        return this.t.t('games.home.statusCreating');
       case 'DRAFTING':
-        return 'En draft';
+        return this.t.t('games.home.statusDrafting');
       case 'ACTIVE':
-        return 'Active';
+        return this.t.t('games.home.statusActive');
       case 'FINISHED':
-        return 'Terminée';
+        return this.t.t('games.home.statusFinished');
       case 'CANCELLED':
-        return 'Annulée';
+        return this.t.t('games.home.statusCancelled');
       default:
         return status;
     }

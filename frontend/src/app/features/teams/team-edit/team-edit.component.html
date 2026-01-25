@@ -2,21 +2,21 @@
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-container">
     <mat-progress-spinner diameter="60" mode="indeterminate"></mat-progress-spinner>
-    <p>Chargement de l'équipe...</p>
+    <p>{{ t.t('teams.common.loadingTeam') }}</p>
   </div>
 
   <!-- Edit Form -->
   <div *ngIf="!loading" class="edit-content">
     <div class="page-header">
-      <button mat-icon-button (click)="goBack()" class="back-button" aria-label="Retour">
+      <button mat-icon-button (click)="goBack()" class="back-button" [attr.aria-label]="t.t('common.back')">
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="header-info">
         <h1>
           <mat-icon>edit</mat-icon>
-          Modifier l'équipe
+          {{ t.t('teams.edit.title') }}
         </h1>
-        <p *ngIf="team">{{ team.name }} - Saison {{ team.season }}</p>
+        <p *ngIf="team">{{ team.name }} - {{ t.t('teams.common.season') }} {{ team.season }}</p>
       </div>
     </div>
 
@@ -25,18 +25,18 @@
       <mat-card class="info-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-icon">groups</mat-icon>
-          <mat-card-title>Informations de l'équipe</mat-card-title>
-          <mat-card-subtitle>Modifiez les détails de votre équipe</mat-card-subtitle>
+          <mat-card-title>{{ t.t('teams.edit.infoTitle') }}</mat-card-title>
+          <mat-card-subtitle>{{ t.t('teams.edit.infoSubtitle') }}</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
           <form [formGroup]="teamForm" class="team-form">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Nom de l'équipe</mat-label>
+              <mat-label>{{ t.t('teams.edit.nameLabel') }}</mat-label>
               <input
                 matInput
                 formControlName="name"
-                placeholder="Ex: Les Champions"
+                [placeholder]="t.t('teams.edit.namePlaceholder')"
                 required
                 maxlength="50">
               <mat-icon matPrefix>badge</mat-icon>
@@ -45,11 +45,11 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description (optionnel)</mat-label>
+              <mat-label>{{ t.t('teams.edit.descriptionLabel') }}</mat-label>
               <textarea
                 matInput
                 formControlName="description"
-                placeholder="Une courte description de votre équipe..."
+                [placeholder]="t.t('teams.edit.descriptionPlaceholder')"
                 rows="3"
                 maxlength="200">
               </textarea>
@@ -64,21 +64,21 @@
               <mat-icon>emoji_events</mat-icon>
               <div class="stat-info">
                 <span class="stat-value">{{ formatPoints(team.totalScore || 0) }}</span>
-                <span class="stat-label">Points totaux</span>
+                <span class="stat-label">{{ t.t('teams.common.pointsTotal') }}</span>
               </div>
             </div>
             <div class="stat-item">
               <mat-icon>group</mat-icon>
               <div class="stat-info">
                 <span class="stat-value">{{ players.length }}</span>
-                <span class="stat-label">Joueurs</span>
+                <span class="stat-label">{{ t.t('teams.common.players') }}</span>
               </div>
             </div>
             <div class="stat-item">
               <mat-icon>person</mat-icon>
               <div class="stat-info">
                 <span class="stat-value">{{ team.ownerUsername }}</span>
-                <span class="stat-label">Propriétaire</span>
+                <span class="stat-label">{{ t.t('teams.common.owner') }}</span>
               </div>
             </div>
           </div>
@@ -89,8 +89,8 @@
       <mat-card class="players-card">
         <mat-card-header>
           <mat-icon mat-card-avatar class="card-icon players-icon">sports_esports</mat-icon>
-          <mat-card-title>Composition de l'équipe</mat-card-title>
-          <mat-card-subtitle>{{ players.length }} joueur{{ players.length > 1 ? 's' : '' }} dans l'équipe</mat-card-subtitle>
+          <mat-card-title>{{ t.t('teams.edit.rosterTitle') }}</mat-card-title>
+          <mat-card-subtitle>{{ getRosterSubtitle() }}</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
@@ -114,14 +114,14 @@
               </div>
               <div class="player-stats">
                 <span class="player-points" *ngIf="player.points">
-                  {{ formatPoints(player.points) }} pts
+                  {{ formatPoints(player.points) }} {{ t.t('teams.common.pointsShort') }}
                 </span>
               </div>
               <button
                 mat-icon-button
                 color="warn"
                 (click)="removePlayer(player)"
-                [matTooltip]="'Retirer ' + player.nickname"
+                [matTooltip]="getRemovePlayerTooltip(player.nickname)"
                 class="remove-button">
                 <mat-icon>remove_circle</mat-icon>
               </button>
@@ -130,14 +130,14 @@
 
           <div class="empty-players" *ngIf="players.length === 0">
             <mat-icon>group_off</mat-icon>
-            <p>Aucun joueur dans l'équipe</p>
+            <p>{{ t.t('teams.edit.emptyPlayers') }}</p>
           </div>
 
           <mat-divider></mat-divider>
 
           <div class="add-player-hint">
             <mat-icon>lightbulb</mat-icon>
-            <p>Pour ajouter des joueurs, participez au draft ou effectuez des échanges.</p>
+            <p>{{ t.t('teams.edit.addHint') }}</p>
           </div>
         </mat-card-content>
       </mat-card>
@@ -151,7 +151,7 @@
         [disabled]="saving"
         class="cancel-btn">
         <mat-icon>close</mat-icon>
-        Annuler
+        {{ t.t('common.cancel') }}
       </button>
       <button
         mat-raised-button
@@ -161,7 +161,7 @@
         class="save-btn">
         <mat-icon *ngIf="!saving">save</mat-icon>
         <mat-progress-spinner *ngIf="saving" diameter="20" mode="indeterminate"></mat-progress-spinner>
-        {{ saving ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+        {{ saving ? t.t('common.saving') : t.t('teams.edit.saveChanges') }}
       </button>
     </div>
   </div>

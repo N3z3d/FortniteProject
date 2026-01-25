@@ -5,8 +5,8 @@
         <div class="header-content">
           <mat-icon class="header-icon">vpn_key</mat-icon>
           <div>
-            <mat-card-title>Rejoindre une partie</mat-card-title>
-            <mat-card-subtitle>Entrez le code d'invitation reçu</mat-card-subtitle>
+            <mat-card-title>{{ t.t('games.join.title') }}</mat-card-title>
+            <mat-card-subtitle>{{ t.t('games.join.subtitle') }}</mat-card-subtitle>
           </div>
         </div>
       </mat-card-header>
@@ -14,27 +14,24 @@
       <mat-card-content>
         <div class="join-instructions">
           <mat-icon class="info-icon">info</mat-icon>
-          <p>
-            Pour rejoindre une partie existante, demandez le code d'invitation
-            au créateur de la partie et saisissez-le ci-dessous.
-          </p>
+          <p>{{ t.t('games.join.instructions') }}</p>
         </div>
 
         <form (ngSubmit)="joinWithCode()" class="join-form">
           <mat-form-field appearance="outline" class="code-input">
-            <mat-label>Code d'invitation</mat-label>
+            <mat-label>{{ t.t('games.join.codeLabel') }}</mat-label>
             <input
               matInput
               [(ngModel)]="invitationCode"
               name="invitationCode"
-              placeholder="Ex: FORTNITE2024"
+              [placeholder]="t.t('games.join.codePlaceholder')"
               [disabled]="joiningGame"
               maxlength="20"
               required
               autocomplete="off"
             />
             <mat-icon matPrefix>confirmation_number</mat-icon>
-            <mat-hint>Le code est sensible à la casse</mat-hint>
+            <mat-hint>{{ t.t('games.join.codeHint') }}</mat-hint>
           </mat-form-field>
 
           <div class="action-buttons">
@@ -47,7 +44,7 @@
             >
               <mat-icon *ngIf="!joiningGame">login</mat-icon>
               <mat-spinner *ngIf="joiningGame" diameter="20"></mat-spinner>
-              {{ joiningGame ? 'Connexion en cours...' : 'Rejoindre la partie' }}
+              {{ joiningGame ? t.t('games.join.joining') : t.t('games.join.joinButton') }}
             </button>
 
             <button
@@ -58,7 +55,7 @@
               class="cancel-button"
             >
               <mat-icon>cancel</mat-icon>
-              Annuler
+              {{ t.t('common.cancel') }}
             </button>
           </div>
         </form>
@@ -66,11 +63,8 @@
         <div class="help-section">
           <mat-icon class="help-icon">help_outline</mat-icon>
           <div class="help-text">
-            <p class="help-title">Vous n'avez pas de code ?</p>
-            <p class="help-description">
-              Demandez au créateur de la partie de vous partager le code d'invitation,
-              ou créez votre propre partie.
-            </p>
+            <p class="help-title">{{ t.t('games.join.noCodeTitle') }}</p>
+            <p class="help-description">{{ t.t('games.join.noCodeDesc') }}</p>
             <button
               mat-button
               color="accent"
@@ -78,7 +72,7 @@
               [disabled]="joiningGame"
             >
               <mat-icon>add_circle</mat-icon>
-              Créer une nouvelle partie
+              {{ t.t('games.join.createNew') }}
             </button>
           </div>
         </div>

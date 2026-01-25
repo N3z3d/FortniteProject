@@ -3,27 +3,27 @@
   <div class="modal-header">
     <div class="header-content">
       <div class="trade-title">
-        <h2>Trade Details</h2>
-        <div class="trade-id">ID: {{ trade.id.substring(0, 8) }}...</div>
+        <h2>{{ t.t('trades.details.title') }}</h2>
+        <div class="trade-id">{{ t.t('trades.details.idLabel') }} {{ trade.id.substring(0, 8) }}...</div>
       </div>
       
       <div class="trade-status-header">
         <div class="status-badge" [class]="getStatusClass(trade.status)">
           <mat-icon>{{ getStatusIcon(trade.status) }}</mat-icon>
-          <span>{{ trade.status | titlecase }}</span>
+          <span>{{ getStatusLabel(trade.status) }}</span>
         </div>
         
         <div class="trade-meta">
           <div class="created-date">{{ formatDate(trade.createdAt) }}</div>
           <div class="expiry-info" *ngIf="trade.status === 'pending'" [class.urgent]="isExpiringSoon()">
             <mat-icon>access_time</mat-icon>
-            <span>Expires in {{ getTimeUntilExpiry() }}</span>
+            <span>{{ t.t('trades.details.expiresIn') }} {{ getTimeUntilExpiry() }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <button mat-icon-button class="close-btn" (click)="onClose()" matTooltip="Close">
+    <button mat-icon-button class="close-btn" (click)="onClose()" [matTooltip]="t.t('trades.details.close')">
       <mat-icon>close</mat-icon>
     </button>
   </div>
@@ -33,7 +33,7 @@
     <div class="participant sender">
       <div class="participant-info">
         <div class="participant-name">{{ trade.fromUserName }}</div>
-        <div class="participant-role">Offering</div>
+        <div class="participant-role">{{ t.t('trades.details.offering') }}</div>
         <div class="team-name">{{ trade.fromTeamName }}</div>
       </div>
     </div>
@@ -43,9 +43,9 @@
       <div class="trade-balance" [class]="getBalanceDisplayClass(trade.valueBalance)">
         <div class="balance-amount">{{ formatCurrency(abs(trade.valueBalance)) }}</div>
         <div class="balance-direction">
-          <span *ngIf="trade.valueBalance > 0">{{ trade.toUserName }} gets more value</span>
-          <span *ngIf="trade.valueBalance < 0">{{ trade.fromUserName }} gets more value</span>
-          <span *ngIf="trade.valueBalance === 0">Balanced trade</span>
+          <span *ngIf="trade.valueBalance > 0">{{ trade.toUserName }} {{ t.t('trades.details.getsMoreValue') }}</span>
+          <span *ngIf="trade.valueBalance < 0">{{ trade.fromUserName }} {{ t.t('trades.details.getsMoreValue') }}</span>
+          <span *ngIf="trade.valueBalance === 0">{{ t.t('trades.details.balancedTrade') }}</span>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
     <div class="participant receiver">
       <div class="participant-info">
         <div class="participant-name">{{ trade.toUserName }}</div>
-        <div class="participant-role">Receiving</div>
+        <div class="participant-role">{{ t.t('trades.details.receiving') }}</div>
         <div class="team-name">{{ trade.toTeamName }}</div>
       </div>
     </div>
@@ -64,7 +64,7 @@
     
     <!-- Trade Statistics -->
     <div class="trade-stats-section" *ngIf="tradeStats$ | async as stats">
-      <h3>Trade Overview</h3>
+      <h3>{{ t.t('trades.details.tradeOverview') }}</h3>
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-icon">
@@ -72,7 +72,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.totalPlayers }}</div>
-            <div class="stat-label">Total Players</div>
+            <div class="stat-label">{{ t.t('trades.details.totalPlayers') }}</div>
           </div>
         </div>
 
@@ -82,7 +82,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ formatCurrency(stats.totalValue) }}</div>
-            <div class="stat-label">Total Value</div>
+            <div class="stat-label">{{ t.t('trades.details.totalValue') }}</div>
           </div>
         </div>
 
@@ -92,7 +92,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ formatCurrency(stats.avgPlayerValue) }}</div>
-            <div class="stat-label">Avg per Player</div>
+            <div class="stat-label">{{ t.t('trades.details.avgPerPlayer') }}</div>
           </div>
         </div>
 
@@ -102,9 +102,9 @@
           </div>
           <div class="stat-content">
             <div class="stat-value" [style.color]="getFairnessColor(stats.fairnessRating)">
-              {{ stats.fairnessRating | titlecase }}
+              {{ t.t('trades.details.' + stats.fairnessRating, (stats.fairnessRating | titlecase)) }}
             </div>
-            <div class="stat-label">Fairness Rating</div>
+            <div class="stat-label">{{ t.t('trades.details.fairnessRating') }}</div>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@
       <div class="players-column offered-column">
         <h3>
           <mat-icon>call_made</mat-icon>
-          Offered Players ({{ trade.offeredPlayers.length }})
+          {{ t.t('trades.details.offeredPlayers') }} ({{ trade.offeredPlayers.length }})
         </h3>
         
         <div class="players-list">
@@ -141,15 +141,15 @@
 
             <div class="player-stats">
               <div class="stat-row">
-                <span class="stat-label">Avg Score</span>
+                <span class="stat-label">{{ t.t('trades.details.avgScore') }}</span>
                 <span class="stat-value">{{ player.averageScore | number:'1.1-1' }}</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">Games</span>
+                <span class="stat-label">{{ t.t('trades.details.games') }}</span>
                 <span class="stat-value">{{ player.gamesPlayed }}</span>
               </div>
               <div class="stat-row" *ngIf="player.stats?.eliminations">
-                <span class="stat-label">Eliminations</span>
+                <span class="stat-label">{{ t.t('trades.details.eliminations') }}</span>
                 <span class="stat-value">{{ player.stats?.eliminations }}</span>
               </div>
             </div>
@@ -157,14 +157,14 @@
         </div>
 
         <div class="total-value offered-total">
-          <strong>Total Value: {{ formatCurrency(getOfferedTotal()) }}</strong>
+          <strong>{{ t.t('trades.details.totalValueLabel') }}: {{ formatCurrency(getOfferedTotal()) }}</strong>
         </div>
       </div>
 
       <div class="players-column requested-column">
         <h3>
           <mat-icon>call_received</mat-icon>
-          Requested Players ({{ trade.requestedPlayers.length }})
+          {{ t.t('trades.details.requestedPlayers') }} ({{ trade.requestedPlayers.length }})
         </h3>
         
         <div class="players-list">
@@ -190,15 +190,15 @@
 
             <div class="player-stats">
               <div class="stat-row">
-                <span class="stat-label">Avg Score</span>
+                <span class="stat-label">{{ t.t('trades.details.avgScore') }}</span>
                 <span class="stat-value">{{ player.averageScore | number:'1.1-1' }}</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">Games</span>
+                <span class="stat-label">{{ t.t('trades.details.games') }}</span>
                 <span class="stat-value">{{ player.gamesPlayed }}</span>
               </div>
               <div class="stat-row" *ngIf="player.stats?.eliminations">
-                <span class="stat-label">Eliminations</span>
+                <span class="stat-label">{{ t.t('trades.details.eliminations') }}</span>
                 <span class="stat-value">{{ player.stats?.eliminations }}</span>
               </div>
             </div>
@@ -206,7 +206,7 @@
         </div>
 
         <div class="total-value requested-total">
-          <strong>Total Value: {{ formatCurrency(getRequestedTotal()) }}</strong>
+          <strong>{{ t.t('trades.details.totalValueLabel') }}: {{ formatCurrency(getRequestedTotal()) }}</strong>
         </div>
       </div>
     </div>
@@ -215,7 +215,7 @@
     <div class="trade-message-section" *ngIf="trade.message">
       <h3>
         <mat-icon>message</mat-icon>
-        Message from {{ trade.fromUserName }}
+        {{ t.t('trades.details.messageFrom') }} {{ trade.fromUserName }}
       </h3>
       <div class="message-content">
         <p>{{ trade.message }}</p>
@@ -226,7 +226,7 @@
     <div class="timeline-section" *ngIf="tradeTimeline$ | async as timeline">
       <h3>
         <mat-icon>timeline</mat-icon>
-        Trade Timeline
+        {{ t.t('trades.details.timeline') }}
       </h3>
       
       <div class="timeline-container" [@timelineProgress]>
@@ -246,7 +246,7 @@
               <div class="timeline-date">{{ formatDate(item.date) }}</div>
             </div>
             <div class="timeline-description">{{ item.description }}</div>
-            <div class="timeline-actor">by {{ item.actor }}</div>
+            <div class="timeline-actor">{{ t.t('trades.details.by') }} {{ item.actor }}</div>
           </div>
         </div>
       </div>
@@ -256,47 +256,47 @@
     <div class="counter-offer-section" *ngIf="showCounterForm | async">
       <h3>
         <mat-icon>reply</mat-icon>
-        Create Counter Offer
+        {{ t.t('trades.details.createCounterOffer') }}
       </h3>
-      
+
       <form [formGroup]="counterOfferForm!" class="counter-form">
         <mat-form-field appearance="outline" class="message-field">
-          <mat-label>Message (Optional)</mat-label>
-          <textarea 
-            matInput 
+          <mat-label>{{ t.t('trades.details.messageOptional') }}</mat-label>
+          <textarea
+            matInput
             formControlName="message"
             rows="3"
             maxlength="500"
-            placeholder="Explain your counter offer..."></textarea>
+            [placeholder]="t.t('trades.details.explainCounterOffer')"></textarea>
           <mat-hint align="end">{{ counterOfferForm?.get('message')?.value?.length || 0 }}/500</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="expires-field">
-          <mat-label>Expires In</mat-label>
+          <mat-label>{{ t.t('trades.details.expiresInLabel') }}</mat-label>
           <mat-select formControlName="expiresIn">
-            <mat-option [value]="24">24 Hours</mat-option>
-            <mat-option [value]="48">48 Hours</mat-option>
-            <mat-option [value]="72">72 Hours</mat-option>
-            <mat-option [value]="168">1 Week</mat-option>
+            <mat-option [value]="24">{{ t.t('trades.details.hours24') }}</mat-option>
+            <mat-option [value]="48">{{ t.t('trades.details.hours48') }}</mat-option>
+            <mat-option [value]="72">{{ t.t('trades.details.hours72') }}</mat-option>
+            <mat-option [value]="168">{{ t.t('trades.details.week1') }}</mat-option>
           </mat-select>
         </mat-form-field>
 
         <div class="counter-actions">
-          <button 
-            mat-raised-button 
-            color="primary" 
+          <button
+            mat-raised-button
+            color="primary"
             (click)="onSubmitCounterOffer()"
             [disabled]="!(counterOfferForm?.valid) || (isProcessing | async)">
             <mat-spinner *ngIf="isProcessing | async" diameter="20"></mat-spinner>
             <mat-icon *ngIf="!(isProcessing | async)">send</mat-icon>
-            Send Counter Offer
+            {{ t.t('trades.details.sendCounterOffer') }}
           </button>
 
-          <button 
-            mat-stroked-button 
+          <button
+            mat-stroked-button
             (click)="onCancelCounterOffer()"
             [disabled]="isProcessing | async">
-            Cancel
+            {{ t.t('trades.list.cancel') }}
           </button>
         </div>
       </form>
@@ -331,7 +331,7 @@
 
     <div class="disclaimer" *ngIf="trade.status === 'pending'">
       <mat-icon>info</mat-icon>
-      <small>Actions cannot be undone once confirmed</small>
+      <small>{{ t.t('trades.details.actionsWarning') }}</small>
     </div>
   </div>
 
@@ -339,8 +339,8 @@
   <div class="no-actions" *ngIf="(availableActions$ | async)?.length === 0">
     <div class="no-actions-content">
       <mat-icon>info</mat-icon>
-      <p>No actions available for this trade</p>
-      <small>Trade status: {{ trade.status | titlecase }}</small>
+      <p>{{ t.t('trades.details.noActions') }}</p>
+      <small>{{ t.t('trades.details.tradeStatusLabel') }} {{ getStatusLabel(trade.status) }}</small>
     </div>
   </div>
 </div>

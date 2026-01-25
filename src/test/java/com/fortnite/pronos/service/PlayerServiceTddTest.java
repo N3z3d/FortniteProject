@@ -283,7 +283,8 @@ class PlayerServiceTddTest {
       String searchQuery = "Pro";
       Page<Player> searchResults = new PageImpl<>(Arrays.asList(testPlayer1), testPageable, 1);
 
-      when(playerRepository.searchByNickname(searchQuery, testPageable)).thenReturn(searchResults);
+      when(playerRepository.searchPlayers(searchQuery, null, null, false, testPageable))
+          .thenReturn(searchResults);
 
       Page<PlayerDto> result =
           playerService.searchPlayers(searchQuery, null, null, false, testPageable);
@@ -291,7 +292,7 @@ class PlayerServiceTddTest {
       assertThat(result.getContent()).hasSize(1);
       assertThat(result.getContent().get(0).getNickname()).contains("Pro");
 
-      verify(playerRepository).searchByNickname(searchQuery, testPageable);
+      verify(playerRepository).searchPlayers(searchQuery, null, null, false, testPageable);
     }
 
     @Test
@@ -302,9 +303,10 @@ class PlayerServiceTddTest {
       Player.Region filterRegion = Player.Region.EU;
       String filterTranche = "1-3";
 
-      // Mock repository to return all players for the search, then filter will be applied
-      when(playerRepository.searchByNickname(searchQuery, testPageable))
-          .thenReturn(new PageImpl<>(testPlayers, testPageable, testPlayers.size()));
+      Page<Player> filteredPage = new PageImpl<>(Arrays.asList(testPlayer1), testPageable, 1);
+      when(playerRepository.searchPlayers(
+              searchQuery, filterRegion, filterTranche, false, testPageable))
+          .thenReturn(filteredPage);
 
       Page<PlayerDto> result =
           playerService.searchPlayers(
@@ -323,7 +325,8 @@ class PlayerServiceTddTest {
       String searchQuery = "NonExistentPlayer";
       Page<Player> emptyResults = new PageImpl<>(Collections.emptyList(), testPageable, 0);
 
-      when(playerRepository.searchByNickname(searchQuery, testPageable)).thenReturn(emptyResults);
+      when(playerRepository.searchPlayers(searchQuery, null, null, false, testPageable))
+          .thenReturn(emptyResults);
 
       Page<PlayerDto> result =
           playerService.searchPlayers(searchQuery, null, null, false, testPageable);
@@ -336,7 +339,9 @@ class PlayerServiceTddTest {
     @DisplayName("Should search without query and apply filters")
     void shouldSearchWithoutQueryAndApplyFilters() {
       // RED: Test filtering without search query
-      when(playerRepository.findAll()).thenReturn(testPlayers);
+      Page<Player> filteredPage = new PageImpl<>(Arrays.asList(testPlayer1), testPageable, 1);
+      when(playerRepository.searchPlayers(null, Player.Region.EU, null, false, testPageable))
+          .thenReturn(filteredPage);
 
       Page<PlayerDto> result =
           playerService.searchPlayers(null, Player.Region.EU, null, false, testPageable);

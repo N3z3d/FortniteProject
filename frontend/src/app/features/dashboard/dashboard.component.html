@@ -10,7 +10,7 @@
         <mat-icon class="title-icon">dashboard</mat-icon>
         {{ t.t('navigation.dashboard') }}
       </h1>
-      <p class="season-info" *ngIf="selectedGame">{{ t.t('dashboard.labels.season') }} 2025 • {{ selectedGame.name }}</p>
+      <p class="season-info" *ngIf="selectedGame">{{ t.t('dashboard.labels.season') }} {{ currentSeason }} • {{ selectedGame.name }}</p>
     </div>
     <div class="quick-actions">
       <button mat-stroked-button color="accent" (click)="navigateTo('/games/' + selectedGame?.id + '/trades')">
@@ -63,17 +63,17 @@
 
           <div class="game-stats-row">
             <div class="hero-stat">
-              <div class="stat-value">{{ formatNumber(stats.totalTeams) }}</div>
+              <div class="stat-value">{{ displayStats.totalTeams?.value || formatter.formatNumber(stats.totalTeams) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.teams') }}</div>
             </div>
             <div class="hero-divider"></div>
             <div class="hero-stat">
-              <div class="stat-value">{{ formatNumber(stats.totalPlayers) }}</div>
+              <div class="stat-value">{{ displayStats.totalPlayers?.value || formatter.formatNumber(stats.totalPlayers) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.players') }}</div>
             </div>
             <div class="hero-divider"></div>
             <div class="hero-stat">
-              <div class="stat-value">{{ formatNumber(getParticipantDisplayCount()) }}</div>
+              <div class="stat-value">{{ formatter.formatNumber(formatter.getParticipantDisplayCount(selectedGame, stats.totalTeams)) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.participants') }}</div>
             </div>
           </div>
@@ -81,11 +81,11 @@
           <div class="hero-actions">
             <button mat-flat-button color="primary" class="action-btn" (click)="viewGameDetails(selectedGame)">
               <mat-icon>visibility</mat-icon>
-              {{ t.t('common.details', 'Détails') }}
+              {{ t.t('common.details') }}
             </button>
             <button mat-stroked-button class="action-btn" (click)="viewGameDetails(selectedGame)">
               <mat-icon>settings</mat-icon>
-              {{ t.t('games.manage', 'Gérer') }}
+              {{ t.t('games.manage') }}
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@
         </div>
         <div>
           <div class="stat-value">{{ t.t('dashboard.labels.proPlayers') }}</div>
-          <div class="stat-value-highlight">{{ stats.proPlayersCount ?? 147 }}</div>
+          <div class="stat-value-highlight">{{ stats.proPlayersCount ? 147 }}</div>
         </div>
         <div class="stat-trend positive">
           <mat-icon>trending_up</mat-icon> +12%
@@ -117,10 +117,10 @@
         <div class="stat-icon">
           <mat-icon>emoji_events</mat-icon>
         </div>
-        <div>
-          <div class="stat-value">{{ t.t('dashboard.labels.points') }}</div>
-          <div class="stat-value-highlight">{{ formatNumber(stats.totalPoints) }}</div>
-        </div>
+          <div>
+            <div class="stat-value">{{ t.t('dashboard.labels.points') }}</div>
+            <div class="stat-value-highlight">{{ displayStats.totalPoints?.value || formatter.formatNumber(stats.totalPoints) }}</div>
+          </div>
         <div class="stat-trend positive">
           <mat-icon>trending_up</mat-icon> {{ t.t('dashboard.labels.total') }}
         </div>
@@ -131,10 +131,10 @@
         <div class="stat-icon">
           <mat-icon>timelapse</mat-icon>
         </div>
-        <div>
-          <div class="stat-value">{{ t.t('dashboard.labels.season') }}</div>
-          <div class="stat-value-highlight">{{ stats.seasonProgress }}%</div>
-        </div>
+          <div>
+            <div class="stat-value">{{ t.t('dashboard.labels.season') }}</div>
+            <div class="stat-value-highlight">{{ displayStats.seasonProgress?.value || (stats.seasonProgress + '%') }}</div>
+          </div>
         <div class="stat-trend neutral">
           {{ t.t('dashboard.labels.progress2025') }}
         </div>
@@ -187,7 +187,7 @@
               <div class="team-info">
                 <span class="team-name">{{ team.name }}</span>
               </div>
-              <div class="team-points">{{ formatNumber(team.points) }}</div>
+              <div class="team-points">{{ formatter.formatNumber(team.points) }}</div>
             </div>
           </div>
           <mat-card-actions>

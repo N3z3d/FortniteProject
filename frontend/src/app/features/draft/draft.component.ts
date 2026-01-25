@@ -20,6 +20,7 @@ import { DraftService, DraftBoardState, Player, GameParticipant } from './servic
 import { DraftStatus, PlayerRegion } from './models/draft.interface';
 import { LoggerService } from '../../core/services/logger.service';
 import { UserContextService } from '../../core/services/user-context.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
   REGION_LABELS,
@@ -78,7 +79,8 @@ export class DraftComponent implements OnInit, OnDestroy {
     private readonly snackBar: MatSnackBar,
     private readonly dialog: MatDialog,
     private readonly logger: LoggerService,
-    private readonly userContextService: UserContextService
+    private readonly userContextService: UserContextService,
+    public readonly t: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -113,12 +115,20 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   pauseDraft(): void {
     if (!this.gameId) return;
-    this.performDraftAction('pause', 'Draft mis en pause');
+    this.performDraftAction(
+      'pause',
+      this.t.t('draft.success.draftPaused'),
+      this.t.t('draft.errors.pauseFailed')
+    );
   }
 
   resumeDraft(): void {
     if (!this.gameId) return;
-    this.performDraftAction('resume', 'Draft repris');
+    this.performDraftAction(
+      'resume',
+      this.t.t('draft.success.draftResumed'),
+      this.t.t('draft.errors.resumeFailed')
+    );
   }
 
   cancelDraft(): void {
@@ -146,7 +156,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   canSelectPlayer(): boolean {
-    const status = this.draftState?.draft?.status ?? this.draftState?.status;
+    const status = this.draftState?.draft?.status ? this.draftState?.status;
     return this.gameId !== null && 
            !this.isSelectingPlayer &&
            this.isCurrentUserTurn() && 
@@ -169,7 +179,8 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   getStatusLabel(status: DraftStatus | string): string {
-    return STATUS_LABELS[status] || status;
+    const key = STATUS_LABELS[status];
+    return key ? this.t.t(key) : status;
   }
 
   // === NOUVELLES MÉTHODES POUR L'INTERFACE SIMPLIFIÉE ===
@@ -210,10 +221,28 @@ export class DraftComponent implements OnInit, OnDestroy {
     }));
   }
 
+  getSearchResultsTitle(count: number): string {
+    return this.formatTemplate(this.t.t('draft.ui.searchResultsTitle'), { count });
+  }
+
+  getShowAllResultsLabel(count: number): string {
+    return this.formatTemplate(this.t.t('draft.ui.showAllResults'), { count });
+  }
+
+  getSuggestionRankLabel(rank: number): string {
+    return this.formatTemplate(this.t.t('draft.ui.suggestionRank'), { rank });
+  }
+
+  getSlotsRemainingLabel(): string {
+    const remaining = this.getRemainingSlots();
+    const key = remaining === 1 ? 'draft.ui.slotsRemainingSingle' : 'draft.ui.slotsRemainingMultiple';
+    return this.formatTemplate(this.t.t(key), { count: remaining });
+  }
+
   getWaitingMessage(): string {
     const currentPlayer = this.getCurrentTurnPlayer();
-    if (!currentPlayer) return 'En attente du prochain tour';
-    return `C'est au tour de ${currentPlayer.username}`;
+    if (!currentPlayer) return this.t.t('draft.ui.waitingNextTurn');
+    return this.formatTemplate(this.t.t('draft.ui.waitingTurn'), { username: currentPlayer.username });
   }
 
   getCurrentUserTeam(): Player[] {
@@ -230,13 +259,14 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   getRegionLabel(region: string): string {
-    return REGION_LABELS[region as PlayerRegion] || region;
+    const key = REGION_LABELS[region as PlayerRegion];
+    return key ? this.t.t(key, region) : region;
   }
 
   getTrancheLabel(tranche: string): string {
     const match = /^T(\d+)$/i.exec(tranche);
     if (match) {
-      return `Tranche ${match[1]}`;
+      return this.formatTemplate(this.t.t('draft.selection.trancheValue'), { value: match[1] });
     }
     return tranche;
   }
@@ -297,7 +327,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   private initializeComponent(): void {
     this.gameId = this.extractGameId();
     if (!this.gameId) {
-      this.setError('ID de game manquant');
+      this.setError(this.t.t('draft.errors.missingGameId'));
       return;
     }
 
@@ -346,7 +376,7 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private handleDraftStateError(error: any): void {
     this.logger.error('Draft: Failed to load draft state', error);
-    const errorMessage = error.message || 'Erreur lors du chargement du draft';
+    const errorMessage = error.message || this.t.t('draft.errors.loadDraftFailed');
     this.setError(errorMessage);
     this.setLoadingState(false);
     
@@ -356,15 +386,18 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private handlePlayerSelectionSuccess(player: Player): void {
-    this.showSuccessMessage(`Joueur ${player.nickname} sélectionné!`);
+    this.showSuccessMessage(
+      this.formatTemplate(this.t.t('draft.success.playerSelectedWithName'), { player: player.nickname })
+    );
     this.refreshDraftState();
     this.setSelectingState(false);
   }
 
   private handlePlayerSelectionError(): void {
     this.logger.error('Draft: Failed to select player');
-    this.setError('Erreur lors de la sélection du joueur');
-    this.showErrorMessage('Erreur lors de la sélection du joueur');
+    const message = this.t.t('draft.errors.selectPlayerFailed');
+    this.setError(message);
+    this.showErrorMessage(message);
     this.setSelectingState(false);
   }
 
@@ -391,7 +424,7 @@ export class DraftComponent implements OnInit, OnDestroy {
       });
   }
 
-  private performDraftAction(action: 'pause' | 'resume', successMessage: string): void {
+  private performDraftAction(action: 'pause' | 'resume', successMessage: string, errorMessage: string): void {
     const actionMethod = action === 'pause' ? 
       this.draftService.pauseDraft(this.gameId!) : 
       this.draftService.resumeDraft(this.gameId!);
@@ -406,9 +439,9 @@ export class DraftComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.logger.error(`Draft: Failed to ${action} draft`, error);
-          const errorMessage = error.message || `Erreur lors de la ${action}`;
-          this.setError(errorMessage);
-          this.showErrorMessage(`Erreur lors de la ${action}`);
+          const resolvedMessage = error.message || errorMessage;
+          this.setError(resolvedMessage);
+          this.showErrorMessage(resolvedMessage);
         }
       });
   }
@@ -418,12 +451,15 @@ export class DraftComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (picks) => {
-          this.showSuccessMessage(`${picks.length} timeouts gérés`);
+          this.showSuccessMessage(
+            this.formatTemplate(this.t.t('draft.success.timeoutsHandled'), { count: picks.length })
+          );
           this.refreshDraftState();
         },
         error: (error) => {
-          this.setError('Erreur lors de la gestion des timeouts');
-          this.showErrorMessage('Erreur lors de la gestion des timeouts');
+          const message = this.t.t('draft.errors.timeoutsFailed');
+          this.setError(message);
+          this.showErrorMessage(message);
         }
       });
   }
@@ -432,10 +468,10 @@ export class DraftComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        title: 'Annuler le draft',
-        message: 'Êtes-vous sûr de vouloir annuler ce draft ? Cette action est irréversible.',
-        confirmText: 'Annuler le draft',
-        cancelText: 'Retour',
+        title: this.t.t('draft.ui.cancelDraftTitle'),
+        message: this.t.t('draft.ui.cancelDraftMessage'),
+        confirmText: this.t.t('draft.ui.cancelDraftConfirm'),
+        cancelText: this.t.t('draft.ui.cancelDraftCancel'),
         confirmColor: 'warn'
       }
     });
@@ -453,27 +489,28 @@ export class DraftComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (success) => {
           if (success) {
-            this.showSuccessMessage('Draft annulé');
+            this.showSuccessMessage(this.t.t('draft.success.draftCancelled'));
             this.onBack();
           }
         },
         error: (error) => {
-          this.setError('Erreur lors de l\'annulation');
-          this.showErrorMessage('Erreur lors de l\'annulation');
+          const message = this.t.t('draft.errors.cancelFailed');
+          this.setError(message);
+          this.showErrorMessage(message);
         }
       });
   }
 
   // Méthodes privées de gestion des réponses d'initialisation
   private handleDraftInitializationSuccess(): void {
-    this.showSuccessMessage('Draft initialisé avec succès!');
+    this.showSuccessMessage(this.t.t('draft.success.draftInitialized'));
     this.loadDraftState();
   }
 
   private handleDraftInitializationError(error: any): void {
-    const errorMessage = error.message || 'Erreur lors de l\'initialisation du draft';
+    const errorMessage = error.message || this.t.t('draft.errors.initializeFailed');
     this.setError(errorMessage);
-    this.showErrorMessage('Erreur lors de l\'initialisation du draft');
+    this.showErrorMessage(errorMessage);
   }
 
   // Méthodes privées de filtrage
@@ -507,11 +544,17 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   // Méthodes privées de notification
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Fermer', { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
+    this.snackBar.open(message, this.t.t('common.close'), { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
   }
 
   private showErrorMessage(message: string): void {
-    this.snackBar.open(message, 'Fermer', { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
+    this.snackBar.open(message, this.t.t('common.close'), { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
+  }
+
+  private formatTemplate(template: string, params: Record<string, string | number>): string {
+    return Object.entries(params).reduce((result, [key, value]) => {
+      return result.replace(`{${key}}`, String(value));
+    }, template);
   }
 
   private normalizeParticipant(entry: any): GameParticipant | null {

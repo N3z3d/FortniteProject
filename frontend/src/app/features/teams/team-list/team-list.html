@@ -1,18 +1,18 @@
 <div class="team-list-container">
   <div class="header">
-    <h1>Équipes Saison 2025</h1>
-    <p class="subtitle">Toutes les équipes de la fantasy league</p>
+    <h1>{{ t.t('teams.list.seasonTitle').replace('{season}', '2025') }}</h1>
+    <p class="subtitle">{{ t.t('teams.list.seasonSubtitle') }}</p>
   </div>
 
   <div *ngIf="loading" class="loading">
     <mat-spinner></mat-spinner>
-    <p>Chargement des équipes...</p>
+    <p>{{ t.t('teams.common.loadingTeams') }}</p>
   </div>
 
   <div *ngIf="error" class="error">
     <mat-icon>error</mat-icon>
     <p>{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="loadTeams()">Réessayer</button>
+    <button mat-raised-button color="primary" (click)="loadTeams()">{{ t.t('common.retry') }}</button>
   </div>
 
   <div *ngIf="!loading && !error" class="teams-grid">
@@ -20,7 +20,7 @@
       <mat-card-header>
         <mat-card-title>{{ team.name }}</mat-card-title>
         <mat-card-subtitle>
-          Propriétaire: {{ team.ownerUsername }}
+          {{ t.t('teams.common.owner') }}: {{ team.ownerUsername }}
         </mat-card-subtitle>
       </mat-card-header>
       
@@ -28,16 +28,16 @@
         <div class="team-stats">
           <div class="stat">
             <mat-icon>star</mat-icon>
-            <span>{{ team.totalScore }} points</span>
+            <span>{{ team.totalScore }} {{ t.t('teams.common.points') }}</span>
           </div>
           <div class="stat">
             <mat-icon>group</mat-icon>
-            <span>{{ team.players.length }} joueurs</span>
+            <span>{{ team.players.length }} {{ t.t('teams.common.players') }}</span>
           </div>
         </div>
 
         <div class="players-section" *ngIf="team.players.length > 0">
-          <h3>Joueurs</h3>
+          <h3>{{ t.t('teams.common.players') }}</h3>
           <div class="players-list">
             <div *ngFor="let player of team.players; let i = index; trackBy: trackByPlayer" 
                  class="player-item">
@@ -50,7 +50,7 @@
                 </mat-chip>
               </div>
               <div class="player-stats">
-                <span class="points">0 pts</span>
+                <span class="points">0 {{ t.t('teams.common.pointsShort') }}</span>
                 <span class="tranche">T{{ player.tranche }}</span>
               </div>
             </div>
@@ -59,18 +59,18 @@
         
         <div *ngIf="team.players.length === 0" class="no-players">
           <mat-icon>person_off</mat-icon>
-          <p>Aucun joueur dans cette équipe</p>
+          <p>{{ t.t('teams.list.noPlayers') }}</p>
         </div>
       </mat-card-content>
       
       <mat-card-actions>
         <button mat-button color="primary" (click)="viewTeamDetails(team.id)">
           <mat-icon>visibility</mat-icon>
-          Voir détails
+          {{ t.t('teams.list.viewDetails') }}
         </button>
         <button mat-button (click)="manageTeam(team.id)">
           <mat-icon>edit</mat-icon>
-          Gérer
+          {{ t.t('teams.list.manage') }}
         </button>
       </mat-card-actions>
     </mat-card>
@@ -78,7 +78,7 @@
 
   <div *ngIf="!loading && !error && teams.length === 0" class="no-teams">
     <mat-icon>team_dashboard</mat-icon>
-    <h2>Aucune équipe trouvée</h2>
-    <p>Il n'y a pas encore d'équipe pour la saison 2025.</p>
+    <h2>{{ t.t('teams.list.emptyTitle') }}</h2>
+    <p>{{ t.t('teams.list.emptySeason').replace('{season}', '2025') }}</p>
   </div>
 </div>

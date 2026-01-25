@@ -23,6 +23,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import com.fortnite.pronos.config.SeedProperties;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
@@ -86,9 +88,12 @@ class FakeGameSeedServiceTest {
     User teddy = buildUser("Teddy", User.UserRole.USER);
     User marcel = buildUser("Marcel", User.UserRole.USER);
 
-    when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.of(creator));
-    when(userRepository.findByUsername("Teddy")).thenReturn(Optional.of(teddy));
-    when(userRepository.findByUsername("Marcel")).thenReturn(Optional.of(marcel));
+    when(((UserRepositoryPort) userRepository).findByUsername("Thibaut"))
+        .thenReturn(Optional.of(creator));
+    when(((UserRepositoryPort) userRepository).findByUsername("Teddy"))
+        .thenReturn(Optional.of(teddy));
+    when(((UserRepositoryPort) userRepository).findByUsername("Marcel"))
+        .thenReturn(Optional.of(marcel));
     when(gameRepository.existsByNameAndCreator(eq("Fake League - 4 Players"), eq(creator)))
         .thenReturn(false);
 
@@ -97,7 +102,8 @@ class FakeGameSeedServiceTest {
     when(playerRepository.findAll(PageRequest.of(0, 4, Sort.by("nickname").ascending())))
         .thenReturn(new PageImpl<>(players));
 
-    when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     when(teamRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     fakeGameSeedService.seedFakeGame();

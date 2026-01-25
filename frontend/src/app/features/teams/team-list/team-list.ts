@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TeamService, TeamDto, TeamPlayerDto } from '../../../core/services/team.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-team-list',
@@ -31,7 +32,8 @@ export class TeamList implements OnInit {
   constructor(
     private readonly teamService: TeamService,
     private readonly logger: LoggerService,
-    private readonly router: Router
+    private readonly router: Router,
+    public readonly t: TranslationService
   ) {}
 
   ngOnInit() {
@@ -50,7 +52,7 @@ export class TeamList implements OnInit {
       },
       error: (error) => {
         this.logger.error('TeamList: failed to load teams', error);
-        this.error = 'Erreur lors du chargement des équipes';
+        this.error = this.t.t('teams.list.errors.loadFailed');
         this.loading = false;
       }
     });

@@ -25,6 +25,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.model.Game;
@@ -150,7 +152,8 @@ class GameWorkflowIntegrationTest {
     flushAndClear();
 
     // Vérifier que le statut a changé
-    Game updatedGame = gameRepository.findById(testGame.getId()).orElse(null);
+    Game updatedGame =
+        ((GameRepositoryPort) gameRepository).findById(testGame.getId()).orElse(null);
     assertNotNull(updatedGame);
     assertEquals(GameStatus.DRAFTING, updatedGame.getStatus());
   }
@@ -171,8 +174,12 @@ class GameWorkflowIntegrationTest {
     // When & Then
     performWithUser(delete("/api/games/{id}", testGame.getId())).andExpect(status().isOk());
 
-    // Vérifier que la game a été supprimée
-    assertFalse(gameRepository.findById(testGame.getId()).isPresent());
+    // Vérifier que la game a été soft-deleted (deletedAt is set)
+    assertTrue(
+        ((GameRepositoryPort) gameRepository)
+            .findById(testGame.getId())
+            .map(game -> game.isDeleted())
+            .orElse(false));
   }
 
   @Test
@@ -207,7 +214,7 @@ class GameWorkflowIntegrationTest {
     // Given - Créer une game avec seulement 2 participants max
     Game fullGame = createTestGame("Full Game", testUser);
     fullGame.setMaxParticipants(2);
-    gameRepository.save(fullGame);
+    ((GameRepositoryPort) gameRepository).save(fullGame);
 
     // Ajouter un premier participant
     User secondUser = createTestUser("SecondUser", "second@test.com");
@@ -302,7 +309,7 @@ class GameWorkflowIntegrationTest {
     user.setPassword("password");
     user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
-    return userRepository.save(user);
+    return ((UserRepositoryPort) userRepository).save(user);
   }
 
   private Game createTestGame(String name, User creator) {
@@ -311,7 +318,7 @@ class GameWorkflowIntegrationTest {
     game.setCreator(creator);
     game.setMaxParticipants(10);
     game.setStatus(GameStatus.CREATING);
-    return gameRepository.save(game);
+    return ((GameRepositoryPort) gameRepository).save(game);
   }
 
   private void joinGame(UUID gameId, UUID userId) throws Exception {

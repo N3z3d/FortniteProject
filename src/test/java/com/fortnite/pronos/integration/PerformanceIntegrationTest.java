@@ -28,6 +28,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
@@ -136,7 +138,7 @@ class PerformanceIntegrationTest {
       user.setPassword("password123");
       user.setRole(User.UserRole.USER);
       user.setCurrentSeason(2025);
-      testUsers.add(userRepository.save(user));
+      testUsers.add(((UserRepositoryPort) userRepository).save(user));
     }
 
     // Création de 50 games de test
@@ -148,7 +150,7 @@ class PerformanceIntegrationTest {
       game.setMaxParticipants(10);
       game.setStatus(GameStatus.CREATING);
       game.setCreatedAt(LocalDateTime.now());
-      testGames.add(gameRepository.save(game));
+      testGames.add(((GameRepositoryPort) gameRepository).save(game));
     }
   }
 
@@ -494,7 +496,7 @@ class PerformanceIntegrationTest {
       game.setMaxParticipants(10);
       game.setStatus(GameStatus.CREATING);
       game.setCreatedAt(LocalDateTime.now());
-      gameRepository.save(game);
+      ((GameRepositoryPort) gameRepository).save(game);
     }
 
     // When & Then - Test de récupération avec beaucoup de données

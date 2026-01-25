@@ -14,11 +14,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 
 /**
  * TDD Tests for GameStatisticsService - Analytics Critical Component
@@ -36,8 +36,8 @@ import com.fortnite.pronos.repository.GameRepository;
 @DisplayName("GameStatisticsService - Analytics Critical TDD Tests")
 class GameStatisticsServiceTddTest {
 
-  @Mock private GameRepository gameRepository;
-  @Mock private GameParticipantRepository gameParticipantRepository;
+  @Mock private GameRepositoryPort gameRepository;
+  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
 
   @InjectMocks private GameStatisticsService gameStatisticsService;
 

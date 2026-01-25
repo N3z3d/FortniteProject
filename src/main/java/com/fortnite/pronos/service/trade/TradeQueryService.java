@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.TradeQueryUseCase;
 import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.model.Trade;
 import com.fortnite.pronos.repository.TradeRepository;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class TradeQueryService {
+public class TradeQueryService implements TradeQueryUseCase {
 
   private final TradeRepository tradeRepository;
 

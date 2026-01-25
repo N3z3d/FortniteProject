@@ -60,9 +60,9 @@
             <mat-form-field appearance="outline">
               <mat-select [(ngModel)]="theme" (selectionChange)="onThemeChange()">
                 <mat-option value="dark">{{ t.translate('settings.darkMode') }}</mat-option>
-                <mat-option value="light" disabled>{{ t.translate('settings.lightMode') }} (à venir)</mat-option>
+                <mat-option value="light" disabled>{{ t.translate('settings.lightMode') }} {{ t.translate('settings.lightModeComingSoon') }}</mat-option>
               </mat-select>
-              <mat-hint>Le mode clair sera disponible dans une prochaine version</mat-hint>
+              <mat-hint>{{ t.translate('settings.lightModeHint') }}</mat-hint>
             </mat-form-field>
           </div>
 

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.InvitationCodeGenerator;
-import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.domain.port.out.InvitationCodeRepositoryPort;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class InvitationCodeService {
 
-  private final GameRepository gameRepository;
+  private final InvitationCodeRepositoryPort invitationCodeRepository;
 
   private static final int MAX_GENERATION_ATTEMPTS = 100;
 
@@ -37,7 +37,7 @@ public class InvitationCodeService {
     for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
       String code = codeGenerator.generate();
 
-      if (!gameRepository.existsByInvitationCode(code)) {
+      if (!invitationCodeRepository.existsByInvitationCode(code)) {
         log.info("Code d'invitation généré avec succès : {} (tentative {})", code, attempt);
         return code;
       }

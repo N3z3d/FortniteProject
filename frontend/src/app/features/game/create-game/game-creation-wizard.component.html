@@ -1,55 +1,55 @@
 <!-- UX-001: Advanced Game Creation Wizard - Multi-step with smart defaults -->
 <div class="game-creation-wizard">
-  
+
   <!-- Wizard Header -->
   <div class="wizard-header">
     <h1>
       <mat-icon>auto_awesome</mat-icon>
-      Créer une nouvelle partie
+      {{ t.t('games.wizard.title') }}
     </h1>
-    <p class="wizard-subtitle">Assistant intelligent en 3 étapes</p>
+    <p class="wizard-subtitle">{{ t.t('games.wizard.subtitle') }}</p>
   </div>
 
   <!-- Multi-step Stepper -->
   <mat-stepper #stepper orientation="horizontal" class="wizard-stepper">
-    
+
     <!-- STEP 1: Basic Information & Template Selection -->
-    <mat-step [stepControl]="basicInfoForm" label="Informations de base">
+    <mat-step [stepControl]="basicInfoForm" [label]="t.t('games.wizard.step1Label')">
       <form [formGroup]="basicInfoForm" class="step-form">
-        
+
         <!-- Template Selection - UX-001 Smart Defaults -->
         <div class="template-selection">
           <h3>
             <mat-icon>dashboard_customize</mat-icon>
-            Choisissez un modèle
+            {{ t.t('games.wizard.chooseTemplate') }}
           </h3>
-          <p class="template-hint">Configurations pré-optimisées pour démarrer rapidement</p>
-          
+          <p class="template-hint">{{ t.t('games.wizard.templateHint') }}</p>
+
           <!-- Popular Templates -->
           <div class="templates-grid">
-            <mat-card 
-              *ngFor="let template of getPopularTemplates()" 
+            <mat-card
+              *ngFor="let template of getPopularTemplates()"
               class="template-card"
               [class.selected]="selectedTemplate?.id === template.id"
               (click)="onTemplateSelect(template)">
-              
+
               <mat-card-header>
                 <mat-icon mat-card-avatar [class.popular]="template.popular">
                   {{ template.icon }}
                 </mat-icon>
                 <mat-card-title>{{ template.name }}</mat-card-title>
                 <mat-card-subtitle *ngIf="template.popular" class="popular-badge">
-                  <mat-icon>star</mat-icon> Populaire
+                  <mat-icon>star</mat-icon> {{ t.t('games.wizard.popular') }}
                 </mat-card-subtitle>
               </mat-card-header>
-              
+
               <mat-card-content>
                 <p>{{ template.description }}</p>
                 <div class="template-specs">
-                  <span class="spec">{{ template.config.maxParticipants }} joueurs</span>
-                  <span class="spec">{{ (template.config.draftTimeLimit || 0) / 60 }}min/pick</span>
-                  <span class="spec" *ngIf="template.config.isPrivate">Privée</span>
-                  <span class="spec" *ngIf="!template.config.isPrivate">Publique</span>
+                  <span class="spec">{{ template.config.maxParticipants }} {{ t.t('games.wizard.players') }}</span>
+                  <span class="spec">{{ (template.config.draftTimeLimit || 0) / 60 }}{{ t.t('games.wizard.minPerPick') }}</span>
+                  <span class="spec" *ngIf="template.config.isPrivate">{{ t.t('games.wizard.private') }}</span>
+                  <span class="spec" *ngIf="!template.config.isPrivate">{{ t.t('games.wizard.public') }}</span>
                 </div>
               </mat-card-content>
             </mat-card>
@@ -57,20 +57,20 @@
 
           <!-- Other Templates -->
           <details class="other-templates" *ngIf="getAllTemplates().length > getPopularTemplates().length">
-            <summary>Autres modèles</summary>
+            <summary>{{ t.t('games.wizard.otherTemplates') }}</summary>
             <div class="templates-grid">
               <ng-container *ngFor="let template of getAllTemplates()">
-                <mat-card 
+                <mat-card
                   *ngIf="!template.popular"
                   class="template-card"
                   [class.selected]="selectedTemplate?.id === template.id"
                   (click)="onTemplateSelect(template)">
-                  
+
                   <mat-card-header>
                     <mat-icon mat-card-avatar>{{ template.icon }}</mat-icon>
                     <mat-card-title>{{ template.name }}</mat-card-title>
                   </mat-card-header>
-                  
+
                   <mat-card-content>
                     <p>{{ template.description }}</p>
                   </mat-card-content>
@@ -84,16 +84,16 @@
         <div class="basic-info-section">
           <h3>
             <mat-icon>edit</mat-icon>
-            Détails de votre partie
+            {{ t.t('games.wizard.gameDetails') }}
           </h3>
-          
+
           <!-- Real-time validation feedback - UX-001 requirement -->
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Nom de la partie</mat-label>
-            <input 
-              matInput 
-              formControlName="name" 
-              placeholder="Ex: Tournoi des champions"
+            <mat-label>{{ t.t('games.wizard.gameName') }}</mat-label>
+            <input
+              matInput
+              formControlName="name"
+              [placeholder]="t.t('games.wizard.gameNamePlaceholder')"
               maxlength="50"
               autocomplete="off">
             <mat-hint align="end">{{ basicInfoForm.get('name')?.value?.length || 0 }}/50</mat-hint>
@@ -101,11 +101,11 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Description (optionnelle)</mat-label>
-            <textarea 
-              matInput 
-              formControlName="description" 
-              placeholder="Décrivez votre partie..."
+            <mat-label>{{ t.t('games.wizard.descriptionOptional') }}</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+              [placeholder]="t.t('games.wizard.descriptionPlaceholder')"
               rows="3"
               maxlength="200"></textarea>
             <mat-hint align="end">{{ basicInfoForm.get('description')?.value?.length || 0 }}/200</mat-hint>
@@ -116,78 +116,78 @@
         <div class="step-actions">
           <button mat-button type="button" (click)="onCancel()">
             <mat-icon>close</mat-icon>
-            Annuler
+            {{ t.t('games.wizard.cancel') }}
           </button>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            matStepperNext 
+          <button
+            mat-raised-button
+            color="primary"
+            matStepperNext
             [disabled]="!isStep1Valid()"
             class="next-button">
             <mat-icon>arrow_forward</mat-icon>
-            Règles du jeu
+            {{ t.t('games.wizard.gameRules') }}
           </button>
         </div>
       </form>
     </mat-step>
 
     <!-- STEP 2: Player Rules & Configuration -->
-    <mat-step [stepControl]="rulesForm" label="Règles du jeu">
+    <mat-step [stepControl]="rulesForm" [label]="t.t('games.wizard.step2Label')">
       <form [formGroup]="rulesForm" class="step-form">
-        
+
         <h3>
           <mat-icon>settings</mat-icon>
-          Configuration de la partie
+          {{ t.t('games.wizard.gameConfig') }}
         </h3>
         <p class="step-description">
-          Ajustez les paramètres selon vos préférences
+          {{ t.t('games.wizard.adjustParams') }}
         </p>
 
         <!-- Players Configuration -->
         <div class="config-section">
-          <h4>Participants</h4>
-          
+          <h4>{{ t.t('games.wizard.participants') }}</h4>
+
           <mat-form-field appearance="outline">
-            <mat-label>Nombre maximum de participants</mat-label>
+            <mat-label>{{ t.t('games.wizard.maxParticipantsLabel') }}</mat-label>
             <mat-select formControlName="maxParticipants">
               <mat-option *ngFor="let num of [2,3,4,5,6,7,8,9,10,12,15,20]" [value]="num">
-                {{ num }} joueurs
+                {{ num }} {{ t.t('games.wizard.players') }}
               </mat-option>
             </mat-select>
-            <mat-hint>Recommandé: 5-8 joueurs pour une expérience optimale</mat-hint>
+            <mat-hint>{{ t.t('games.wizard.participantsRecommendation') }}</mat-hint>
             <mat-error>{{ getParticipantsValidationMessage() }}</mat-error>
           </mat-form-field>
         </div>
 
         <!-- Draft Configuration -->
         <div class="config-section">
-          <h4>Configuration du draft</h4>
-          
+          <h4>{{ t.t('games.wizard.draftConfig') }}</h4>
+
           <div class="draft-config">
             <!-- Draft Time Limit -->
             <mat-form-field appearance="outline" class="time-field">
-              <mat-label>Temps par pick</mat-label>
+              <mat-label>{{ t.t('games.wizard.timePerPick') }}</mat-label>
               <mat-select formControlName="draftTimeLimit">
-                <mat-option [value]="60">1 minute ⚡</mat-option>
-                <mat-option [value]="120">2 minutes</mat-option>
-                <mat-option [value]="180">3 minutes (recommandé)</mat-option>
-                <mat-option [value]="300">5 minutes</mat-option>
-                <mat-option [value]="600">10 minutes</mat-option>
-                <mat-option [value]="900">15 minutes</mat-option>
+                <mat-option [value]="60">{{ t.t('games.wizard.oneMinute') }}</mat-option>
+                <mat-option [value]="120">{{ t.t('games.wizard.twoMinutes') }}</mat-option>
+                <mat-option [value]="180">{{ t.t('games.wizard.threeMinutesRec') }}</mat-option>
+                <mat-option [value]="300">{{ t.t('games.wizard.fiveMinutes') }}</mat-option>
+                <mat-option [value]="600">{{ t.t('games.wizard.tenMinutes') }}</mat-option>
+                <mat-option [value]="900">{{ t.t('games.wizard.fifteenMinutes') }}</mat-option>
               </mat-select>
               <mat-hint>{{ getDraftTimeLimitLabel() }}</mat-hint>
             </mat-form-field>
 
             <!-- Auto-pick Delay -->
             <mat-form-field appearance="outline" class="time-field">
-              <mat-label>Délai avant auto-pick</mat-label>
+              <mat-label>{{ t.t('games.wizard.autoPickDelay') }}</mat-label>
               <mat-select formControlName="autoPickDelay">
-                <mat-option [value]="300">5 minutes ⚡</mat-option>
-                <mat-option [value]="1800">30 minutes</mat-option>
-                <mat-option [value]="3600">1 heure (recommandé)</mat-option>
-                <mat-option [value]="7200">2 heures</mat-option>
-                <mat-option [value]="43200">12 heures</mat-option>
-                <mat-option [value]="86400">24 heures</mat-option>
+                <mat-option [value]="300">{{ t.t('games.wizard.fiveMinutesFast') }}</mat-option>
+                <mat-option [value]="1800">{{ t.t('games.wizard.thirtyMinutes') }}</mat-option>
+                <mat-option [value]="3600">{{ t.t('games.wizard.oneHourRec') }}</mat-option>
+                <mat-option [value]="7200">{{ t.t('games.wizard.twoHours') }}</mat-option>
+                <mat-option [value]="43200">{{ t.t('games.wizard.twelveHours') }}</mat-option>
+                <mat-option [value]="86400">{{ t.t('games.wizard.twentyFourHours') }}</mat-option>
               </mat-select>
               <mat-hint>{{ getAutoPickDelayLabel() }}</mat-hint>
             </mat-form-field>
@@ -196,17 +196,17 @@
 
         <!-- Game Options -->
         <div class="config-section">
-          <h4>Options de jeu</h4>
-          
+          <h4>{{ t.t('games.wizard.gameOptions') }}</h4>
+
           <div class="game-options">
             <mat-checkbox formControlName="isPrivate">
-              <span class="option-label">Game privée</span>
-              <span class="option-description">Seuls les joueurs invités peuvent rejoindre</span>
+              <span class="option-label">{{ t.t('games.wizard.privateGame') }}</span>
+              <span class="option-description">{{ t.t('games.wizard.privateGameDesc') }}</span>
             </mat-checkbox>
 
             <mat-checkbox formControlName="autoStartDraft">
-              <span class="option-label">Démarrage automatique du draft</span>
-              <span class="option-description">Le draft commence dès que tous les joueurs sont prêts</span>
+              <span class="option-label">{{ t.t('games.wizard.autoStartDraft') }}</span>
+              <span class="option-description">{{ t.t('games.wizard.autoStartDraftDesc') }}</span>
             </mat-checkbox>
           </div>
         </div>
@@ -215,31 +215,31 @@
         <div class="step-actions">
           <button mat-button matStepperPrevious>
             <mat-icon>arrow_back</mat-icon>
-            Retour
+            {{ t.t('games.wizard.back') }}
           </button>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            matStepperNext 
+          <button
+            mat-raised-button
+            color="primary"
+            matStepperNext
             [disabled]="!isStep2Valid()"
             class="next-button">
             <mat-icon>preview</mat-icon>
-            Aperçu
+            {{ t.t('games.wizard.preview') }}
           </button>
         </div>
       </form>
     </mat-step>
 
     <!-- STEP 3: Review & Preview -->
-    <mat-step label="Aperçu">
+    <mat-step [label]="t.t('games.wizard.step3Label')">
       <div class="review-step">
-        
+
         <h3>
           <mat-icon>visibility</mat-icon>
-          Aperçu de votre partie
+          {{ t.t('games.wizard.previewTitle') }}
         </h3>
         <p class="review-description">
-          Vérifiez les détails avant de créer votre partie
+          {{ t.t('games.wizard.previewDesc') }}
         </p>
 
         <!-- Game Preview Card -->
@@ -259,27 +259,27 @@
             <div class="game-stats">
               <div class="stat">
                 <mat-icon>group</mat-icon>
-                <span class="stat-label">{{ getGamePreview().maxParticipants }} participants max</span>
+                <span class="stat-label">{{ getGamePreview().maxParticipants }} {{ t.t('games.wizard.participantsMax') }}</span>
               </div>
-              
+
               <div class="stat">
                 <mat-icon>schedule</mat-icon>
                 <span class="stat-label">{{ getDraftTimeLimitLabel() }}</span>
               </div>
-              
+
               <div class="stat">
                 <mat-icon>auto_mode</mat-icon>
-                <span class="stat-label">Auto-pick: {{ getAutoPickDelayLabel() }}</span>
+                <span class="stat-label">{{ t.t('games.wizard.autoPick') }} {{ getAutoPickDelayLabel() }}</span>
               </div>
-              
+
               <div class="stat" *ngIf="getGamePreview().isPrivate">
                 <mat-icon>lock</mat-icon>
-                <span class="stat-label">Game privée</span>
+                <span class="stat-label">{{ t.t('games.wizard.privateGame') }}</span>
               </div>
-              
+
               <div class="stat" *ngIf="!getGamePreview().isPrivate">
                 <mat-icon>public</mat-icon>
-                <span class="stat-label">Game publique</span>
+                <span class="stat-label">{{ t.t('games.wizard.publicGame') }}</span>
               </div>
             </div>
 
@@ -287,8 +287,8 @@
             <div class="success-prediction">
               <mat-icon class="prediction-icon">psychology</mat-icon>
               <div class="prediction-content">
-                <strong>Prédiction de succès: 94%</strong>
-                <p>Configuration optimale basée sur {{ getGamePreview().maxParticipants }} joueurs similaires</p>
+                <strong>{{ t.t('games.wizard.successPrediction') }}</strong>
+                <p>{{ t.t('games.wizard.optimalConfigBased').replace('{n}', getGamePreview().maxParticipants) }}</p>
               </div>
             </div>
           </mat-card-content>
@@ -308,18 +308,18 @@
         <div class="step-actions final-actions">
           <button mat-button matStepperPrevious [disabled]="loading">
             <mat-icon>arrow_back</mat-icon>
-            Modifier
+            {{ t.t('games.wizard.modify') }}
           </button>
-          
-          <button 
-            mat-raised-button 
-            color="primary" 
+
+          <button
+            mat-raised-button
+            color="primary"
             (click)="onSubmit()"
             [disabled]="loading"
             class="create-button">
             <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
             <mat-icon *ngIf="!loading">rocket_launch</mat-icon>
-            {{ loading ? 'Création en cours...' : 'Créer la partie' }}
+            {{ loading ? t.t('games.wizard.creating') : t.t('games.wizard.createGame') }}
           </button>
         </div>
       </div>
@@ -331,7 +331,7 @@
   <div class="wizard-progress" *ngIf="!loading">
     <div class="progress-info">
       <mat-icon>info</mat-icon>
-      <span>Temps de création moyen: moins de 2 minutes</span>
+      <span>{{ t.t('games.wizard.avgCreationTime') }}</span>
     </div>
   </div>
 

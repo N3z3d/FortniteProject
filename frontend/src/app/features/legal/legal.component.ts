@@ -29,6 +29,7 @@ interface PageContent {
 })
 export class LegalComponent implements OnInit {
   pageType: LegalPageType = 'legal-notice';
+  readonly lastUpdateDate = '2026-01-22';
 
   private pageConfigs: Record<LegalPageType, PageContent> = {
     'contact': {

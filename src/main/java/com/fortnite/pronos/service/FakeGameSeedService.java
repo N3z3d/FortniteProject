@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.config.SeedProperties;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameRegionRule;
@@ -22,7 +23,6 @@ import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.repository.UserRepository;
@@ -46,7 +46,7 @@ public class FakeGameSeedService {
   private static final int FAKE_MAX_PARTICIPANTS = 4;
   private static final int FAKE_PLAYER_COUNT = 4;
 
-  private final GameRepository gameRepository;
+  private final GameRepositoryPort gameRepository;
   private final UserRepository userRepository;
   private final PlayerRepository playerRepository;
   private final TeamRepository teamRepository;

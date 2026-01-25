@@ -121,6 +121,8 @@ class DomainIsolationTest {
             .areNotRecords()
             .and()
             .areNotNestedClasses()
+            .and()
+            .areNotInterfaces() // Interfaces cannot be final
             .should()
             .haveModifier(JavaModifier.FINAL);
 

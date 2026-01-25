@@ -19,7 +19,7 @@
       <div class="orb-glow"></div>
     </div>
     <div class="loading-text">
-      <p>Initialisation de la matrice de jeu...</p>
+      <p>{{ t.t('games.home.loading') }}</p>
     </div>
   </div>
 
@@ -32,7 +32,7 @@
             <mat-icon class="error-icon">error_outline</mat-icon>
             <div class="error-pulse"></div>
           </div>
-          <h3>Dysfonctionnement système détecté</h3>
+          <h3>{{ t.t('games.home.errorTitle') }}</h3>
           <p class="error-message">{{ error }}</p>
           <button
             mat-raised-button
@@ -40,7 +40,7 @@
             class="retry-btn"
             (click)="reloadUserGames()">
             <mat-icon>refresh</mat-icon>
-            Réinitialiser
+            {{ t.t('games.home.retry') }}
           </button>
         </mat-card-content>
       </mat-card>
@@ -56,7 +56,7 @@
         <div class="section-title">
           <mat-icon class="section-icon">sports_esports</mat-icon>
           <h2>
-            Mes parties
+            {{ t.t('games.home.myGames') }}
             <span class="games-counter" *ngIf="getGameCount() > 0">({{ getGameCount() }})</span>
           </h2>
         </div>
@@ -68,7 +68,7 @@
             class="create-btn"
             (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
-            <span>Créer une partie</span>
+            <span>{{ t.t('games.home.createGame') }}</span>
           </button>
 
           <button
@@ -77,7 +77,7 @@
             class="join-btn"
             (click)="joinGame()">
             <mat-icon>group_add</mat-icon>
-            <span>Rejoindre avec un code</span>
+            <span>{{ t.t('games.home.joinWithCode') }}</span>
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@
               <div class="game-meta">
                 <span class="participants">
                   <mat-icon>group</mat-icon>
-                  {{ game.participantCount }} Joueurs
+                  {{ game.participantCount }} {{ t.t('games.home.players') }}
                 </span>
                 <span class="creation-date" *ngIf="game.createdAt">
                   {{ game.createdAt | date:'dd/MM/yyyy' }}
@@ -129,20 +129,20 @@
               <!-- Only show Fortnite players for games with draft started or completed -->
               <div class="stat-item" *ngIf="game.status !== 'CREATING'">
                 <mat-icon>sports</mat-icon>
-                <span class="stat-label">Joueurs disponibles</span>
+                <span class="stat-label">{{ t.t('games.home.availablePlayers') }}</span>
                 <span class="stat-value">{{ getTotalFortnitePlayers(game) }}</span>
               </div>
 
               <!-- For CREATING games, show empty state hint -->
               <div class="stat-item" *ngIf="game.status === 'CREATING'">
                 <mat-icon>hourglass_empty</mat-icon>
-                <span class="stat-label">En attente</span>
-                <span class="stat-value">du draft</span>
+                <span class="stat-label">{{ t.t('games.home.waitingFor') }}</span>
+                <span class="stat-value">{{ t.t('games.home.forDraft') }}</span>
               </div>
 
               <div class="stat-item" *ngIf="game.participantCount > 0">
                 <mat-icon>leaderboard</mat-icon>
-                <span class="stat-label">Taille du tournoi</span>
+                <span class="stat-label">{{ t.t('games.home.tournamentSize') }}</span>
                 <span class="stat-value">{{ game.participantCount }}/{{ getMaxParticipants() }}</span>
               </div>
             </div>
@@ -155,7 +155,7 @@
                   [style.width.%]="(game.participantCount / getMaxParticipants()) * 100">
                 </div>
               </div>
-              <span class="progress-text">{{ game.participantCount }}/{{ getMaxParticipants() }} Participants</span>
+              <span class="progress-text">{{ game.participantCount }}/{{ getMaxParticipants() }} {{ t.t('games.home.participants') }}</span>
             </div>
           </div>
 
@@ -168,7 +168,7 @@
                 class="action-btn detail-btn"
                 (click)="viewGame(game.id); $event.stopPropagation()">
                 <mat-icon>visibility</mat-icon>
-                Voir les détails
+                {{ t.t('games.home.viewDetails') }}
               </button>
 
               <button
@@ -178,7 +178,7 @@
                 *ngIf="game.status === 'DRAFTING'"
                 (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
                 <mat-icon>how_to_vote</mat-icon>
-                Entrer dans la draft
+                {{ t.t('games.home.enterDraft') }}
               </button>
 
               <button
@@ -188,7 +188,7 @@
                 *ngIf="game.status === 'ACTIVE'"
                 (click)="router.navigate(['/games', game.id, 'dashboard']); $event.stopPropagation()">
                 <mat-icon>dashboard</mat-icon>
-                Tableau de bord
+                {{ t.t('games.home.dashboard') }}
               </button>
             </div>
           </div>
@@ -205,21 +205,21 @@
               </div>
 
               <div class="empty-content">
-                <h3>Aucune partie active</h3>
-                <p>Votre empire gaming vous attend. Créez des tournois légendaires et rassemblez des champions d'élite pour bâtir votre dynastie fantasy.</p>
+                <h3>{{ t.t('games.home.noActiveGames') }}</h3>
+                <p>{{ t.t('games.home.emptyDescription') }}</p>
 
                 <div class="empty-features">
                   <div class="feature">
                     <mat-icon>add_circle</mat-icon>
-                    <span>Créer des batailles épiques</span>
+                    <span>{{ t.t('games.home.createEpicBattles') }}</span>
                   </div>
                   <div class="feature">
                     <mat-icon>group_add</mat-icon>
-                    <span>Rejoindre des champions</span>
+                    <span>{{ t.t('games.home.joinChampions') }}</span>
                   </div>
                   <div class="feature">
                     <mat-icon>emoji_events</mat-icon>
-                    <span>Remporter la victoire</span>
+                    <span>{{ t.t('games.home.winVictory') }}</span>
                   </div>
                 </div>
 
@@ -230,7 +230,7 @@
                     class="gaming-cta-btn"
                     (click)="createGame()">
                     <mat-icon>add_circle</mat-icon>
-                    Créer ma première partie
+                    {{ t.t('games.home.createFirstGame') }}
                     <div class="btn-glow"></div>
                   </button>
 
@@ -240,7 +240,7 @@
                     class="gaming-secondary-btn"
                     (click)="joinGame()">
                     <mat-icon>group_add</mat-icon>
-                    Rejoindre avec un code
+                    {{ t.t('games.home.joinWithCode') }}
                   </button>
                 </div>
               </div>

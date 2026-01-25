@@ -8,12 +8,12 @@ import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.PlayerQueryUseCase;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.PlayerRepository;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PlayerService {
+public class PlayerService implements PlayerQueryUseCase {
   private final PlayerRepository playerRepository;
   private final ScoreRepository scoreRepository;
 
@@ -91,30 +91,18 @@ public class PlayerService {
     log.debug(
         "Recherche de joueurs avec query: {}, region: {}, tranche: {}", query, region, tranche);
 
-    List<Player> players;
+    String normalizedQuery = normalizeQuery(query);
+    return playerRepository
+        .searchPlayers(normalizedQuery, region, tranche, available, pageable)
+        .map(PlayerDto::fromEntity);
+  }
 
-    if (query != null && !query.trim().isEmpty()) {
-      Page<Player> playerPage = playerRepository.searchByNickname(query, pageable);
-      players = playerPage.getContent();
-    } else {
-      players = findAllPlayers();
+  private String normalizeQuery(String query) {
+    if (query == null) {
+      return null;
     }
-
-    // Filtrer par région si spécifiée
-    if (region != null) {
-      players = players.stream().filter(p -> p.getRegion() == region).collect(Collectors.toList());
-    }
-
-    // Filtrer par tranche si spécifiée
-    if (tranche != null) {
-      players =
-          players.stream().filter(p -> p.getTranche().equals(tranche)).collect(Collectors.toList());
-    }
-
-    List<PlayerDto> playerDtos =
-        players.stream().map(PlayerDto::fromEntity).collect(Collectors.toList());
-
-    return new PageImpl<>(playerDtos, pageable, playerDtos.size());
+    String trimmed = query.trim();
+    return trimmed.isEmpty() ? null : trimmed;
   }
 
   public List<PlayerDto> getActivePlayers() {

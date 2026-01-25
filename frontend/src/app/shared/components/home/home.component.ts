@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChildren, QueryList, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective, PulseDirective } from '../../directives/premium-interactions.directive';
@@ -32,7 +32,9 @@ interface Region {
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, AfterViewInit {
-  
+  // Translation service exposed for template
+  public readonly t = inject(TranslationService);
+
   @ViewChildren('heroButton') heroButtons!: QueryList<ElementRef>;
   @ViewChildren('regionCard') regionCards!: QueryList<ElementRef>;
   
@@ -133,7 +135,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         if (stats.playersByRegion) {
           this.regions = this.regions.map(region => ({
             ...region,
-            playerCount: stats.playersByRegion?.[region.code] ?? region.playerCount
+            playerCount: stats.playersByRegion?.[region.code] ? region.playerCount
           }));
           this.logger.debug('Home: region counts updated from API', stats.playersByRegion);
         }

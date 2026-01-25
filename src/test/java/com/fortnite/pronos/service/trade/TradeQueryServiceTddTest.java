@@ -125,13 +125,13 @@ class TradeQueryServiceTddTest {
     when(tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.PENDING)).thenReturn(3L);
     when(tradeRepository.countByGameIdAndStatus(gameId, Trade.Status.REJECTED)).thenReturn(2L);
 
-    Map<String, Long> stats = tradeQueryService.getGameTradeStatistics(gameId);
+    Map<String, Object> stats = tradeQueryService.getGameTradeStatistics(gameId);
 
     assertThat(stats)
-        .containsEntry("accepted", 5L)
-        .containsEntry("pending", 3L)
-        .containsEntry("rejected", 2L)
-        .containsEntry("total", 10L);
+        .containsEntry("successfulTrades", 5L)
+        .containsEntry("pendingOffers", 3L)
+        .containsEntry("receivedOffers", 3L)
+        .containsEntry("totalTrades", 10L);
   }
 
   @Test

@@ -17,6 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
@@ -51,19 +54,27 @@ class DataInitializationServiceH2Test {
     thibaut = createUser("Thibaut", "thibaut@test.com");
     teddy = createUser("Teddy", "teddy@test.com");
 
-    lenient().when(userRepository.findByUsername("Marcel")).thenReturn(Optional.of(marcel));
-    lenient().when(userRepository.findByUsername("Thibaut")).thenReturn(Optional.of(thibaut));
-    lenient().when(userRepository.findByUsername("Teddy")).thenReturn(Optional.of(teddy));
+    lenient()
+        .when(((UserRepositoryPort) userRepository).findByUsername("Marcel"))
+        .thenReturn(Optional.of(marcel));
+    lenient()
+        .when(((UserRepositoryPort) userRepository).findByUsername("Thibaut"))
+        .thenReturn(Optional.of(thibaut));
+    lenient()
+        .when(((UserRepositoryPort) userRepository).findByUsername("Teddy"))
+        .thenReturn(Optional.of(teddy));
 
     // Mock des saves avec lenient
     lenient()
-        .when(userRepository.save(any(User.class)))
+        .when(((UserRepositoryPort) userRepository).save(any(User.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     lenient()
-        .when(gameRepository.save(any(Game.class)))
+        .when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     lenient()
-        .when(gameParticipantRepository.save(any(GameParticipant.class)))
+        .when(
+            ((GameParticipantRepositoryPort) gameParticipantRepository)
+                .save(any(GameParticipant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     lenient().when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$encodedPassword");
 

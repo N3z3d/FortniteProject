@@ -10,21 +10,21 @@
         <div class="hero-content">
             <div class="market-status">
                 <span class="status-indicator live"></span>
-                <span class="status-text">MARCHÉ OUVERT</span>
+                <span class="status-text">{{ t.t('trades.list.marketOpen') }}</span>
             </div>
 
-            <h1 class="market-title">Trade Hub</h1>
-            <p class="market-subtitle">Échangez vos joueurs pour maximiser votre score</p>
+            <h1 class="market-title">{{ t.t('trades.list.marketTitle') }}</h1>
+            <p class="market-subtitle">{{ t.t('trades.list.marketSubtitle') }}</p>
 
             <div class="market-stats">
                 <div class="stat-item">
                     <span class="stat-value">{{ trades.length }}</span>
-                    <span class="stat-label">Offres totales</span>
+                    <span class="stat-label">{{ t.t('trades.list.totalOffers') }}</span>
                 </div>
                 <div class="stat-divider"></div>
                 <div class="stat-item">
                     <span class="stat-value">{{ getActiveTradesCount() }}</span>
-                    <span class="stat-label">En cours</span>
+                    <span class="stat-label">{{ t.t('trades.list.active') }}</span>
                 </div>
             </div>
         </div>
@@ -34,20 +34,20 @@
     <div class="controls-bar">
         <div class="search-wrapper">
             <mat-icon class="search-icon">search</mat-icon>
-            <input type="text" placeholder="Rechercher un joueur ou une équipe..." [(ngModel)]="searchTerm"
+            <input type="text" [placeholder]="t.t('trades.searchPlaceholder')" [(ngModel)]="searchTerm"
                 (input)="applyFilters()" class="search-input" />
         </div>
 
         <div class="filter-tabs">
             <button class="tab-btn" [class.active]="activeTab === 'ALL'" (click)="setTab('ALL')">
-                Tout
+                {{ t.t('trades.list.all') }}
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'PENDING'" (click)="setTab('PENDING')">
-                En cours
+                {{ t.t('trades.list.pending') }}
                 <span class="badge" *ngIf="getPendingCount() > 0">{{ getPendingCount() }}</span>
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'HISTORY'" (click)="setTab('HISTORY')">
-                Historique
+                {{ t.t('trades.list.history') }}
             </button>
         </div>
     </div>
@@ -55,20 +55,20 @@
     <!-- Loading State -->
     <div class="loading-state" *ngIf="isLoading">
         <div class="spinner"></div>
-        <p>Chargement des trades...</p>
+        <p>{{ t.t('trades.list.loadingTrades') }}</p>
     </div>
 
     <!-- Empty State -->
     <div class="empty-state" *ngIf="!isLoading && filteredTrades.length === 0">
         <mat-icon class="empty-icon">swap_horiz</mat-icon>
-        <h3>Aucun trade trouvé</h3>
-        <p *ngIf="searchTerm">Aucun résultat pour "{{ searchTerm }}"</p>
-        <p *ngIf="!searchTerm && activeTab === 'PENDING'">Vous n'avez aucun trade en cours</p>
-        <p *ngIf="!searchTerm && activeTab === 'HISTORY'">Aucun historique de trade</p>
-        <p *ngIf="!searchTerm && activeTab === 'ALL'">Commencez par créer votre premier trade</p>
+        <h3>{{ t.t('trades.list.noTradeFound') }}</h3>
+        <p *ngIf="searchTerm">{{ t.t('trades.list.noResultsFor') }} "{{ searchTerm }}"</p>
+        <p *ngIf="!searchTerm && activeTab === 'PENDING'">{{ t.t('trades.list.noPendingTrades') }}</p>
+        <p *ngIf="!searchTerm && activeTab === 'HISTORY'">{{ t.t('trades.list.noHistoryTrades') }}</p>
+        <p *ngIf="!searchTerm && activeTab === 'ALL'">{{ t.t('trades.list.createFirstTrade') }}</p>
         <button mat-raised-button color="primary" (click)="createNewTrade()">
             <mat-icon>add</mat-icon>
-            Créer un Trade
+            {{ t.t('trades.list.createTrade') }}
         </button>
     </div>
 
@@ -99,7 +99,7 @@
                         <span class="player-name">{{ trade.playerOut.username }}</span>
                         <span class="player-region" *ngIf="trade.playerOut.region">{{ trade.playerOut.region }}</span>
                     </div>
-                    <span class="direction-label">SORT</span>
+                    <span class="direction-label">{{ t.t('trades.list.out') }}</span>
                 </div>
 
                 <div class="exchange-arrow">
@@ -114,7 +114,7 @@
                         <span class="player-name">{{ trade.playerIn.username }}</span>
                         <span class="player-region" *ngIf="trade.playerIn.region">{{ trade.playerIn.region }}</span>
                     </div>
-                    <span class="direction-label">ENTRE</span>
+                    <span class="direction-label">{{ t.t('trades.list.in') }}</span>
                 </div>
             </div>
 
@@ -122,12 +122,12 @@
             <div class="card-actions">
                 <button mat-button class="view-btn" (click)="viewTrade(trade.id)">
                     <mat-icon>visibility</mat-icon>
-                    Détails
+                    {{ t.t('trades.list.details') }}
                 </button>
                 <button mat-button class="cancel-btn" *ngIf="trade.status === 'PENDING'"
                     (click)="cancelTrade(trade.id)">
                     <mat-icon>close</mat-icon>
-                    Annuler
+                    {{ t.t('trades.list.cancel') }}
                 </button>
             </div>
         </div>

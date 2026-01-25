@@ -20,7 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.domain.port.out.InvitationCodeRepositoryPort;
 import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGenerationException;
 
 /**
@@ -39,7 +39,7 @@ import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGeneratio
 @DisplayName("InvitationCodeService - Security Critical TDD Tests")
 class InvitationCodeServiceTddTest {
 
-  @Mock private GameRepository gameRepository;
+  @Mock private InvitationCodeRepositoryPort invitationCodeRepository;
 
   @InjectMocks private InvitationCodeService invitationCodeService;
 
@@ -61,7 +61,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should generate unique code successfully")
     void shouldGenerateUniqueCodeSuccessfully() {
       // RED: Test basic code generation
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       String result = invitationCodeService.generateUniqueCode();
 
@@ -69,14 +69,14 @@ class InvitationCodeServiceTddTest {
       assertThat(result).hasSize(8);
       assertThat(result).matches("^[A-Z0-9]{8}$");
 
-      verify(gameRepository).existsByInvitationCode(result);
+      verify(invitationCodeRepository).existsByInvitationCode(result);
     }
 
     @Test
     @DisplayName("Should retry code generation when collision occurs")
     void shouldRetryCodeGenerationWhenCollisionOccurs() {
       // RED: Test collision handling
-      when(gameRepository.existsByInvitationCode(anyString()))
+      when(invitationCodeRepository.existsByInvitationCode(anyString()))
           .thenReturn(true) // First attempt collides
           .thenReturn(true) // Second attempt collides
           .thenReturn(false); // Third attempt succeeds
@@ -87,27 +87,27 @@ class InvitationCodeServiceTddTest {
       assertThat(result).hasSize(8);
       assertThat(result).matches("^[A-Z0-9]{8}$");
 
-      verify(gameRepository, times(3)).existsByInvitationCode(anyString());
+      verify(invitationCodeRepository, times(3)).existsByInvitationCode(anyString());
     }
 
     @Test
     @DisplayName("Should throw exception when max attempts exceeded")
     void shouldThrowExceptionWhenMaxAttemptsExceeded() {
       // RED: Test max attempts handling
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(true);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(true);
 
       assertThatThrownBy(() -> invitationCodeService.generateUniqueCode())
           .isInstanceOf(InvitationCodeGenerationException.class)
           .hasMessageContaining("Impossible de générer un code unique après 100 tentatives");
 
-      verify(gameRepository, times(100)).existsByInvitationCode(anyString());
+      verify(invitationCodeRepository, times(100)).existsByInvitationCode(anyString());
     }
 
     @Test
     @DisplayName("Should generate codes with proper format")
     void shouldGenerateCodesWithProperFormat() {
       // RED: Test format consistency
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       Set<String> generatedCodes = new HashSet<>();
       for (int i = 0; i < 10; i++) {
@@ -128,7 +128,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle repository exceptions gracefully")
     void shouldHandleRepositoryExceptionsGracefully() {
       // RED: Test repository error handling
-      when(gameRepository.existsByInvitationCode(anyString()))
+      when(invitationCodeRepository.existsByInvitationCode(anyString()))
           .thenThrow(new RuntimeException("Database connection failed"));
 
       assertThatThrownBy(() -> invitationCodeService.generateUniqueCode())
@@ -140,7 +140,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should generate truly random codes")
     void shouldGenerateTrulyRandomCodes() {
       // RED: Test randomness and distribution
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       Set<String> generatedCodes = new HashSet<>();
       for (int i = 0; i < 100; i++) {
@@ -156,7 +156,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle successful generation after multiple collisions")
     void shouldHandleSuccessfulGenerationAfterMultipleCollisions() {
       // RED: Test collision recovery
-      when(gameRepository.existsByInvitationCode(anyString()))
+      when(invitationCodeRepository.existsByInvitationCode(anyString()))
           .thenReturn(true) // Attempts 1-5 collide
           .thenReturn(true)
           .thenReturn(true)
@@ -167,7 +167,7 @@ class InvitationCodeServiceTddTest {
       String result = invitationCodeService.generateUniqueCode();
 
       assertThat(result).isNotNull();
-      verify(gameRepository, times(6)).existsByInvitationCode(anyString());
+      verify(invitationCodeRepository, times(6)).existsByInvitationCode(anyString());
     }
 
     @Test
@@ -175,7 +175,7 @@ class InvitationCodeServiceTddTest {
     void shouldHandleEdgeCaseAtMaxAttempsBoundary() {
       // RED: Test boundary condition
       // Mock 99 collisions, then success on attempt 100
-      when(gameRepository.existsByInvitationCode(anyString()))
+      when(invitationCodeRepository.existsByInvitationCode(anyString()))
           .thenReturn(true, true, true, true, true, true, true, true, true, true) // 10 trues
           .thenReturn(true, true, true, true, true, true, true, true, true, true) // 20 trues
           .thenReturn(true, true, true, true, true, true, true, true, true, true) // 30 trues
@@ -191,7 +191,7 @@ class InvitationCodeServiceTddTest {
       String result = invitationCodeService.generateUniqueCode();
 
       assertThat(result).isNotNull();
-      verify(gameRepository, times(100)).existsByInvitationCode(anyString());
+      verify(invitationCodeRepository, times(100)).existsByInvitationCode(anyString());
     }
   }
 
@@ -351,7 +351,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should use secure random generation")
     void shouldUseSecureRandomGeneration() {
       // RED: Test secure randomness
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       Set<String> generatedCodes = new HashSet<>();
       for (int i = 0; i < 1000; i++) {
@@ -367,7 +367,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle concurrent code generation safely")
     void shouldHandleConcurrentCodeGenerationSafely() throws InterruptedException {
       // RED: Test thread safety
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       ExecutorService executor = Executors.newFixedThreadPool(10);
       Set<String> concurrentCodes = ConcurrentHashMap.newKeySet();
@@ -398,7 +398,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should maintain character distribution balance")
     void shouldMaintainCharacterDistributionBalance() {
       // RED: Test character distribution
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       int letterCount = 0;
       int digitCount = 0;
@@ -425,7 +425,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should generate codes efficiently under load")
     void shouldGenerateCodesEfficientlyUnderLoad() {
       // RED: Test performance under load
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       long startTime = System.currentTimeMillis();
 
@@ -466,7 +466,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should maintain security constraints under pressure")
     void shouldMaintainSecurityConstraintsUnderPressure() {
       // RED: Test security under stress
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       for (int i = 0; i < 500; i++) {
         String code = invitationCodeService.generateUniqueCode();
@@ -487,7 +487,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle repository null response gracefully")
     void shouldHandleRepositoryNullResponseGracefully() {
       // RED: Test null response handling - repository always returns false for non-existing codes
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       String result = invitationCodeService.generateUniqueCode();
 
@@ -498,7 +498,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle repository intermittent failures")
     void shouldHandleRepositoryIntermittentFailures() {
       // RED: Test intermittent failures
-      when(gameRepository.existsByInvitationCode(anyString()))
+      when(invitationCodeRepository.existsByInvitationCode(anyString()))
           .thenThrow(new RuntimeException("Connection timeout"))
           .thenReturn(false);
 
@@ -511,7 +511,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should provide meaningful error messages")
     void shouldProvideMeaningfulErrorMessages() {
       // RED: Test error message quality
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(true);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(true);
 
       InvitationCodeGenerationException exception =
           catchThrowableOfType(
@@ -527,28 +527,28 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle extreme collision scenarios")
     void shouldHandleExtremeCollisionScenarios() {
       // RED: Test extreme collision handling
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(true);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(true);
 
       assertThatThrownBy(() -> invitationCodeService.generateUniqueCode())
           .isInstanceOf(InvitationCodeGenerationException.class);
 
       // Should have made exactly 100 attempts
-      verify(gameRepository, times(100)).existsByInvitationCode(anyString());
+      verify(invitationCodeRepository, times(100)).existsByInvitationCode(anyString());
     }
 
     @Test
     @DisplayName("Should maintain state consistency across failures")
     void shouldMaintainStateConsistencyAcrossFailures() {
       // RED: Test state consistency
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(true);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(true);
 
       // First call should fail
       assertThatThrownBy(() -> invitationCodeService.generateUniqueCode())
           .isInstanceOf(InvitationCodeGenerationException.class);
 
       // Reset mock for second call
-      reset(gameRepository);
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      reset(invitationCodeRepository);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       // Second call should succeed (service state should be clean)
       String result = invitationCodeService.generateUniqueCode();
@@ -587,7 +587,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should integrate generation and validation correctly")
     void shouldIntegrateGenerationAndValidationCorrectly() {
       // RED: Test generation-validation integration
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       String generatedCode = invitationCodeService.generateUniqueCode();
       boolean isValid = invitationCodeService.isValidCodeFormat(generatedCode);
@@ -600,7 +600,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should maintain consistency between multiple operations")
     void shouldMaintainConsistencyBetweenMultipleOperations() {
       // RED: Test operational consistency
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       for (int i = 0; i < 50; i++) {
         String code = invitationCodeService.generateUniqueCode();
@@ -617,7 +617,7 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle business workflow integration")
     void shouldHandleBusinessWorkflowIntegration() {
       // RED: Test business workflow
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       // Generate code
       String code = invitationCodeService.generateUniqueCode();
@@ -628,7 +628,7 @@ class InvitationCodeServiceTddTest {
       // Verify integration workflow
       assertThat(code).isNotNull();
       assertThat(isValidFormat).isTrue();
-      verify(gameRepository).existsByInvitationCode(code);
+      verify(invitationCodeRepository).existsByInvitationCode(code);
     }
 
     @Test
@@ -648,15 +648,15 @@ class InvitationCodeServiceTddTest {
     @DisplayName("Should handle code lifecycle correctly")
     void shouldHandleCodeLifecycleCorrectly() {
       // RED: Test code lifecycle
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       // Generate first code
       String firstCode = invitationCodeService.generateUniqueCode();
       assertThat(firstCode).isNotNull();
 
       // Reset mock and simulate first code exists, others don't
-      reset(gameRepository);
-      when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+      reset(invitationCodeRepository);
+      when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
       String secondCode = invitationCodeService.generateUniqueCode();
       assertThat(secondCode).isNotNull();

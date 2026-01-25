@@ -11,7 +11,7 @@
               <h1>{{ currentUser?.username }}</h1>
               <div class="role-badge" [attr.data-role]="getRoleBadgeClass()">
                 <mat-icon>{{ getRoleIcon() }}</mat-icon>
-                <span>{{ currentUser?.role || 'Utilisateur' }}</span>
+                <span>{{ currentUser?.role || t.translate('profile.defaultRole') }}</span>
               </div>
               <p class="user-email">{{ currentUser?.email || t.translate('profile.noEmailProvided') }}</p>
             </div>
@@ -38,7 +38,7 @@
               <div matListItemTitle>{{ t.translate('profile.role') }}</div>
               <div matListItemLine class="role-line">
                 <span class="role-badge-inline" [attr.data-role]="getRoleBadgeClass()">
-                  {{ currentUser?.role || 'Utilisateur' }}
+                  {{ currentUser?.role || t.translate('profile.defaultRole') }}
                 </span>
               </div>
             </mat-list-item>

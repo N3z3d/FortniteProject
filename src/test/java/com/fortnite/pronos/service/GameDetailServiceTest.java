@@ -17,22 +17,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.DraftPickRepository;
 import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameDetailService - getGameDetails TDD")
 class GameDetailServiceTest {
 
-  @Mock private GameRepository gameRepository;
+  @Mock private GameRepositoryPort gameRepository;
 
-  @Mock private GameParticipantRepository gameParticipantRepository;
+  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
 
   @Mock private DraftRepository draftRepository;
 

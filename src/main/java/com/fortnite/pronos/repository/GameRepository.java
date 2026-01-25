@@ -13,13 +13,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.InvitationCodeRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
 
 /** Repository pour la gestion des games */
 @Repository
-public interface GameRepository extends JpaRepository<Game, UUID> {
+public interface GameRepository
+    extends JpaRepository<Game, UUID>, GameRepositoryPort, InvitationCodeRepositoryPort {
 
   /** Trouver les games par créateur */
   List<Game> findByCreator(User creator);
@@ -225,4 +228,9 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
               + "WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :namePattern, '%'))")
   Page<Game> findByNameContainingIgnoreCasePaginated(
       @Param("namePattern") String namePattern, Pageable pageable);
+
+  /** Port implementation: findAllGames */
+  default List<Game> findAllGames(Pageable pageable) {
+    return findAll(pageable).getContent();
+  }
 }

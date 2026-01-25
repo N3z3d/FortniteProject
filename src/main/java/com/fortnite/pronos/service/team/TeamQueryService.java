@@ -11,12 +11,13 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.application.usecase.TeamQueryUseCase;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,14 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class TeamQueryService {
+public class TeamQueryService implements TeamQueryUseCase {
 
   private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouve";
   private static final String TEAM_NOT_FOUND_MESSAGE = "Equipe non trouvee";
 
   private final TeamRepository teamRepository;
   private final PlayerRepository playerRepository;
-  private final UserRepository userRepository;
+  private final UserRepositoryPort userRepository;
 
   /** Recupere l'equipe d'un utilisateur pour une saison donnee */
   public TeamDto getTeam(UUID userId, int season) {

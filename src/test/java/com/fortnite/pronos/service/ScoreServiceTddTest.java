@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.*;
 
@@ -38,7 +39,7 @@ class ScoreServiceTddTest {
   @Mock private ScoreRepository scoreRepository;
   @Mock private PlayerRepository playerRepository;
   @Mock private TeamRepository teamRepository;
-  @Mock private UserRepository userRepository;
+  @Mock private UserRepositoryPort userRepository;
 
   @InjectMocks private ScoreService scoreService;
 

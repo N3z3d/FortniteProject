@@ -5,15 +5,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
-import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.ValidationService;
 
 import lombok.RequiredArgsConstructor;
@@ -34,8 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CreateGameUseCase {
 
-  private final GameRepository gameRepository;
-  private final UserRepository userRepository;
+  private final GameRepositoryPort gameRepositoryPort;
+  private final UserRepositoryPort userRepositoryPort;
   private final ValidationService validationService;
 
   /**
@@ -56,7 +55,7 @@ public class CreateGameUseCase {
     validationService.validateCreateGameRequest(request);
 
     // 2. Verify user exists and can create games (fallback to auto-created admin in tests)
-    User creator = userRepository.findById(userId).orElseGet(() -> createFallbackUser(userId));
+    User creator = userRepositoryPort.findById(userId).orElseGet(() -> createFallbackUser(userId));
     request.setCreatorId(creator.getId());
 
     // 3. Apply business logic - check user permissions, game limits, etc.
@@ -83,7 +82,7 @@ public class CreateGameUseCase {
     game.addParticipant(creatorParticipant);
 
     // 6. Persist the entity
-    Game savedGame = gameRepository.save(game);
+    Game savedGame = gameRepositoryPort.save(game);
 
     log.info("Successfully created game '{}' with ID {}", savedGame.getName(), savedGame.getId());
 
@@ -104,7 +103,7 @@ public class CreateGameUseCase {
 
     // Check existing active games count
     long activeGamesCount =
-        gameRepository.countByCreatorAndStatusIn(
+        gameRepositoryPort.countByCreatorAndStatusIn(
             user, java.util.List.of(GameStatus.CREATING, GameStatus.DRAFTING, GameStatus.ACTIVE));
 
     int maxActiveGames =
@@ -122,7 +121,7 @@ public class CreateGameUseCase {
     UUID effectiveId = UUID.randomUUID();
     String username = "auto-" + effectiveId.toString().substring(0, 8);
 
-    return userRepository
+    return userRepositoryPort
         .findByUsername(username)
         .orElseGet(
             () -> {
@@ -133,7 +132,7 @@ public class CreateGameUseCase {
               user.setPassword("placeholder");
               user.setRole(User.UserRole.ADMIN);
               user.setCurrentSeason(2025);
-              return userRepository.save(user);
+              return userRepositoryPort.save(user);
             });
   }
 }

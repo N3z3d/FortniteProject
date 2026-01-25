@@ -9,13 +9,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.port.out.GameRegionRuleRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameRegionRule;
 import com.fortnite.pronos.model.Player;
 
 /** Repository pour la gestion des règles de région des games */
 @Repository
-public interface GameRegionRuleRepository extends JpaRepository<GameRegionRule, UUID> {
+public interface GameRegionRuleRepository
+    extends JpaRepository<GameRegionRule, UUID>, GameRegionRuleRepositoryPort {
 
   /** Trouver les règles de région par game */
   List<GameRegionRule> findByGame(Game game);

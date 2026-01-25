@@ -208,8 +208,8 @@ export class DraftService implements OnDestroy {
   }
 
   getDraftProgress(draft: Draft): { current: number; total: number; percentage: number } {
-    const totalRounds = draft.totalRounds ?? 0;
-    const currentPickValue = draft.currentPick ?? 0;
+    const totalRounds = draft.totalRounds ? 0;
+    const currentPickValue = draft.currentPick ? 0;
     const totalPicks = totalRounds * currentPickValue || 0;
     const currentPick = (draft.currentRound - 1) * currentPickValue + currentPickValue;
     const percentage = totalPicks > 0 ? Math.round((currentPick / totalPicks) * 100) : 0;

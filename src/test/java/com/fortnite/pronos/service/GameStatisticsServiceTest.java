@@ -17,20 +17,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GameStatisticsServiceTest {
 
-  @Mock private GameRepository gameRepository;
+  @Mock private GameRepositoryPort gameRepository;
 
-  @Mock private GameParticipantRepository gameParticipantRepository;
+  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
 
   @InjectMocks private GameStatisticsService gameStatisticsService;
 

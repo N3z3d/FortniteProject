@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
@@ -70,7 +71,7 @@ class GameRepositoryTest {
   @DisplayName("Devrait trouver une game par son ID")
   void shouldFindGameById() {
     // When
-    Optional<Game> foundGame = gameRepository.findById(testGame.getId());
+    Optional<Game> foundGame = ((GameRepositoryPort) gameRepository).findById(testGame.getId());
 
     // Then
     assertThat(foundGame).isPresent();
@@ -85,7 +86,7 @@ class GameRepositoryTest {
     UUID nonExistentId = UUID.randomUUID();
 
     // When
-    Optional<Game> foundGame = gameRepository.findById(nonExistentId);
+    Optional<Game> foundGame = ((GameRepositoryPort) gameRepository).findById(nonExistentId);
 
     // Then
     assertThat(foundGame).isEmpty();
@@ -103,7 +104,7 @@ class GameRepositoryTest {
     newGame.setCreatedAt(LocalDateTime.now());
 
     // When
-    Game savedGame = gameRepository.save(newGame);
+    Game savedGame = ((GameRepositoryPort) gameRepository).save(newGame);
 
     // Then
     assertThat(savedGame.getId()).isNotNull();
@@ -120,7 +121,7 @@ class GameRepositoryTest {
     testGame.setStatus(GameStatus.DRAFTING);
 
     // When
-    Game updatedGame = gameRepository.save(testGame);
+    Game updatedGame = ((GameRepositoryPort) gameRepository).save(testGame);
 
     // Then
     assertThat(updatedGame.getName()).isEqualTo("Updated Game Name");
@@ -149,7 +150,7 @@ class GameRepositoryTest {
     gameRepository.deleteById(gameId);
 
     // Then
-    Optional<Game> deletedGame = gameRepository.findById(gameId);
+    Optional<Game> deletedGame = ((GameRepositoryPort) gameRepository).findById(gameId);
     assertThat(deletedGame).isEmpty();
   }
 

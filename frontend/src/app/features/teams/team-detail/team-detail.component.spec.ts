@@ -42,7 +42,7 @@ describe('TeamDetailComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(component.error).toBe('Donn\u00e9es indisponibles (CSV non charg\u00e9)');
+    expect(component.error).toBe(component.t.t('teams.detail.dataUnavailable'));
     expect(component.team).toBeNull();
     expect(component.stats).toBeNull();
     expect(component.allTeams.length).toBe(0);

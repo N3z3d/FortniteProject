@@ -21,6 +21,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.application.facade.GameDomainFacade;
 import com.fortnite.pronos.domain.ParticipantRules;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.UserNotFoundException;
@@ -74,13 +77,14 @@ class GameParticipantServiceTest {
       JoinGameRequest request = new JoinGameRequest();
       request.setGameId(gameId);
 
-      when(userRepository.findById(unknownUserId)).thenReturn(Optional.empty());
+      when(((UserRepositoryPort) userRepository).findById(unknownUserId))
+          .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.joinGame(unknownUserId, request))
           .isInstanceOf(UserNotFoundException.class)
           .hasMessageContaining(unknownUserId.toString());
 
-      verify(userRepository, never()).save(any(User.class));
+      verify(((UserRepositoryPort) userRepository), never()).save(any(User.class));
     }
 
     @Test
@@ -89,8 +93,9 @@ class GameParticipantServiceTest {
       JoinGameRequest request = new JoinGameRequest();
       request.setGameId(UUID.randomUUID());
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(request.getGameId())).thenReturn(Optional.empty());
+      when(((UserRepositoryPort) userRepository).findById(userId)).thenReturn(Optional.of(user));
+      when(((GameRepositoryPort) gameRepository).findById(request.getGameId()))
+          .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(GameNotFoundException.class);
@@ -106,9 +111,10 @@ class GameParticipantServiceTest {
       creator.setId(UUID.randomUUID());
       game.setCreator(creator);
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
-      when(gameParticipantRepository.existsByUserIdAndGameId(creator.getId(), gameId))
+      when(((UserRepositoryPort) userRepository).findById(userId)).thenReturn(Optional.of(user));
+      when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.of(game));
+      when(((GameParticipantRepositoryPort) gameParticipantRepository)
+              .existsByUserIdAndGameId(creator.getId(), gameId))
           .thenReturn(true);
       when(gameDomainFacade.canAddParticipant(game, user))
           .thenReturn(new ParticipantRules.ValidationResult(true, null));
@@ -116,7 +122,7 @@ class GameParticipantServiceTest {
       boolean result = service.joinGame(userId, request);
 
       assertThat(result).isTrue();
-      verify(gameParticipantRepository).save(any());
+      verify(((GameParticipantRepositoryPort) gameParticipantRepository)).save(any());
     }
 
     @Test
@@ -130,9 +136,10 @@ class GameParticipantServiceTest {
       creator.setId(UUID.randomUUID());
       game.setCreator(creator);
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(((UserRepositoryPort) userRepository).findById(userId)).thenReturn(Optional.of(user));
       when(gameRepository.findByInvitationCode(invitationCode)).thenReturn(Optional.of(game));
-      when(gameParticipantRepository.existsByUserIdAndGameId(creator.getId(), game.getId()))
+      when(((GameParticipantRepositoryPort) gameParticipantRepository)
+              .existsByUserIdAndGameId(creator.getId(), game.getId()))
           .thenReturn(true);
       when(gameDomainFacade.canAddParticipant(game, user))
           .thenReturn(new ParticipantRules.ValidationResult(true, null));
@@ -153,7 +160,8 @@ class GameParticipantServiceTest {
     void throwsUserNotFoundWhenUserDoesNotExist() {
       UUID unknownUserId = UUID.randomUUID();
 
-      when(userRepository.findById(unknownUserId)).thenReturn(Optional.empty());
+      when(((UserRepositoryPort) userRepository).findById(unknownUserId))
+          .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.leaveGame(unknownUserId, gameId))
           .isInstanceOf(UserNotFoundException.class);
@@ -162,8 +170,8 @@ class GameParticipantServiceTest {
     @Test
     @DisplayName("throws GameNotFoundException when game does not exist")
     void throwsGameNotFoundWhenGameDoesNotExist() {
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
+      when(((UserRepositoryPort) userRepository).findById(userId)).thenReturn(Optional.of(user));
+      when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.leaveGame(userId, gameId))
           .isInstanceOf(GameNotFoundException.class);
@@ -177,7 +185,9 @@ class GameParticipantServiceTest {
     @Test
     @DisplayName("returns true when user is participant")
     void returnsTrueWhenParticipant() {
-      when(gameParticipantRepository.existsByUserIdAndGameId(userId, gameId)).thenReturn(true);
+      when(((GameParticipantRepositoryPort) gameParticipantRepository)
+              .existsByUserIdAndGameId(userId, gameId))
+          .thenReturn(true);
 
       boolean result = service.isUserParticipant(userId, gameId);
 
@@ -187,7 +197,9 @@ class GameParticipantServiceTest {
     @Test
     @DisplayName("returns false when user is not participant")
     void returnsFalseWhenNotParticipant() {
-      when(gameParticipantRepository.existsByUserIdAndGameId(userId, gameId)).thenReturn(false);
+      when(((GameParticipantRepositoryPort) gameParticipantRepository)
+              .existsByUserIdAndGameId(userId, gameId))
+          .thenReturn(false);
 
       boolean result = service.isUserParticipant(userId, gameId);
 

@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
   selector: 'app-change-password-dialog',
@@ -34,7 +35,8 @@ export class ChangePasswordDialogComponent {
   constructor(
     private readonly dialogRef: MatDialogRef<ChangePasswordDialogComponent>,
     private readonly fb: FormBuilder,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    public readonly t: TranslationService
   ) {
     this.passwordForm = this.fb.group({
       currentPassword: ['', [Validators.required, Validators.minLength(6)]],
@@ -67,7 +69,7 @@ export class ChangePasswordDialogComponent {
 
   onSave(): void {
     if (this.passwordForm.invalid) {
-      this.snackBar.open('Veuillez corriger les erreurs du formulaire', 'Fermer', {
+      this.snackBar.open(this.t.t('profile.changePasswordDialog.errors.formInvalid'), this.t.t('common.close'), {
         duration: 3000
       });
       return;
@@ -77,7 +79,7 @@ export class ChangePasswordDialogComponent {
 
     // Simuler un appel API
     setTimeout(() => {
-      this.snackBar.open('Mot de passe modifié avec succès !', 'Fermer', {
+      this.snackBar.open(this.t.t('profile.changePasswordDialog.success'), this.t.t('common.close'), {
         duration: 3000
       });
       this.saving = false;
@@ -92,10 +94,10 @@ export class ChangePasswordDialogComponent {
   get currentPasswordError(): string {
     const control = this.passwordForm.get('currentPassword');
     if (control?.hasError('required')) {
-      return 'Le mot de passe actuel est requis';
+      return this.t.t('profile.changePasswordDialog.errors.currentPasswordRequired');
     }
     if (control?.hasError('minlength')) {
-      return 'Minimum 6 caractères';
+      return this.t.t('profile.changePasswordDialog.errors.currentPasswordMinLength');
     }
     return '';
   }
@@ -103,13 +105,13 @@ export class ChangePasswordDialogComponent {
   get newPasswordError(): string {
     const control = this.passwordForm.get('newPassword');
     if (control?.hasError('required')) {
-      return 'Le nouveau mot de passe est requis';
+      return this.t.t('profile.changePasswordDialog.errors.newPasswordRequired');
     }
     if (control?.hasError('minlength')) {
-      return 'Minimum 8 caractères';
+      return this.t.t('profile.changePasswordDialog.errors.newPasswordMinLength');
     }
     if (control?.hasError('weakPassword')) {
-      return 'Doit contenir majuscule, minuscule et chiffre';
+      return this.t.t('profile.changePasswordDialog.errors.weakPassword');
     }
     return '';
   }
@@ -117,10 +119,10 @@ export class ChangePasswordDialogComponent {
   get confirmPasswordError(): string {
     const control = this.passwordForm.get('confirmPassword');
     if (control?.hasError('required')) {
-      return 'Confirmation requise';
+      return this.t.t('profile.changePasswordDialog.errors.confirmPasswordRequired');
     }
     if (this.passwordForm.hasError('passwordMismatch')) {
-      return 'Les mots de passe ne correspondent pas';
+      return this.t.t('profile.changePasswordDialog.errors.passwordMismatch');
     }
     return '';
   }
@@ -141,11 +143,11 @@ export class ChangePasswordDialogComponent {
     if (/[^A-Za-z0-9]/.test(password)) strength++;
 
     if (strength <= 2) {
-      return { label: 'Faible', class: 'weak', percent: 33 };
-    } else if (strength <= 4) {
-      return { label: 'Moyen', class: 'medium', percent: 66 };
-    } else {
-      return { label: 'Fort', class: 'strong', percent: 100 };
+      return { label: this.t.t('profile.changePasswordDialog.strength.weak'), class: 'weak', percent: 33 };
     }
+    if (strength <= 4) {
+      return { label: this.t.t('profile.changePasswordDialog.strength.medium'), class: 'medium', percent: 66 };
+    }
+    return { label: this.t.t('profile.changePasswordDialog.strength.strong'), class: 'strong', percent: 100 };
   }
 }

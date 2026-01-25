@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { UserProfile } from '../../../core/services/user-context.service';
 import { formatPoints } from '../../../shared/constants/theme.constants';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface UserStats {
   gamesPlayed: number;
@@ -42,7 +43,8 @@ export class UserStatsDialogComponent implements OnInit {
 
   constructor(
     private readonly dialogRef: MatDialogRef<UserStatsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { user: UserProfile }
+    @Inject(MAT_DIALOG_DATA) public data: { user: UserProfile },
+    public readonly t: TranslationService
   ) {}
 
   ngOnInit(): void {
@@ -82,6 +84,20 @@ export class UserStatsDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  getStatsTitle(): string {
+    return this.formatTemplate('profile.statsDialog.title', {
+      username: this.data.user.username
+    });
+  }
+
+  getGamesPlayedLabel(count: number): string {
+    return this.formatTemplate('profile.statsDialog.gamesPlayedSuffix', { count });
+  }
+
+  getFavoriteRegionLabel(region: string): string {
+    return this.t.t(`leaderboard.regions.${region}`, region);
+  }
+
   formatNumber(value: number): string {
     return formatPoints(value);
   }
@@ -112,5 +128,14 @@ export class UserStatsDialogComponent implements OnInit {
       'ME': '🇦🇪'
     };
     return flags[region] || '🌍';
+  }
+
+  private formatTemplate(key: string, params: Record<string, string | number>): string {
+    let value = this.t.t(key);
+    for (const [param, paramValue] of Object.entries(params)) {
+      const token = new RegExp(`\\{${param}\\}`, 'g');
+      value = value.replace(token, String(paramValue));
+    }
+    return value;
   }
 }

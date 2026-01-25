@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,6 +19,7 @@ import { MatSliderModule } from '@angular/material/slider';
 
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
+import { TranslationService } from '../../../core/services/translation.service';
 
 interface GameTemplate {
   id: string;
@@ -55,6 +56,8 @@ interface GameTemplate {
   styleUrls: ['./game-creation-wizard.component.scss']
 })
 export class GameCreationWizardComponent implements OnInit {
+  public readonly t = inject(TranslationService);
+
   // Form Groups for each step
   basicInfoForm!: FormGroup;
   rulesForm!: FormGroup;
@@ -64,59 +67,64 @@ export class GameCreationWizardComponent implements OnInit {
   error: string | null = null;
   selectedTemplate: GameTemplate | null = null;
 
-  // Game Templates - UX-001 requirement
-  gameTemplates: GameTemplate[] = [
-    {
-      id: 'quick-play',
-      name: 'Quick Play',
-      description: 'Partie rapide entre amis (5 joueurs, draft simple)',
-      icon: 'flash_on',
-      popular: true,
-      config: {
-        maxParticipants: 5,
-        draftTimeLimit: 180, // 3 minutes
-        autoPickDelay: 3600, // 1 hour
-        isPrivate: false
+  // Game Templates - UX-001 requirement (using translation keys)
+  getGameTemplates(): GameTemplate[] {
+    return [
+      {
+        id: 'quick-play',
+        name: this.t.t('games.wizard.templates.quickPlay'),
+        description: this.t.t('games.wizard.templates.quickPlayDesc'),
+        icon: 'flash_on',
+        popular: true,
+        config: {
+          maxParticipants: 5,
+          draftTimeLimit: 180, // 3 minutes
+          autoPickDelay: 3600, // 1 hour
+          isPrivate: false
+        }
+      },
+      {
+        id: 'championship',
+        name: this.t.t('games.wizard.templates.championship'),
+        description: this.t.t('games.wizard.templates.championshipDesc'),
+        icon: 'emoji_events',
+        popular: true,
+        config: {
+          maxParticipants: 10,
+          draftTimeLimit: 300, // 5 minutes
+          autoPickDelay: 86400, // 24 hours
+          isPrivate: true
+        }
+      },
+      {
+        id: 'casual',
+        name: this.t.t('games.wizard.templates.casualFun'),
+        description: this.t.t('games.wizard.templates.casualFunDesc'),
+        icon: 'sports_esports',
+        config: {
+          maxParticipants: 6,
+          draftTimeLimit: 120, // 2 minutes
+          autoPickDelay: 7200, // 2 hours
+          isPrivate: false
+        }
+      },
+      {
+        id: 'custom',
+        name: this.t.t('games.wizard.templates.custom'),
+        description: this.t.t('games.wizard.templates.customDesc'),
+        icon: 'tune',
+        config: {
+          maxParticipants: 5,
+          draftTimeLimit: 300,
+          autoPickDelay: 43200,
+          isPrivate: false
+        }
       }
-    },
-    {
-      id: 'championship',
-      name: 'Championship',
-      description: 'Tournoi sérieux (8-10 joueurs, règles avancées)',
-      icon: 'emoji_events',
-      popular: true,
-      config: {
-        maxParticipants: 10,
-        draftTimeLimit: 300, // 5 minutes
-        autoPickDelay: 86400, // 24 hours
-        isPrivate: true
-      }
-    },
-    {
-      id: 'casual',
-      name: 'Casual Fun',
-      description: 'Partie décontractée (3-6 joueurs, draft rapide)',
-      icon: 'sports_esports',
-      config: {
-        maxParticipants: 6,
-        draftTimeLimit: 120, // 2 minutes
-        autoPickDelay: 7200, // 2 hours
-        isPrivate: false
-      }
-    },
-    {
-      id: 'custom',
-      name: 'Configuration custom',
-      description: 'Créez votre propre configuration',
-      icon: 'tune',
-      config: {
-        maxParticipants: 5,
-        draftTimeLimit: 300,
-        autoPickDelay: 43200,
-        isPrivate: false
-      }
-    }
-  ];
+    ];
+  }
+
+  // Keep a cached reference for performance
+  private _cachedTemplates: GameTemplate[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -166,7 +174,7 @@ export class GameCreationWizardComponent implements OnInit {
     this.reviewForm = this.formBuilder.group({});
 
     // Set default template on init
-    this.onTemplateSelect(this.gameTemplates[0]);
+    this.onTemplateSelect(this.getGameTemplates()[0]);
   }
 
   onTemplateSelect(template: GameTemplate): void {
@@ -192,18 +200,18 @@ export class GameCreationWizardComponent implements OnInit {
   }
 
   private generateSmartDescription(template: GameTemplate): string {
-    const currentDate = new Date().toLocaleDateString('fr-FR');
-    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    
+    const currentDate = new Date().toLocaleDateString();
+    const time = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
     switch (template.id) {
       case 'quick-play':
-        return `Partie rapide créée le ${currentDate} à ${time}. Que le meilleur gagne ! 🚀`;
+        return this.t.t('games.wizard.smartDesc.quickPlay').replace('{date}', currentDate).replace('{time}', time);
       case 'championship':
-        return `Tournoi officiel - ${currentDate}. Préparez-vous pour la compétition ! 🏆`;
+        return this.t.t('games.wizard.smartDesc.championship').replace('{date}', currentDate);
       case 'casual':
-        return `Game détente entre amis - ${currentDate}. Fun garanti ! 🎮`;
+        return this.t.t('games.wizard.smartDesc.casual').replace('{date}', currentDate);
       default:
-        return `Game custom créée le ${currentDate} à ${time}`;
+        return this.t.t('games.wizard.smartDesc.custom').replace('{date}', currentDate).replace('{time}', time);
     }
   }
 
@@ -211,13 +219,13 @@ export class GameCreationWizardComponent implements OnInit {
   getNameValidationMessage(): string {
     const nameControl = this.basicInfoForm.get('name');
     if (nameControl?.hasError('required')) {
-      return 'Le nom de la game est requis';
+      return this.t.t('games.wizard.nameRequired');
     }
     if (nameControl?.hasError('minlength')) {
-      return 'Minimum 2 caractères';
+      return this.t.t('games.wizard.minChars');
     }
     if (nameControl?.hasError('maxlength')) {
-      return 'Maximum 50 caractères';
+      return this.t.t('games.wizard.maxChars');
     }
     return '';
   }
@@ -225,17 +233,17 @@ export class GameCreationWizardComponent implements OnInit {
   getParticipantsValidationMessage(): string {
     const participantsControl = this.rulesForm.get('maxParticipants');
     if (participantsControl?.hasError('min')) {
-      return 'Minimum 2 participants';
+      return this.t.t('games.wizard.minParticipants');
     }
     if (participantsControl?.hasError('max')) {
-      return 'Maximum 20 participants';
+      return this.t.t('games.wizard.maxParticipants');
     }
     return '';
   }
 
   getDraftTimeLimitLabel(): string {
     const minutes = Math.floor((this.rulesForm.get('draftTimeLimit')?.value || 0) / 60);
-    return `${minutes} minute(s) par pick`;
+    return this.t.t('games.wizard.minutesPerPick').replace('{n}', minutes.toString());
   }
 
   getAutoPickDelayLabel(): string {
@@ -309,33 +317,33 @@ export class GameCreationWizardComponent implements OnInit {
       next: (game) => {
         this.loading = false;
         this.snackBar.open(
-          `🎉 "${game.name}" créée avec succès !`, 
-          'Voir la game', 
-          { 
+          `🎉 ${this.t.t('games.wizard.successCreated').replace('{name}', game.name)}`,
+          this.t.t('games.wizard.viewGame'),
+          {
             duration: 5000,
             panelClass: 'success-snackbar'
           }
         );
-        
+
         // Navigate to the created game
         this.router.navigate(['/games', game.id], {
-          queryParams: { 
+          queryParams: {
             created: 'true',
-            template: this.selectedTemplate?.id 
+            template: this.selectedTemplate?.id
           }
         });
       },
       error: (error) => {
         this.loading = false;
-        this.error = 'Impossible de créer la game. Veuillez réessayer.';
+        this.error = this.t.t('games.wizard.errorCreate');
         console.error('Game creation error:', error);
-        
+
         this.snackBar.open(
-          '❌ Erreur lors de la création',
-          'Réessayer',
-          { 
+          `❌ ${this.t.t('games.wizard.errorCreation')}`,
+          this.t.t('games.wizard.retry'),
+          {
             duration: 5000,
-            panelClass: 'error-snackbar' 
+            panelClass: 'error-snackbar'
           }
         );
       }
@@ -348,10 +356,10 @@ export class GameCreationWizardComponent implements OnInit {
 
   // Smart defaults helpers
   getPopularTemplates(): GameTemplate[] {
-    return this.gameTemplates.filter(t => t.popular);
+    return this.getGameTemplates().filter(t => t.popular);
   }
 
   getAllTemplates(): GameTemplate[] {
-    return this.gameTemplates;
+    return this.getGameTemplates();
   }
 }

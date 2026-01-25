@@ -11,7 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.repository.GameRepository;
+import com.fortnite.pronos.domain.port.out.InvitationCodeRepositoryPort;
 import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGenerationException;
 
 /** Tests TDD pour InvitationCodeService Clean Code : tests clairs et focalisés */
@@ -19,7 +19,7 @@ import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGeneratio
 @DisplayName("Tests TDD - InvitationCodeService")
 class InvitationCodeServiceTest {
 
-  @Mock private GameRepository gameRepository;
+  @Mock private InvitationCodeRepositoryPort invitationCodeRepository;
 
   @InjectMocks private InvitationCodeService invitationCodeService;
 
@@ -27,7 +27,7 @@ class InvitationCodeServiceTest {
   @DisplayName("Devrait générer un code d'invitation unique de 8 caractères")
   void shouldGenerateUniqueCodeWith8Characters() {
     // Given
-    when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+    when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
     // When
     String code = invitationCodeService.generateUniqueCode();
@@ -36,14 +36,14 @@ class InvitationCodeServiceTest {
     assertThat(code).isNotNull();
     assertThat(code).hasSize(8);
     assertThat(code).matches("^[A-Z0-9]{8}$");
-    verify(gameRepository, times(1)).existsByInvitationCode(anyString());
+    verify(invitationCodeRepository, times(1)).existsByInvitationCode(anyString());
   }
 
   @Test
   @DisplayName("Devrait réessayer si le code existe déjà")
   void shouldRetryIfCodeAlreadyExists() {
     // Given
-    when(gameRepository.existsByInvitationCode(anyString()))
+    when(invitationCodeRepository.existsByInvitationCode(anyString()))
         .thenReturn(true) // Premier code existe
         .thenReturn(true) // Deuxième code existe
         .thenReturn(false); // Troisième code n'existe pas
@@ -53,21 +53,21 @@ class InvitationCodeServiceTest {
 
     // Then
     assertThat(code).isNotNull();
-    verify(gameRepository, times(3)).existsByInvitationCode(anyString());
+    verify(invitationCodeRepository, times(3)).existsByInvitationCode(anyString());
   }
 
   @Test
   @DisplayName("Devrait lancer une exception après 100 tentatives")
   void shouldThrowExceptionAfter100Attempts() {
     // Given
-    when(gameRepository.existsByInvitationCode(anyString())).thenReturn(true);
+    when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(true);
 
     // When/Then
     assertThatThrownBy(() -> invitationCodeService.generateUniqueCode())
         .isInstanceOf(InvitationCodeGenerationException.class)
         .hasMessageContaining("100 tentatives");
 
-    verify(gameRepository, times(100)).existsByInvitationCode(anyString());
+    verify(invitationCodeRepository, times(100)).existsByInvitationCode(anyString());
   }
 
   @Test
@@ -136,7 +136,7 @@ class InvitationCodeServiceTest {
   @DisplayName("Performance - Devrait générer un code en moins de 50ms")
   void shouldGenerateCodeQuickly() {
     // Given
-    when(gameRepository.existsByInvitationCode(anyString())).thenReturn(false);
+    when(invitationCodeRepository.existsByInvitationCode(anyString())).thenReturn(false);
 
     // When
     long startTime = System.currentTimeMillis();
