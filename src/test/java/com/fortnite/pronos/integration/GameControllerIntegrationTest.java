@@ -17,6 +17,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
@@ -66,7 +68,7 @@ public class GameControllerIntegrationTest {
                   u.setRole(
                       User.UserRole.ADMIN); // éviter de compter comme USER dans les autres tests
                   u.setCurrentSeason(2025);
-                  return userRepository.save(u);
+                  return ((UserRepositoryPort) userRepository).save(u);
                 });
   }
 
@@ -137,7 +139,7 @@ public class GameControllerIntegrationTest {
     joiningUser.setPassword("password123");
     joiningUser.setRole(User.UserRole.USER);
     joiningUser.setCurrentSeason(2025);
-    joiningUser = userRepository.save(joiningUser);
+    joiningUser = ((UserRepositoryPort) userRepository).save(joiningUser);
 
     // Créer une game avec testUser comme créateur
     Game game = new Game();
@@ -145,7 +147,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     JoinGameRequest request = new JoinGameRequest();
     request.setGameId(game.getId());
@@ -183,7 +185,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     JoinGameRequest request = new JoinGameRequest();
     request.setGameId(game.getId());
@@ -209,7 +211,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     // When
     ResponseEntity<GameDto> response =
@@ -232,7 +234,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     // When
     ResponseEntity<GameDto> response =
@@ -251,7 +253,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     // When
     ResponseEntity<Map> response =
@@ -282,7 +284,7 @@ public class GameControllerIntegrationTest {
     game.setCreator(testUser);
     game.setStatus(GameStatus.CREATING);
     game.setMaxParticipants(4);
-    game = gameRepository.save(game);
+    game = ((GameRepositoryPort) gameRepository).save(game);
 
     // When & Then
     try {

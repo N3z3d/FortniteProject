@@ -16,6 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
@@ -57,7 +59,7 @@ class GameControllerIntegrationSimpleTest {
     testUser.setEmail("test@example.com");
     testUser.setPassword("password");
     testUser.setRole(User.UserRole.USER);
-    testUser = userRepository.save(testUser);
+    testUser = ((UserRepositoryPort) userRepository).save(testUser);
 
     testGame = new Game();
     testGame.setName("Game Test");
@@ -67,7 +69,7 @@ class GameControllerIntegrationSimpleTest {
     testGame.setStatus(GameStatus.CREATING);
     testGame.setParticipants(new ArrayList<>());
     testGame.setRegionRules(new ArrayList<>());
-    testGame = gameRepository.save(testGame);
+    testGame = ((GameRepositoryPort) gameRepository).save(testGame);
   }
 
   @Test

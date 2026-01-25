@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -49,7 +50,7 @@ public class GameControllerAuthenticationTest {
                   u.setPassword("password123");
                   u.setRole(User.UserRole.USER);
                   u.setCurrentSeason(2025);
-                  return userRepository.save(u);
+                  return ((UserRepositoryPort) userRepository).save(u);
                 });
   }
 
@@ -165,7 +166,7 @@ public class GameControllerAuthenticationTest {
     noGameUser.setPassword("password123");
     noGameUser.setRole(User.UserRole.USER);
     noGameUser.setCurrentSeason(2025);
-    userRepository.save(noGameUser);
+    ((UserRepositoryPort) userRepository).save(noGameUser);
 
     // When
     ResponseEntity<Object[]> response =

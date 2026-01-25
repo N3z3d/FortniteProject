@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.*;
 
@@ -43,23 +45,23 @@ class GamePlayerLinkIntegrationTest {
   void setUp() {
     // Récupérer la game de test
     testGame =
-        gameRepository
+        ((GameRepositoryPort) gameRepository)
             .findById(UUID.fromString("880e8400-e29b-41d4-a716-446655440000"))
             .orElse(null);
 
     // Récupérer les utilisateurs
     thibaut =
-        userRepository
+        ((UserRepositoryPort) userRepository)
             .findById(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
             .orElse(null);
 
     marcel =
-        userRepository
+        ((UserRepositoryPort) userRepository)
             .findById(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
             .orElse(null);
 
     teddy =
-        userRepository
+        ((UserRepositoryPort) userRepository)
             .findById(UUID.fromString("550e8400-e29b-41d4-a716-446655440003"))
             .orElse(null);
   }

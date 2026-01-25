@@ -22,6 +22,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
@@ -67,7 +68,7 @@ public class CreateGameIntegrationTest {
     testUser.setPassword("password123");
     testUser.setRole(User.UserRole.ADMIN);
     testUser.setCurrentSeason(2025);
-    testUser = userRepository.save(testUser);
+    testUser = ((UserRepositoryPort) userRepository).save(testUser);
 
     // Créer UserDetails pour le JWT
     org.springframework.security.core.userdetails.User userDetails =

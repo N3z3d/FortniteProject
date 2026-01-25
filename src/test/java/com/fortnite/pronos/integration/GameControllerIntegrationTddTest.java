@@ -19,6 +19,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
@@ -56,7 +57,7 @@ class GameControllerIntegrationTddTest {
     testUser.setPassword("$2a$10$dummy.password.hash.for.testing");
     testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
-    testUser = userRepository.save(testUser);
+    testUser = ((UserRepositoryPort) userRepository).save(testUser);
 
     // Créer une requête de game valide
     validGameRequest =

@@ -21,6 +21,9 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.GameStatus;
@@ -82,7 +85,7 @@ class DraftWorkflowIntegrationTest {
     user.setPassword("password123");
     user.setRole(User.UserRole.USER);
     user.setCurrentSeason(2025);
-    return userRepository.save(user);
+    return ((UserRepositoryPort) userRepository).save(user);
   }
 
   private Player createTestPlayer(String username, Player.Region region) {
@@ -104,7 +107,7 @@ class DraftWorkflowIntegrationTest {
     game.setMaxParticipants(maxParticipants);
     game.setStatus(GameStatus.DRAFTING);
     game.setCreatedAt(LocalDateTime.now());
-    return gameRepository.save(game);
+    return ((GameRepositoryPort) gameRepository).save(game);
   }
 
   private GameParticipant createTestParticipant(Game game, User user, int draftOrder) {
@@ -114,7 +117,7 @@ class DraftWorkflowIntegrationTest {
     participant.setUser(user);
     participant.setDraftOrder(draftOrder);
     participant.setLastSelectionTime(LocalDateTime.now());
-    return gameParticipantRepository.save(participant);
+    return ((GameParticipantRepositoryPort) gameParticipantRepository).save(participant);
   }
 
   @Test
@@ -274,7 +277,7 @@ class DraftWorkflowIntegrationTest {
         .andExpect(jsonPath("$.message").value("Draft termine avec succes"));
 
     // Vérification en base
-    Game updatedGame = gameRepository.findById(gameId).orElseThrow();
+    Game updatedGame = ((GameRepositoryPort) gameRepository).findById(gameId).orElseThrow();
     assert updatedGame.getStatus() == GameStatus.ACTIVE;
   }
 
@@ -364,7 +367,7 @@ class DraftWorkflowIntegrationTest {
         .andExpect(jsonPath("$.success").value(true));
 
     // Vérification finale
-    Game finalGame = gameRepository.findById(gameId).orElseThrow();
+    Game finalGame = ((GameRepositoryPort) gameRepository).findById(gameId).orElseThrow();
     assert finalGame.getStatus() == GameStatus.ACTIVE;
   }
 

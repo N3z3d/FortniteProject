@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.PlayerRepository;
@@ -134,7 +135,8 @@ class PlayerServiceTest {
   void shouldGetPlayerByIdSuccessfully() {
     // Given
     Integer totalPoints = 150;
-    when(playerRepository.findById(testPlayer1.getId())).thenReturn(Optional.of(testPlayer1));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer1.getId()))
+        .thenReturn(Optional.of(testPlayer1));
     when(scoreRepository.sumPointsByPlayerAndSeason(
             testPlayer1.getId(), testPlayer1.getCurrentSeason()))
         .thenReturn(totalPoints);
@@ -144,7 +146,7 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result).isNotNull();
-    verify(playerRepository).findById(testPlayer1.getId());
+    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer1.getId());
     verify(scoreRepository)
         .sumPointsByPlayerAndSeason(testPlayer1.getId(), testPlayer1.getCurrentSeason());
   }
@@ -153,7 +155,8 @@ class PlayerServiceTest {
   @DisplayName("Devrait lever une exception quand le joueur n'existe pas")
   void shouldThrowExceptionWhenPlayerNotFound() {
     // Given
-    when(playerRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
+    when(((PlayerRepositoryPort) playerRepository).findById(any(UUID.class)))
+        .thenReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> playerService.getPlayerById(UUID.randomUUID()))
@@ -165,7 +168,8 @@ class PlayerServiceTest {
   @DisplayName("Devrait retourner 0 points quand le joueur n'a pas de scores")
   void shouldReturnZeroPointsWhenPlayerHasNoScores() {
     // Given
-    when(playerRepository.findById(testPlayer1.getId())).thenReturn(Optional.of(testPlayer1));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer1.getId()))
+        .thenReturn(Optional.of(testPlayer1));
     when(scoreRepository.sumPointsByPlayerAndSeason(
             testPlayer1.getId(), testPlayer1.getCurrentSeason()))
         .thenReturn(null);
@@ -175,7 +179,7 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result).isNotNull();
-    verify(playerRepository).findById(testPlayer1.getId());
+    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer1.getId());
     verify(scoreRepository)
         .sumPointsByPlayerAndSeason(testPlayer1.getId(), testPlayer1.getCurrentSeason());
   }
@@ -214,14 +218,15 @@ class PlayerServiceTest {
   @DisplayName("Devrait rǸcupǸrer une entitǸ joueur par ID")
   void shouldFindPlayerById() {
     // Given
-    when(playerRepository.findById(testPlayer1.getId())).thenReturn(Optional.of(testPlayer1));
+    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer1.getId()))
+        .thenReturn(Optional.of(testPlayer1));
 
     // When
     Optional<Player> result = playerService.findPlayerById(testPlayer1.getId());
 
     // Then
     assertThat(result).contains(testPlayer1);
-    verify(playerRepository).findById(testPlayer1.getId());
+    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer1.getId());
   }
 
   @Test

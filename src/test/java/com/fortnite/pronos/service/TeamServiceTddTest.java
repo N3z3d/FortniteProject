@@ -271,7 +271,7 @@ class TeamServiceTddTest {
 
       assertThat(result.getId()).isEqualTo(teamId1);
       verify(userRepository).findById(userId1);
-      verify(playerRepository).findById(newPlayer.getId());
+      verify(((PlayerRepositoryPort) playerRepository)).findById(newPlayer.getId());
       verify(teamRepository).save(any(Team.class));
     }
 
@@ -311,7 +311,7 @@ class TeamServiceTddTest {
 
       assertThat(result.getId()).isEqualTo(teamId1);
       verify(userRepository).findById(userId1);
-      verify(playerRepository).findById(playerId1);
+      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
       verify(teamRepository).save(any(Team.class));
     }
 
