@@ -104,7 +104,8 @@ class DataInitializationServiceGameTest {
     addParticipantsToGame(testGame, Arrays.asList(marcel, thibaut, teddy));
 
     // Then
-    verify(gameParticipantRepository, times(3)).save(any(GameParticipant.class));
+    verify(((GameParticipantRepositoryPort) gameParticipantRepository), times(3))
+        .save(any(GameParticipant.class));
   }
 
   @Test
@@ -126,7 +127,8 @@ class DataInitializationServiceGameTest {
 
     // Then - Sarah ne devrait pas être ajoutée
     // Vérifier qu'on n'a sauvé que 3 participants, pas 4
-    verify(gameParticipantRepository, times(3)).save(any(GameParticipant.class));
+    verify(((GameParticipantRepositoryPort) gameParticipantRepository), times(3))
+        .save(any(GameParticipant.class));
   }
 
   private User createUser(String username, String email) {

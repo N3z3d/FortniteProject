@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.PlayerRepository;
@@ -194,7 +195,8 @@ class PlayerServiceTddTest {
       UUID playerId = testPlayer1.getId();
       Integer totalPoints = 1500;
 
-      when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId))
+          .thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.sumPointsByPlayerAndSeason(playerId, 2025)).thenReturn(totalPoints);
 
       PlayerDto result = playerService.getPlayerById(playerId);
@@ -205,7 +207,7 @@ class PlayerServiceTddTest {
       assertThat(result.getRegion()).isEqualTo(Player.Region.EU);
       assertThat(result.getTotalPoints()).isEqualTo(1500);
 
-      verify(playerRepository).findById(playerId);
+      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId);
       verify(scoreRepository).sumPointsByPlayerAndSeason(playerId, 2025);
     }
 
@@ -215,7 +217,8 @@ class PlayerServiceTddTest {
       // RED: Test player with null score sum
       UUID playerId = testPlayer1.getId();
 
-      when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId))
+          .thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.sumPointsByPlayerAndSeason(playerId, 2025)).thenReturn(null);
 
       PlayerDto result = playerService.getPlayerById(playerId);
@@ -229,13 +232,14 @@ class PlayerServiceTddTest {
     void shouldThrowExceptionForNonExistentPlayer() {
       // RED: Test player not found scenario
       UUID nonExistentId = UUID.randomUUID();
-      when(playerRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+      when(((PlayerRepositoryPort) playerRepository).findById(nonExistentId))
+          .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> playerService.getPlayerById(nonExistentId))
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Joueur non trouvé: " + nonExistentId);
 
-      verify(playerRepository).findById(nonExistentId);
+      verify(((PlayerRepositoryPort) playerRepository)).findById(nonExistentId);
       verifyNoInteractions(scoreRepository);
     }
   }
@@ -496,7 +500,8 @@ class PlayerServiceTddTest {
       // RED: Test score repository exception handling
       UUID playerId = testPlayer1.getId();
 
-      when(playerRepository.findById(playerId)).thenReturn(Optional.of(testPlayer1));
+      when(((PlayerRepositoryPort) playerRepository).findById(playerId))
+          .thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.sumPointsByPlayerAndSeason(playerId, 2025))
           .thenThrow(new RuntimeException("Score calculation failed"));
 

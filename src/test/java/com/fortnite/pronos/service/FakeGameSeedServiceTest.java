@@ -52,7 +52,7 @@ class FakeGameSeedServiceTest {
 
     fakeGameSeedService.seedFakeGame();
 
-    verify(gameRepository, never()).save(any(Game.class));
+    verify(((GameRepositoryPort) gameRepository), never()).save(any(Game.class));
     verify(teamRepository, never()).saveAll(any());
   }
 
@@ -63,7 +63,7 @@ class FakeGameSeedServiceTest {
 
     fakeGameSeedService.seedFakeGame();
 
-    verify(gameRepository, never()).save(any(Game.class));
+    verify(((GameRepositoryPort) gameRepository), never()).save(any(Game.class));
     verify(teamRepository, never()).saveAll(any());
   }
 
@@ -75,7 +75,7 @@ class FakeGameSeedServiceTest {
 
     fakeGameSeedService.seedFakeGame();
 
-    verify(gameRepository, never()).save(any(Game.class));
+    verify(((GameRepositoryPort) gameRepository), never()).save(any(Game.class));
     verify(teamRepository, never()).saveAll(any());
   }
 
