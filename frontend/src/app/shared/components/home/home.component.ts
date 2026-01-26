@@ -135,7 +135,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         if (stats.playersByRegion) {
           this.regions = this.regions.map(region => ({
             ...region,
-            playerCount: stats.playersByRegion?.[region.code] ? region.playerCount
+            playerCount: stats.playersByRegion?.[region.code] || region.playerCount
           }));
           this.logger.debug('Home: region counts updated from API', stats.playersByRegion);
         }

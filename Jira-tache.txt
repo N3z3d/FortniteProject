@@ -286,16 +286,29 @@ DEPENDENCIES: none
 
 OBJECTIF:
 - Corriger le chargement des traductions i18n dans l'application.
-- Eliminer l'affichage des cles brutes (ex: games.mygames).
+- Eliminer l'affichage des cles brutes (ex: games.myGames).
 - Corriger les accents casses qui apparaissent au runtime.
+- Restaurer les traductions francaises correctes (verifiees dans Git).
 
 CONTEXTE:
 **PROBLEME RUNTIME CRITIQUE:**
 - L'application affiche les CLES i18n au lieu des traductions
-- Exemple: "games.mygames" au lieu de "Mes jeux"
-- Exemple: "games.joinGame" au lieu de "Rejoindre une partie"
+- Exemple: "games.myGames" affiche "games.myGames" au lieu de "Mes Parties"
+- Exemple: "games.joinGame" affiche "games.joinGame" au lieu de "Rejoindre une partie"
 - Les accents sont toujours casses dans l'UI qui tourne
 - Code source: mojibakes corriges (986 total) mais RUNTIME casse
+
+**TRADUCTIONS CORRECTES (verifiees dans Git commit efd2f70):**
+```typescript
+games: {
+  myGames: 'Mes Parties',        // NOT "Mes jeux"
+  createGame: 'Créer une partie',
+  joinGame: 'Rejoindre une partie',
+  joinWithCode: 'Rejoindre avec un code',
+  noGames: 'Aucune partie',
+  // ...
+}
+```
 
 **CAUSE PROBABLE:**
 - TranslationService.loadTranslations() charge les traductions en memoire
@@ -341,12 +354,14 @@ constructor() {
 
 CRITERES_D_ACCEPTATION:
 - [ ] Application affiche les traductions (pas les cles)
-- [ ] "Mes jeux" s'affiche au lieu de "games.myGames"
+- [ ] "Mes Parties" s'affiche au lieu de "games.myGames" (verifie dans Git)
 - [ ] "Rejoindre une partie" s'affiche au lieu de "games.joinGame"
+- [ ] "Créer une partie" s'affiche au lieu de "games.createGame"
 - [ ] Tous les accents sont corrects au runtime (é, è, à, ô, etc.)
 - [ ] Navigation menu affiche texte francais correct
 - [ ] Console browser: 0 erreurs i18n
 - [ ] Tests i18n passent
+- [ ] Traductions correspondent a celles verifiees dans Git (commit efd2f70)
 
 READY:
 - [x] OBJECTIF defini

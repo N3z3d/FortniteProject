@@ -143,7 +143,7 @@
               </mat-chip>
               <span class="participants participant-badge" [attr.title]="t.t('games.participantsTooltip')">
                 <mat-icon class="participant-icon">group</mat-icon>
-                {{ game.participantCount ? 0 }}/{{ game.maxParticipants ? 0 }}
+                {{ game.participantCount || 0 }}/{{ game.maxParticipants || 0 }}
               </span>
             </div>
           </div>

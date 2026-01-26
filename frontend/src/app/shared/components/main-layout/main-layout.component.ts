@@ -109,7 +109,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Méthode pour les animations de route
   prepareRoute(outlet: RouterOutlet): string {
-    return outlet?.activatedRouteData?.['animation'] ? '*';
+    return outlet?.activatedRouteData?.['animation'] ? '*' : '';
   }
 
   ngOnInit(): void {
