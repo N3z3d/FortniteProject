@@ -296,11 +296,11 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
   // Template helpers
   minPercent(value: number): number {
-    return Math.min(value ? 0, 100);
+    return Math.min(value || 0, 100);
   }
 
   abs(value: number): number {
-    return Math.abs(value ? 0);
+    return Math.abs(value || 0);
   }
 
   // Drag and Drop Handlers

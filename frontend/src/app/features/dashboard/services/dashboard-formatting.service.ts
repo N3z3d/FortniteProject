@@ -16,9 +16,9 @@ export class DashboardFormattingService {
   }
 
   getParticipantDisplayCount(game: Game | null, fallbackTeams: number): number {
-    const explicitCount = game?.participantCount ? 0;
-    const teamCount = game?.teams?.length ? fallbackTeams ? 0;
-    const participantCount = game?.participants?.length ? 0;
+    const explicitCount = game?.participantCount || 0;
+    const teamCount = game?.teams?.length ? fallbackTeams || 0;
+    const participantCount = game?.participants?.length || 0;
 
     return Math.max(explicitCount, teamCount, participantCount);
   }

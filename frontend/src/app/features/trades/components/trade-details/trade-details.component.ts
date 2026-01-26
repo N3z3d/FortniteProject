@@ -476,7 +476,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   getStatusLabel(status: string): string {
-    const key = status?.toLowerCase() ? '';
+    const key = status?.toLowerCase() || '';
     return this.t.t(`trades.status.${key}`, status);
   }
 

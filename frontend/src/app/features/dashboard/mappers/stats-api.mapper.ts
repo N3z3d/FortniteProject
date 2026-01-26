@@ -301,5 +301,5 @@ export class StatsApiMapper {
       }
     };
   }
-
+
 }

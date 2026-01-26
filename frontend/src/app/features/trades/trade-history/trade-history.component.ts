@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslationService } from '../../../core/services/translation.service';
@@ -52,7 +53,8 @@ export interface TradeHistoryItem {
     MatFormFieldModule,
     MatSelectModule,
     MatDatepickerModule,
-    MatInputModule
+    MatInputModule,
+    MatTooltipModule
   ],
   template: `
     <div class="trade-history-container">
@@ -109,11 +111,11 @@ export interface TradeHistoryItem {
 
             <mat-form-field appearance="outline">
               <mat-label>{{ t.t('trades.history.playerLabel') }}</mat-label>
-              <mat-input 
-                formControlName="player" 
+              <input
+                matInput
+                formControlName="player"
                 [placeholder]="t.t('trades.history.playerPlaceholder')"
                 (input)="applyFilters()">
-              </mat-input>
             </mat-form-field>
 
             <button 

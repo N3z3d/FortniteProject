@@ -172,7 +172,7 @@ export class GameHomeComponent implements OnInit, OnDestroy {
 
   getTotalFortnitePlayers(game: Game): number {
     // Use API value if available, fallback to 147 (7 regions x 21 players)
-    return game.fortnitePlayerCount ? 147;
+    return game.fortnitePlayerCount || 147;
   }
 
   getMaxParticipants(): number {

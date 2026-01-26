@@ -73,7 +73,7 @@ export class DataSourceStrategy {
     operationName: string,
     options: DataSourceFallbackOptions = {}
   ): Observable<T> {
-    const allowFallback = options.allowFallback ? false;
+    const allowFallback = options.allowFallback || false;
 
     return primarySource.pipe(
       tap(() => {
