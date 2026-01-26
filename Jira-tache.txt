@@ -760,6 +760,143 @@ NEXT:
 5. Extract command methods (TDD)
 6. Create facade GameService
 
+ID: JIRA-CLEAN-004
+TITRE: Refactor draft.component.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-3h
+
+ASSIGNE: Unassigned
+ASSIGNE_LE: -
+DERNIERE_MAJ: 2026-01-25 18:45
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Reduire draft.component.ts de 584 lignes a <500 lignes.
+- Componentiser les sections UI pour respecter SRP.
+
+CONTEXTE:
+- Current: 584 lines (1.17x over 500-line limit)
+- Violation: Component handles orchestration + UI rendering
+- Impact: Component too complex, difficult to test and maintain
+
+DESCRIPTION:
+Extraire les sections UI vers des sub-components dedies.
+
+REFACTORING STRATEGY:
+```
+draft.component.ts (< 300 lines - orchestrator only)
+  ├── draft-player-pool.component (< 200 lines)
+  ├── draft-pick-order.component (< 150 lines)
+  ├── draft-timer.component (< 100 lines)
+  └── draft-team-roster.component (< 200 lines)
+```
+
+CRITERES_D_ACCEPTATION:
+- [ ] draft.component.ts < 300 lines (orchestrator only)
+- [ ] 4 sub-components created (each < 200 lines)
+- [ ] All existing tests pass
+- [ ] Sub-component tests created (coverage >= 85%)
+- [ ] No functional regressions
+- [ ] Draft functionality preserved
+
+READY:
+- [x] OBJECTIF defini
+- [x] CONTEXTE clair
+- [x] DESCRIPTION avec structure
+- [x] CRITERES_D_ACCEPTATION definis
+
+NEXT:
+1. Assigner ticket
+2. Extract draft-player-pool.component
+3. Extract draft-pick-order.component
+4. Extract draft-timer.component
+5. Extract draft-team-roster.component
+6. Refactor parent component to orchestrate
+7. Run tests + verify
+
+ID: JIRA-CLEAN-005
+TITRE: Refactor Premium Services & Detail Components (6 files)
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 6-8h
+
+ASSIGNE: Unassigned
+ASSIGNE_LE: -
+DERNIERE_MAJ: 2026-01-25 18:45
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Refactor 6 remaining components/services exceeding 500 lines.
+- Atteindre 100% frontend clean code compliance.
+
+CONTEXTE:
+FILES VIOLATING CLEAN CODE (MEDIUM priority - 501-590 lines):
+1. accessible-error-handler.component.ts - 590 lignes (1.18x over)
+2. premium-interactions.service.ts - 550 lignes (1.10x over)
+3. trade-detail.component.ts - 543 lignes (1.09x over)
+4. game-detail.component.ts - 530 lignes (1.06x over)
+5. team-detail.component.ts - 517 lignes (1.03x over)
+6. dashboard.component.ts - 501 lignes (1.00x over)
+
+ROOT CAUSE:
+- Components mix display logic with business logic
+- Services contain multiple responsibilities
+- Detail components not componentized
+
+DESCRIPTION:
+Refactor each file to respect 500-line limit using appropriate patterns.
+
+REFACTORING PRIORITIES:
+
+Priority 2.1: premium-interactions.service.ts (550 lines)
+- Strategy: Split by animation type
+- Create: PremiumAnimationsService, PremiumEffectsService
+- Result: 2 services < 300 lines each
+
+Priority 2.2: accessible-error-handler.component.ts (590 lines)
+- Strategy: Extract error strategies
+- Create: ErrorStrategyFactory, error strategy classes
+- Result: Component < 300 lines + strategy classes < 150 lines
+
+Priority 2.3: Detail components (trade-detail, game-detail, team-detail)
+- Strategy: Extract sub-components for sections
+- Create: *-header, *-stats, *-actions sub-components
+- Result: Main components < 300 lines, sub-components < 200 lines
+
+Priority 2.4: dashboard.component.ts (501 lines - barely over)
+- Strategy: Extract 1-2 methods to helper service
+- Result: Component < 500 lines
+
+CRITERES_D_ACCEPTATION:
+- [ ] All 6 files < 500 lines
+- [ ] Services split by responsibility where needed
+- [ ] Sub-components created for detail components
+- [ ] All tests pass
+- [ ] New tests created for extracted services/components
+- [ ] Coverage maintained >= 85%
+- [ ] No functional regressions
+- [ ] 100% frontend clean code compliance achieved
+
+READY:
+- [x] OBJECTIF defini
+- [x] CONTEXTE clair (6 files identified with priorities)
+- [x] DESCRIPTION avec strategie
+- [x] CRITERES_D_ACCEPTATION definis
+
+NEXT:
+1. Assigner ticket
+2. Start with premium-interactions.service.ts (TDD)
+3. Refactor accessible-error-handler.component.ts
+4. Refactor detail components (trade, game, team)
+5. Refactor dashboard.component.ts (quick win)
+6. Run full test suite
+7. Verify 100% clean code compliance
+
 ================================================================================
 DEBRIEF SESSION 2026-01-25 18:30
 ================================================================================
@@ -863,7 +1000,14 @@ PRIORITY P2 - MEDIUM IMPORTANCE
 6. JIRA-CLEAN-003: Refactor game.service.ts (2-3h)
    → 594 lines → <100 lines (CQRS pattern)
 
-7. JIRA-ARCH-011 to 015: Pure Hexagonal Migration (36-60h)
+7. JIRA-CLEAN-004: Refactor draft.component.ts (2-3h)
+   → 584 lines → <300 lines (componentize UI)
+
+8. JIRA-CLEAN-005: Refactor Premium Services & Detail Components (6-8h)
+   → 6 files: 501-590 lines → <500 lines each
+   → Achieve 100% frontend clean code compliance
+
+9. JIRA-ARCH-011 to 015: Pure Hexagonal Migration (36-60h)
    → 5 domains: Game, Player, Team, Draft, Trade
    → Incremental strategy (one domain at a time)
    → BLOCKED by JIRA-ARCH-009
@@ -880,13 +1024,15 @@ TICKETS IN_PROGRESS: 2
 • JIRA-ARCH-000: Architecture Review (Epic P0) - @Team
 • JIRA-ARCH-001: Migration Hexagonale (Story P1) - @Claude
 
-TICKETS TODO: 6 (P0-P1 priority)
+TICKETS TODO: 8 (P0-P2 priority)
 • JIRA-CLEAN-001 (P0) - translation.service.ts refactoring
 • JIRA-ARCH-009 (P1) - Architecture decision
 • JIRA-TEST-004 (P1) - Architecture tests
 • JIRA-TEST-003 (P1) - Frontend tests (BLOCKED)
 • JIRA-CLEAN-002 (P1) - Trade components
 • JIRA-CLEAN-003 (P2) - game.service.ts CQRS
+• JIRA-CLEAN-004 (P2) - draft.component.ts
+• JIRA-CLEAN-005 (P2) - Premium Services & Detail Components
 
 TICKETS BLOCKED: 5 (P2 priority)
 • JIRA-ARCH-011 to 015 (blocked by JIRA-ARCH-009)
@@ -894,8 +1040,8 @@ TICKETS BLOCKED: 5 (P2 priority)
 TOTAL REMAINING EFFORT:
 • P0: 2-4h (CRITICAL)
 • P1: 9-16h
-• P2: 38-63h
-• TOTAL: 49-83h (multi-sprint)
+• P2: 48-74h
+• TOTAL: 59-94h (multi-sprint)
 
 QUALITY METRICS:
 • Backend Tests: 99.7% passing ✅
@@ -952,6 +1098,6 @@ Aucun blocage technique majeur. Travail prioritaire identifie et documente.
 ================================================================================
 FIN DU BACKLOG
 ================================================================================
-Last Updated: 2026-01-25 18:30
-Total Active Tickets: 13
-Total Estimated Effort: 49-83h
+Last Updated: 2026-01-25 18:45
+Total Active Tickets: 15
+Total Estimated Effort: 59-94h
