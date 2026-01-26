@@ -271,18 +271,97 @@ NEXT:
 5. Run architecture tests
 6. Verify functional tests (0 regressions)
 
+ID: JIRA-COMP-003
+TITRE: BUG CRITIQUE - Frontend ne compile pas (10-15 erreurs TypeScript)
+TYPE: Bug
+PRIORITE: P0
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-25 20:00
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Corriger toutes les erreurs de compilation TypeScript frontend.
+- Permettre a l'application de demarrer (ng serve).
+- Debloquer JIRA-I18N-039 (test i18n impossible sans compilation).
+
+CONTEXTE:
+**CAUSE RACINE:**
+- Mass search/replace a casse tous les ternaires dans le code
+- Pattern: `value || 0` a ete remplace par `value ? 0` (incomplet)
+- Resultat: ~50+ ternaires incomplets dans tout le frontend
+
+**CORRECTIONS PARTIELLES APPLIQUEES (commit 22ed63d):**
+- Fixed ~40 patterns: `? 0;` → `|| 0;`, `? null;` → `|| null;`
+- Fixed MatTooltipModule import
+- Fixed mat-input syntax
+
+**ERREURS RESTANTES:**
+- ~10-15 erreurs TypeScript encore presentes
+- Patterns: `TS1005: ':' expected`, `Unexpected ";"`, `Unexpected ")"`
+
+DESCRIPTION:
+Corriger systematiquement toutes les erreurs de compilation restantes.
+
+STRATEGIES POSSIBLES:
+
+Option A - Fix systematique (RECOMMANDE):
+```bash
+# Trouver tous les ternaires incomplets restants
+cd frontend/src
+grep -r " ? " app/ --include="*.ts" | grep -E " ? [^:]+;| ? [^:]+\)"
+
+# Fix manuel des patterns restants
+# Patterns a chercher:
+# - `condition ? value;` (manque `: else`)
+# - `condition ? value)` (manque `: else`)
+# - `condition ? value :` (manque `else_value`)
+```
+
+Option B - Revert et refaire proprement:
+```bash
+# Si trop d'erreurs, revert au dernier commit fonctionnel
+git log --oneline --grep="i18n\|compile" | head -10
+git revert <last_working_commit>
+```
+
+CRITERES_D_ACCEPTATION:
+- [ ] `ng serve` demarre sans erreurs TypeScript
+- [ ] Application accessible sur http://localhost:4200
+- [ ] 0 erreurs dans console browser au demarrage
+- [ ] JIRA-I18N-039 debloque
+
+READY:
+- [x] OBJECTIF defini
+- [x] CONTEXTE clair (cause racine identifiee)
+- [x] DESCRIPTION avec strategies
+- [x] CRITERES_D_ACCEPTATION definis
+
+NEXT:
+1. Assigner ticket (@Claude ou @Dev)
+2. Choisir strategie (Fix systematique vs Revert)
+3. Si Fix: Trouver tous les patterns restants
+4. Corriger un par un en testant la compilation
+5. Verifier ng serve demarre
+6. Debloquer JIRA-I18N-039
+
 ID: JIRA-I18N-039
 TITRE: BUG CRITIQUE - Traductions i18n non chargees (cles brutes affichees)
 TYPE: Bug
 PRIORITE: P0
-STATUT: IN_PROGRESS
+STATUT: BLOCKED
 ESTIMATE: 2-4h
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-25 19:15
-DERNIERE_MAJ: 2026-01-25 19:15
+DERNIERE_MAJ: 2026-01-25 20:00
 
 DEPENDENCIES: none
+BLOCKED_BY: JIRA-COMP-003 (Frontend ne compile pas)
 
 OBJECTIF:
 - Corriger le chargement des traductions i18n dans l'application.
@@ -1080,16 +1159,23 @@ PRIORITES IMMEDIATES
 
 PRIORITY P0 - IMMEDIATE ACTION REQUIRED
 ----------------------------------------
-1. JIRA-I18N-039: BUG CRITIQUE - Traductions i18n non chargees (2-4h) 🔴🔴🔴
-   → BLOCAGE APPLICATION: Clés brutes affichées (games.myGames au lieu de "Mes jeux")
+1. JIRA-COMP-003: BUG CRITIQUE - Frontend ne compile pas (2-4h) 🔴🔴🔴
+   → BLOCAGE TOTAL: 10-15 erreurs TypeScript empêchent ng serve
+   → Cause: Mass search/replace a cassé tous les ternaires
+   → Impact: Impossible de tester l'application
+   → BLOQUE: JIRA-I18N-039
+
+2. JIRA-I18N-039: BUG CRITIQUE - Traductions i18n non chargees (2-4h) 🔴🔴🔴
+   → STATUT: BLOCKED BY JIRA-COMP-003
+   → BLOCAGE APPLICATION: Clés brutes affichées (games.myGames au lieu de "Mes Parties")
    → Accents cassés au runtime
    → Impact: Application inutilisable pour les utilisateurs
 
-2. JIRA-CLEAN-001: Refactor translation.service.ts (2-4h)
+3. JIRA-CLEAN-001: Refactor translation.service.ts (2-4h)
+   → STATUT: BLOCKED BY JIRA-I18N-039
    → CRITICAL: 5353 lines → <200 lines
    → Extract translations to JSON files
    → Impact: Unblocks i18n improvements
-   → BLOCKED BY: JIRA-I18N-039 (doit fonctionner avant refactoring)
 
 PRIORITY P1 - HIGH IMPORTANCE
 ------------------------------
@@ -1139,8 +1225,7 @@ TICKETS IN_PROGRESS: 2
 • JIRA-ARCH-001: Migration Hexagonale (Story P1) - @Claude
 
 TICKETS TODO: 9 (P0-P2 priority)
-• JIRA-I18N-039 (P0) - BUG CRITIQUE i18n runtime (cles brutes affichees)
-• JIRA-CLEAN-001 (P0) - translation.service.ts refactoring
+• JIRA-COMP-003 (P0) - BUG CRITIQUE Frontend ne compile pas (NOUVEAU)
 • JIRA-ARCH-009 (P1) - Architecture decision
 • JIRA-TEST-004 (P1) - Architecture tests
 • JIRA-TEST-003 (P1) - Frontend tests
@@ -1149,14 +1234,19 @@ TICKETS TODO: 9 (P0-P2 priority)
 • JIRA-CLEAN-004 (P2) - draft.component.ts
 • JIRA-CLEAN-005 (P2) - Premium Services & Detail Components
 
+TICKETS BLOCKED: 7 (P0-P2 priority)
+• JIRA-I18N-039 (P0) - BUG CRITIQUE i18n runtime (BLOCKED BY JIRA-COMP-003)
+• JIRA-CLEAN-001 (P0) - translation.service.ts refactoring (BLOCKED BY JIRA-I18N-039)
+• JIRA-ARCH-011 to 015 (P2) - Pure Hexagonal Migration (BLOCKED BY JIRA-ARCH-009)
+
 TICKETS BLOCKED: 5 (P2 priority)
 • JIRA-ARCH-011 to 015 (blocked by JIRA-ARCH-009)
 
 TOTAL REMAINING EFFORT:
-• P0: 4-8h (2 CRITICAL tasks)
+• P0: 6-12h (3 CRITICAL tasks - 2 BLOCKED)
 • P1: 9-16h
 • P2: 48-74h
-• TOTAL: 61-98h (multi-sprint)
+• TOTAL: 63-102h (multi-sprint)
 
 QUALITY METRICS:
 • Backend Tests: 99.7% passing ✅
@@ -1211,8 +1301,131 @@ STATUS GLOBAL: 🟢 SAIN
 Aucun blocage technique majeur. Travail prioritaire identifie et documente.
 
 ================================================================================
+DEBRIEF SESSION 2026-01-25 20:05 (CONTINUATION)
+================================================================================
+
+SESSION WORK (depuis 19:00)
+-----------------------------
+TICKETS CREES:
+✅ JIRA-COMP-003: BUG CRITIQUE Frontend ne compile pas (P0 - NOUVEAU)
+✅ JIRA-I18N-039: Mis a jour avec traductions correctes Git (commit efd2f70)
+
+TICKETS MIS A JOUR:
+🔴 JIRA-I18N-039: TODO → BLOCKED BY JIRA-COMP-003
+🔴 JIRA-CLEAN-001: TODO → BLOCKED BY JIRA-I18N-039
+📝 JIRA-TEST-003: Precise utilisation de Brave browser
+
+CODE CORRECTIONS PARTIELLES:
+✅ ~50 ternaires incomplets corriges (commit 22ed63d)
+✅ MatTooltipModule ajoute (trade-history.component.ts)
+✅ mat-input syntax corrige (input matInput)
+✅ Patterns corriges:
+   - `value ? 0;` → `value || 0;`
+   - `value ? null;` → `value || null;`
+   - `value ? {};` → `value || {};`
+
+FICHIERS MODIFIES (11 principaux):
+- trade-history.component.ts
+- trade-proposal.component.ts
+- home.component.ts
+- main-layout.component.ts + .html
+- player-stats.service.ts
+- dashboard-formatting.service.ts
+- draft.service.ts
+- game-home.component.ts
+- game-data.service.ts
+- trade-details.component.ts
+
+GIT COMMITS (total session: 9 commits):
+1. 71b401f: fix TypeScript syntax errors (layout, home)
+2. 22ed63d: wip partial fix ternary expressions (COMPILATION STILL FAILING)
+
+STATUS COMPILATION:
+❌ Frontend: 10-15 erreurs TypeScript restantes
+❌ ng serve: N'a pas pu demarrer
+❌ Backend: Running en background (non teste)
+❌ Application: Inaccessible
+
+BLOCAGES CRITIQUES IDENTIFIES:
+🔴🔴🔴 JIRA-COMP-003: Frontend ne compile pas
+   → Bloque: JIRA-I18N-039 (test i18n impossible)
+   → Bloque: JIRA-CLEAN-001 (refactor impossible)
+   → Bloque: Tout developpement frontend
+
+TRADUCTIONS CORRECTES VERIFIEES (Git commit efd2f70):
+```typescript
+games: {
+  myGames: 'Mes Parties',        // PAS "Mes jeux"
+  createGame: 'Créer une partie',
+  joinGame: 'Rejoindre une partie',
+  joinWithCode: 'Rejoindre avec un code',
+  noGames: 'Aucune partie',
+}
+```
+
+PROCHAINES ACTIONS CRITIQUES:
+1. 🔴 JIRA-COMP-003: Corriger les 10-15 erreurs TypeScript restantes (2-4h)
+   → Options: Fix systematique OU Revert dernier commit fonctionnel
+2. 🔴 JIRA-I18N-039: Investiguer bug i18n runtime (2-4h)
+   → Verifier TranslationService.loadTranslations()
+   → Verifier encoding UTF-8
+   → Verifier appels translate() dans composants
+3. 🔴 JIRA-CLEAN-001: Refactor translation.service.ts (2-4h)
+   → 5353 → <200 lignes
+   → Extraire vers JSON files
+
+================================================================================
 FIN DU BACKLOG
 ================================================================================
-Last Updated: 2026-01-25 19:00
-Total Active Tickets: 16
-Total Estimated Effort: 61-98h
+Last Updated: 2026-01-25 20:05
+Total Active Tickets: 17 (1 IN_PROGRESS, 9 TODO, 7 BLOCKED)
+Total Estimated Effort: 63-102h
+
+================================================================================
+CONCLUSION SESSION
+================================================================================
+
+STATUT GLOBAL: 🔴 CRITIQUE - BLOCAGE COMPILATION
+
+Le projet a progresse significativement mais rencontre un blocage critique:
+
+ACCOMPLISSEMENTS SESSION COMPLETE (depuis debut):
+✅ 30+ test files corriges (repository ambiguities)
+✅ 2 services migres vers Port interfaces
+✅ Clean code analysis complete (12 violations frontend identifiees)
+✅ 0 mojibakes trouves (986 deja corriges)
+✅ 17 tickets JIRA crees/mis a jour (couverture 100%)
+✅ 9 commits Git (tous pushes)
+✅ ~50 erreurs TypeScript corrigees
+
+BLOCAGES CRITIQUES:
+🔴 Frontend ne compile pas (10-15 erreurs TypeScript)
+🔴 Application inaccessible (ng serve ne demarre pas)
+🔴 Tests i18n impossibles sans compilation
+🔴 Cause: Mass search/replace a casse les ternaires
+
+PRIORITE ABSOLUE P0:
+1. JIRA-COMP-003: Corriger compilation frontend (2-4h)
+   → URGENT: Debloquer developpement frontend
+   → Options: Fix systematique OU Revert
+
+2. JIRA-I18N-039: Corriger bug i18n runtime (2-4h)
+   → APRES compilation OK
+   → Verifier "games.myGames" → "Mes Parties"
+
+METRIQUES FINALES:
+- Backend Tests: 1282/1286 (99.7%) ✅
+- Frontend Compilation: ❌ FAILED
+- Backend Clean Code: 100% ✅
+- Frontend Clean Code: 12 violations ❌
+- I18n Source Code: 100% clean ✅
+- I18n Runtime: ❌ BROKEN (keys displayed)
+
+RECOMMANDATION:
+🔴 PRIORITE 1: Fix JIRA-COMP-003 IMMEDIATEMENT
+🔴 PRIORITE 2: Test JIRA-I18N-039 des que compilation OK
+🔴 PRIORITE 3: Refactor JIRA-CLEAN-001 des que i18n fonctionne
+
+STATUS: 🔴 BLOCAGE CRITIQUE NECESSITANT ACTION IMMEDIATE
+
+================================================================================
