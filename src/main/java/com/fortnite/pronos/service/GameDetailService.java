@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.GameDetailUseCase;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.dto.GameDetailDto.*;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.ScoreRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class GameDetailService implements GameDetailUseCase {
   private static final int DEFAULT_SEASON = 2025;
 
   private final GameRepositoryPort gameRepository;
-  private final GameParticipantRepository gameParticipantRepository;
+  private final GameParticipantRepositoryPort gameParticipantRepository;
   private final DraftRepository draftRepository;
   private final ScoreRepository scoreRepository;
 

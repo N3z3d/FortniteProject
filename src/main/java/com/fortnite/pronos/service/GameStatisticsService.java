@@ -9,11 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.GameStatisticsUseCase;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.repository.GameParticipantRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GameStatisticsService implements GameStatisticsUseCase {
 
   private final GameRepositoryPort gameRepository;
-  private final GameParticipantRepository gameParticipantRepository;
+  private final GameParticipantRepositoryPort gameParticipantRepository;
 
   /**
    * Calcule la distribution des joueurs par région pour une game
