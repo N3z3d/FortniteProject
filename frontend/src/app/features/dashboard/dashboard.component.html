@@ -63,12 +63,12 @@
 
           <div class="game-stats-row">
             <div class="hero-stat">
-              <div class="stat-value">{{ displayStats.totalTeams?.value || formatter.formatNumber(stats.totalTeams) }}</div>
+              <div class="stat-value">{{ displayStats['totalTeams']?.value || formatter.formatNumber(stats['totalTeams']) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.teams') }}</div>
             </div>
             <div class="hero-divider"></div>
             <div class="hero-stat">
-              <div class="stat-value">{{ displayStats.totalPlayers?.value || formatter.formatNumber(stats.totalPlayers) }}</div>
+              <div class="stat-value">{{ displayStats['totalPlayers']?.value || formatter.formatNumber(stats['totalPlayers']) }}</div>
               <div class="stat-label">{{ t.t('dashboard.labels.players') }}</div>
             </div>
             <div class="hero-divider"></div>
@@ -105,7 +105,7 @@
         </div>
         <div>
           <div class="stat-value">{{ t.t('dashboard.labels.proPlayers') }}</div>
-          <div class="stat-value-highlight">{{ stats.proPlayersCount ? 147 }}</div>
+          <div class="stat-value-highlight">{{ stats.proPlayersCount || 147 }}</div>
         </div>
         <div class="stat-trend positive">
           <mat-icon>trending_up</mat-icon> +12%
@@ -119,7 +119,7 @@
         </div>
           <div>
             <div class="stat-value">{{ t.t('dashboard.labels.points') }}</div>
-            <div class="stat-value-highlight">{{ displayStats.totalPoints?.value || formatter.formatNumber(stats.totalPoints) }}</div>
+            <div class="stat-value-highlight">{{ displayStats['totalPoints']?.value || formatter.formatNumber(stats['totalPoints']) }}</div>
           </div>
         <div class="stat-trend positive">
           <mat-icon>trending_up</mat-icon> {{ t.t('dashboard.labels.total') }}
@@ -133,7 +133,7 @@
         </div>
           <div>
             <div class="stat-value">{{ t.t('dashboard.labels.season') }}</div>
-            <div class="stat-value-highlight">{{ displayStats.seasonProgress?.value || (stats.seasonProgress + '%') }}</div>
+            <div class="stat-value-highlight">{{ displayStats['seasonProgress']?.value || (stats['seasonProgress'] + '%') }}</div>
           </div>
         <div class="stat-trend neutral">
           {{ t.t('dashboard.labels.progress2025') }}

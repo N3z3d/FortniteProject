@@ -48,7 +48,7 @@ export class TranslationService {
       return englishFallback;
     }
 
-    return fallback ? key; // Return key if translation not found
+    return fallback || key; // Return fallback if provided, else return key
   }
 
   t(key: string, fallback?: string): string {

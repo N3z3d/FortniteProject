@@ -506,7 +506,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   abs(value: number): number {
-    return Math.abs(value ? 0);
+    return Math.abs(value || 0);
   }
 
   formatDate(date: Date): string {

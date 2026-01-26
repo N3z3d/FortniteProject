@@ -156,10 +156,10 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   canSelectPlayer(): boolean {
-    const status = this.draftState?.draft?.status ? this.draftState?.status;
-    return this.gameId !== null && 
+    const status = this.draftState?.draft?.status || this.draftState?.status;
+    return this.gameId !== null &&
            !this.isSelectingPlayer &&
-           this.isCurrentUserTurn() && 
+           this.isCurrentUserTurn() &&
            status === 'ACTIVE';
   }
 

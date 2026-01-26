@@ -57,7 +57,7 @@ export class PlayerStatsService {
       return parsedTotal;
     }
 
-    const sumFromRegions = Object.values(playersByRegion ? {}).reduce<number>(
+    const sumFromRegions = Object.values(playersByRegion || {}).reduce<number>(
       (sum, value) => sum + (Number(value) || 0),
       0
     );
