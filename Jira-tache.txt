@@ -271,19 +271,112 @@ NEXT:
 5. Run architecture tests
 6. Verify functional tests (0 regressions)
 
+ID: JIRA-I18N-039
+TITRE: BUG CRITIQUE - Traductions i18n non chargees (cles brutes affichees)
+TYPE: Bug
+PRIORITE: P0
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: Unassigned
+ASSIGNE_LE: -
+DERNIERE_MAJ: 2026-01-25 19:00
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Corriger le chargement des traductions i18n dans l'application.
+- Eliminer l'affichage des cles brutes (ex: games.mygames).
+- Corriger les accents casses qui apparaissent au runtime.
+
+CONTEXTE:
+**PROBLEME RUNTIME CRITIQUE:**
+- L'application affiche les CLES i18n au lieu des traductions
+- Exemple: "games.mygames" au lieu de "Mes jeux"
+- Exemple: "games.joinGame" au lieu de "Rejoindre une partie"
+- Les accents sont toujours casses dans l'UI qui tourne
+- Code source: mojibakes corriges (986 total) mais RUNTIME casse
+
+**CAUSE PROBABLE:**
+- TranslationService.loadTranslations() charge les traductions en memoire
+- Mais les composants n'appellent pas translate() correctement
+- OU: Traductions hardcodees dans service ne sont pas chargees au demarrage
+- OU: Probleme d'encodage UTF-8 au runtime (fichiers servis en mauvais charset)
+
+DESCRIPTION:
+Investiguer et corriger le probleme de chargement des traductions.
+
+INVESTIGATION STEPS:
+1. Lancer l'application (ng serve)
+2. Verifier console browser (erreurs TranslationService?)
+3. Verifier que loadTranslations() est appelee
+4. Verifier encoding des fichiers servis (Content-Type: text/html; charset=UTF-8)
+5. Verifier appels translate() dans les composants
+
+SOLUTIONS POSSIBLES:
+
+Option A - Probleme d'appel translate():
+```typescript
+// WRONG (affiche la cle)
+<h1>{{ 'games.myGames' }}</h1>
+
+// CORRECT
+<h1>{{ translationService.translate('games.myGames') }}</h1>
+```
+
+Option B - Probleme charset HTML:
+```html
+<!-- Ajouter dans index.html -->
+<meta charset="UTF-8">
+```
+
+Option C - Probleme loadTranslations() non appelee:
+```typescript
+// Verifier constructor TranslationService
+constructor() {
+  this.loadTranslations(); // Doit etre appele!
+  this.restoreLanguagePreference();
+}
+```
+
+CRITERES_D_ACCEPTATION:
+- [ ] Application affiche les traductions (pas les cles)
+- [ ] "Mes jeux" s'affiche au lieu de "games.myGames"
+- [ ] "Rejoindre une partie" s'affiche au lieu de "games.joinGame"
+- [ ] Tous les accents sont corrects au runtime (é, è, à, ô, etc.)
+- [ ] Navigation menu affiche texte francais correct
+- [ ] Console browser: 0 erreurs i18n
+- [ ] Tests i18n passent
+
+READY:
+- [x] OBJECTIF defini
+- [x] CONTEXTE clair (probleme runtime identifie)
+- [x] DESCRIPTION avec investigation steps
+- [x] CRITERES_D_ACCEPTATION definis
+
+NEXT:
+1. Assigner ticket (@Claude)
+2. Lancer backend (mvn spring-boot:run)
+3. Lancer frontend (cd frontend && ng serve)
+4. Ouvrir http://localhost:4200 dans Brave
+5. Verifier menu navigation (games.myGames visible?)
+6. Ouvrir console browser (F12)
+7. Analyser erreurs + reseau
+8. Corriger probleme identifie
+9. Verifier fix fonctionne
+
 ID: JIRA-TEST-003
 TITRE: Lancer tests frontend Angular complets
 TYPE: Task
 PRIORITE: P1
-STATUT: BLOCKED
+STATUT: TODO
 ESTIMATE: 1-2h
 
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-01-24 23:50
-DERNIERE_MAJ: 2026-01-25 18:30
+DERNIERE_MAJ: 2026-01-25 19:00
 
 DEPENDENCIES: none
-BLOCKED_BY: Chrome/Brave setup required
 
 OBJECTIF:
 - Executer tous les tests frontend Angular.
@@ -292,23 +385,23 @@ OBJECTIF:
 CONTEXTE:
 - Compilation: ✅ Successful
 - Historique: Plusieurs sessions "TESTS NON LANCES"
+- Browser disponible: Brave (C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe)
 - Recent changes:
   * 986 mojibakes corriges (translation.service.ts)
   * Dashboard refactored to < 500 lines
   * 4 translation.service specs created (FR, EN, ES, PT)
 
 DESCRIPTION:
-Run full Angular test suite avec ChromeHeadless.
+Run full Angular test suite avec Brave browser (ChromeHeadless mode).
 
 COMMANDES:
 ```bash
 cd frontend
 
-# Option 1: ChromeHeadless (preferred)
-npm test -- --watch=false --browsers=ChromeHeadless --no-progress
+# Set Brave as Chrome binary for Karma
+set CHROME_BIN=C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe
 
-# Option 2: Brave (if Chrome not available)
-set CHROME_BIN="C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+# Run tests with ChromeHeadless (uses Brave)
 npm test -- --watch=false --browsers=ChromeHeadless --no-progress
 ```
 
@@ -972,10 +1065,16 @@ PRIORITES IMMEDIATES
 
 PRIORITY P0 - IMMEDIATE ACTION REQUIRED
 ----------------------------------------
-1. JIRA-CLEAN-001: Refactor translation.service.ts (2-4h)
+1. JIRA-I18N-039: BUG CRITIQUE - Traductions i18n non chargees (2-4h) 🔴🔴🔴
+   → BLOCAGE APPLICATION: Clés brutes affichées (games.myGames au lieu de "Mes jeux")
+   → Accents cassés au runtime
+   → Impact: Application inutilisable pour les utilisateurs
+
+2. JIRA-CLEAN-001: Refactor translation.service.ts (2-4h)
    → CRITICAL: 5353 lines → <200 lines
    → Extract translations to JSON files
    → Impact: Unblocks i18n improvements
+   → BLOCKED BY: JIRA-I18N-039 (doit fonctionner avant refactoring)
 
 PRIORITY P1 - HIGH IMPORTANCE
 ------------------------------
@@ -1024,11 +1123,12 @@ TICKETS IN_PROGRESS: 2
 • JIRA-ARCH-000: Architecture Review (Epic P0) - @Team
 • JIRA-ARCH-001: Migration Hexagonale (Story P1) - @Claude
 
-TICKETS TODO: 8 (P0-P2 priority)
+TICKETS TODO: 9 (P0-P2 priority)
+• JIRA-I18N-039 (P0) - BUG CRITIQUE i18n runtime (cles brutes affichees)
 • JIRA-CLEAN-001 (P0) - translation.service.ts refactoring
 • JIRA-ARCH-009 (P1) - Architecture decision
 • JIRA-TEST-004 (P1) - Architecture tests
-• JIRA-TEST-003 (P1) - Frontend tests (BLOCKED)
+• JIRA-TEST-003 (P1) - Frontend tests
 • JIRA-CLEAN-002 (P1) - Trade components
 • JIRA-CLEAN-003 (P2) - game.service.ts CQRS
 • JIRA-CLEAN-004 (P2) - draft.component.ts
@@ -1038,10 +1138,10 @@ TICKETS BLOCKED: 5 (P2 priority)
 • JIRA-ARCH-011 to 015 (blocked by JIRA-ARCH-009)
 
 TOTAL REMAINING EFFORT:
-• P0: 2-4h (CRITICAL)
+• P0: 4-8h (2 CRITICAL tasks)
 • P1: 9-16h
 • P2: 48-74h
-• TOTAL: 59-94h (multi-sprint)
+• TOTAL: 61-98h (multi-sprint)
 
 QUALITY METRICS:
 • Backend Tests: 99.7% passing ✅
@@ -1098,6 +1198,6 @@ Aucun blocage technique majeur. Travail prioritaire identifie et documente.
 ================================================================================
 FIN DU BACKLOG
 ================================================================================
-Last Updated: 2026-01-25 18:45
-Total Active Tickets: 15
-Total Estimated Effort: 59-94h
+Last Updated: 2026-01-25 19:00
+Total Active Tickets: 16
+Total Estimated Effort: 61-98h
