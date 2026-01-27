@@ -6,13 +6,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.InvitationCodeRepositoryPort;
 import com.fortnite.pronos.model.Game;
@@ -229,8 +232,13 @@ public interface GameRepository
   Page<Game> findByNameContainingIgnoreCasePaginated(
       @Param("namePattern") String namePattern, Pageable pageable);
 
-  /** Port implementation: findAllGames */
-  default List<Game> findAllGames(Pageable pageable) {
+  /** Port implementation: findAllGames - Maps domain Pagination to Spring Pageable */
+  default List<Game> findAllGames(Pagination pagination) {
+    Pageable pageable =
+        PageRequest.of(
+            pagination.getPage(),
+            pagination.getSize(),
+            Sort.by(Sort.Direction.fromString(pagination.getSortDirection()), pagination.getSortBy()));
     return findAll(pageable).getContent();
   }
 }

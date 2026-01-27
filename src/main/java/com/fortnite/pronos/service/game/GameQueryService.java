@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.GameQueryUseCase;
+import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
@@ -106,7 +107,18 @@ public class GameQueryService implements GameQueryUseCase {
   /** Gets games with pagination */
   public List<GameDto> getGamesWithPagination(Pageable pageable) {
     log.debug("Retrieving games with pagination");
-    return gameRepository.findAllGames(pageable).stream()
+    // Convert Spring Pageable to domain Pagination
+    Pagination pagination =
+        Pagination.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            pageable.getSort().iterator().hasNext()
+                ? pageable.getSort().iterator().next().getProperty()
+                : "createdAt",
+            pageable.getSort().iterator().hasNext()
+                ? pageable.getSort().iterator().next().getDirection().name()
+                : "DESC");
+    return gameRepository.findAllGames(pagination).stream()
         .map(GameDto::fromGame)
         .collect(java.util.stream.Collectors.toList());
   }
