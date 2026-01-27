@@ -62,68 +62,6 @@ NEXT:
 - (2) JIRA-ARCH-009: Finaliser decision architecture pure hexagonal - P1
 - (3) JIRA-TEST-004: Corriger 4 tests architecture - P1
 
-ID: JIRA-ARCH-009
-TITRE: Decision Architecture Finale (Pure Hexagonal)
-TYPE: Decision
-PRIORITE: P1
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: Unassigned
-ASSIGNE_LE: -
-DERNIERE_MAJ: 2026-01-25 18:30
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Documenter decision architecture Pure Hexagonal avec strategie incrementale.
-- Debloquer JIRA-ARCH-011 a 015 (migration 5 domaines).
-- Valider roadmap migration avec user.
-
-CONTEXTE:
-- User decision: "Je veux du pure hexagonal. C'est ce qui est le mieux pour le long therme."
-- User strategy: "faire de l'hexagonal pur, mais de maniere incrementale".
-- ADR-001 deja mis a jour avec strategie pure hexagonal incremental.
-- Current state: 57% controllers DIP, 4 architecture test failures.
-
-DESCRIPTION:
-Formaliser decision architecturale et creer roadmap migration incrementale.
-
-STRATEGIE INCREMENTALE:
-1. Migrer un domaine a la fois (no big bang)
-2. Run ALL tests apres chaque domaine (verify 1282+ passing)
-3. Manual smoke tests avant next domain
-4. IF tests fail → Fix avant de continuer
-5. IF tests pass → Proceed to next domain
-
-MIGRATION ORDER:
-- Phase 1: Game domain (JIRA-ARCH-011) - 8-16h
-- Phase 2: Player domain (JIRA-ARCH-012) - 8-16h
-- Phase 3: Team domain (JIRA-ARCH-013) - 8-16h
-- Phase 4: Draft domain (JIRA-ARCH-014) - 6-12h
-- Phase 5: Trade domain (JIRA-ARCH-015) - 6-12h
-
-TOTAL ESTIMATE: 36-60h (multi-sprint)
-
-CRITERES_D_ACCEPTATION:
-- [ ] ADR-001 validated and signed off
-- [ ] Migration roadmap documented
-- [ ] JIRA-ARCH-011 to 015 unblocked
-- [ ] Team alignment on incremental approach
-- [ ] Success criteria defined (0 test regressions)
-
-READY:
-- [x] OBJECTIF defini
-- [x] CONTEXTE clair (user decision recorded)
-- [x] DESCRIPTION complete
-- [x] CRITERES_D_ACCEPTATION definis
-
-NEXT:
-1. Review ADR-001 with team
-2. Validate incremental strategy
-3. Unblock JIRA-ARCH-011 (Game domain migration)
-4. Document success criteria
-
 ID: JIRA-TEST-004
 TITRE: Fix 4 Architecture Test Failures
 TYPE: Task
@@ -409,15 +347,14 @@ ID: JIRA-ARCH-011
 TITRE: Migration Pure Hexagonale - Domaine Game
 TYPE: Story
 PRIORITE: P2
-STATUT: BLOCKED
+STATUT: TODO
 ESTIMATE: 8-16h
 
 ASSIGNE: Unassigned
 ASSIGNE_LE: -
-DERNIERE_MAJ: 2026-01-25 18:30
+DERNIERE_MAJ: 2026-01-27 07:05
 
-DEPENDENCIES: JIRA-ARCH-009
-BLOCKED_BY: JIRA-ARCH-009 (Architecture Decision)
+DEPENDENCIES: none
 
 OBJECTIF:
 - Migrer Game domain vers pure hexagonal architecture (first incremental step).
