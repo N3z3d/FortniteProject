@@ -1,15 +1,47 @@
 ﻿import { TestBed } from '@angular/core/testing';
-import { TranslationService } from './translation.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TranslationService, Translations } from './translation.service';
 
 describe('TranslationService', () => {
   let service: TranslationService;
+  let httpMock: HttpTestingController;
+
+  const mockTranslations: Record<string, Translations> = {
+    fr: {
+      dashboard: { loading: 'Chargement du tableau de bord...' },
+      common: { yes: 'Oui', no: 'Non' }
+    },
+    en: {
+      dashboard: { loading: 'Loading dashboard...' },
+      common: { yes: 'Yes', no: 'No' }
+    },
+    es: {
+      common: { yes: 'Sí', no: 'No' }
+    },
+    pt: {
+      common: { yes: 'Sim', no: 'Não' }
+    }
+  };
 
   beforeEach(() => {
     localStorage.removeItem('app_language');
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [TranslationService]
     });
     service = TestBed.inject(TranslationService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Mock HTTP requests for all languages
+    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    requests.forEach(req => {
+      const lang = req.url.split('/').pop()?.replace('.json', '') || 'en';
+      req.flush(mockTranslations[lang] || {});
+    });
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('falls back to English when translation is missing in the current language', () => {
