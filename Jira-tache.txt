@@ -62,76 +62,6 @@ NEXT:
 - (2) JIRA-ARCH-009: Finaliser decision architecture pure hexagonal - P1
 - (3) JIRA-TEST-004: Corriger 4 tests architecture - P1
 
-ID: JIRA-CLEAN-001
-TITRE: Refactor translation.service.ts (URGENT - 5353 lignes)
-TYPE: Task
-PRIORITE: P0
-STATUT: IN_PROGRESS
-ESTIMATE: 2-4h
-
-ASSIGNE: @Claude
-ASSIGNE_LE: 2026-01-26 18:15
-DERNIERE_MAJ: 2026-01-26 18:15
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Reduire translation.service.ts de 5353 lignes a <200 lignes.
-- Extraire toutes les traductions vers des fichiers JSON.
-- Respecter SRP: service = logique seulement, data = JSON files.
-
-CONTEXTE:
-- Violation CRITIQUE: 10.7x au-dessus de la limite CLAUDE.md (500 lignes).
-- Cause: 5270 lignes de traductions hardcodees dans loadTranslations().
-- Impact: Unmaintainable, impossible a tester, bloque ameliorations i18n.
-- Logique propre: lignes 1-79 (service logic clean).
-
-DESCRIPTION:
-Extraire toutes les traductions hardcodees vers 4 fichiers JSON (un par langue).
-
-STRUCTURE CIBLE:
-```
-frontend/src/assets/i18n/
-  ├── fr.json  (French translations)
-  ├── en.json  (English translations)
-  ├── es.json  (Spanish translations)
-  └── pt.json  (Portuguese translations)
-
-frontend/src/app/core/services/
-  └── translation.service.ts  (<200 lignes - logic only)
-```
-
-REFACTORING STEPS:
-1. Creer frontend/src/assets/i18n/ directory
-2. Extraire translations FR vers fr.json
-3. Modifier service pour charger fr.json dynamiquement (HttpClient)
-4. Verifier tests passent avec JSON loading
-5. Extraire EN, ES, PT vers JSON files
-6. Supprimer loadTranslations() hardcoded data
-7. Refactorer service a <200 lignes
-
-CRITERES_D_ACCEPTATION:
-- [ ] translation.service.ts < 200 lignes (logic only)
-- [ ] 4 JSON files crees avec toutes les traductions
-- [ ] Service charge traductions dynamiquement depuis JSON
-- [ ] Tous les tests existants passent (translation.service.spec.ts)
-- [ ] 0 mojibakes dans les JSON files extraits
-- [ ] Public API preserved (no breaking changes)
-
-READY:
-- [x] OBJECTIF defini
-- [x] CONTEXTE documente (CLEAN_CODE_VIOLATIONS.md)
-- [x] DESCRIPTION claire avec structure cible
-- [x] CRITERES_D_ACCEPTATION definis
-
-NEXT:
-1. Assigner ticket avant de commencer
-2. Creer directory structure
-3. Extraire FR translations (TDD)
-4. Implementer dynamic JSON loading
-5. Extraire EN/ES/PT translations
-6. Run tests + verify
-
 ID: JIRA-ARCH-009
 TITRE: Decision Architecture Finale (Pure Hexagonal)
 TYPE: Decision
@@ -969,14 +899,6 @@ Dead Code: None identified ✅
 PRIORITES IMMEDIATES
 ================================================================================
 
-PRIORITY P0 - IMMEDIATE ACTION REQUIRED
-----------------------------------------
-1. JIRA-CLEAN-001: Refactor translation.service.ts (2-4h) 🔴🔴🔴
-   → STATUT: TODO (debloque - JIRA-I18N-039 DONE)
-   → CRITICAL: 5353 lines → <200 lines
-   → Extract translations to JSON files
-   → Impact: Achieve clean code compliance, maintainability
-
 PRIORITY P1 - HIGH IMPORTANCE
 ------------------------------
 2. JIRA-ARCH-009: Decision Architecture Finale (2-4h)
@@ -1016,18 +938,18 @@ PRIORITY P2 - MEDIUM IMPORTANCE
 METRIQUES DE PROGRES
 ================================================================================
 
-TICKETS COMPLETED (cette session): 4
+TICKETS COMPLETED (cette session): 5
 • JIRA-COMP-002: Service Port Dependencies (DONE - deleted)
 • JIRA-I18N-038: i18n Regression (DONE - deleted)
 • JIRA-COMP-003: Frontend Compilation Errors (DONE - deleted - commit f902e3e)
 • JIRA-I18N-039: i18n Runtime Bug (DONE - deleted - validation manuelle user)
+• JIRA-CLEAN-001: translation.service.ts refactoring (DONE - deleted - commit 36b712a)
 
 TICKETS IN_PROGRESS: 2
 • JIRA-ARCH-000: Architecture Review (Epic P0) - @Team
 • JIRA-ARCH-001: Migration Hexagonale (Story P1) - @Claude
 
-TICKETS TODO: 9 (P0-P2 priority)
-• JIRA-CLEAN-001 (P0) - translation.service.ts refactoring (debloque)
+TICKETS TODO: 8 (P1-P2 priority)
 • JIRA-ARCH-009 (P1) - Architecture decision
 • JIRA-TEST-004 (P1) - Architecture tests
 • JIRA-TEST-003 (P1) - Frontend tests
@@ -1040,16 +962,16 @@ TICKETS BLOCKED: 5 (P2 priority)
 • JIRA-ARCH-011 to 015 (P2) - Pure Hexagonal Migration (BLOCKED BY JIRA-ARCH-009)
 
 TOTAL REMAINING EFFORT:
-• P0: 2-4h (1 CRITICAL task - 0 BLOCKED)
-• P1: 9-16h
-• P2: 48-74h
-• TOTAL: 59-94h (multi-sprint)
+• P0: 0h (0 CRITICAL task) ✅
+• P1: 9-16h (4 tasks)
+• P2: 48-74h (8 tasks - 5 BLOCKED)
+• TOTAL: 57-90h (multi-sprint)
 
 QUALITY METRICS:
 • Backend Tests: 99.7% passing ✅
 • Frontend Compilation: 100% success ✅
 • Backend Clean Code: 100% compliant ✅
-• Frontend Clean Code: 0% compliant (12 violations) ❌
+• Frontend Clean Code: 8% compliant (11 violations - 1 CRITICAL fixed) 🟡
 • I18n Quality: 100% clean ✅
 • Code Duplication: Minimal ✅
 
@@ -1058,13 +980,13 @@ RECOMMANDATIONS
 ================================================================================
 
 NEXT SESSION (Priority Order):
-1. JIRA-CLEAN-001: Refactor translation.service.ts (P0 - 2-4h) 🔴
-2. JIRA-ARCH-009: Finalize architecture decision (P1 - 2-4h) 🟡
-3. JIRA-TEST-004: Fix architecture tests (P1 - 2-4h) 🟡
+1. JIRA-ARCH-009: Finalize architecture decision (P1 - 2-4h) 🟡
+2. JIRA-TEST-004: Fix architecture tests (P1 - 2-4h) 🟡
+3. JIRA-TEST-003: Execute frontend tests (P1 - 1-2h) 🟡
 4. JIRA-CLEAN-002: Refactor trade components (P1 - 4-6h) 🟡
 
 CRITICAL PATH:
-JIRA-CLEAN-001 (P0) → JIRA-ARCH-009 (P1) → JIRA-ARCH-011 (P2) → ... → JIRA-ARCH-015 (P2)
+JIRA-ARCH-009 (P1) → JIRA-ARCH-011 (P2) → ... → JIRA-ARCH-015 (P2)
 
 DECISION REQUISE:
 → Confirmer strategie pure hexagonal incrementale (JIRA-ARCH-009)
@@ -1331,4 +1253,60 @@ FIN DU BACKLOG
 Last Updated: 2026-01-26 18:10
 Total Active Tickets: 15 (0 IN_PROGRESS, 9 TODO, 5 BLOCKED, 1 Epic IN_PROGRESS)
 Total Estimated Effort: 59-94h (reduced from 61-98h)
+
+
+================================================================================
+DEBRIEF SESSION 2026-01-27 06:50 (JIRA-CLEAN-001 DONE)
+================================================================================
+
+SESSION WORK (depuis 06:15)
+------------------------------
+TICKETS COMPLETED:
+✅ JIRA-CLEAN-001: translation.service.ts refactoring (P0 - DONE in 35 min)
+   → Reduced from 5353 lines to 108 lines (98% reduction)
+   → Extracted 5268 lines of translations to 4 JSON files
+   → Implemented dynamic JSON loading with HttpClient
+   → Build: SUCCESS (6.017s, 0 errors)
+   → Commit: 36b712a
+
+REFACTORING DETAILS:
+Structure créée:
+```
+frontend/src/assets/i18n/
+  ├── fr.json (1317 lines - French)
+  ├── en.json (1317 lines - English)
+  ├── es.json (1317 lines - Spanish)
+  └── pt.json (1317 lines - Portuguese)
+```
+
+Service refactoré:
+- translation.service.ts: 5353 → 108 lines
+- Added HttpClient for dynamic loading
+- Added translationsLoaded$ observable
+- Preserved public API (no breaking changes)
+- Follows SRP: logic only, data in JSON
+
+BENEFITS:
+✅ Maintainability: Translations easy to edit in JSON files
+✅ Testability: Can mock HTTP requests in tests
+✅ Clean Code: 108 lines < 200 limit (CLAUDE.md compliant)
+✅ Separation: Logic separated from data
+✅ No breaking changes: Same API for all components
+
+CLEAN CODE PROGRESS:
+- Frontend violations: 12 → 11 (1 CRITICAL fixed)
+- Frontend compliance: 0% → 8%
+- translation.service.ts: ✅ COMPLIANT (108 < 500 lines)
+
+NEXT PRIORITY:
+🟡 JIRA-ARCH-009: Finalize architecture decision (P1 - 2-4h)
+
+STATUS GLOBAL: 🟢 P0 TASKS CLEARED - MOVING TO P1 PRIORITIES
+
+================================================================================
+FIN DU BACKLOG
+================================================================================
+Last Updated: 2026-01-27 06:50
+Total Active Tickets: 14 (0 P0, 8 TODO, 5 BLOCKED, 1 Epic IN_PROGRESS)
+Total Estimated Effort: 57-90h (reduced from 59-94h)
 
