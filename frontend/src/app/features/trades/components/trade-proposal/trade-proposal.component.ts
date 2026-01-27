@@ -14,6 +14,8 @@ import { TradingService, TradeOffer, Player, Team } from '../../services/trading
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { TradeBusinessService } from '../../services/trade-business.service';
+import { TradeValidators } from '../../utils/trade-validators';
 
 interface TradeProposalState {
   selectedTeam: Team | null;
@@ -100,6 +102,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   
   // Injected services
   private readonly tradingService = inject(TradingService);
+  private readonly tradeBusinessService = inject(TradeBusinessService);
   public readonly userContextService = inject(UserContextService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -150,9 +153,9 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
     map(state => ({
       hasOfferedPlayers: state.offeredPlayers.length > 0,
       hasRequestedPlayers: state.requestedPlayers.length > 0,
-      isBalanced: this.tradingService.isTradeBalanced(state.offeredPlayers, state.requestedPlayers),
+      isBalanced: this.tradeBusinessService.isTradeBalanced(state.offeredPlayers, state.requestedPlayers),
       selectedTeam: state.selectedTeam !== null,
-      balancePercentage: this.calculateBalancePercentage(state.offeredPlayers, state.requestedPlayers),
+      balancePercentage: this.tradeBusinessService.calculateBalancePercentage(state.offeredPlayers, state.requestedPlayers),
       isValid: state.isValid
     }))
   );
@@ -206,40 +209,18 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       this.tradeState$,
       this.searchQuery$.pipe(startWith(''), debounceTime(300))
     ]).pipe(
-      map(([state, searchQuery]) => {
-        let players = state.availablePlayers;
-        
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase();
-          players = players.filter(player => 
-            player.name.toLowerCase().includes(query) ||
-            player.region.toLowerCase().includes(query) ||
-            player.position?.toLowerCase().includes(query)
-          );
-        }
-        
-        return players;
-      })
+      map(([state, searchQuery]) =>
+        TradeValidators.filterPlayersBySearch(state.availablePlayers, searchQuery)
+      )
     );
 
     this.filteredTargetPlayers$ = combineLatest([
       this.tradeState$,
       this.searchQuery$.pipe(startWith(''), debounceTime(300))
     ]).pipe(
-      map(([state, searchQuery]) => {
-        let players = state.targetTeamPlayers;
-        
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase();
-          players = players.filter(player => 
-            player.name.toLowerCase().includes(query) ||
-            player.region.toLowerCase().includes(query) ||
-            player.position?.toLowerCase().includes(query)
-          );
-        }
-        
-        return players;
-      })
+      map(([state, searchQuery]) =>
+        TradeValidators.filterPlayersBySearch(state.targetTeamPlayers, searchQuery)
+      )
     );
   }
 
@@ -345,31 +326,12 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   private canMovePlayer(player: Player, fromList: string, toList: string): boolean {
-    const state = this.tradeStateSubject.value;
-
-    // Can't move to the same type of list
-    if ((fromList === this.AVAILABLE_LIST || fromList === this.OFFERED_LIST) &&
-        (toList === this.AVAILABLE_LIST || toList === this.OFFERED_LIST)) {
-      return fromList !== toList;
-    }
-
-    if ((fromList === this.TARGET_LIST || fromList === this.REQUESTED_LIST) &&
-        (toList === this.TARGET_LIST || toList === this.REQUESTED_LIST)) {
-      return fromList !== toList;
-    }
-
-    // Can't move between different team pools
-    if ((fromList === this.AVAILABLE_LIST || fromList === this.OFFERED_LIST) &&
-        (toList === this.TARGET_LIST || toList === this.REQUESTED_LIST)) {
-      return false;
-    }
-
-    if ((fromList === this.TARGET_LIST || fromList === this.REQUESTED_LIST) &&
-        (toList === this.AVAILABLE_LIST || toList === this.OFFERED_LIST)) {
-      return false;
-    }
-
-    return true;
+    return this.tradeBusinessService.canMovePlayer(player, fromList, toList, {
+      OFFERED_LIST: this.OFFERED_LIST,
+      REQUESTED_LIST: this.REQUESTED_LIST,
+      AVAILABLE_LIST: this.AVAILABLE_LIST,
+      TARGET_LIST: this.TARGET_LIST
+    });
   }
 
   private handlePlayerMove(player: Player, fromList: string, toList: string): void {
@@ -490,55 +452,43 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private updateTradeState(updates: Partial<TradeProposalState>): void {
     const currentState = this.tradeStateSubject.value;
     const newState = { ...currentState, ...updates };
-    
+
     // Calculate trade balance
-    newState.tradeBalance = this.tradingService.calculateTradeBalance(
-      newState.offeredPlayers, 
+    newState.tradeBalance = this.tradeBusinessService.calculateTradeBalance(
+      newState.offeredPlayers,
       newState.requestedPlayers
     );
-    
+
     // Validate trade
     newState.isValid = this.validateTradeState(newState);
-    
+
     this.tradeStateSubject.next(newState);
   }
 
   private validateTradeState(state: TradeProposalState): boolean {
-    return (
-      state.selectedTeam !== null &&
-      state.offeredPlayers.length > 0 &&
-      state.requestedPlayers.length > 0 &&
+    return this.tradeBusinessService.validateTradeProposal(
+      state.selectedTeam,
+      state.offeredPlayers,
+      state.requestedPlayers,
       this.tradeForm.valid
     );
   }
 
   private calculateTradeBalance(): void {
     const state = this.tradeStateSubject.value;
-    const balance = this.tradingService.calculateTradeBalance(
+    const balance = this.tradeBusinessService.calculateTradeBalance(
       state.offeredPlayers,
       state.requestedPlayers
     );
-    
+
     this.updateTradeState({ tradeBalance: balance });
   }
 
   private validateTrade(): void {
     const state = this.tradeStateSubject.value;
     const isValid = this.validateTradeState(state);
-    
-    this.updateTradeState({ isValid });
-  }
 
-  private calculateBalancePercentage(offered: Player[], requested: Player[]): number {
-    if (offered.length === 0 && requested.length === 0) return 0;
-    
-    const offeredValue = offered.reduce((sum, p) => sum + p.marketValue, 0);
-    const requestedValue = requested.reduce((sum, p) => sum + p.marketValue, 0);
-    const totalValue = offeredValue + requestedValue;
-    
-    if (totalValue === 0) return 0;
-    
-    return Math.abs(offeredValue - requestedValue) / totalValue * 100;
+    this.updateTradeState({ isValid });
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
@@ -579,24 +529,15 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
   // Template helper methods
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    return this.tradeBusinessService.formatCurrency(value);
   }
 
   getBalanceDisplayClass(balance: number): string {
-    if (balance > 0) return 'positive';
-    if (balance < 0) return 'negative';
-    return 'neutral';
+    return this.tradeBusinessService.getBalanceDisplayClass(balance);
   }
 
   getBalanceIcon(balance: number): string {
-    if (balance > 0) return 'trending_up';
-    if (balance < 0) return 'trending_down';
-    return 'compare_arrows';
+    return this.tradeBusinessService.getBalanceIcon(balance);
   }
 
   trackByPlayerId(index: number, player: Player): string {

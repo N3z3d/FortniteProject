@@ -13,6 +13,7 @@ import { UserContextService } from '../../../../core/services/user-context.servi
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { TradeBusinessService } from '../../services/trade-business.service';
 
 interface TradeDetailsData {
   trade: TradeOffer;
@@ -122,6 +123,7 @@ interface TradeTimeline {
 })
 export class TradeDetailsComponent implements OnInit, OnDestroy {
   public readonly t = inject(TranslationService);
+  private readonly tradeBusinessService = inject(TradeBusinessService);
   private readonly destroy$ = new Subject<void>();
 
   // Component state
@@ -326,30 +328,10 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   private calculateTradeStats() {
-    const offeredPlayers = this.trade.offeredPlayers;
-    const requestedPlayers = this.trade.requestedPlayers;
-    const totalPlayers = offeredPlayers.length + requestedPlayers.length;
-    
-    const offeredValue = offeredPlayers.reduce((sum, p) => sum + p.marketValue, 0);
-    const requestedValue = requestedPlayers.reduce((sum, p) => sum + p.marketValue, 0);
-    const totalValue = offeredValue + requestedValue;
-    const avgPlayerValue = totalPlayers > 0 ? totalValue / totalPlayers : 0;
-    
-    const balancePercentage = totalValue > 0 ? Math.abs(offeredValue - requestedValue) / totalValue * 100 : 0;
-    
-    let fairnessRating: 'excellent' | 'good' | 'fair' | 'poor';
-    if (balancePercentage <= 5) fairnessRating = 'excellent';
-    else if (balancePercentage <= 15) fairnessRating = 'good';
-    else if (balancePercentage <= 25) fairnessRating = 'fair';
-    else fairnessRating = 'poor';
-
-    return {
-      totalPlayers,
-      totalValue,
-      avgPlayerValue,
-      balancePercentage,
-      fairnessRating
-    };
+    return this.tradeBusinessService.calculateTradeStats(
+      this.trade.offeredPlayers,
+      this.trade.requestedPlayers
+    );
   }
 
   // Template helper totals (avoid complex reducers inline in template)
@@ -481,9 +463,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   getBalanceDisplayClass(balance: number): string {
-    if (balance > 0) return 'positive';
-    if (balance < 0) return 'negative';
-    return 'neutral';
+    return this.tradeBusinessService.getBalanceDisplayClass(balance);
   }
 
   getFairnessColor(rating: string): string {
@@ -497,12 +477,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    return this.tradeBusinessService.formatCurrency(value);
   }
 
   abs(value: number): number {
