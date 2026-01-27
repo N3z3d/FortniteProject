@@ -1,10 +1,10 @@
 package com.fortnite.pronos.domain.model;
 
 /**
- * Domain-specific pagination DTO (no framework dependencies).
- * Replaces Spring's Pageable to maintain domain layer purity.
+ * Domain-specific pagination DTO (no framework dependencies). Replaces Spring's Pageable to
+ * maintain domain layer purity.
  */
-public class Pagination {
+public final class Pagination {
   private final int page;
   private final int size;
   private final String sortBy;
@@ -43,11 +43,17 @@ public class Pagination {
 
   @Override
   public String toString() {
-    return "Pagination{" +
-        "page=" + page +
-        ", size=" + size +
-        ", sortBy='" + sortBy + '\'' +
-        ", sortDirection='" + sortDirection + '\'' +
-        '}';
+    return "Pagination{"
+        + "page="
+        + page
+        + ", size="
+        + size
+        + ", sortBy='"
+        + sortBy
+        + '\''
+        + ", sortDirection='"
+        + sortDirection
+        + '\''
+        + '}';
   }
 }

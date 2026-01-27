@@ -238,7 +238,8 @@ public interface GameRepository
         PageRequest.of(
             pagination.getPage(),
             pagination.getSize(),
-            Sort.by(Sort.Direction.fromString(pagination.getSortDirection()), pagination.getSortBy()));
+            Sort.by(
+                Sort.Direction.fromString(pagination.getSortDirection()), pagination.getSortBy()));
     return findAll(pageable).getContent();
   }
 }

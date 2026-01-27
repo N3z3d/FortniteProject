@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.SwapPlayersRequest;
 import com.fortnite.pronos.dto.SwapPlayersResponse;
@@ -165,7 +166,7 @@ public class TeamService {
 
   /** Trouve un joueur ou lance une exception Clean Code : méthode focalisée */
   private Player findPlayerOrThrow(UUID playerId) {
-    return playerRepository
+    return ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(
             () -> new EntityNotFoundException(PLAYER_NOT_FOUND_MESSAGE + " : " + playerId));
@@ -283,7 +284,7 @@ public class TeamService {
   }
 
   private Player findPlayerById(UUID playerId) {
-    return playerRepository
+    return ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(
             () -> {

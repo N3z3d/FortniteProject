@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.*;
@@ -46,7 +47,7 @@ public class TradingService {
         offeredPlayerIds.stream()
             .map(
                 id ->
-                    playerRepository
+                    ((PlayerRepositoryPort) playerRepository)
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Offered player not found: " + id)))
@@ -56,7 +57,7 @@ public class TradingService {
         requestedPlayerIds.stream()
             .map(
                 id ->
-                    playerRepository
+                    ((PlayerRepositoryPort) playerRepository)
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Requested player not found: " + id)))
@@ -318,7 +319,7 @@ public class TradingService {
         offeredPlayerIds.stream()
             .map(
                 id ->
-                    playerRepository
+                    ((PlayerRepositoryPort) playerRepository)
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Offered player not found: " + id)))
@@ -328,7 +329,7 @@ public class TradingService {
         requestedPlayerIds.stream()
             .map(
                 id ->
-                    playerRepository
+                    ((PlayerRepositoryPort) playerRepository)
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Requested player not found: " + id)))

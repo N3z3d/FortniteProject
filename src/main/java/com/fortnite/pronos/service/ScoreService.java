@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.ScoreCommandUseCase;
 import com.fortnite.pronos.application.usecase.ScoreQueryUseCase;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Score;
@@ -211,7 +212,7 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
   }
 
   private Player findPlayerById(UUID playerId) {
-    return playerRepository
+    return ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(
             () -> {

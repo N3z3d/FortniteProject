@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.TeamQueryUseCase;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.model.Team;
@@ -82,7 +83,7 @@ public class TeamQueryService implements TeamQueryUseCase {
 
   /** Recupere l'equipe d'un joueur pour une saison */
   public TeamDto getTeamByPlayer(UUID playerId, int season) {
-    playerRepository
+    ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(() -> new EntityNotFoundException("Joueur non trouve"));
 

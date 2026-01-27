@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
@@ -142,7 +143,7 @@ public class TestDataInitializerConfig {
       TeamPlayer tp = new TeamPlayer();
       tp.setTeam(team);
       Player managedPlayer =
-          playerRepository
+          ((PlayerRepositoryPort) playerRepository)
               .findById(player.getId())
               .orElseThrow(
                   () ->

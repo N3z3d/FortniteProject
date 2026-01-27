@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.DraftIncompleteException;
@@ -167,7 +168,7 @@ public class GameDraftService {
   }
 
   private Player findPlayerOrThrow(UUID playerId) {
-    return playerRepository
+    return ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
   }

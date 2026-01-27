@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.DraftUseCase;
+import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.DraftActionResponse;
 import com.fortnite.pronos.dto.DraftAdvanceResponse;
 import com.fortnite.pronos.dto.DraftAvailablePlayerResponse;
@@ -54,7 +56,7 @@ public class DraftService implements DraftUseCase {
     draft.setCurrentPick(1);
     draft.setTotalRounds(calculateTotalRounds(game));
 
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Calcule le nombre total de rounds basÃƒÆ’Ã‚Â© sur les rÃƒÆ’Ã‚Â¨gles rÃƒÆ’Ã‚Â©gionales */
@@ -93,7 +95,7 @@ public class DraftService implements DraftUseCase {
       }
     }
 
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Obtient le participant actuel qui doit picker */
@@ -133,7 +135,7 @@ public class DraftService implements DraftUseCase {
     draft.setStatus(Draft.Status.ACTIVE);
     draft.setStartedAt(LocalDateTime.now());
 
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Met en pause un draft */
@@ -141,7 +143,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Mise en pause du draft {}", draft.getId());
     draft.setStatus(Draft.Status.PAUSED);
     draft.setUpdatedAt(LocalDateTime.now());
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Reprend un draft en pause */
@@ -149,7 +151,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Reprise du draft {}", draft.getId());
     draft.setStatus(Draft.Status.ACTIVE);
     draft.setUpdatedAt(LocalDateTime.now());
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Termine un draft */
@@ -157,7 +159,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Fin du draft {}", draft.getId());
     draft.setStatus(Draft.Status.FINISHED);
     draft.setFinishedAt(LocalDateTime.now());
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** SÃƒÆ’Ã‚Â©lectionne un joueur dans le draft */
@@ -220,10 +222,10 @@ public class DraftService implements DraftUseCase {
     return gameRepository.findById(gameId);
   }
 
-  /** Trouve un joueur par ID ou lÃƒÆ’Ã‚Â¨ve une exception */
+  /** Trouve un joueur par ID ou lÃƒÆ'Ã‚Â¨ve une exception */
   @Transactional(readOnly = true)
   public Player findPlayerById(UUID playerId) {
-    return playerRepository
+    return ((PlayerRepositoryPort) playerRepository)
         .findById(playerId)
         .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
   }
@@ -231,7 +233,7 @@ public class DraftService implements DraftUseCase {
   /** Trouve un joueur par ID (optionnel) */
   @Transactional(readOnly = true)
   public Optional<Player> findPlayerByIdOptional(UUID playerId) {
-    return playerRepository.findById(playerId);
+    return ((PlayerRepositoryPort) playerRepository).findById(playerId);
   }
 
   /** RÃƒÆ’Ã‚Â©cupÃƒÆ’Ã‚Â¨re les participants d'une game ordonnÃƒÆ’Ã‚Â©s par draft order */
@@ -399,7 +401,7 @@ public class DraftService implements DraftUseCase {
 
   /** Sauvegarde un draft */
   public Draft saveDraft(Draft draft) {
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** RÃƒÆ’Ã‚Â©cupÃƒÆ’Ã‚Â¨re les joueurs disponibles par rÃƒÆ’Ã‚Â©gion */
@@ -417,12 +419,12 @@ public class DraftService implements DraftUseCase {
   /** Avance le draft au pick suivant et retourne le draft sauvegarde */
   public Draft advanceToNextPick(Draft draft) {
     draft.nextPick();
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 
   /** Avance le draft au pick suivant avec un nombre de participants explicite */
   public Draft advanceToNextPick(Draft draft, int participantCount) {
     draft.nextPick(participantCount);
-    return draftRepository.save(draft);
+    return ((DraftRepositoryPort) draftRepository).save(draft);
   }
 }

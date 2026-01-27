@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.PlayerQueryUseCase;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.repository.PlayerRepository;
@@ -54,7 +55,7 @@ public class PlayerService implements PlayerQueryUseCase {
   }
 
   public java.util.Optional<Player> findPlayerById(UUID id) {
-    return playerRepository.findById(id);
+    return ((PlayerRepositoryPort) playerRepository).findById(id);
   }
 
   public List<Player> findPlayersByRegion(Player.Region region) {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
@@ -163,7 +164,7 @@ public class TeamSeedService {
     for (int i = 0; i < players.size(); i++) {
       Player player = players.get(i);
       if (player.getId() != null) {
-        player = playerRepository.findById(player.getId()).orElse(player);
+        player = ((PlayerRepositoryPort) playerRepository).findById(player.getId()).orElse(player);
       }
       team.addPlayer(player, i + 1);
     }
