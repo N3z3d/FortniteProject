@@ -16,6 +16,12 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { TranslationService } from '../../../../core/services/translation.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
 import { TradeValidators } from '../../utils/trade-validators';
+import {
+  slideInFromSide,
+  playerCardDrag,
+  tradeBalanceChange,
+  dropZoneActive
+} from '../../utils/trade-animations';
 
 interface TradeProposalState {
   selectedTeam: Team | null;
@@ -38,63 +44,7 @@ interface TradeProposalState {
     '../../styles/trading-animations.scss'
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('slideInFromSide', [
-      transition(':enter', [
-        style({ transform: 'translateX(-100%)', opacity: 0 }),
-        animate('0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-          style({ transform: 'translateX(0)', opacity: 1 })
-        )
-      ])
-    ]),
-    trigger('playerCardDrag', [
-      transition('idle => dragging', [
-        animate('0.3s ease-out', 
-          style({ 
-            transform: 'scale(1.1) rotate(8deg)',
-            zIndex: 1000,
-            boxShadow: '0 20px 60px rgba(var(--gaming-primary-rgb), 0.4)'
-          })
-        )
-      ]),
-      transition('dragging => idle', [
-        animate('0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', 
-          style({ 
-            transform: 'scale(1) rotate(0deg)',
-            zIndex: 'auto',
-            boxShadow: 'var(--shadow-trading-card)'
-          })
-        )
-      ])
-    ]),
-    trigger('tradeBalanceChange', [
-      transition('* => positive', [
-        animate('0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)', keyframes([
-          style({ transform: 'scale(1)', color: 'var(--gaming-light)', offset: 0 }),
-          style({ transform: 'scale(1.2)', color: 'var(--value-positive)', offset: 0.5 }),
-          style({ transform: 'scale(1)', color: 'var(--value-positive)', offset: 1 })
-        ]))
-      ]),
-      transition('* => negative', [
-        animate('0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)', keyframes([
-          style({ transform: 'scale(1)', color: 'var(--gaming-light)', offset: 0 }),
-          style({ transform: 'scale(1.2)', color: 'var(--value-negative)', offset: 0.5 }),
-          style({ transform: 'scale(1)', color: 'var(--value-negative)', offset: 1 })
-        ]))
-      ]),
-      transition('* => neutral', [
-        animate('0.4s ease-out', 
-          style({ transform: 'scale(1)', color: 'var(--gaming-light)' })
-        )
-      ])
-    ]),
-    trigger('dropZoneActive', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'scale(0.9)' }),
-        animate('0.3s ease-out', style({ opacity: 1, transform: 'scale(1)' }))
-      ])
-    ])
-  ]
+  animations: [slideInFromSide, playerCardDrag, tradeBalanceChange, dropZoneActive]
 })
 export class TradeProposalComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
@@ -275,15 +225,6 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Template helpers
-  minPercent(value: number): number {
-    return Math.min(value || 0, 100);
-  }
-
-  abs(value: number): number {
-    return Math.abs(value || 0);
-  }
-
   // Drag and Drop Handlers
   onDragStarted(): void {
     this.dragState.next('dragging');
@@ -315,9 +256,6 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
         previousIndex,
         currentIndex
       );
-
-      // Update trade state based on the move
-      this.handlePlayerMove(player, previousContainer.id, container.id);
     }
 
     this.calculateTradeBalance();
@@ -332,16 +270,6 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       AVAILABLE_LIST: this.AVAILABLE_LIST,
       TARGET_LIST: this.TARGET_LIST
     });
-  }
-
-  private handlePlayerMove(player: Player, fromList: string, toList: string): void {
-    // This method is called after the arrays have already been updated
-    // We just need to trigger recalculation of the trade state
-    const currentState = this.tradeStateSubject.value;
-    
-    // The arrays in currentState are already updated by the drag-drop operation
-    // Just trigger validation and balance calculation
-    this.updateTradeState(currentState);
   }
 
   // Search functionality

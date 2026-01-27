@@ -14,6 +14,14 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { LoggerService } from '../../../../core/services/logger.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
+import { TradeTimelineService } from '../../services/trade-timeline.service';
+import {
+  slideInFromBottom,
+  playerStagger,
+  actionButtonHover,
+  tradeStatusChange,
+  timelineProgress
+} from '../../utils/trade-animations';
 
 interface TradeDetailsData {
   trade: TradeOffer;
@@ -49,81 +57,17 @@ interface TradeTimeline {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
-    trigger('slideInFromBottom', [
-      transition(':enter', [
-        style({ transform: 'translateY(100%)', opacity: 0 }),
-        animate('0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-          style({ transform: 'translateY(0)', opacity: 1 })
-        )
-      ]),
-      transition(':leave', [
-        animate('0.3s ease-in', 
-          style({ transform: 'translateY(100%)', opacity: 0 })
-        )
-      ])
-    ]),
-    trigger('playerStagger', [
-      transition('* => *', [
-        query(':enter', [
-          style({ opacity: 0, transform: 'translateX(-30px)' }),
-          stagger(100, [
-            animate('0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)', 
-              style({ opacity: 1, transform: 'translateX(0)' })
-            )
-          ])
-        ], { optional: true })
-      ])
-    ]),
-    trigger('actionButtonHover', [
-      transition('idle => hover', [
-        animate('0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)', 
-          style({ transform: 'scale(1.05) translateY(-2px)' })
-        )
-      ]),
-      transition('hover => idle', [
-        animate('0.2s ease-out', 
-          style({ transform: 'scale(1) translateY(0)' })
-        )
-      ])
-    ]),
-    trigger('tradeStatusChange', [
-      transition('pending => accepted', [
-        animate('1s cubic-bezier(0.68, -0.55, 0.265, 1.55)', keyframes([
-          style({ transform: 'scale(1)', background: 'var(--card-pending)', offset: 0 }),
-          style({ transform: 'scale(1.02)', background: 'var(--card-receive)', offset: 0.5 }),
-          style({ transform: 'scale(1)', background: 'var(--card-receive)', offset: 1 })
-        ]))
-      ]),
-      transition('pending => rejected', [
-        animate('0.8s ease-in-out', keyframes([
-          style({ transform: 'scale(1) rotateZ(0deg)', offset: 0 }),
-          style({ transform: 'scale(0.95) rotateZ(-2deg)', offset: 0.3 }),
-          style({ transform: 'scale(1.02) rotateZ(1deg)', offset: 0.7 }),
-          style({ transform: 'scale(1) rotateZ(0deg)', offset: 1 })
-        ]))
-      ])
-    ]),
-    trigger('timelineProgress', [
-      transition(':enter', [
-        query('.timeline-connector', [
-          style({ height: '0%' }),
-          animate('0.8s ease-out', style({ height: '100%' }))
-        ], { optional: true }),
-        query('.timeline-item', [
-          style({ opacity: 0, transform: 'scale(0.8)' }),
-          stagger(200, [
-            animate('0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)', 
-              style({ opacity: 1, transform: 'scale(1)' })
-            )
-          ])
-        ], { optional: true })
-      ])
-    ])
+    slideInFromBottom,
+    playerStagger,
+    actionButtonHover,
+    tradeStatusChange,
+    timelineProgress
   ]
 })
 export class TradeDetailsComponent implements OnInit, OnDestroy {
   public readonly t = inject(TranslationService);
   private readonly tradeBusinessService = inject(TradeBusinessService);
+  private readonly tradeTimelineService = inject(TradeTimelineService);
   private readonly destroy$ = new Subject<void>();
 
   // Component state
@@ -183,8 +127,10 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
       map(processing => this.getAvailableActions(processing))
     );
 
-    this.tradeTimeline$ = new BehaviorSubject(this.generateTradeTimeline()).asObservable();
-    
+    this.tradeTimeline$ = new BehaviorSubject(
+      this.tradeTimelineService.generateTradeTimeline(this.trade)
+    ).asObservable();
+
     this.tradeStats$ = new BehaviorSubject(this.calculateTradeStats()).asObservable();
   }
 
@@ -242,89 +188,6 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     }
 
     return actions;
-  }
-
-  private generateTradeTimeline(): TradeTimeline[] {
-    const timeline: TradeTimeline[] = [this.buildProposedTimelineEntry()];
-
-    if (this.trade.status === 'pending') {
-      timeline.push(...this.buildPendingTimelineEntries());
-    } else {
-      timeline.push(this.buildStatusTimelineEntry());
-    }
-
-    return timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }
-
-  private buildProposedTimelineEntry(): TradeTimeline {
-    return {
-      date: this.trade.createdAt,
-      action: this.t.t('trades.details.timelineProposedAction'),
-      actor: this.trade.fromUserName,
-      icon: 'send',
-      description: this.t.t('trades.details.timelineProposedDesc'),
-      status: 'completed'
-    };
-  }
-
-  private buildPendingTimelineEntries(): TradeTimeline[] {
-    return [
-      {
-        date: new Date(),
-        action: this.t.t('trades.details.timelineAwaitingAction'),
-        actor: this.trade.toUserName,
-        icon: 'schedule',
-        description: this.t.t('trades.details.timelineAwaitingDesc'),
-        status: 'current'
-      },
-      {
-        date: this.trade.expiresAt,
-        action: this.t.t('trades.details.timelineExpiresAction'),
-        actor: this.t.t('trades.details.system'),
-        icon: 'access_time',
-        description: this.t.t('trades.details.timelineExpiresDesc'),
-        status: 'pending'
-      }
-    ];
-  }
-
-  private buildStatusTimelineEntry(): TradeTimeline {
-    const status = this.trade.status;
-
-    return {
-      date: this.trade.updatedAt,
-      action: this.getStatusLabel(status),
-      actor: this.getStatusTimelineActor(status),
-      icon: this.getStatusTimelineIcon(status),
-      description: this.getStatusTimelineDescription(status),
-      status: 'completed'
-    };
-  }
-
-  private getStatusTimelineActor(status: string): string {
-    if (status === 'withdrawn') return this.trade.fromUserName;
-    if (status === 'expired') return this.t.t('trades.details.system');
-    return this.trade.toUserName;
-  }
-
-  private getStatusTimelineIcon(status: string): string {
-    switch (status) {
-      case 'accepted': return 'check_circle';
-      case 'rejected': return 'cancel';
-      case 'withdrawn': return 'undo';
-      case 'expired': return 'access_time';
-      default: return 'help_outline';
-    }
-  }
-
-  private getStatusTimelineDescription(status: string): string {
-    switch (status) {
-      case 'accepted': return this.t.t('trades.details.timelineAcceptedDesc');
-      case 'rejected': return this.t.t('trades.details.timelineRejectedDesc');
-      case 'withdrawn': return this.t.t('trades.details.timelineWithdrawnDesc');
-      case 'expired': return this.t.t('trades.details.timelineExpiredDesc');
-      default: return this.t.t('trades.details.timelineStatusUpdatedDesc');
-    }
   }
 
   private calculateTradeStats() {
