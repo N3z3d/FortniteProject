@@ -67,14 +67,15 @@ ID: JIRA-TEST-003
 TITRE: Lancer tests frontend Angular complets
 TYPE: Task
 PRIORITE: P1
-STATUT: IN_PROGRESS
-ESTIMATE: 1-2h
+STATUT: BLOCKED
+ESTIMATE: 2-4h (increased)
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-27 07:25
-DERNIERE_MAJ: 2026-01-27 07:25
+DERNIERE_MAJ: 2026-01-27 07:40
 
 DEPENDENCIES: none
+BLOCKED_BY: TranslationService tests need complete refactoring after HttpClient migration
 
 OBJECTIF:
 - Executer tous les tests frontend Angular.
@@ -82,12 +83,27 @@ OBJECTIF:
 
 CONTEXTE:
 - Compilation: ✅ Successful
-- Historique: Plusieurs sessions "TESTS NON LANCES"
 - Browser disponible: Brave (C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe)
 - Recent changes:
-  * 986 mojibakes corriges (translation.service.ts)
-  * Dashboard refactored to < 500 lines
-  * 4 translation.service specs created (FR, EN, ES, PT)
+  * TranslationService refactored to use HttpClient (dynamic JSON loading)
+  * translation.service.ts: 5353 → 108 lines
+  * 4 translation.service specs exist but need HttpClientTestingModule
+
+TEST RESULTS (Execution 1):
+- Executed: 97/394 tests (disconnected after 30s timeout)
+- Failed: 33/97 (34%)
+- Main issues:
+  * 30 TranslationService tests: NullInjectorError (No provider for HttpClient)
+  * 3 LeaderboardService tests: Data format mismatches
+  * Browser timeout: Tests block after 30s
+
+ROOT CAUSE:
+TranslationService refactoring added HttpClient injection but 5 spec files not updated:
+- translation.service.spec.ts (updated ✅)
+- translation.service.fr.spec.ts (updated ✅)
+- translation.service.en.spec.ts (needs update ❌)
+- translation.service.es.spec.ts (needs update ❌)
+- translation.service.pt.spec.ts (needs update ❌)
 
 DESCRIPTION:
 Run full Angular test suite avec Brave browser (ChromeHeadless mode).
@@ -103,35 +119,49 @@ set CHROME_BIN=C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.ex
 npm test -- --watch=false --browsers=ChromeHeadless --no-progress
 ```
 
+WORK DONE:
+- [x] Brave installation verified
+- [x] Tests executed (97/394 before timeout)
+- [x] Root cause identified (HttpClient mocks missing)
+- [x] 2/5 TranslationService specs updated
+- [ ] 3/5 TranslationService specs still need update (complex mocks)
+- [ ] LeaderboardService tests need review
+
 CRITERES_D_ACCEPTATION:
-- [ ] Tests execute successfully (no timeout)
-- [ ] 0 critical failures
-- [ ] Coverage maintained >= 80%
-- [ ] Test report generated and analyzed
+- [ ] Tests execute successfully (no timeout) - ❌ 30s timeout
+- [ ] 0 critical failures - ❌ 33 failures
+- [ ] Coverage maintained >= 80% - ⏳ not measured yet
+- [ ] Test report generated and analyzed - ✅ partial (33 failures analyzed)
+
+SOLUTION PROPOSEE:
+Option A (Quick): Simplify language-specific tests temporarily
+Option B (Proper): Create comprehensive mock translations for all 4 languages
+Option C (Better): Load real JSON files in tests (requires config change)
 
 READY:
 - [x] OBJECTIF defini
-- [x] CONTEXTE clair
+- [x] CONTEXTE clair (updated with results)
 - [x] DESCRIPTION avec commandes
 - [x] CRITERES_D_ACCEPTATION definis
+- [x] BLOCKER identified and documented
 
 NEXT:
-1. Verify Chrome/Brave installation
-2. Set CHROME_BIN environment variable
-3. Execute test suite
-4. Analyze results
-5. Fix critical failures if any
+1. Update 3 remaining TranslationService spec files (en, es, pt)
+2. Fix LeaderboardService test data format issues
+3. Re-run full test suite
+4. Verify no timeout and all tests pass
+5. Measure coverage
 
 ID: JIRA-CLEAN-002
 TITRE: Refactor Trade Components (3 files)
 TYPE: Task
 PRIORITE: P1
-STATUT: TODO
+STATUT: IN_PROGRESS
 ESTIMATE: 4-6h
 
-ASSIGNE: Unassigned
-ASSIGNE_LE: -
-DERNIERE_MAJ: 2026-01-25 18:30
+ASSIGNE: @Claude
+ASSIGNE_LE: 2026-01-27 07:41
+DERNIERE_MAJ: 2026-01-27 07:41
 
 DEPENDENCIES: none
 
