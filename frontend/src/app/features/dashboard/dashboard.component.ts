@@ -80,15 +80,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('regionChart') regionChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('pointsChart') pointsChartRef!: ElementRef<HTMLCanvasElement>;
 
-  // Chart instances
   private regionChart: Chart | null = null;
   private pointsChart: Chart | null = null;
 
-  // Loading and error state
   isLoading = false;
   error: string | null = null;
 
-  // État unifié
   stats: DashboardStats = {
     totalTeams: 0,
     totalPlayers: 0,
@@ -118,13 +115,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly REFRESH_INTERVAL = 300000; // 5 minutes
   currentSeason = 2025;
 
-  // Premium stats properties (calculated from real data)
   totalScore = 0;
   ranking = 0;
   activeGames = 0;
   weeklyBest = 0;
 
-  // UI-2: New Leaderboard Mock Data
   dashboardLeaderboard: any[] = [];
 
   constructor(
@@ -423,9 +418,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/', ...segments]);
   }
 
-  // Enhanced navigation with keyboard support
-
-  // Live region announcements
   private updateLiveRegion(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
     const regionId = priority === 'assertive' ? 'dashboard-alerts' : 'dashboard-announcements';
     const region = document.getElementById(regionId);
@@ -497,5 +489,4 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   /**
    * Navigate vers une route spécifique
    */
-  // Méthode navigateTo supprimée - doublon résolu
 } 
