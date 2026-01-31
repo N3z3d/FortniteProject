@@ -281,13 +281,14 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
 
     it('should have working action callbacks', () => {
-      spyOn(window.location, 'reload');
+      const reloadSpy = jasmine.createSpy('reload');
+      spyOnProperty(window.location, 'reload', 'get').and.returnValue(reloadSpy);
       spyOn(component, 'hideError');
 
       const actions = component.getDefaultRecoveryActions();
 
       actions[0].action(); // Réessayer
-      expect(window.location.reload).toHaveBeenCalled();
+      expect(reloadSpy).toHaveBeenCalled();
 
       actions[2].action(); // Fermer
       expect(component.hideError).toHaveBeenCalled();
@@ -331,24 +332,28 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
 
     it('should reload on Alt+R', () => {
-      spyOn(window.location, 'reload');
+      const reloadSpy = jasmine.createSpy('reload');
+      spyOnProperty(window.location, 'reload', 'get').and.returnValue(reloadSpy);
+
       const event = new KeyboardEvent('keydown', { key: 'r', altKey: true });
       spyOn(event, 'preventDefault');
 
       component['handleKeydown'](event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(window.location.reload).toHaveBeenCalled();
+      expect(reloadSpy).toHaveBeenCalled();
     });
 
     it('should navigate home on Alt+H', () => {
+      spyOnProperty(window.location, 'href', 'set');
+
       const event = new KeyboardEvent('keydown', { key: 'h', altKey: true });
       spyOn(event, 'preventDefault');
 
       component['handleKeydown'](event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(window.location.href).toBe('/');
+      expect(Object.getOwnPropertyDescriptor(window.location, 'href')?.set).toHaveBeenCalledWith('/');
     });
 
     it('should not trigger keyboard shortcuts when no error', () => {

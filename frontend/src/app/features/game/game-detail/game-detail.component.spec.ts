@@ -5,6 +5,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
+import { GameDetailActionsService } from '../services/game-detail-actions.service';
+import { GameDetailPermissionsService } from '../services/game-detail-permissions.service';
+import { GameDetailUIService } from '../services/game-detail-ui.service';
 import { Game, GameParticipant } from '../models/game.interface';
 import { UserContextService } from '../../../core/services/user-context.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
@@ -32,6 +35,9 @@ describe('GameDetailComponent', () => {
   let fixture: ComponentFixture<GameDetailComponent>;
   let gameServiceSpy: jasmine.SpyObj<GameService>;
   let gameDataServiceSpy: jasmine.SpyObj<GameDataService>;
+  let gameDetailActionsSpy: jasmine.SpyObj<GameDetailActionsService>;
+  let gameDetailPermissionsSpy: jasmine.SpyObj<GameDetailPermissionsService>;
+  let gameDetailUISpy: jasmine.SpyObj<GameDetailUIService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
   let userContextServiceSpy: jasmine.SpyObj<UserContextService>;
@@ -59,6 +65,44 @@ describe('GameDetailComponent', () => {
       'validateGameData',
       'calculateGameStatistics'
     ]);
+    gameDetailActionsSpy = jasmine.createSpyObj('GameDetailActionsService', [
+      'startDraft',
+      'archiveGame',
+      'leaveGame',
+      'permanentlyDeleteGame',
+      'joinGame',
+      'confirmArchive',
+      'confirmLeave',
+      'confirmDelete',
+      'confirmStartDraft',
+      'copyInvitationCode',
+      'regenerateInvitationCode',
+      'promptRegenerateCode',
+      'promptRenameGame'
+    ]);
+    gameDetailPermissionsSpy = jasmine.createSpyObj('GameDetailPermissionsService', [
+      'canStartDraft',
+      'canArchiveGame',
+      'canLeaveGame',
+      'canDeleteGame',
+      'canJoinGame',
+      'canRegenerateCode',
+      'canRenameGame'
+    ]);
+    gameDetailUISpy = jasmine.createSpyObj('GameDetailUIService', [
+      'getStatusColor',
+      'getStatusLabel',
+      'getParticipantPercentage',
+      'getGameStatistics',
+      'getParticipantColor',
+      'getTimeAgo',
+      'getCreator',
+      'getNonCreatorParticipants',
+      'getParticipantStatusIcon',
+      'getParticipantStatusColor',
+      'getParticipantStatusLabel',
+      'getInvitationCodeExpiry'
+    ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
     userContextServiceSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
@@ -80,6 +124,9 @@ describe('GameDetailComponent', () => {
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
         { provide: GameDataService, useValue: gameDataServiceSpy },
+        { provide: GameDetailActionsService, useValue: gameDetailActionsSpy },
+        { provide: GameDetailPermissionsService, useValue: gameDetailPermissionsSpy },
+        { provide: GameDetailUIService, useValue: gameDetailUISpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRouteStub },
         { provide: UserContextService, useValue: userContextServiceSpy },
@@ -125,7 +172,7 @@ describe('GameDetailComponent', () => {
     tick();
     expect(component.error).toBeTruthy();
     expect(component.participantsError).toBeNull();
-    expect(snackBarSpy.open).toHaveBeenCalled();
+    expect(component.loading).toBe(false);
   }));
 
   it('should not load participants when loading game details fails', fakeAsync(() => {
@@ -140,25 +187,21 @@ describe('GameDetailComponent', () => {
   it('should allow joining a game', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
     gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.joinGame.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
     component.joinGame();
     tick();
-    expect(gameServiceSpy.joinGame).toHaveBeenCalledWith('1');
-    expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/rejoint/i), 'Fermer', jasmine.any(Object));
+    expect(gameDetailActionsSpy.joinGame).toHaveBeenCalledWith('1', jasmine.any(Function));
   }));
 
   it('should handle error when joining a game', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
     gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.joinGame.and.returnValue(throwError(() => new Error('Erreur')));
     fixture.detectChanges();
     tick();
     component.joinGame();
     tick();
-    expect(component.error).toBeNull();
-    expect(snackBarSpy.open).toHaveBeenCalled();
+    expect(gameDetailActionsSpy.joinGame).toHaveBeenCalledWith('1', jasmine.any(Function));
   }));
 
   it('should allow deleting a game', fakeAsync(() => {
