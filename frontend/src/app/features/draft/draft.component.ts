@@ -17,6 +17,9 @@ import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 
 import { DraftService, DraftBoardState, Player, GameParticipant } from './services/draft.service';
+import { DraftPlayerFilterService } from './services/draft-player-filter.service';
+import { DraftProgressService } from './services/draft-progress.service';
+import { DraftStateHelperService } from './services/draft-state-helper.service';
 import { DraftStatus, PlayerRegion } from './models/draft.interface';
 import { LoggerService } from '../../core/services/logger.service';
 import { UserContextService } from '../../core/services/user-context.service';
@@ -74,6 +77,9 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly draftService: DraftService,
+    private readonly filterService: DraftPlayerFilterService,
+    private readonly progressService: DraftProgressService,
+    private readonly helperService: DraftStateHelperService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
@@ -95,8 +101,8 @@ export class DraftComponent implements OnInit, OnDestroy {
   loadDraftState(): void {
     if (!this.gameId) return;
 
-    this.setLoadingState(true);
-    this.clearError();
+    this.isLoading = true;
+    this.error = null;
 
     this.draftService.getDraftBoardState(this.gameId)
       .pipe(takeUntil(this.destroy$))
@@ -109,7 +115,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   selectPlayer(player: Player): void {
     if (!this.canSelectPlayer()) return;
 
-    this.setSelectingState(true);
+    this.isSelectingPlayer = true;
     this.performPlayerSelection(player);
   }
 
@@ -147,12 +153,7 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   // Méthodes de validation
   isCurrentUserTurn(): boolean {
-    if (!this.draftState || !this.currentUserId) return false;
-    const currentParticipant = this.draftState.participants.find((p: any) =>
-      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
-    );
-    const participant = this.normalizeParticipant(currentParticipant);
-    return participant?.id === this.currentUserId;
+    return this.progressService.isCurrentUserTurn(this.draftState, this.currentUserId);
   }
 
   canSelectPlayer(): boolean {
@@ -165,136 +166,96 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   // Méthodes de formatage
   getStatusColor(status: DraftStatus | string): string {
-    switch (status) {
-      case 'ACTIVE':
-      case 'IN_PROGRESS':
-        return 'accent';
-      case 'PAUSED':
-      case 'CANCELLED':
-      case 'ERROR':
-        return 'warn';
-      default:
-        return 'primary';
-    }
+    return this.helperService.getStatusColor(status);
   }
 
   getStatusLabel(status: DraftStatus | string): string {
-    const key = STATUS_LABELS[status];
-    return key ? this.t.t(key) : status;
+    const key = this.helperService.getStatusLabelKey(status);
+    return this.t.t(key);
   }
 
-  // === NOUVELLES MÉTHODES POUR L'INTERFACE SIMPLIFIÉE ===
-  
+  // === MÉTHODES POUR L'INTERFACE (déléguées aux services) ===
+
   getDraftProgress(): number {
-    if (!this.draftState?.draft) return 0;
-    const totalRounds = this.draftState.draft.totalRounds || 0;
-    const currentPickValue = this.draftState.draft.currentPick || 0;
-    const totalPicks = totalRounds * this.draftState.participants.length;
-    const currentPick = currentPickValue > 0 ? currentPickValue - 1 : 0;
-    return Math.min((currentPick / totalPicks) * 100, 100);
+    return this.progressService.calculateProgress(this.draftState);
   }
 
   getDraftProgressText(): string {
-    if (!this.draftState?.draft) return '';
-    const totalRounds = this.draftState.draft.totalRounds || 0;
-    const currentPickValue = this.draftState.draft.currentPick || 0;
-    return `${currentPickValue} / ${totalRounds * this.draftState.participants.length}`;
+    return this.progressService.getProgressText(this.draftState);
   }
 
   getCurrentTurnPlayer(): GameParticipant | null {
-    if (!this.draftState) return null;
-    const entry = this.draftState.participants.find((p: any) =>
-      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
-    );
-    return this.normalizeParticipant(entry) || null;
+    return this.progressService.getCurrentTurnPlayer(this.draftState);
   }
 
   getSmartSuggestions(): any[] {
     if (!this.draftState || this.searchTerm) return [];
-    
-    // Retourne les top 3 joueurs disponibles avec scoring simulé
-    const availablePlayers = this.getFilteredPlayers().slice(0, 3);
-    return availablePlayers.map((player, index) => ({
-      player,
-      rank: index + 1,
-      score: Math.floor(Math.random() * 1000) + 500 // Score simulé
-    }));
+    const filteredPlayers = this.getFilteredPlayers();
+    return this.filterService.getSmartSuggestions(filteredPlayers, 3);
   }
 
   getSearchResultsTitle(count: number): string {
-    return this.formatTemplate(this.t.t('draft.ui.searchResultsTitle'), { count });
+    return this.helperService.getSearchResultsTitle(count, (key) => this.t.t(key));
   }
 
   getShowAllResultsLabel(count: number): string {
-    return this.formatTemplate(this.t.t('draft.ui.showAllResults'), { count });
+    return this.helperService.getShowAllResultsLabel(count, (key) => this.t.t(key));
   }
 
   getSuggestionRankLabel(rank: number): string {
-    return this.formatTemplate(this.t.t('draft.ui.suggestionRank'), { rank });
+    return this.helperService.getSuggestionRankLabel(rank, (key) => this.t.t(key));
   }
 
   getSlotsRemainingLabel(): string {
     const remaining = this.getRemainingSlots();
-    const key = remaining === 1 ? 'draft.ui.slotsRemainingSingle' : 'draft.ui.slotsRemainingMultiple';
-    return this.formatTemplate(this.t.t(key), { count: remaining });
+    return this.helperService.getSlotsRemainingLabel(remaining, (key) => this.t.t(key));
   }
 
   getWaitingMessage(): string {
     const currentPlayer = this.getCurrentTurnPlayer();
-    if (!currentPlayer) return this.t.t('draft.ui.waitingNextTurn');
-    return this.formatTemplate(this.t.t('draft.ui.waitingTurn'), { username: currentPlayer.username });
+    return this.helperService.getWaitingMessage(currentPlayer?.username || null, (key) => this.t.t(key));
   }
 
   getCurrentUserTeam(): Player[] {
-    if (!this.draftState || !this.currentUserId) return [];
-    const currentParticipant = this.draftState.participants.find((p: any) =>
-      this.normalizeParticipant(p)?.id === this.currentUserId
-    );
-    return this.normalizeParticipant(currentParticipant)?.selectedPlayers || [];
+    return this.progressService.getCurrentUserTeam(this.draftState, this.currentUserId);
   }
 
   getRemainingSlots(): number {
     const currentTeam = this.getCurrentUserTeam();
-    return Math.max(0, 5 - currentTeam.length); // 5 joueurs max par équipe
+    return this.progressService.getRemainingSlots(currentTeam, 5);
   }
 
   getRegionLabel(region: string): string {
-    const key = REGION_LABELS[region as PlayerRegion];
-    return key ? this.t.t(key, region) : region;
+    const key = this.helperService.getRegionLabelKey(region);
+    return this.t.t(key, region);
   }
 
   getTrancheLabel(tranche: string): string {
-    const match = /^T(\d+)$/i.exec(tranche);
-    if (match) {
-      return this.formatTemplate(this.t.t('draft.selection.trancheValue'), { value: match[1] });
-    }
-    return tranche;
+    return this.helperService.getTrancheLabel(tranche, (key) => this.t.t(key));
   }
 
   formatTime(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return this.progressService.formatTime(seconds);
   }
 
-  // Méthodes de filtrage
+  // Méthodes de filtrage (déléguées au service)
   getFilteredPlayers(): Player[] {
     if (!this.draftState) return [];
-
-    return this.draftState.availablePlayers
-      .filter(this.filterByRegion.bind(this))
-      .filter(this.filterByTranche.bind(this))
-      .filter(this.filterBySearch.bind(this));
+    return this.filterService.filterPlayers(this.draftState.availablePlayers, {
+      selectedRegion: this.selectedRegion,
+      selectedTranche: this.selectedTranche,
+      searchTerm: this.searchTerm
+    });
   }
 
   getAvailableRegions(): PlayerRegion[] {
     if (!this.draftState) return [];
-    return this.extractUniqueRegions();
+    return this.filterService.extractUniqueRegions(this.draftState.availablePlayers);
   }
 
   getAvailableTranches(): string[] {
     if (!this.draftState) return [];
-    return this.extractUniqueTranches();
+    return this.filterService.extractUniqueTranches(this.draftState.availablePlayers);
   }
 
   clearFilters(): void {
@@ -327,7 +288,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   private initializeComponent(): void {
     this.gameId = this.extractGameId();
     if (!this.gameId) {
-      this.setError(this.t.t('draft.errors.missingGameId'));
+      this.error = this.t.t('draft.errors.missingGameId');
       return;
     }
 
@@ -351,35 +312,18 @@ export class DraftComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Méthodes privées de gestion d'état
-  private setLoadingState(loading: boolean): void {
-    this.isLoading = loading;
-  }
-
-  private setSelectingState(selecting: boolean): void {
-    this.isSelectingPlayer = selecting;
-  }
-
-  private setError(message: string): void {
-    this.error = message;
-  }
-
-  private clearError(): void {
-    this.error = null;
-  }
-
   // Méthodes privées de gestion des réponses
   private handleDraftStateSuccess(state: DraftBoardState): void {
     this.draftState = state;
-    this.setLoadingState(false);
+    this.isLoading = false;
   }
 
   private handleDraftStateError(error: any): void {
     this.logger.error('Draft: Failed to load draft state', error);
     const errorMessage = error.message || this.t.t('draft.errors.loadDraftFailed');
-    this.setError(errorMessage);
-    this.setLoadingState(false);
-    
+    this.error = errorMessage;
+    this.isLoading = false;
+
     if (error.message?.includes('not found')) {
       this.initializeDraft();
     }
@@ -387,18 +331,18 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private handlePlayerSelectionSuccess(player: Player): void {
     this.showSuccessMessage(
-      this.formatTemplate(this.t.t('draft.success.playerSelectedWithName'), { player: player.nickname })
+      this.helperService.formatTemplate(this.t.t('draft.success.playerSelectedWithName'), { player: player.nickname })
     );
     this.refreshDraftState();
-    this.setSelectingState(false);
+    this.isSelectingPlayer = false;
   }
 
   private handlePlayerSelectionError(): void {
     this.logger.error('Draft: Failed to select player');
     const message = this.t.t('draft.errors.selectPlayerFailed');
-    this.setError(message);
+    this.error = message;
     this.showErrorMessage(message);
-    this.setSelectingState(false);
+    this.isSelectingPlayer = false;
   }
 
   // Méthodes privées d'actions
@@ -425,8 +369,8 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private performDraftAction(action: 'pause' | 'resume', successMessage: string, errorMessage: string): void {
-    const actionMethod = action === 'pause' ? 
-      this.draftService.pauseDraft(this.gameId!) : 
+    const actionMethod = action === 'pause' ?
+      this.draftService.pauseDraft(this.gameId!) :
       this.draftService.resumeDraft(this.gameId!);
 
     actionMethod.pipe(takeUntil(this.destroy$))
@@ -440,7 +384,7 @@ export class DraftComponent implements OnInit, OnDestroy {
         error: (error) => {
           this.logger.error(`Draft: Failed to ${action} draft`, error);
           const resolvedMessage = error.message || errorMessage;
-          this.setError(resolvedMessage);
+          this.error = resolvedMessage;
           this.showErrorMessage(resolvedMessage);
         }
       });
@@ -452,13 +396,13 @@ export class DraftComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (picks) => {
           this.showSuccessMessage(
-            this.formatTemplate(this.t.t('draft.success.timeoutsHandled'), { count: picks.length })
+            this.helperService.formatTemplate(this.t.t('draft.success.timeoutsHandled'), { count: picks.length })
           );
           this.refreshDraftState();
         },
         error: (error) => {
           const message = this.t.t('draft.errors.timeoutsFailed');
-          this.setError(message);
+          this.error = message;
           this.showErrorMessage(message);
         }
       });
@@ -495,7 +439,7 @@ export class DraftComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           const message = this.t.t('draft.errors.cancelFailed');
-          this.setError(message);
+          this.error = message;
           this.showErrorMessage(message);
         }
       });
@@ -509,38 +453,10 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private handleDraftInitializationError(error: any): void {
     const errorMessage = error.message || this.t.t('draft.errors.initializeFailed');
-    this.setError(errorMessage);
+    this.error = errorMessage;
     this.showErrorMessage(errorMessage);
   }
 
-  // Méthodes privées de filtrage
-  private filterByRegion(player: Player): boolean {
-    return this.selectedRegion === 'ALL' || player.region === this.selectedRegion;
-  }
-
-  private filterByTranche(player: Player): boolean {
-    return this.selectedTranche === 'ALL' || player.tranche === this.selectedTranche;
-  }
-
-  private filterBySearch(player: Player): boolean {
-    if (!this.searchTerm.trim()) return true;
-    
-    const searchLower = this.searchTerm.toLowerCase();
-    return player.nickname.toLowerCase().includes(searchLower) ||
-           player.username.toLowerCase().includes(searchLower);
-  }
-
-  private extractUniqueRegions(): PlayerRegion[] {
-    if (!this.draftState) return [];
-    const regions = [...new Set(this.draftState.availablePlayers.map((p: Player) => p.region))];
-    return regions.filter((region): region is PlayerRegion => typeof region === 'string');
-  }
-
-  private extractUniqueTranches(): string[] {
-    return this.draftState
-      ? [...new Set(this.draftState.availablePlayers.map((p: Player) => p.tranche))]
-      : [];
-  }
 
   // Méthodes privées de notification
   private showSuccessMessage(message: string): void {
@@ -549,17 +465,6 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   private showErrorMessage(message: string): void {
     this.snackBar.open(message, this.t.t('common.close'), { duration: DRAFT_CONSTANTS.SNACKBAR_DURATION });
-  }
-
-  private formatTemplate(template: string, params: Record<string, string | number>): string {
-    return Object.entries(params).reduce((result, [key, value]) => {
-      return result.replace(`{${key}}`, String(value));
-    }, template);
-  }
-
-  private normalizeParticipant(entry: any): GameParticipant | null {
-    if (!entry) return null;
-    return (entry as any).participant ? (entry as any).participant : (entry as GameParticipant);
   }
 
   // Méthodes privées de gestion du cycle de vie

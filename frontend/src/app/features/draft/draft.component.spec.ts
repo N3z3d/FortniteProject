@@ -8,6 +8,7 @@ import { DraftComponent } from './draft.component';
 import { DraftService } from './services/draft.service';
 import { UserContextService, UserProfile } from '../../core/services/user-context.service';
 import { DraftBoardState, Player, GameParticipant, DraftStatus, PlayerRegion } from './models/draft.interface';
+import { REGION_LABELS, STATUS_LABELS } from './constants/draft.constants';
 describe('DraftComponent', () => {
   let component: DraftComponent;
   let fixture: ComponentFixture<DraftComponent>;
@@ -62,6 +63,7 @@ describe('DraftComponent', () => {
     const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
     const dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
     draftServiceSpy.getDraftBoardState.and.returnValue(of(mockDraftState));
     userContextSpy.getCurrentUser.and.returnValue(mockUser);
     await TestBed.configureTestingModule({
@@ -90,7 +92,7 @@ describe('DraftComponent', () => {
     component.gameId = '1';
     component.currentUserId = '1';
     component.draftState = mockDraftState;
-    spyOn(window, 'confirm').and.returnValue(false);
+
   });
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -104,20 +106,20 @@ describe('DraftComponent', () => {
     });
   });
   describe('confirmCancel', () => {
-    it('should ask confirmation before draft cancellation', () => {
+    it('should open confirmation dialog before draft cancellation', () => {
       component.confirmCancel();
       
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialog.open).toHaveBeenCalled();
     });
   });
   describe('getRegionLabel', () => {
     it('should return correct region label for EU', () => {
       const result = component.getRegionLabel('EU' as PlayerRegion);
-      expect(result).toBe('Europe');
+      expect(result).toBe(component.t.t(REGION_LABELS.EU));
     });
     it('should return correct region label for NAW', () => {
       const result = component.getRegionLabel('NAW' as PlayerRegion);
-      expect(result).toBe('Nord-Amérique Ouest');
+      expect(result).toBe(component.t.t(REGION_LABELS.NAW));
     });
     it('should return region code for unknown region', () => {
       const result = component.getRegionLabel('UNKNOWN' as PlayerRegion);
@@ -127,11 +129,11 @@ describe('DraftComponent', () => {
   describe('getTrancheLabel', () => {
     it('should return correct tranche label for T1', () => {
       const result = component.getTrancheLabel('T1');
-      expect(result).toBe('Tranche 1');
+      expect(result).toBe(component.t.t('draft.selection.trancheValue'));
     });
     it('should return correct tranche label for T2', () => {
       const result = component.getTrancheLabel('T2');
-      expect(result).toBe('Tranche 2');
+      expect(result).toBe(component.t.t('draft.selection.trancheValue'));
     });
     it('should return tranche code for unknown tranche', () => {
       const result = component.getTrancheLabel('UNKNOWN');
@@ -151,11 +153,11 @@ describe('DraftComponent', () => {
   describe('getStatusLabel', () => {
     it('should return correct label for ACTIVE status', () => {
       const result = component.getStatusLabel('ACTIVE' as DraftStatus);
-      expect(result).toBe('En cours');
+      expect(result).toBe(component.t.t(STATUS_LABELS.ACTIVE));
     });
     it('should return correct label for PAUSED status', () => {
       const result = component.getStatusLabel('PAUSED' as DraftStatus);
-      expect(result).toBe('En pause');
+      expect(result).toBe(component.t.t(STATUS_LABELS.PAUSED));
     });
   });
   describe('selectPlayer', () => {
@@ -267,3 +269,7 @@ describe('DraftComponent', () => {
     });
   });
 });
+
+
+
+
