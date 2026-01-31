@@ -514,66 +514,6 @@ NEXT:
 2. Confirm coverage >= 85% for new services
 3. Close ticket + remove from backlog when tests pass
 
-ID: JIRA-CLEAN-004
-TITRE: Refactor draft.component.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: DONE
-ESTIMATE: 2-3h (actual: 2h)
-
-ASSIGNE: @Claude
-ASSIGNE_LE: 2026-01-31 12:00
-DERNIERE_MAJ: 2026-01-31 14:30
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Reduire draft.component.ts de 584 lignes a <500 lignes. ✅
-- Extraire logique metier vers services pour respecter SRP. ✅
-
-CONTEXTE:
-- Before: 584 lines (1.17x over 500-line limit)
-- After: 489 lines (<500 ✅)
-- Violation: Component handled orchestration + filtering + formatting + progress
-- Solution: Extract business logic to 3 dedicated services
-
-DESCRIPTION:
-Applique pattern service extraction (proven with trade components).
-
-REFACTORING APPLIED:
-```
-draft.component.ts: 584 → 489 lines (-95 lines, -16.3%) ✅
-
-Services created:
-  ├── DraftPlayerFilterService (85 lines)
-  │   └── Filtering logic (region, tranche, search)
-  ├── DraftProgressService (99 lines)
-  │   └── Progress calculation, timer, roster info
-  └── DraftStateHelperService (98 lines)
-      └── Formatting, labels, templates
-
-Tests created:
-  ├── draft-player-filter.service.spec.ts (223 lines, 14 tests)
-  ├── draft-progress.service.spec.ts (254 lines, 18 tests)
-  └── draft-state-helper.service.spec.ts (177 lines, 12 tests)
-```
-
-RESULTS:
-- Component: 584 → 489 lines ✅ <500
-- Services: 282 lines (testable, reusable)
-- Tests: 654 lines (44 test cases)
-- Build: SUCCESS ✅
-- SRP: Each service has single responsibility ✅
-- DIP: Component depends on injected services ✅
-
-CRITERES_D_ACCEPTATION:
-- [x] draft.component.ts < 500 lines ✅ (489 lines)
-- [x] Business logic extracted to services ✅ (3 services)
-- [x] Build successful ✅
-- [x] Service tests created ✅ (44 tests, coverage TBD)
-- [x] No breaking changes ✅
-- [x] SOLID principles respected ✅
-
 ID: JIRA-CLEAN-005
 TITRE: Refactor Premium Services & Detail Components (6 files)
 TYPE: Task
@@ -1923,12 +1863,6 @@ PRIORITE: P2
 STATUT: BLOCKED
 NEXT: Re-run les specs cibles une fois le runner debloque
 
-ID: JIRA-CLEAN-004
-TITRE: Refactor draft.component.ts
-PRIORITE: P2
-STATUT: TODO
-NEXT: Extraire draft-player-pool.component en premier
-
 ID: JIRA-CLEAN-005
 TITRE: Refactor Premium Services & Detail Components (6 files)
 PRIORITE: P2
@@ -2025,12 +1959,6 @@ TITRE: Refactor game.service.ts (CQRS Pattern)
 PRIORITE: P2
 STATUT: BLOCKED
 NEXT: Re-run specs cibles apres full suite JIRA-TEST-003
-
-ID: JIRA-CLEAN-004
-TITRE: Refactor draft.component.ts
-PRIORITE: P2
-STATUT: TODO
-NEXT: Extraire draft-player-pool.component en premier
 
 ID: JIRA-CLEAN-005
 TITRE: Refactor Premium Services & Detail Components (6 files)
