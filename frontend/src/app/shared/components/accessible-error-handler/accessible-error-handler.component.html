@@ -1,0 +1,113 @@
+<div
+  *ngIf="currentError"
+  class="accessible-error-container"
+  role="alert"
+  aria-live="assertive"
+  aria-atomic="true"
+  [attr.aria-labelledby]="errorTitleId"
+  [attr.aria-describedby]="errorDescriptionId">
+
+  <!-- Skip link pour aller directement aux actions de récupération -->
+  <a
+    class="skip-link"
+    href="#error-recovery-actions"
+    (click)="focusRecoveryActions()"
+    [attr.aria-label]="'Aller aux actions de récupération pour : ' + currentError.title">
+    Aller aux actions de récupération
+  </a>
+
+  <div class="error-content">
+    <!-- Titre de l'erreur -->
+    <h2
+      [id]="errorTitleId"
+      class="error-title"
+      tabindex="-1"
+      #errorTitle>
+      <span class="error-icon" aria-hidden="true">⚠️</span>
+      {{ currentError.title }}
+    </h2>
+
+    <!-- Message principal -->
+    <div
+      [id]="errorDescriptionId"
+      class="error-description">
+      <p>{{ currentError.message }}</p>
+
+      <!-- Informations techniques (collapsibles) -->
+      <details
+        *ngIf="hasDetailedInfo()"
+        class="error-details">
+        <summary
+          class="error-details-toggle"
+          [attr.aria-expanded]="detailsExpanded"
+          (click)="detailsExpanded = !detailsExpanded">
+          Informations techniques
+          <span aria-hidden="true">{{ detailsExpanded ? '▼' : '▶' }}</span>
+        </summary>
+        <div class="error-details-content">
+          <dl>
+            <dt *ngIf="currentError.status">Code de statut :</dt>
+            <dd *ngIf="currentError.status">{{ currentError.status }}</dd>
+
+            <dt *ngIf="currentError.code">Code d'erreur :</dt>
+            <dd *ngIf="currentError.code">{{ currentError.code }}</dd>
+
+            <dt *ngIf="currentError.path">Chemin :</dt>
+            <dd *ngIf="currentError.path">{{ currentError.path }}</dd>
+
+            <dt *ngIf="currentError.requestId">ID de requête :</dt>
+            <dd *ngIf="currentError.requestId">{{ currentError.requestId }}</dd>
+
+            <dt>Horodatage :</dt>
+            <dd>{{ currentError.timestamp | date:'medium' }}</dd>
+          </dl>
+
+          <!-- Erreurs de validation -->
+          <div *ngIf="currentError.validationErrors" class="validation-errors">
+            <h3>Erreurs de validation :</h3>
+            <ul>
+              <li *ngFor="let error of getValidationErrorsArray()">
+                <strong>{{ error.field }} :</strong> {{ error.message }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Actions de récupération -->
+    <div
+      id="error-recovery-actions"
+      class="error-recovery"
+      #recoveryActions>
+      <h3>Actions possibles :</h3>
+      <ul class="recovery-actions-list">
+        <li *ngFor="let action of currentError.recoveryActions || getDefaultRecoveryActions(); let i = index">
+          <button
+            type="button"
+            class="recovery-action-btn"
+            (click)="executeRecoveryAction(action)"
+            [attr.aria-describedby]="action.keyboardShortcut ? 'shortcut-' + i : null">
+            {{ action.label }}
+          </button>
+          <span
+            *ngIf="action.keyboardShortcut"
+            [id]="'shortcut-' + i"
+            class="keyboard-shortcut"
+            aria-label="Raccourci clavier">
+            ({{ action.keyboardShortcut }})
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Instructions d'accessibilité -->
+    <div class="accessibility-instructions" aria-label="Instructions de navigation">
+      <p>
+        <span class="sr-only">Instructions : </span>
+        Utilisez Tab et Shift+Tab pour naviguer, Entrée ou Espace pour activer les boutons.
+        Échap pour fermer cette erreur si possible.
+      </p>
+    </div>
+  </div>
+</div>
