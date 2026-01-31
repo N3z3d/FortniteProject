@@ -1,0 +1,188 @@
+<div class="trade-detail-container">
+  <div class="loading-container" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>{{ t.t('trades.detail.loading') }}</p>
+  </div>
+
+  <div class="trade-content" *ngIf="!isLoading && trade">
+    <!-- Header Card -->
+    <mat-card class="header-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>swap_horiz</mat-icon>
+          {{ t.t('trades.detail.titlePrefix') }}{{ trade.id.substring(0, 8) }}
+        </mat-card-title>
+        <mat-card-subtitle>
+          <mat-chip [color]="getStatusColor(trade.status)">
+            {{ getStatusLabel(trade.status) }}
+          </mat-chip>
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-actions>
+        <button mat-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          {{ t.t('trades.detail.back') }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="primary"
+          *ngIf="trade.status === 'PENDING'"
+          (click)="completeTrade()">
+          <mat-icon>check</mat-icon>
+          {{ t.t('trades.detail.validateTrade') }}
+        </button>
+
+        <button
+          mat-raised-button
+          color="warn"
+          *ngIf="trade.status === 'PENDING'"
+          (click)="cancelTrade()">
+          <mat-icon>cancel</mat-icon>
+          {{ t.t('trades.detail.cancelTrade') }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Trade Details Card -->
+    <mat-card class="trade-details-card">
+      <mat-card-header>
+        <mat-card-title>{{ t.t('trades.detail.detailsTitle') }}</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="trade-flow">
+          <!-- Player Out -->
+          <div class="player-card player-out">
+            <div class="player-header">
+              <mat-icon color="warn">person_remove</mat-icon>
+              <h3>{{ t.t('trades.detail.playerOutTitle') }}</h3>
+            </div>
+            <div class="player-info">
+              <h4>{{ trade.playerOut.username }}</h4>
+              <p class="region">{{ trade.playerOut.region }}</p>
+
+              <div class="player-stats" *ngIf="trade.playerOut.stats">
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.kills') }}:</span>
+                  <span class="stat-value">{{ trade.playerOut.stats.kills }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.wins') }}:</span>
+                  <span class="stat-value">{{ trade.playerOut.stats.wins }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.kd') }}:</span>
+                  <span class="stat-value">{{ trade.playerOut.stats.kd }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trade Arrow -->
+          <div class="trade-arrow-container">
+            <mat-icon class="trade-arrow">swap_horiz</mat-icon>
+          </div>
+
+          <!-- Player In -->
+          <div class="player-card player-in">
+            <div class="player-header">
+              <mat-icon color="primary">person_add</mat-icon>
+              <h3>{{ t.t('trades.detail.playerInTitle') }}</h3>
+            </div>
+            <div class="player-info">
+              <h4>{{ trade.playerIn.username }}</h4>
+              <p class="region">{{ trade.playerIn.region }}</p>
+
+              <div class="player-stats" *ngIf="trade.playerIn.stats">
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.kills') }}:</span>
+                  <span class="stat-value">{{ trade.playerIn.stats.kills }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.wins') }}:</span>
+                  <span class="stat-value">{{ trade.playerIn.stats.wins }}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">{{ t.t('trades.detail.stats.kd') }}:</span>
+                  <span class="stat-value">{{ trade.playerIn.stats.kd }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Team Information -->
+        <div class="team-section">
+          <h3>
+            <mat-icon>group</mat-icon>
+            {{ t.t('trades.detail.teamSectionTitle') }}
+          </h3>
+          <div class="team-info">
+            <h4>{{ trade.team.name }}</h4>
+            <p>{{ t.t('trades.detail.teamOwnerLabel') }}: <strong>{{ trade.team.owner }}</strong></p>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Timeline -->
+        <div class="timeline-section">
+          <h3>
+            <mat-icon>timeline</mat-icon>
+            {{ t.t('trades.detail.timelineTitle') }}
+          </h3>
+          <div class="timeline">
+            <div class="timeline-item completed">
+              <mat-icon>add</mat-icon>
+              <div class="timeline-content">
+                <strong>{{ t.t('trades.detail.timelineCreated') }}</strong>
+                <p>{{ trade.createdAt | date:'dd/MM/yyyy à HH:mm' }}</p>
+              </div>
+            </div>
+
+            <div
+              class="timeline-item"
+              [ngClass]="{ 'completed': trade.status === 'COMPLETED' || trade.status === 'CANCELLED' }">
+              <mat-icon>
+                {{ trade.status === 'COMPLETED' ? 'check' : trade.status === 'CANCELLED' ? 'cancel' : 'schedule' }}
+              </mat-icon>
+              <div class="timeline-content">
+                <strong>{{ getTimelineLabel(trade.status) }}</strong>
+                <p *ngIf="trade.completedAt">{{ trade.completedAt | date:'dd/MM/yyyy à HH:mm' }}</p>
+                <p *ngIf="!trade.completedAt && trade.status === 'PENDING'">{{ t.t('trades.status.pending') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reason (if cancelled) -->
+        <div class="reason-section" *ngIf="trade.status === 'CANCELLED' && trade.reason">
+          <mat-divider></mat-divider>
+          <h3>
+            <mat-icon>info</mat-icon>
+            {{ t.t('trades.detail.cancelReasonTitle') }}
+          </h3>
+          <p class="reason-text">{{ trade.reason }}</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Error State -->
+  <mat-card class="error-card" *ngIf="!isLoading && !trade">
+    <mat-card-content>
+      <div class="error-content">
+        <mat-icon color="warn">error</mat-icon>
+        <h3>{{ t.t('trades.detail.notFoundTitle') }}</h3>
+        <p>{{ t.t('trades.detail.notFoundDesc') }}</p>
+        <button mat-raised-button color="primary" (click)="goBack()">
+          {{ t.t('trades.detail.backToList') }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
