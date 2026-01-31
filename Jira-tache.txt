@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-31 11:26
+Last Updated: 2026-01-31 12:08
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -72,10 +72,10 @@ ESTIMATE: 2-4h (increased)
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-27 09:20
-DERNIERE_MAJ: 2026-01-31 11:45
+DERNIERE_MAJ: 2026-01-31 12:08
 
 DEPENDENCIES: none
-BLOCKED_BY: Test runner timeout - needs investigation
+BLOCKED_BY: none
 
 OBJECTIF:
 - Executer tous les tests frontend Angular.
@@ -100,9 +100,10 @@ TEST RESULTS (Execution 2 - 2026-01-27 18:13):
 
 ROOT CAUSE (Updated):
 1. ✅ RESOLVED: TranslationService specs fixed (req.request.url instead of req.url)
-2. ✅ APPLIED: Test polyfills for global/process to prevent sockjs-client afterAll errors (pending rerun)
-3. ✅ APPLIED: i18n expectations updated in failing specs (pending rerun)
-4. ❌ REMAINING: Re-run full suite and address any remaining failures
+2. ✅ RESOLVED: Test polyfills for global/process to prevent sockjs-client afterAll errors
+3. ✅ RESOLVED: i18n expectations + spec type alignment (draft/dashboard/game/websocket)
+4. ✅ RESOLVED: Karma single-run env + ng test via npx
+5. ⚠️ REMAINING: Coverage below threshold (Lines 44.65% < 80%)
 
 FILES UPDATED:
 - translation.service.spec.ts (HttpClientTestingModule + req.request.url ✅)
@@ -117,15 +118,19 @@ FILES UPDATED:
 
 FILES UPDATED (31-01-2026):
 - angular.json (test polyfills for global/process)
+- karma.conf.js (KARMA_SINGLE_RUN single-run toggle)
 - dashboard-formatting.service.ts (Equipe/Équipe prefix regex fix)
-- dashboard.component.spec.ts (i18n expectations)
-- game-detail.component.spec.ts (delete flow + i18n expectations)
+- dashboard.component.spec.ts (HttpClient stub + i18n expectations)
+- game-detail.component.spec.ts (MatSnackBar provider override)
 - game-home.component.spec.ts (status label expectations)
 - main-layout.component.spec.ts (sidebar i18n labels)
 - trade-proposal.component.spec.ts (i18n title expectations)
 - leaderboard.service.spec.ts (missing fields expectation)
 - simple-leaderboard.component.spec.ts (optional params)
-- draft.component.spec.ts (dialog + i18n labels)
+- draft.component.spec.ts (dialog + i18n labels + region fallback)
+- draft-progress.service.spec.ts (AvailablePlayer props alignment)
+- draft-player-filter.service.spec.ts (AvailablePlayer props alignment)
+- websocket.service.spec.ts (take(1) for isConnected$)
 
 DESCRIPTION:
 Run full Angular test suite avec Brave browser (ChromeHeadless mode).
@@ -155,15 +160,26 @@ WORK DONE (31-01-2026 11:26):
 - [x] Fixed team name prefix regex in DashboardFormattingService
 - [ ] Attempted full test run (npm test -- --watch=false --browsers=ChromeHeadless) -> TIMEOUT after 120s
 
-TEST RESULTS (Latest - 31-01-2026 11:26):
-- npm test -- --watch=false --browsers=ChromeHeadless
-- Result: TIMEOUT after 120s (no report generated)
+WORK DONE (31-01-2026 12:08):
+- [x] Fixed draft spec typing (AvailablePlayer props + pickTimeLimit removal)
+- [x] Fixed DashboardComponent i18n tests (HttpClient stub)
+- [x] Fixed GameDetailComponent snackBar provider in tests
+- [x] Fixed WebSocketService initial disconnect test (take(1))
+- [x] Added Karma single-run toggle (KARMA_SINGLE_RUN)
+- [x] Full suite run successful (462 tests)
+- [x] Coverage run generated report (Lines 44.65%)
+TEST RESULTS (Latest - 31-01-2026 12:08):
+- npx ng test --watch=false --browsers=ChromeHeadless
+- Result: TOTAL 462 SUCCESS (0 failed)
+- npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+- Result: TOTAL 462 SUCCESS; Lines 44.65% (1741/3899), Statements 43.79% (1817/4149)
+- Notes: Sass deprecation warnings (non-blocking)
 
 CRITERES_D_ACCEPTATION:
-- [ ] Tests execute successfully (no timeout) - ❌ TIMEOUT after 120s (31-01-2026 11:26)
-- [ ] 0 critical failures - ❌ not measured (suite timed out)
-- [ ] Coverage maintained >= 80% - ❌ not generated (timeout)
-- [ ] Test report generated - ❌ not generated (timeout)
+- [x] Tests execute successfully (no timeout) - ? 462 SUCCESS (31-01-2026 12:08)
+- [x] 0 critical failures - ? 0 failed (31-01-2026 12:08)
+- [ ] Coverage maintained >= 80% - ? Lines 44.65% (31-01-2026 12:08)
+- [x] Test report generated - ? coverage report created (31-01-2026 12:08)
 
 READY:
 - [x] OBJECTIF defini
@@ -173,9 +189,9 @@ READY:
 - [x] Progress documented
 
 NEXT:
-1. Re-run full suite (ChromeHeadless) after polyfills + spec updates
-2. Fix any remaining failing specs or mocks
-3. Generate coverage report (>= 80%)
+1. Definir strategie couverture (objectif >= 80%)
+2. Ajouter/ajuster tests unitaires sur zones modifiees
+3. Re-lancer coverage + cloturer JIRA-TEST-003
 
 ID: JIRA-ARCH-001
 TITRE: Migration Hexagonale Complete
@@ -329,7 +345,7 @@ ID: JIRA-ARCH-012
 TITRE: Migration Pure Hexagonale - Domaine Player
 TYPE: Story
 PRIORITE: P2
-STATUT: BLOCKED
+STATUT: TODO
 ESTIMATE: 8-16h
 
 ASSIGNE: Unassigned
@@ -452,7 +468,7 @@ ESTIMATE: 2-3h
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-27 19:45
-DERNIERE_MAJ: 2026-01-31 11:17
+DERNIERE_MAJ: 2026-01-31 12:08
 
 DEPENDENCIES: none
 
@@ -510,7 +526,7 @@ READY:
 - [x] CRITERES_D_ACCEPTATION definis
 
 NEXT:
-1. Re-run focused specs after JIRA-TEST-003 full suite execution
+1. Re-run CQRS service specs (runner unblocked)
 2. Confirm coverage >= 85% for new services
 3. Close ticket + remove from backlog when tests pass
 
@@ -2014,3 +2030,99 @@ FIN DU DEBRIEF SESSION 2026-01-31 11:26
 
 
 
+
+
+
+
+
+
+================================================================================
+DEBRIEF SESSION 2026-01-31 12:08 (JIRA-TEST-003 FULL SUITE)
+================================================================================
+
+SESSION WORK
+------------
+- JIRA-TEST-003: full suite unblocked; 19 failing specs fixed (draft/dashboard/game/websocket).
+- Full suite run: TOTAL 462 SUCCESS (0 failed).
+- Coverage run: Lines 44.65% (below 80% target).
+
+TESTS
+-----
+- npx ng test --watch=false --browsers=ChromeHeadless (462 SUCCESS)
+- npx ng test --watch=false --browsers=ChromeHeadless --code-coverage (462 SUCCESS; Lines 44.65%)
+
+REMAINING TICKETS (JIRA FORMAT)
+-------------------------------
+ID: JIRA-ARCH-000
+TITRE: Architecture Review and Clean Code Implementation
+PRIORITE: P0
+STATUT: IN_PROGRESS
+NEXT: Finaliser derniers refactors frontend + verifs architecture
+
+ID: JIRA-TEST-003
+TITRE: Lancer tests frontend Angular complets
+PRIORITE: P1
+STATUT: IN_PROGRESS
+NEXT: Ameliorer couverture (>= 80%) + revalider report
+
+ID: JIRA-ARCH-001
+TITRE: Migration Hexagonale Complete
+PRIORITE: P1
+STATUT: IN_PROGRESS
+NEXT: Migrer les 6 controllers restants (DIP)
+
+ID: JIRA-CLEAN-003
+TITRE: Refactor game.service.ts (CQRS Pattern)
+PRIORITE: P2
+STATUT: TODO
+NEXT: Re-run CQRS specs + verifier coverage
+
+ID: JIRA-ARCH-011
+TITRE: Migration Pure Hexagonale - Domaine Game
+PRIORITE: P2
+STATUT: TODO
+NEXT: Creer les domain models + mapper
+
+ID: JIRA-CLEAN-005
+TITRE: Refactor Premium Services & Detail Components (6 files)
+PRIORITE: P2
+STATUT: TODO
+NEXT: Refactor premium-interactions.service.ts
+
+ID: JIRA-ARCH-012
+TITRE: Migration Pure Hexagonale - Domaine Player
+PRIORITE: P2
+STATUT: BLOCKED
+NEXT: Debloquer via completion JIRA-ARCH-011
+
+ID: JIRA-ARCH-013
+TITRE: Migration Pure Hexagonale - Domaine Team
+PRIORITE: P2
+STATUT: BLOCKED
+NEXT: Debloquer via completion JIRA-ARCH-012
+
+ID: JIRA-ARCH-014
+TITRE: Migration Pure Hexagonale - Domaine Draft
+PRIORITE: P2
+STATUT: BLOCKED
+NEXT: Debloquer via completion JIRA-ARCH-013
+
+ID: JIRA-ARCH-015
+TITRE: Migration Pure Hexagonale - Domaine Trade
+PRIORITE: P2
+STATUT: BLOCKED
+NEXT: Debloquer via completion JIRA-ARCH-014
+
+NOTE:
+- JIRA-CLEAN-004 est reference dans les anciens debriefs mais pas present dans la liste active; recreer si besoin.
+
+BACKLOG A JOUR
+--------------
+Last Updated: 2026-01-31 12:08
+Total Active Tickets: 10
+- IN_PROGRESS: 3 (ARCH-000, ARCH-001, TEST-003)
+- TODO: 3 (ARCH-011, CLEAN-003, CLEAN-005)
+- BLOCKED: 4 (ARCH-012, ARCH-013, ARCH-014, ARCH-015)
+
+FIN DU DEBRIEF SESSION 2026-01-31 12:08
+================================================================================
