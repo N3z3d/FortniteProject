@@ -12,8 +12,8 @@ describe('DraftPlayerFilterService', () => {
     username: 'testuser',
     region: 'EUROPE',
     tranche: 'T1',
-    epicAccountId: 'epic-123',
-    isSelected: false,
+    currentSeason: 1,
+    selected: false,
     ...overrides
   });
 

@@ -207,11 +207,11 @@ describe('GameHomeComponent', () => {
     });
 
     it('should return correct status label', () => {
-      expect(component.getStatusLabel('CREATING')).toBe('En création');
-      expect(component.getStatusLabel('DRAFTING')).toBe('Draft en cours');
-      expect(component.getStatusLabel('ACTIVE')).toBe('Active');
-      expect(component.getStatusLabel('FINISHED')).toBe('Terminée');
-      expect(component.getStatusLabel('CANCELLED')).toBe('Annulée');
+      expect(component.getStatusLabel('CREATING')).toBe(component.t.t('games.home.statusCreating'));
+      expect(component.getStatusLabel('DRAFTING')).toBe(component.t.t('games.home.statusDrafting'));
+      expect(component.getStatusLabel('ACTIVE')).toBe(component.t.t('games.home.statusActive'));
+      expect(component.getStatusLabel('FINISHED')).toBe(component.t.t('games.home.statusFinished'));
+      expect(component.getStatusLabel('CANCELLED')).toBe(component.t.t('games.home.statusCancelled'));
     });
 
     it('should expose game count and hasGames', () => {
@@ -234,3 +234,4 @@ describe('GameHomeComponent', () => {
     });
   });
 });
+

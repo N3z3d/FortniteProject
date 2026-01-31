@@ -59,7 +59,7 @@ describe('TranslationService (fr)', () => {
     // Mock HTTP requests for all languages
     const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
     requests.forEach(req => {
-      const lang = req.url.split('/').pop()?.replace('.json', '') || 'en';
+      const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
       req.flush(lang === 'fr' ? mockTranslationsFr : mockTranslationsOther);
     });
   });

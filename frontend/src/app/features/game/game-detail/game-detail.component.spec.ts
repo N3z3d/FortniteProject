@@ -6,6 +6,8 @@ import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
 import { Game, GameParticipant } from '../models/game.interface';
+import { UserContextService } from '../../../core/services/user-context.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 const mockGame: Game = {
@@ -32,11 +34,24 @@ describe('GameDetailComponent', () => {
   let gameDataServiceSpy: jasmine.SpyObj<GameDataService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let userContextServiceSpy: jasmine.SpyObj<UserContextService>;
+  let userGamesStoreSpy: jasmine.SpyObj<UserGamesStore>;
   let activatedRouteStub: any;
 
   beforeEach(async () => {
     gameServiceSpy = jasmine.createSpyObj('GameService', [
-      'getGameById', 'getGameParticipants', 'deleteGame', 'startDraft', 'joinGame', 'generateInvitationCode', 'getDraftState'
+      'getGameById',
+      'getGameParticipants',
+      'deleteGame',
+      'startDraft',
+      'joinGame',
+      'generateInvitationCode',
+      'getDraftState',
+      'archiveGame',
+      'leaveGame',
+      'regenerateInvitationCode',
+      'renameGame',
+      'isGameHost'
     ]);
     gameDataServiceSpy = jasmine.createSpyObj('GameDataService', [
       'getGameById',
@@ -46,6 +61,8 @@ describe('GameDetailComponent', () => {
     ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    userContextServiceSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
+    userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame']);
     activatedRouteStub = { params: of({ id: '1' }) };
 
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
@@ -64,13 +81,19 @@ describe('GameDetailComponent', () => {
         { provide: GameService, useValue: gameServiceSpy },
         { provide: GameDataService, useValue: gameDataServiceSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: activatedRouteStub }
+        { provide: ActivatedRoute, useValue: activatedRouteStub },
+        { provide: UserContextService, useValue: userContextServiceSpy },
+        { provide: UserGamesStore, useValue: userGamesStoreSpy }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });
 
-    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
-    TestBed.overrideComponent(GameDetailComponent, { set: { template: '' } });
+    TestBed.overrideComponent(GameDetailComponent, {
+      set: {
+        template: '',
+        providers: [{ provide: MatSnackBar, useValue: snackBarSpy }]
+      }
+    });
 
     await TestBed.compileComponents();
   });
@@ -147,8 +170,9 @@ describe('GameDetailComponent', () => {
     component.deleteGame();
     tick();
     expect(gameServiceSpy.deleteGame).toHaveBeenCalledWith('1');
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
-    expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/supprimée/i), 'Fermer', jasmine.any(Object));
+    expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('1');
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
+    expect(snackBarSpy.open).not.toHaveBeenCalled();
   }));
 
   it('should handle error when deleting a game', fakeAsync(() => {
@@ -160,7 +184,7 @@ describe('GameDetailComponent', () => {
     component.deleteGame();
     tick();
     expect(component.error).toBeNull();
-    expect(snackBarSpy.open).toHaveBeenCalled();
+    expect(snackBarSpy.open).not.toHaveBeenCalled();
   }));
 
   it('should allow starting a draft', fakeAsync(() => {
@@ -206,11 +230,11 @@ describe('GameDetailComponent', () => {
   });
 
   it('should return correct status label', () => {
-    expect(component.getStatusLabel('CREATING')).toBe('En création');
-    expect(component.getStatusLabel('DRAFTING')).toBe('En draft');
-    expect(component.getStatusLabel('ACTIVE')).toBe('Active');
-    expect(component.getStatusLabel('FINISHED')).toBe('Terminée');
-    expect(component.getStatusLabel('CANCELLED')).toBe('Annulée');
+    expect(component.getStatusLabel('CREATING')).toBe(component.t.t('games.home.statusCreating'));
+    expect(component.getStatusLabel('DRAFTING')).toBe(component.t.t('games.home.statusDrafting'));
+    expect(component.getStatusLabel('ACTIVE')).toBe(component.t.t('games.home.statusActive'));
+    expect(component.getStatusLabel('FINISHED')).toBe(component.t.t('games.home.statusFinished'));
+    expect(component.getStatusLabel('CANCELLED')).toBe(component.t.t('games.home.statusCancelled'));
   });
 
   it('should calculate participant percentage', () => {
@@ -363,10 +387,14 @@ describe('GameDetailComponent', () => {
   });
 
   it('should return true for canDeleteGame if status is CREATING', () => {
+    userContextServiceSpy.getCurrentUser.and.returnValue({ id: 'u1', username: 'Alice', email: 'alice@test.com' });
+    gameServiceSpy.isGameHost.and.returnValue(true);
     component.game = { ...mockGame, status: 'CREATING' };
     expect(component.canDeleteGame()).toBeTrue();
   });
   it('should return false for canDeleteGame if status is not CREATING', () => {
+    userContextServiceSpy.getCurrentUser.and.returnValue({ id: 'u1', username: 'Alice', email: 'alice@test.com' });
+    gameServiceSpy.isGameHost.and.returnValue(true);
     component.game = { ...mockGame, status: 'ACTIVE' };
     expect(component.canDeleteGame()).toBeFalse();
   });
@@ -384,3 +412,4 @@ describe('GameDetailComponent', () => {
     expect(component.canJoinGame()).toBeFalse();
   });
 }); 
+

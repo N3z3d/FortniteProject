@@ -80,7 +80,7 @@ describe('TradeProposalComponent (i18n)', () => {
     fixture.detectChanges();
 
     const title = fixture.nativeElement.querySelector('.proposal-title') as HTMLElement;
-    expect(title?.textContent).toContain('Create Trade Proposal');
+    expect(title?.textContent).toContain(translationService.t('trades.proposal.title'));
   });
 
   it('affiche le titre d\'erreur quand une erreur est presente', () => {
@@ -99,3 +99,4 @@ describe('TradeProposalComponent (i18n)', () => {
     expect(loadingText?.textContent).toContain(translationService.t('trades.proposal.loading.teamsAndPlayers'));
   });
 });
+

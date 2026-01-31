@@ -149,7 +149,7 @@
             ],
             "karmaConfig": "karma.conf.js",
             "polyfills": [
-              "zone.js",
+              "src/polyfills.ts",
               "zone.js/testing"
             ]
           }

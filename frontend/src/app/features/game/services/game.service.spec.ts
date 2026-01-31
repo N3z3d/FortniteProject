@@ -1,339 +1,212 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 import { GameService } from './game.service';
-import { Game, CreateGameRequest, JoinGameRequest } from '../models/game.interface';
-import { environment } from '../../../../environments/environment';
+import { GameQueryService } from './game-query.service';
+import { GameCommandService } from './game-command.service';
+import {
+  Game,
+  CreateGameRequest,
+  DraftState,
+  DraftStatistics,
+  DraftHistoryEntry,
+  GameParticipant,
+  InvitationCode
+} from '../models/game.interface';
 
 describe('GameService', () => {
   let service: GameService;
-  let httpMock: HttpTestingController;
-  const apiUrl = environment.apiUrl;
-  const apiBaseUrl = `${apiUrl}/api`;
-  const gamesUrl = `${apiBaseUrl}/games`;
-  const userGamesUrl = `${gamesUrl}/my-games`;
-  const joinGameUrl = `${gamesUrl}/join`;
+  let querySpy: jasmine.SpyObj<GameQueryService>;
+  let commandSpy: jasmine.SpyObj<GameCommandService>;
 
   const mockGame: Game = {
-    id: '1',
+    id: 'game-1',
     name: 'Test Game',
-    creatorName: 'Test User',
-    maxParticipants: 10,
+    creatorName: 'Tester',
+    maxParticipants: 4,
     status: 'CREATING',
-    createdAt: '2024-01-15T10:30:00',
+    createdAt: '2025-01-01T00:00:00Z',
     participantCount: 1,
     canJoin: true
   };
 
+  const draftState: DraftState = {
+    gameId: 'game-1',
+    status: 'NOT_STARTED',
+    currentRound: 0,
+    totalRounds: 1,
+    currentPick: 0,
+    participants: [],
+    availablePlayers: [],
+    rules: {
+      maxPlayersPerTeam: 1,
+      timeLimitPerPick: 60,
+      autoPickEnabled: false,
+      regionQuotas: {}
+    },
+    lastUpdated: '2025-01-01T00:00:00Z'
+  };
+
+  const draftHistory: DraftHistoryEntry[] = [
+    {
+      playerId: 'player-1',
+      playerName: 'Player One',
+      selectedBy: 'user-1',
+      selectionTime: '2025-01-01T00:00:00Z',
+      round: 1,
+      pick: 1,
+      autoPick: false,
+      timeTaken: 12
+    }
+  ];
+
+  const draftStatistics: DraftStatistics = {
+    totalPicks: 1,
+    autoPicks: 0,
+    manualPicks: 1,
+    picksByRegion: { EU: 1 },
+    averagePickTime: 12,
+    fastestPick: 12,
+    slowestPick: 12
+  };
+
+  const participants: GameParticipant[] = [
+    {
+      id: 'participant-1',
+      username: 'user-1',
+      joinedAt: '2025-01-01T00:00:00Z'
+    }
+  ];
+
+  const invitationCode: InvitationCode = {
+    code: 'INVITE',
+    gameId: 'game-1',
+    gameName: 'Test Game',
+    creatorName: 'Tester',
+    currentUses: 0
+  };
+
   beforeEach(() => {
+    querySpy = jasmine.createSpyObj('GameQueryService', [
+      'getAllGames',
+      'getUserGames',
+      'getAvailableGames',
+      'getGameById',
+      'getGameDetails',
+      'validateInvitationCode',
+      'getDraftState',
+      'getDraftHistory',
+      'getDraftStatistics',
+      'getGameParticipants',
+      'canJoinGame',
+      'isGameHost',
+      'getArchivedGameIds',
+      'filterArchivedGames'
+    ]);
+
+    commandSpy = jasmine.createSpyObj('GameCommandService', [
+      'createGame',
+      'joinGame',
+      'joinGameWithCode',
+      'generateInvitationCode',
+      'regenerateInvitationCode',
+      'renameGame',
+      'deleteGame',
+      'startDraft',
+      'finishDraft',
+      'archiveGame',
+      'leaveGame',
+      'initializeDraft',
+      'makePlayerSelection',
+      'pauseDraft',
+      'resumeDraft',
+      'cancelDraft'
+    ]);
+
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [GameService]
+      providers: [
+        GameService,
+        { provide: GameQueryService, useValue: querySpy },
+        { provide: GameCommandService, useValue: commandSpy }
+      ]
     });
+
     service = TestBed.inject(GameService);
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
-  });
+  it('delegates query operations to GameQueryService', () => {
+    const queryCases = [
+      { method: 'getAllGames', args: [], returnValue: of([mockGame]) },
+      { method: 'getUserGames', args: [], returnValue: of([mockGame]) },
+      { method: 'getAvailableGames', args: [], returnValue: of([mockGame]) },
+      { method: 'getGameById', args: ['game-1'], returnValue: of(mockGame) },
+      { method: 'getGameDetails', args: ['game-1'], returnValue: of(mockGame) },
+      { method: 'validateInvitationCode', args: ['INVITE'], returnValue: of(true) },
+      { method: 'getDraftState', args: ['game-1'], returnValue: of(draftState) },
+      { method: 'getDraftHistory', args: ['game-1'], returnValue: of(draftHistory) },
+      { method: 'getDraftStatistics', args: ['game-1'], returnValue: of(draftStatistics) },
+      { method: 'getGameParticipants', args: ['game-1'], returnValue: of(participants) },
+      { method: 'canJoinGame', args: ['game-1'], returnValue: of(true) }
+    ];
 
-  describe('getUserGames', () => {
-    it('should return user games successfully', () => {
-      const expectedGames: Game[] = [mockGame];
+    queryCases.forEach(({ method, args, returnValue }) => {
+      (querySpy as any)[method].and.returnValue(returnValue);
 
-      service.getUserGames().subscribe(games => {
-        expect(games).toEqual(expectedGames);
-      });
+      const result = (service as any)[method](...args);
 
-      const req = httpMock.expectOne(userGamesUrl);
-      expect(req.request.method).toBe('GET');
-      req.flush(expectedGames);
-    });
-
-    it('should handle network errors', () => {
-      service.getUserGames().subscribe(games => {
-        expect(games.length).toBeGreaterThan(0);
-      });
-
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    });
-
-    it('should not fallback on 403 (should surface access errors)', () => {
-      service.getUserGames().subscribe({
-        next: () => fail('should not return fallback data on 403'),
-        error: (error) => {
-          expect(error).toBeTruthy();
-        }
-      });
-
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-    });
-
-    it('should return empty array when no games (not an error)', () => {
-      service.getUserGames().subscribe(games => {
-        expect(games).toEqual([]);
-      });
-
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush([]);
-    });
-
-    it('should handle empty response gracefully', () => {
-      service.getUserGames().subscribe({
-        next: (games) => {
-          expect(games).toEqual([]);
-        },
-        error: (error) => {
-          fail('should not have failed with empty array');
-        }
-      });
-
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush([]);
+      expect((querySpy as any)[method]).toHaveBeenCalledWith(...args);
+      expect(result).toBe(returnValue);
     });
   });
 
-  describe('getUserGames - Empty Array Handling', () => {
-    let originalFallbackEnabled: boolean;
+  it('delegates command operations to GameCommandService', () => {
+    const createRequest: CreateGameRequest = {
+      name: 'New Game',
+      maxParticipants: 8
+    };
 
-    beforeEach(() => {
-      originalFallbackEnabled = environment.enableFallbackData;
-      environment.enableFallbackData = false;
-    });
+    const commandCases = [
+      { method: 'createGame', args: [createRequest], returnValue: of(mockGame) },
+      { method: 'joinGame', args: ['game-1'], returnValue: of(true) },
+      { method: 'joinGameWithCode', args: ['INVITE'], returnValue: of(mockGame) },
+      { method: 'generateInvitationCode', args: ['game-1'], returnValue: of(invitationCode) },
+      { method: 'regenerateInvitationCode', args: ['game-1', '24h'], returnValue: of(mockGame) },
+      { method: 'renameGame', args: ['game-1', 'Renamed'], returnValue: of(mockGame) },
+      { method: 'deleteGame', args: ['game-1'], returnValue: of(true) },
+      { method: 'startDraft', args: ['game-1'], returnValue: of(true) },
+      { method: 'finishDraft', args: ['game-1'], returnValue: of(mockGame) },
+      { method: 'archiveGame', args: ['game-1'], returnValue: of(true) },
+      { method: 'leaveGame', args: ['game-1'], returnValue: of(true) },
+      { method: 'initializeDraft', args: ['game-1'], returnValue: of(draftState) },
+      { method: 'makePlayerSelection', args: ['game-1', 'player-1'], returnValue: of(true) },
+      { method: 'pauseDraft', args: ['game-1'], returnValue: of(true) },
+      { method: 'resumeDraft', args: ['game-1'], returnValue: of(true) },
+      { method: 'cancelDraft', args: ['game-1'], returnValue: of(true) }
+    ];
 
-    afterEach(() => {
-      environment.enableFallbackData = originalFallbackEnabled;
-    });
+    commandCases.forEach(({ method, args, returnValue }) => {
+      (commandSpy as any)[method].and.returnValue(returnValue);
 
-    it('should handle empty array response as success, not error', () => {
-      // Arrange
-      const emptyGames: Game[] = [];
-      
-      // Act
-      service.getUserGames().subscribe({
-        next: (games) => {
-          // Assert
-          expect(games).toEqual([]);
-        },
-        error: (error) => {
-          fail('should not have failed with empty array');
-        }
-      });
-      
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush(emptyGames);
-    });
+      const result = (service as any)[method](...args);
 
-    it('should return empty array when backend returns 200 with []', () => {
-      // Arrange
-      const emptyResponse: Game[] = [];
-      
-      // Act
-      service.getUserGames().subscribe(games => {
-        // Assert
-        expect(games).toEqual([]);
-        expect(games.length).toBe(0);
-      });
-      
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush(emptyResponse, { status: 200, statusText: 'OK' });
-    });
-
-    it('should handle 401 error as authentication issue', () => {
-      // Act
-      service.getUserGames().subscribe({
-        next: (games) => {
-          fail('should not succeed with 401');
-        },
-        error: (error) => {
-          // Assert
-          expect(error.message).toContain('Non autorisé');
-        }
-      });
-      
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-    });
-
-    it('should handle 500 error as server issue', () => {
-      // Act
-      service.getUserGames().subscribe({
-        next: (games) => {
-          fail('should not succeed with 500');
-        },
-        error: (error) => {
-          // Assert
-          expect(error.message).toContain('Erreur serveur');
-        }
-      });
-      
-      const req = httpMock.expectOne(userGamesUrl);
-      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+      expect((commandSpy as any)[method]).toHaveBeenCalledWith(...args);
+      expect(result).toBe(returnValue);
     });
   });
 
-  describe('getAvailableGames', () => {
-    it('should return available games successfully', () => {
-      const expectedGames: Game[] = [mockGame];
+  it('delegates sync helpers to GameQueryService', () => {
+    const archivedIds = ['game-1'];
 
-      service.getAvailableGames().subscribe(games => {
-        expect(games).toEqual(expectedGames);
-      });
+    querySpy.getArchivedGameIds.and.returnValue(archivedIds);
+    querySpy.filterArchivedGames.and.returnValue([mockGame]);
+    querySpy.isGameHost.and.returnValue(true);
 
-      const req = httpMock.expectOne(gamesUrl);
-      expect(req.request.method).toBe('GET');
-      req.flush(expectedGames);
-    });
+    expect(service.getArchivedGameIds()).toBe(archivedIds);
+    expect(querySpy.getArchivedGameIds).toHaveBeenCalled();
 
-    it('should return empty array when no available games', () => {
-      service.getAvailableGames().subscribe(games => {
-        expect(games).toEqual([]);
-      });
+    expect(service.filterArchivedGames([mockGame])).toEqual([mockGame]);
+    expect(querySpy.filterArchivedGames).toHaveBeenCalledWith([mockGame]);
 
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush([]);
-    });
+    expect(service.isGameHost(mockGame, 'user-1')).toBe(true);
+    expect(querySpy.isGameHost).toHaveBeenCalledWith(mockGame, 'user-1');
   });
-
-  describe('getAllGames', () => {
-    it('should return all games successfully', () => {
-      const expectedGames: Game[] = [mockGame];
-
-      service.getAllGames().subscribe(games => {
-        expect(games).toEqual(expectedGames);
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      expect(req.request.method).toBe('GET');
-      req.flush(expectedGames);
-    });
-
-    it('should return empty array when no games exist', () => {
-      service.getAllGames().subscribe(games => {
-        expect(games).toEqual([]);
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush([]);
-    });
-  });
-
-  describe('joinGame', () => {
-    it('should join game successfully', () => {
-      const gameId = 'game-1';
-      const joinRequest: JoinGameRequest = { gameId };
-
-      service.joinGame(gameId).subscribe(success => {
-        expect(success).toBe(true);
-      });
-
-      const req = httpMock.expectOne(joinGameUrl);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(joinRequest);
-      req.flush({ success: true, message: 'Joined successfully' });
-    });
-
-    it('should handle join game errors', () => {
-      const gameId = 'invalid-game';
-
-      service.joinGame(gameId).subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.message).toContain('Ressource non trouv');
-        }
-      });
-
-      const req = httpMock.expectOne(joinGameUrl);
-      req.flush('Game not found', { status: 404, statusText: 'Not Found' });
-    });
-  });
-
-  describe('getGameById', () => {
-    it('should return game details successfully', () => {
-      const gameId = 'game-1';
-
-      service.getGameById(gameId).subscribe((game: Game) => {
-        expect(game).toEqual(mockGame);
-      });
-
-      const req = httpMock.expectOne(`${gamesUrl}/${gameId}`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockGame);
-    });
-  });
-
-  describe('createGame', () => {
-    it('should create game successfully', () => {
-      const createRequest: CreateGameRequest = {
-        name: 'New Game',
-        maxParticipants: 10,
-        regionRules: {
-          'EU': 2,
-          'NAW': 1,
-          'BR': 1
-        }
-      };
-
-      service.createGame(createRequest).subscribe(game => {
-        expect(game).toBeDefined();
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(createRequest);
-      req.flush(mockGame);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle 401 unauthorized errors', () => {
-      service.getAllGames().subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.message).toBe('Non autorisé');
-        }
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-    });
-
-    it('should handle 403 forbidden errors', () => {
-      service.getAllGames().subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.message).toBe('Accès refusé');
-        }
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-    });
-
-    it('should handle 404 not found errors', () => {
-      service.getAllGames().subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.message).toBe('Ressource non trouvée');
-        }
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush('Not Found', { status: 404, statusText: 'Not Found' });
-    });
-
-    it('should handle 500 server errors', () => {
-      service.getAllGames().subscribe({
-        next: () => fail('should have failed'),
-        error: (error) => {
-          expect(error.message).toBe('Erreur serveur');
-        }
-      });
-
-      const req = httpMock.expectOne(gamesUrl);
-      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
-    });
-  });
-}); 
+});

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { take } from 'rxjs';
 import { WebSocketService, TradeNotification } from './websocket.service';
 
 describe('WebSocketService', () => {
@@ -28,7 +29,7 @@ describe('WebSocketService', () => {
   });
 
   it('should initially be disconnected', (done) => {
-    service.isConnected$.subscribe(connected => {
+    service.isConnected$.pipe(take(1)).subscribe(connected => {
       expect(connected).toBeFalse();
       done();
     });

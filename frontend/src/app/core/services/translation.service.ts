@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, forkJoin } from 'rxjs';
 import { tap } from 'rxjs/operators';
@@ -13,7 +13,6 @@ export interface Translations {
   providedIn: 'root'
 })
 export class TranslationService {
-  private readonly http = inject(HttpClient);
   private currentLang$ = new BehaviorSubject<SupportedLanguage>('fr');
   private translations: Record<SupportedLanguage, Translations> = {
     fr: {},
@@ -23,7 +22,7 @@ export class TranslationService {
   };
   private translationsLoaded$ = new BehaviorSubject<boolean>(false);
 
-  constructor() {
+  constructor(@Optional() private readonly http?: HttpClient) {
     this.loadTranslations();
     this.restoreLanguagePreference();
   }
@@ -86,9 +85,14 @@ export class TranslationService {
   }
 
   private loadTranslations(): void {
+    const http = this.http;
+    if (!http) {
+      this.translationsLoaded$.next(false);
+      return;
+    }
     const languages: SupportedLanguage[] = ['fr', 'en', 'es', 'pt'];
     const requests = languages.map(lang =>
-      this.http.get<Translations>(`/assets/i18n/${lang}.json`)
+      http.get<Translations>(`/assets/i18n/${lang}.json`)
     );
 
     forkJoin(requests).pipe(

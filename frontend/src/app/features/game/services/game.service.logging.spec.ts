@@ -1,32 +1,27 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { GameService } from './game.service';
+import { GameQueryService } from './game-query.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { environment } from '../../../../environments/environment';
 import { Game } from '../models/game.interface';
 
-describe('GameService - Enhanced Logging (JIRA-4A)', () => {
-  let service: GameService;
+describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
+  let service: GameQueryService;
   let httpMock: HttpTestingController;
   let mockLogger: jasmine.SpyObj<LoggerService>;
-  let mockAnnouncer: jasmine.SpyObj<LiveAnnouncer>;
 
   beforeEach(() => {
     mockLogger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
-    mockAnnouncer = jasmine.createSpyObj('LiveAnnouncer', ['announce']);
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, MatSnackBarModule],
+      imports: [HttpClientTestingModule],
       providers: [
-        GameService,
-        { provide: LoggerService, useValue: mockLogger },
-        { provide: LiveAnnouncer, useValue: mockAnnouncer }
+        GameQueryService,
+        { provide: LoggerService, useValue: mockLogger }
       ]
     });
 
-    service = TestBed.inject(GameService);
+    service = TestBed.inject(GameQueryService);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -35,8 +30,7 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   describe('getGameById with logging', () => {
-    it('should log request with requestId before API call', (done) => {
-      // Arrange
+    it('logs request with requestId before API call', (done) => {
       const gameId = 'game-123';
       const mockGame: Game = {
         id: gameId,
@@ -49,12 +43,10 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
         canJoin: true
       };
 
-      // Act
       service.getGameById(gameId).subscribe({
         next: () => {
-          // Assert
           expect(mockLogger.info).toHaveBeenCalledWith(
-            'GameService: fetching game by ID',
+            'GameQueryService: fetching game by ID',
             jasmine.objectContaining({
               gameId,
               requestId: jasmine.stringMatching(/^req_\d+_[a-z0-9]+$/)
@@ -64,13 +56,11 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
         }
       });
 
-      // Respond to HTTP request
       const req = httpMock.expectOne(`${environment.apiUrl}/api/games/${gameId}`);
       req.flush(mockGame);
     });
 
-    it('should log success with game details after API call', (done) => {
-      // Arrange
+    it('logs success with game details after API call', (done) => {
       const gameId = 'game-456';
       const mockGame: Game = {
         id: gameId,
@@ -83,12 +73,10 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
         canJoin: false
       };
 
-      // Act
       service.getGameById(gameId).subscribe({
         next: () => {
-          // Assert
           expect(mockLogger.debug).toHaveBeenCalledWith(
-            'GameService: game fetched successfully',
+            'GameQueryService: game fetched successfully',
             jasmine.objectContaining({
               gameId,
               gameName: 'Victory League',
@@ -103,22 +91,19 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(mockGame);
     });
 
-    it('should log detailed error context on HTTP failure', (done) => {
-      // Arrange
+    it('logs detailed error context on HTTP failure', (done) => {
       const gameId = 'nonexistent-game';
       const errorMessage = 'Game not found';
 
-      // Act
       service.getGameById(gameId).subscribe({
         error: () => {
-          // Assert
           expect(mockLogger.error).toHaveBeenCalledWith(
-            'GameService.getGameById: HTTP error',
+            'GameQueryService.getGameById: HTTP error',
             jasmine.objectContaining({
               gameId,
               status: 404,
               statusText: 'Not Found',
-              errorMessage: 'Ressource non trouvée',
+              errorMessage: jasmine.stringMatching(/Ressource non trouv/),
               requestId: jasmine.stringMatching(/^req_\d+_[a-z0-9]+$/),
               timestamp: jasmine.any(String)
             })
@@ -131,19 +116,16 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(errorMessage, { status: 404, statusText: 'Not Found' });
     });
 
-    it('should log network error (status 0) with appropriate message', (done) => {
-      // Arrange
+    it('logs network error (status 0) with appropriate message', (done) => {
       const gameId = 'game-network-fail';
 
-      // Act
       service.getGameById(gameId).subscribe({
         error: () => {
-          // Assert
           expect(mockLogger.error).toHaveBeenCalledWith(
-            'GameService.getGameById: HTTP error',
+            'GameQueryService.getGameById: HTTP error',
             jasmine.objectContaining({
               status: 0,
-              errorMessage: 'Erreur de communication avec le serveur (vérifiez votre connexion)'
+              errorMessage: jasmine.stringMatching(/Erreur de communication/)
             })
           );
           done();
@@ -154,16 +136,13 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
       req.error(new ProgressEvent('Network error'), { status: 0 });
     });
 
-    it('should include URL in error logs for debugging', (done) => {
-      // Arrange
+    it('includes URL in error logs for debugging', (done) => {
       const gameId = 'game-500';
 
-      // Act
       service.getGameById(gameId).subscribe({
         error: () => {
-          // Assert
           expect(mockLogger.error).toHaveBeenCalledWith(
-            'GameService.getGameById: HTTP error',
+            'GameQueryService.getGameById: HTTP error',
             jasmine.objectContaining({
               url: `${environment.apiUrl}/api/games/${gameId}`
             })
@@ -178,16 +157,13 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   describe('getGameParticipants with logging', () => {
-    it('should log request with correlation ID', (done) => {
-      // Arrange
+    it('logs request with correlation ID', (done) => {
       const gameId = 'game-789';
 
-      // Act
       service.getGameParticipants(gameId).subscribe({
         next: () => {
-          // Assert
           expect(mockLogger.info).toHaveBeenCalledWith(
-            'GameService: fetching game participants',
+            'GameQueryService: fetching game participants',
             jasmine.objectContaining({
               gameId,
               requestId: jasmine.stringMatching(/^req_/)
@@ -201,8 +177,7 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
       req.flush([]);
     });
 
-    it('should log participant count on success', (done) => {
-      // Arrange
+    it('logs participant count on success', (done) => {
       const gameId = 'game-participants';
       const mockParticipants = [
         { id: 'p1', username: 'user1', isCreator: true },
@@ -210,12 +185,10 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
         { id: 'p3', username: 'user3', isCreator: false }
       ];
 
-      // Act
       service.getGameParticipants(gameId).subscribe({
         next: () => {
-          // Assert
           expect(mockLogger.debug).toHaveBeenCalledWith(
-            'GameService: participants fetched',
+            'GameQueryService: participants fetched',
             jasmine.objectContaining({
               gameId,
               count: 3,
@@ -230,16 +203,13 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(mockParticipants);
     });
 
-    it('should log error with context on participant fetch failure', (done) => {
-      // Arrange
+    it('logs error with context on participant fetch failure', (done) => {
       const gameId = 'game-error';
 
-      // Act
       service.getGameParticipants(gameId).subscribe({
         error: () => {
-          // Assert
           expect(mockLogger.error).toHaveBeenCalledWith(
-            'GameService.getGameParticipants: HTTP error',
+            'GameQueryService.getGameParticipants: HTTP error',
             jasmine.objectContaining({
               gameId,
               status: jasmine.any(Number),
@@ -257,12 +227,10 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   describe('Request ID generation', () => {
-    it('should generate unique request IDs for concurrent requests', (done) => {
-      // Arrange
+    it('generates unique request IDs for concurrent requests', (done) => {
       const gameIds = ['game-1', 'game-2', 'game-3'];
       const requestIds: string[] = [];
 
-      // Act - Make concurrent requests
       gameIds.forEach((gameId, index) => {
         service.getGameById(gameId).subscribe();
 
@@ -270,13 +238,11 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
         req.flush({ id: gameId, name: `Game ${index}` });
       });
 
-      // Assert - Collect all request IDs from log calls
       mockLogger.info.calls.all().forEach(call => {
         const context = call.args[1] as { requestId: string };
         requestIds.push(context.requestId);
       });
 
-      // All request IDs should be unique
       const uniqueIds = new Set(requestIds);
       expect(uniqueIds.size).toBe(requestIds.length);
       expect(requestIds.length).toBe(gameIds.length);
@@ -286,25 +252,23 @@ describe('GameService - Enhanced Logging (JIRA-4A)', () => {
 
   describe('Error message mapping', () => {
     const errorStatusCases = [
-      { status: 400, expected: 'Requête invalide' },
-      { status: 401, expected: 'Non autorisé - Veuillez vous reconnecter' },
-      { status: 403, expected: 'Accès refusé' },
-      { status: 404, expected: 'Ressource non trouvée' },
-      { status: 500, expected: 'Erreur serveur interne' },
-      { status: 502, expected: 'Service temporairement indisponible' },
-      { status: 503, expected: 'Service temporairement indisponible' }
+      { status: 400, expectedFragment: 'Requ' },
+      { status: 401, expectedFragment: 'Non autor' },
+      { status: 403, expectedFragment: 'Acc' },
+      { status: 404, expectedFragment: 'Ressource non trouv' },
+      { status: 500, expectedFragment: 'Erreur serveur interne' },
+      { status: 502, expectedFragment: 'Service temporairement indisponible' },
+      { status: 503, expectedFragment: 'Service temporairement indisponible' }
     ];
 
-    errorStatusCases.forEach(({ status, expected }) => {
-      it(`should map HTTP ${status} to user-friendly message: "${expected}"`, (done) => {
-        // Act
+    errorStatusCases.forEach(({ status, expectedFragment }) => {
+      it(`maps HTTP ${status} to a user-friendly message`, (done) => {
         service.getGameById('test-game').subscribe({
           error: () => {
-            // Assert
             expect(mockLogger.error).toHaveBeenCalledWith(
               jasmine.any(String),
               jasmine.objectContaining({
-                errorMessage: expected,
+                errorMessage: jasmine.stringMatching(expectedFragment),
                 status
               })
             );

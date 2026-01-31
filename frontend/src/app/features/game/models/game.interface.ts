@@ -2,6 +2,7 @@
 export interface Game {
   id: string;
   name: string;
+  creatorId?: string;
   creatorName: string;
   maxParticipants: number;
   status: GameStatus;
@@ -49,6 +50,7 @@ export interface CreateGameRequest {
 
 export interface JoinGameRequest {
   gameId: string;
+  userId?: string;
   invitationCode?: string;
 }
 

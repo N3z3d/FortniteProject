@@ -64,7 +64,7 @@ describe('SimpleLeaderboardComponent', () => {
 
     component.loadData();
 
-    expect(leaderboardService.getPlayerLeaderboard).toHaveBeenCalledWith(2025);
+    expect(leaderboardService.getPlayerLeaderboard).toHaveBeenCalledWith(2025, undefined, undefined);
     expect(component.allPlayers.length).toBe(2);
     expect(component.filteredPlayers.length).toBe(2);
   });

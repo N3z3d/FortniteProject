@@ -115,11 +115,11 @@ describe('DraftComponent', () => {
   describe('getRegionLabel', () => {
     it('should return correct region label for EU', () => {
       const result = component.getRegionLabel('EU' as PlayerRegion);
-      expect(result).toBe(component.t.t(REGION_LABELS.EU));
+      expect(result).toBe(component.t.t(REGION_LABELS['EU'], 'EU'));
     });
     it('should return correct region label for NAW', () => {
       const result = component.getRegionLabel('NAW' as PlayerRegion);
-      expect(result).toBe(component.t.t(REGION_LABELS.NAW));
+      expect(result).toBe(component.t.t(REGION_LABELS['NAW'], 'NAW'));
     });
     it('should return region code for unknown region', () => {
       const result = component.getRegionLabel('UNKNOWN' as PlayerRegion);
@@ -153,11 +153,11 @@ describe('DraftComponent', () => {
   describe('getStatusLabel', () => {
     it('should return correct label for ACTIVE status', () => {
       const result = component.getStatusLabel('ACTIVE' as DraftStatus);
-      expect(result).toBe(component.t.t(STATUS_LABELS.ACTIVE));
+      expect(result).toBe(component.t.t(STATUS_LABELS['ACTIVE']));
     });
     it('should return correct label for PAUSED status', () => {
       const result = component.getStatusLabel('PAUSED' as DraftStatus);
-      expect(result).toBe(component.t.t(STATUS_LABELS.PAUSED));
+      expect(result).toBe(component.t.t(STATUS_LABELS['PAUSED']));
     });
   });
   describe('selectPlayer', () => {

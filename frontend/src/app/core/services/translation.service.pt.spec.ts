@@ -1,15 +1,174 @@
 import { TestBed } from '@angular/core/testing';
-import { TranslationService } from './translation.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TranslationService, Translations } from './translation.service';
 
 describe('TranslationService (pt)', () => {
   let service: TranslationService;
+  let httpMock: HttpTestingController;
+
+  const mockTranslationsPt: Translations = {
+    common: {
+      all: 'Todos'
+    },
+    errors: {
+      generic: 'Erro',
+      network: 'Erro de conexão',
+      validation: 'Erro de validação'
+    },
+    games: {
+      myGames: 'Minhas partidas',
+      participantsTooltip: 'Participantes / Máximo',
+      joinGame: 'Entrar em uma partida',
+      joinWithCode: 'Entrar com um código',
+      status: {
+        completed: 'Concluída'
+      }
+    },
+    legal: {
+      lastUpdate: 'Última atualização',
+      subtitle: 'Fortnite Fantasy League',
+      contact: {
+        title: 'Contato'
+      },
+      privacy: {
+        title: 'Política de privacidade'
+      }
+    },
+    profile: {
+      title: 'Perfil',
+      accountActions: 'Ações da conta',
+      noEmailProvided: 'Nenhum e-mail informado',
+      defaultRole: 'Usuário',
+      statsDialog: {
+        loading: 'Carregando estatísticas...'
+      }
+    },
+    settings: {
+      emailNotifications: 'Notificações por e-mail',
+      showOnlineStatus: 'Mostrar status online',
+      resetDefaults: 'Restaurar padrões',
+      lightModeComingSoon: '(em breve)',
+      lightModeHint: 'O modo claro estará disponível em uma próxima versão'
+    },
+    notifications: {
+      close: 'Fechar',
+      game: {
+        joined: 'Você entrou em "{name}"'
+      },
+      auth: {
+        sessionExpired: 'Sessão expirada, faça login novamente'
+      }
+    },
+    leaderboard: {
+      title: 'Classificação de jogadores - Temporada 2025',
+      noPlayersFound: 'Nenhum jogador encontrado',
+      pageOf: 'Página {current} de {total}',
+      aria: {
+        playerRow: 'Jogador na posição {rank}: {nickname} da região {region} com {points} pontos',
+        filterResultsMultiple: '{count} jogadores encontrados'
+      },
+      errors: {
+        dataUnavailable: 'Dados indisponíveis (CSV não carregado)'
+      }
+    },
+    trades: {
+      title: 'Centro de Trocas',
+      filters: {
+        all: 'Todas as trocas'
+      },
+      tabs: {
+        pending: 'Pendentes'
+      },
+      errors: {
+        loadTrades: 'Erro ao carregar as trocas',
+        actionFailed: 'A ação falhou. Tente novamente.'
+      },
+      messages: {
+        tradeAccepted: 'Troca aceita com sucesso!'
+      },
+      proposal: {
+        title: 'Criar uma proposta de troca'
+      },
+      details: {
+        timelineProposedAction: 'Troca proposta'
+      },
+      history: {
+        title: 'Histórico de trocas'
+      },
+      detail: {
+        titlePrefix: 'Detalhe da troca #'
+      },
+      form: {
+        titleNew: 'Nova troca'
+      },
+      status: {
+        cancelled: 'Cancelada'
+      }
+    },
+    dashboard: {
+      loading: 'Carregando o painel...',
+      labels: {
+        currentRanking: 'Classificação atual'
+      },
+      aria: {
+        seasonProgressBarSuffix: '% concluída'
+      },
+      messages: {
+        demoMode: 'Modo demonstração (backend offline)',
+        gameSelected: 'Partida "{name}" selecionada!'
+      }
+    },
+    draft: {
+      filters: {
+        allRegions: 'Todas as regiões'
+      },
+      sort: {
+        pointsDesc: 'Pontos (descendente)'
+      },
+      status: {
+        completed: 'Concluído'
+      },
+      ui: {
+        searchResultsTitle: 'Resultados da busca ({count})'
+      },
+      selection: {
+        clearFilters: 'Limpar filtros'
+      }
+    },
+    teams: {
+      list: {
+        titleMine: 'Meus Times'
+      },
+      edit: {
+        saveChanges: 'Salvar alterações'
+      },
+      detail: {
+        backToTeams: 'Voltar para times'
+      }
+    }
+  };
+
+  const mockTranslationsOther: Translations = {};
 
   beforeEach(() => {
     localStorage.removeItem('app_language');
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [TranslationService]
     });
     service = TestBed.inject(TranslationService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Mock HTTP requests for all languages
+    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    requests.forEach(req => {
+      const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
+      req.flush(lang === 'pt' ? mockTranslationsPt : mockTranslationsOther);
+    });
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('returns Portuguese errors when available', () => {

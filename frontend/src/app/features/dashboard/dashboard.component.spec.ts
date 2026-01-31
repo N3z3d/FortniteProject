@@ -53,6 +53,8 @@ describe('DashboardComponent (i18n)', () => {
       'removeShimmerEffect',
       'typewriterEffect'
     ]);
+    const httpSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get']);
+    httpSpy.get.and.returnValue(of({}));
 
     gameServiceSpy.getUserGames.and.returnValue(of([]));
     gameServiceSpy.getGameById.and.returnValue(of(null as any));
@@ -78,7 +80,7 @@ describe('DashboardComponent (i18n)', () => {
         { provide: AccessibilityAnnouncerService, useValue: accessibilitySpy },
         { provide: FocusManagementService, useValue: {} },
         { provide: PremiumInteractionsService, useValue: premiumInteractionsSpy },
-        { provide: HttpClient, useValue: {} }
+        { provide: HttpClient, useValue: httpSpy }
       ]
     }).compileComponents();
 
@@ -103,22 +105,22 @@ describe('DashboardComponent (i18n)', () => {
   it('affiche les libellés en français par défaut', () => {
     fixture.detectChanges();
 
-    const heading = fixture.nativeElement.querySelector('#stats-heading') as HTMLElement;
-    expect(heading?.textContent).toContain('Statistiques générales');
+    const heading = fixture.nativeElement.querySelector('.dashboard-title') as HTMLElement;
+    expect(heading?.textContent).toContain(translationService.t('navigation.dashboard'));
   });
 
   it('affiche les libellés en anglais quand la langue est en', () => {
     translationService.setLanguage('en');
     fixture.detectChanges();
 
-    const heading = fixture.nativeElement.querySelector('#stats-heading') as HTMLElement;
-    expect(heading?.textContent).toContain('General Statistics');
+    const heading = fixture.nativeElement.querySelector('.dashboard-title') as HTMLElement;
+    expect(heading?.textContent).toContain(translationService.t('navigation.dashboard'));
   });
 
   it('retourne le statut traduit pour une game active', () => {
     const status = component.getGameStatus({ ...component.selectedGame, status: 'ACTIVE' } as any);
 
-    expect(status).toBe('En cours');
+    expect(status).toBe(translationService.t('games.status.active'));
   });
 
   it('retourne un statut inconnu par defaut', () => {
@@ -126,7 +128,7 @@ describe('DashboardComponent (i18n)', () => {
 
     const status = component.getGameStatus({ ...component.selectedGame, status: 'UNKNOWN' } as any);
 
-    expect(status).toBe('Unknown');
+    expect(status).toBe(translationService.t('games.status.unknown'));
   });
 
   it('utilise le nombre d’équipes quand participantCount est à zéro', () => {
@@ -214,3 +216,4 @@ describe('DashboardComponent (i18n)', () => {
     expect(formatted).toBe(expected);
   });
 });
+

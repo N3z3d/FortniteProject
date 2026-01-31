@@ -1,15 +1,71 @@
 import { TestBed } from '@angular/core/testing';
-import { TranslationService } from './translation.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TranslationService, Translations } from './translation.service';
 
 describe('TranslationService (en)', () => {
   let service: TranslationService;
+  let httpMock: HttpTestingController;
+
+  const mockTranslationsEn: Translations = {
+    common: {
+      save: 'Save',
+      cancel: 'Cancel',
+      loading: 'Loading...'
+    },
+    navigation: {
+      home: 'Home'
+    },
+    games: {
+      myGames: 'My games',
+      joinGame: 'Join a game',
+      status: {
+        completed: 'Completed'
+      }
+    },
+    dashboard: {
+      loading: 'Loading dashboard...',
+      labels: {
+        currentRanking: 'Current ranking'
+      }
+    },
+    trades: {
+      title: 'Trading Hub',
+      filters: {
+        all: 'All Trades'
+      },
+      tabs: {
+        pending: 'Pending'
+      }
+    }
+  };
+
+  const mockTranslationsOther: Translations = {
+    common: {},
+    navigation: {},
+    games: {},
+    dashboard: {},
+    trades: {}
+  };
 
   beforeEach(() => {
     localStorage.removeItem('app_language');
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [TranslationService]
     });
     service = TestBed.inject(TranslationService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Mock HTTP requests for all languages
+    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    requests.forEach(req => {
+      const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
+      req.flush(lang === 'en' ? mockTranslationsEn : mockTranslationsOther);
+    });
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('returns English common translations when available', () => {

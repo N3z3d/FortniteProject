@@ -1,15 +1,176 @@
 import { TestBed } from '@angular/core/testing';
-import { TranslationService } from './translation.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TranslationService, Translations } from './translation.service';
 
 describe('TranslationService (es)', () => {
   let service: TranslationService;
+  let httpMock: HttpTestingController;
+
+  const mockTranslationsEs: Translations = {
+    common: {
+      all: 'Todos'
+    },
+    errors: {
+      generic: 'Error',
+      network: 'Error de red',
+      validation: 'Error de validación'
+    },
+    games: {
+      myGames: 'Mis partidas',
+      participantsTooltip: 'Participantes / Máximo',
+      joinGame: 'Unirse a una partida',
+      joinWithCode: 'Unirse con un código',
+      status: {
+        completed: 'Completada'
+      }
+    },
+    legal: {
+      lastUpdate: 'Última actualización',
+      subtitle: 'Fortnite Fantasy League',
+      contact: {
+        title: 'Contacto'
+      },
+      privacy: {
+        title: 'Política de privacidad'
+      }
+    },
+    profile: {
+      title: 'Perfil',
+      accountActions: 'Acciones de la cuenta',
+      noEmailProvided: 'No se proporcionó correo electrónico',
+      defaultRole: 'Usuario',
+      changePasswordDialog: {
+        strength: {
+          weak: 'Débil'
+        }
+      }
+    },
+    settings: {
+      emailNotifications: 'Notificaciones por correo electrónico',
+      gamePreferences: 'Preferencias de juego',
+      autoJoinDraftDesc: 'Unirse automáticamente al draft cuando comience',
+      lightModeComingSoon: '(próximamente)',
+      lightModeHint: 'El modo claro estará disponible en una próxima versión'
+    },
+    notifications: {
+      close: 'Cerrar',
+      game: {
+        created: 'Partida "{name}" creada con éxito'
+      },
+      auth: {
+        sessionExpired: 'Sesión expirada, vuelve a iniciar sesión'
+      }
+    },
+    leaderboard: {
+      title: 'Clasificación de jugadores - Temporada 2025',
+      noPlayersFound: 'No se encontraron jugadores',
+      pageOf: 'Página {current} de {total}',
+      aria: {
+        playerRow: 'Jugador en el puesto {rank}: {nickname} de {region} con {points} puntos',
+        filterResultsSingle: '1 jugador encontrado'
+      },
+      errors: {
+        dataUnavailable: 'Datos no disponibles (CSV no cargado)'
+      }
+    },
+    trades: {
+      title: 'Centro de Intercambios',
+      filters: {
+        all: 'Todos los intercambios'
+      },
+      tabs: {
+        pending: 'Pendientes'
+      },
+      errors: {
+        loadTrades: 'Error al cargar los intercambios'
+      },
+      messages: {
+        tradeAccepted: '¡Intercambio aceptado con éxito!',
+        counterOfferSent: '¡Contraoferta enviada con éxito!'
+      },
+      proposal: {
+        title: 'Crear una propuesta de intercambio'
+      },
+      details: {
+        timelineProposedAction: 'Intercambio propuesto'
+      },
+      history: {
+        title: 'Historial de intercambios'
+      },
+      detail: {
+        titlePrefix: 'Detalle del intercambio #'
+      },
+      form: {
+        titleNew: 'Nuevo intercambio'
+      },
+      status: {
+        completed: 'Completado'
+      }
+    },
+    dashboard: {
+      loading: 'Cargando el panel...',
+      labels: {
+        currentRanking: 'Clasificación actual'
+      },
+      aria: {
+        seasonProgressBarSuffix: '% completada'
+      },
+      messages: {
+        demoMode: 'Modo demostración (backend sin conexión)',
+        gameSelected: 'Partida "{name}" seleccionada!'
+      }
+    },
+    draft: {
+      filters: {
+        allRegions: 'Todas las regiones'
+      },
+      sort: {
+        pointsDesc: 'Puntos (descendente)'
+      },
+      status: {
+        completed: 'Completado'
+      },
+      ui: {
+        searchResultsTitle: 'Resultados de búsqueda ({count})'
+      },
+      selection: {
+        clearFilters: 'Borrar filtros'
+      }
+    },
+    teams: {
+      list: {
+        titleMine: 'Mis Equipos'
+      },
+      edit: {
+        saveChanges: 'Guardar cambios'
+      },
+      detail: {
+        backToTeams: 'Volver a equipos'
+      }
+    }
+  };
+
+  const mockTranslationsOther: Translations = {};
 
   beforeEach(() => {
     localStorage.removeItem('app_language');
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [TranslationService]
     });
     service = TestBed.inject(TranslationService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Mock HTTP requests for all languages
+    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    requests.forEach(req => {
+      const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
+      req.flush(lang === 'es' ? mockTranslationsEs : mockTranslationsOther);
+    });
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('returns Spanish errors when available', () => {

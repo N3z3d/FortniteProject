@@ -63,8 +63,8 @@ describe('DashboardDataService - Integration TDD', () => {
         done();
       });
 
-      // ASSERT - Mock the expected API call
-      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
+      // ASSERT - Mock the expected API call (inclut gameId)
+      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
       expect(req.request.method).toBe('GET');
       req.flush(expectedApiResponse);
     });
@@ -91,7 +91,7 @@ describe('DashboardDataService - Integration TDD', () => {
         done();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
+      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
       req.flush(regressionResponse);
     });
   });
@@ -128,10 +128,10 @@ describe('DashboardDataService - Integration TDD', () => {
         done();
       });
 
-      // Mock all endpoints
-      const statsReq = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
-      const leaderboardReq = httpMock.expectOne(`${apiUrl}/leaderboard?season=2025`);
-      const regionReq = httpMock.expectOne(`${apiUrl}/leaderboard/distribution/regions`);
+      // Mock all endpoints (inclut gameId)
+      const statsReq = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
+      const leaderboardReq = httpMock.expectOne(`${apiUrl}/leaderboard?season=2025&gameId=${gameId}`);
+      const regionReq = httpMock.expectOne(`${apiUrl}/leaderboard/distribution/regions?gameId=${gameId}`);
 
       statsReq.flush(mockStats);
       leaderboardReq.flush(mockLeaderboard);
@@ -167,7 +167,7 @@ describe('DashboardDataService - Integration TDD', () => {
         done();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
+      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
       req.flush({ totalTeams: 3, totalPlayers: 147, totalPoints: 12500000, averagePoints: 4166666.67 });
     });
   });

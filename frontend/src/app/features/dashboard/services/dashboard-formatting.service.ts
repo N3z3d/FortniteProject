@@ -27,7 +27,7 @@ export class DashboardFormattingService {
     if (!rawName) {
       return '';
     }
-    return rawName.replace(/^É?quipe des\s+/i, '').trim();
+    return rawName.replace(/^[\u00C9E]quipe des\s+/i, '').trim();
   }
 
   private getNumberLocale(): string {
@@ -43,3 +43,4 @@ export class DashboardFormattingService {
     }
   }
 }
+

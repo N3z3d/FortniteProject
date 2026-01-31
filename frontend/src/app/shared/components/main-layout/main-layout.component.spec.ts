@@ -199,7 +199,7 @@ describe('MainLayoutComponent', () => {
 
     const joinButton = fixture.nativeElement.querySelector('.join-game-btn');
     expect(joinButton).toBeTruthy();
-    expect(joinButton.textContent.trim()).toContain('Rejoindre une partie');
+    expect(joinButton.textContent.trim()).toContain(component.t.t('games.home.joinWithCode'));
   });
 
   it('should show empty state when no games', () => {
@@ -209,6 +209,7 @@ describe('MainLayoutComponent', () => {
 
     const emptyState = fixture.nativeElement.querySelector('.sidebar-empty');
     expect(emptyState).toBeTruthy();
-    expect(emptyState.textContent).toContain('Aucune partie');
+    expect(emptyState.textContent).toContain(component.t.t('games.noGames'));
   });
 });
+

@@ -12,18 +12,11 @@ describe('DraftProgressService', () => {
       status: 'ACTIVE',
       currentRound: 1,
       currentPick: 5,
-      totalRounds: 3,
-      pickTimeLimit: 60
+      totalRounds: 3
     },
     participants: [],
     availablePlayers: [],
-    pickHistory: [],
-    rules: {
-      pickTimeLimit: 60,
-      totalRounds: 3,
-      regionQuotas: {},
-      trancheQuotas: {}
-    },
+    picks: [],
     ...overrides
   });
 
@@ -31,8 +24,19 @@ describe('DraftProgressService', () => {
     id: 'user-1',
     username: 'testuser',
     selectedPlayers: [],
-    pickOrder: 1,
+    draftOrder: 1,
     isCurrentTurn: false,
+    ...overrides
+  });
+
+  const createMockPlayer = (overrides: Partial<Player> = {}): Player => ({
+    id: 'player-1',
+    nickname: 'Player1',
+    username: 'user1',
+    region: 'EUROPE',
+    tranche: 'T1',
+    currentSeason: 1,
+    selected: false,
     ...overrides
   });
 
@@ -60,8 +64,7 @@ describe('DraftProgressService', () => {
           status: 'ACTIVE',
           currentRound: 1,
           currentPick: 5,
-          totalRounds: 3,
-          pickTimeLimit: 60
+          totalRounds: 3
         },
         participants: [
           createMockParticipant({ id: '1' }),
@@ -83,8 +86,7 @@ describe('DraftProgressService', () => {
           status: 'ACTIVE',
           currentRound: 1,
           currentPick: 100,
-          totalRounds: 3,
-          pickTimeLimit: 60
+          totalRounds: 3
         },
         participants: [createMockParticipant()]
       });
@@ -106,8 +108,7 @@ describe('DraftProgressService', () => {
           status: 'ACTIVE',
           currentRound: 1,
           currentPick: 5,
-          totalRounds: 3,
-          pickTimeLimit: 60
+          totalRounds: 3
         },
         participants: [
           createMockParticipant(),
@@ -140,7 +141,7 @@ describe('DraftProgressService', () => {
 
     it('should return current user selected players', () => {
       const players: Player[] = [
-        { id: 'p1', nickname: 'Player1', username: 'user1', region: 'EUROPE', tranche: 'T1', epicAccountId: 'epic1', isSelected: true }
+        createMockPlayer({ id: 'p1', nickname: 'Player1', username: 'user1', selected: true })
       ];
 
       const state = createMockState({
@@ -160,37 +161,35 @@ describe('DraftProgressService', () => {
   describe('getRemainingSlots', () => {
     it('should calculate remaining slots', () => {
       const team: Player[] = [
-        { id: 'p1', nickname: 'P1', username: 'u1', region: 'EUROPE', tranche: 'T1', epicAccountId: 'e1', isSelected: true },
-        { id: 'p2', nickname: 'P2', username: 'u2', region: 'EUROPE', tranche: 'T1', epicAccountId: 'e2', isSelected: true }
+        createMockPlayer({ id: 'p1', nickname: 'P1', username: 'u1', selected: true }),
+        createMockPlayer({ id: 'p2', nickname: 'P2', username: 'u2', selected: true })
       ];
 
       expect(service.getRemainingSlots(team, 5)).toBe(3);
     });
 
     it('should return 0 when team is full', () => {
-      const team: Player[] = Array(5).fill(null).map((_, i) => ({
-        id: `p${i}`,
-        nickname: `P${i}`,
-        username: `u${i}`,
-        region: 'EUROPE' as any,
-        tranche: 'T1',
-        epicAccountId: `e${i}`,
-        isSelected: true
-      }));
+      const team: Player[] = Array.from({ length: 5 }, (_, i) =>
+        createMockPlayer({
+          id: `p${i}`,
+          nickname: `P${i}`,
+          username: `u${i}`,
+          selected: true
+        })
+      );
 
       expect(service.getRemainingSlots(team, 5)).toBe(0);
     });
 
     it('should not return negative values', () => {
-      const team: Player[] = Array(10).fill(null).map((_, i) => ({
-        id: `p${i}`,
-        nickname: `P${i}`,
-        username: `u${i}`,
-        region: 'EUROPE' as any,
-        tranche: 'T1',
-        epicAccountId: `e${i}`,
-        isSelected: true
-      }));
+      const team: Player[] = Array.from({ length: 10 }, (_, i) =>
+        createMockPlayer({
+          id: `p${i}`,
+          nickname: `P${i}`,
+          username: `u${i}`,
+          selected: true
+        })
+      );
 
       expect(service.getRemainingSlots(team, 5)).toBe(0);
     });

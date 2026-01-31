@@ -50,8 +50,8 @@ describe('DashboardDataService - TDD', () => {
         done();
       });
 
-      // ASSERT - Vérifier l'appel HTTP
-      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
+      // ASSERT - Vérifier l'appel HTTP (inclut gameId)
+      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockStatsResponse);
     });
@@ -69,8 +69,8 @@ describe('DashboardDataService - TDD', () => {
         done();
       });
 
-      // ASSERT - Simuler une erreur HTTP
-      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
+      // ASSERT - Simuler une erreur HTTP (inclut gameId)
+      const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
       req.error(new ProgressEvent('Network error'));
     });
   });
@@ -140,10 +140,10 @@ describe('DashboardDataService - TDD', () => {
         done();
       });
 
-      // Mock les appels HTTP
-      const statsReq = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025`);
-      const leaderboardReq = httpMock.expectOne(`${apiUrl}/leaderboard?season=2025`);  
-      const regionReq = httpMock.expectOne(`${apiUrl}/leaderboard/distribution/regions`);
+      // Mock les appels HTTP (inclut gameId dans tous les endpoints)
+      const statsReq = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
+      const leaderboardReq = httpMock.expectOne(`${apiUrl}/leaderboard?season=2025&gameId=${gameId}`);
+      const regionReq = httpMock.expectOne(`${apiUrl}/leaderboard/distribution/regions?gameId=${gameId}`);
 
       statsReq.flush(mockStats);
       leaderboardReq.flush(mockLeaderboard);

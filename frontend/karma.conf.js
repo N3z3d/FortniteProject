@@ -1,6 +1,10 @@
 // Karma configuration file, see link for more information
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
+// Set Chrome binary to Brave if CHROME_BIN is not set
+process.env.CHROME_BIN = process.env.CHROME_BIN || 'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe';
+const singleRun = process.env.KARMA_SINGLE_RUN === 'true' || process.env.CI === 'true';
+
 module.exports = function (config) {
   config.set({
     basePath: '',
@@ -32,9 +36,25 @@ module.exports = function (config) {
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: true,
+    autoWatch: !singleRun,
     browsers: ['Chrome'],
-    singleRun: false,
-    restartOnFileChange: true
+    customLaunchers: {
+      ChromeHeadless: {
+        base: 'Chrome',
+        flags: [
+          '--headless',
+          '--disable-gpu',
+          '--no-sandbox',
+          '--disable-dev-shm-usage',
+          '--remote-debugging-port=9222'
+        ]
+      }
+    },
+    singleRun,
+    restartOnFileChange: !singleRun,
+    browserDisconnectTimeout: 10000,
+    browserDisconnectTolerance: 3,
+    browserNoActivityTimeout: 120000,
+    captureTimeout: 300000
   });
 }; 

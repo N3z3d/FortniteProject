@@ -6,19 +6,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 
-import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
+import { GameDetailActionsService } from '../services/game-detail-actions.service';
+import { GameDetailPermissionsService } from '../services/game-detail-permissions.service';
+import { GameDetailUIService } from '../services/game-detail-ui.service';
 import { Game, GameStatus, GameParticipant } from '../models/game.interface';
-import { GameApiMapper } from '../mappers/game-api.mapper';
-import { UserContextService } from '../../../core/services/user-context.service';
-import { UserGamesStore } from '../../../core/services/user-games.store';
 import { TranslationService } from '../../../core/services/translation.service';
 
 @Component({
@@ -32,7 +30,6 @@ import { TranslationService } from '../../../core/services/translation.service';
     MatIconModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatTooltipModule,
     MatProgressBarModule,
     MatListModule,
@@ -53,13 +50,12 @@ export class GameDetailComponent implements OnInit {
   gameId: string = '';
 
   constructor(
-    private readonly gameService: GameService,
     private readonly gameDataService: GameDataService,
+    private readonly actions: GameDetailActionsService,
+    private readonly permissions: GameDetailPermissionsService,
+    private readonly ui: GameDetailUIService,
     private readonly router: Router,
-    private readonly route: ActivatedRoute,
-    private readonly snackBar: MatSnackBar,
-    private readonly userContextService: UserContextService,
-    private readonly userGamesStore: UserGamesStore
+    private readonly route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
@@ -93,11 +89,6 @@ export class GameDetailComponent implements OnInit {
         this.error = error.message;
         this.loading = false;
         console.error('Error loading game details:', error);
-        this.snackBar.open(
-          error.message || 'Erreur lors du chargement de la game',
-          'Fermer',
-          { duration: 4000 }
-        );
       }
     });
   }
@@ -124,115 +115,32 @@ export class GameDetailComponent implements OnInit {
   }
 
   startDraft(): void {
-    this.gameService.startDraft(this.gameId).subscribe({
-      next: (success) => {
-        if (success) {
-          this.snackBar.open('Draft démarré avec succès!', 'Fermer', { duration: 3000 });
-          this.loadGameDetails(); // Recharger les détails
-        } else {
-          this.snackBar.open('Impossible de démarrer le draft', 'Fermer', { duration: 3000 });
-        }
-      },
-      error: (error) => {
-        this.snackBar.open('Erreur lors du démarrage du draft', 'Fermer', { duration: 3000 });
-        console.error('Error starting draft:', error);
-      }
-    });
+    this.actions.startDraft(this.gameId, () => this.loadGameDetails());
   }
 
-  /**
-   * Archive la game (soft delete pour l'host)
-   */
   archiveGame(): void {
     if (!this.game) return;
-
-    this.gameService.archiveGame(this.gameId).subscribe({
-      next: (success) => {
-        if (success) {
-          this.snackBar.open('Game archivée avec succès!', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/games']);
-        } else {
-          this.snackBar.open('Impossible d\'archiver la game', 'Fermer', { duration: 3000 });
-        }
-      },
-      error: (error) => {
-        this.snackBar.open('Erreur lors de l\'archivage de la game', 'Fermer', { duration: 3000 });
-        console.error('Error archiving game:', error);
-      }
-    });
+    this.actions.archiveGame(this.gameId);
   }
 
-  /**
-   * Quitter la game (pour les participants non-host)
-   */
   leaveGame(): void {
     if (!this.game) return;
-
-    this.gameService.leaveGame(this.gameId).subscribe({
-      next: (success) => {
-        if (success) {
-          this.snackBar.open('Vous avez quitté la game', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/games']);
-        } else {
-          this.snackBar.open('Impossible de quitter la game', 'Fermer', { duration: 3000 });
-        }
-      },
-      error: (error) => {
-        this.snackBar.open('Erreur lors de la sortie de la game', 'Fermer', { duration: 3000 });
-        console.error('Error leaving game:', error);
-      }
-    });
+    this.actions.leaveGame(this.gameId);
   }
 
-  /**
-   * Confirme l'archivage de la game
-   */
   confirmArchive(): void {
     if (!this.game) return;
-
-    const confirmed = confirm(
-      'Êtes-vous sûr de vouloir archiver cette game ? Elle ne sera plus visible dans votre liste.'
-    );
-
-    if (confirmed) {
-      this.archiveGame();
-    }
+    this.actions.confirmArchive(this.gameId);
   }
 
-  /**
-   * Confirme la sortie de la game
-   */
   confirmLeave(): void {
     if (!this.game) return;
-
-    const confirmed = confirm(
-      'Êtes-vous sûr de vouloir quitter cette game ?'
-    );
-
-    if (confirmed) {
-      this.leaveGame();
-    }
+    this.actions.confirmLeave(this.gameId);
   }
 
-  /**
-   * Supprime définitivement une partie (uniquement en status CREATING)
-   */
   permanentlyDeleteGame(): void {
     if (!this.game) return;
-
-    this.gameService.deleteGame(this.gameId).subscribe({
-      next: (success) => {
-        if (success) {
-          // Rafraîchir la sidebar
-          this.userGamesStore.removeGame(this.gameId);
-          // Rediriger vers la page d'accueil
-          this.router.navigate(['/']);
-        }
-      },
-      error: (error) => {
-        console.error('Error deleting game:', error);
-      }
-    });
+    this.actions.permanentlyDeleteGame(this.gameId);
   }
 
   /**
@@ -243,134 +151,54 @@ export class GameDetailComponent implements OnInit {
   }
 
   joinGame(): void {
-    this.gameService.joinGame(this.gameId).subscribe({
-      next: (success) => {
-        if (success) {
-          this.snackBar.open('Game rejoint avec succès!', 'Fermer', { duration: 3000 });
-          this.loadGameDetails(); // Recharger les détails
-          this.loadParticipants(); // Recharger les participants
-        } else {
-          this.snackBar.open('Impossible de rejoindre la game', 'Fermer', { duration: 3000 });
-        }
-      },
-      error: (error) => {
-        this.snackBar.open('Erreur lors de la tentative de rejoindre la game', 'Fermer', { duration: 3000 });
-        console.error('Error joining game:', error);
-      }
+    this.actions.joinGame(this.gameId, () => {
+      this.loadGameDetails();
+      this.loadParticipants();
     });
   }
 
   canStartDraft(): boolean {
-    if (!this.game) return false;
-    return this.game.status === 'CREATING' && this.game.participantCount >= 2;
+    return this.permissions.canStartDraft(this.game);
   }
 
-  /**
-   * Vérifie si l'utilisateur peut archiver la game (host uniquement)
-   */
   canArchiveGame(): boolean {
-    if (!this.game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.gameService.isGameHost(this.game, currentUser.username);
+    return this.permissions.canArchiveGame(this.game);
   }
 
-  /**
-   * Vérifie si l'utilisateur peut quitter la game (participant non-host)
-   */
   canLeaveGame(): boolean {
-    if (!this.game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    // Peut quitter si participant mais pas host
-    const isHost = this.gameService.isGameHost(this.game, currentUser.username);
-    const isParticipant = this.game.participants?.some(p => p.username === currentUser.username) || false;
-
-    return isParticipant && !isHost;
+    return this.permissions.canLeaveGame(this.game);
   }
 
-  /**
-   * Vérifie si l'utilisateur peut supprimer définitivement la partie
-   * Conditions: host + status CREATING uniquement
-   */
   canDeleteGame(): boolean {
-    if (!this.game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    // Peut supprimer uniquement si host ET status CREATING
-    const isHost = this.gameService.isGameHost(this.game, currentUser.username);
-    const isCreatingStatus = this.game.status === 'CREATING';
-
-    return isHost && isCreatingStatus;
+    return this.permissions.canDeleteGame(this.game);
   }
 
   canJoinGame(): boolean {
-    if (!this.game) return false;
-    return this.game.canJoin && this.game.participantCount < this.game.maxParticipants;
+    return this.permissions.canJoinGame(this.game);
   }
 
   getStatusColor(status: GameStatus): string {
-    switch (status) {
-      case 'CREATING':
-        return 'primary';
-      case 'DRAFTING':
-        return 'accent';
-      case 'ACTIVE':
-        return 'warn';
-      case 'FINISHED':
-        return 'default';
-      case 'CANCELLED':
-        return 'default';
-      default:
-        return 'default';
-    }
+    return this.ui.getStatusColor(status);
   }
 
   getStatusLabel(status: GameStatus): string {
-    switch (status) {
-      case 'CREATING':
-        return this.t.t('games.home.statusCreating');
-      case 'DRAFTING':
-        return this.t.t('games.home.statusDrafting');
-      case 'ACTIVE':
-        return this.t.t('games.home.statusActive');
-      case 'FINISHED':
-        return this.t.t('games.home.statusFinished');
-      case 'CANCELLED':
-        return this.t.t('games.home.statusCancelled');
-      default:
-        return status;
-    }
+    return this.ui.getStatusLabel(status);
   }
 
   getParticipantPercentage(): number {
-    if (!this.game) return 0;
-    const stats = this.gameDataService.calculateGameStatistics(this.game);
-    return stats.fillPercentage;
+    return this.ui.getParticipantPercentage(this.game);
   }
 
   getGameStatistics() {
-    if (!this.game) return null;
-    return this.gameDataService.calculateGameStatistics(this.game);
+    return this.ui.getGameStatistics(this.game);
   }
 
   getParticipantColor(): string {
-    const percentage = this.getParticipantPercentage();
-    if (percentage >= 90) return 'warn';
-    if (percentage >= 70) return 'accent';
-    return 'primary';
+    return this.ui.getParticipantColor(this.game);
   }
 
   getTimeAgo(date: string | Date | null | undefined): string {
-    if (!date) {
-      return 'Date invalide';
-    }
-
-    const dateString = typeof date === 'string' ? date : date.toISOString();
-    return GameApiMapper.formatRelativeTime(dateString);
+    return this.ui.getTimeAgo(date);
   }
 
   onBack(): void {
@@ -378,153 +206,77 @@ export class GameDetailComponent implements OnInit {
   }
 
   confirmDelete(): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette game ? Cette action est irréversible.')) {
-      this.deleteGame();
-    }
+    this.actions.confirmDelete(this.gameId);
   }
 
   confirmStartDraft(): void {
-    if (confirm('Êtes-vous sûr de vouloir démarrer le draft ? Cette action ne peut pas être annulée.')) {
-      this.startDraft();
-    }
+    this.actions.confirmStartDraft(this.gameId, () => this.loadGameDetails());
   }
 
   copyInvitationCode(): void {
     if (!this.game?.invitationCode) return;
-
-    navigator.clipboard.writeText(this.game.invitationCode).then(() => {
-      this.snackBar.open('Code copié dans le presse-papier !', 'OK', {
-        duration: 2000
-      });
-    }).catch(() => {
-      this.snackBar.open('Impossible de copier le code', 'Fermer', {
-        duration: 3000
-      });
-    });
+    this.actions.copyInvitationCode(this.game.invitationCode);
   }
 
-  /**
-   * Régénère le code d'invitation de la game avec durée configurable
-   */
   regenerateInvitationCode(duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): void {
     if (!this.game) return;
-
-    this.gameService.regenerateInvitationCode(this.gameId, duration).subscribe({
-      next: (updatedGame) => {
-        if (this.game) {
-          this.game.invitationCode = updatedGame.invitationCode;
-          this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
-          this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
-        }
-      },
-      error: (error) => {
-        console.error('Error regenerating invitation code:', error);
+    this.actions.regenerateInvitationCode(this.gameId, duration, (updatedGame) => {
+      if (this.game) {
+        this.game.invitationCode = updatedGame.invitationCode;
+        this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
+        this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
       }
     });
   }
 
-  /**
-   * Affiche le prompt pour choisir la durée et régénère le code
-   */
   promptRegenerateCode(): void {
-    const choice = prompt(
-      'Choisissez la durée du code d\'invitation:\n1 = 24 heures\n2 = 48 heures\n3 = 7 jours\n4 = Permanent',
-      '4'
-    );
-
-    if (!choice) return;
-
-    const durationMap: { [key: string]: '24h' | '48h' | '7d' | 'permanent' } = {
-      '1': '24h',
-      '2': '48h',
-      '3': '7d',
-      '4': 'permanent'
-    };
-
-    const duration = durationMap[choice] || 'permanent';
-    this.regenerateInvitationCode(duration);
+    this.actions.promptRegenerateCode(this.gameId, (updatedGame) => {
+      if (this.game) {
+        this.game.invitationCode = updatedGame.invitationCode;
+        this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
+        this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
+      }
+    });
   }
 
-  /**
-   * Formate la date d'expiration du code d'invitation
-   */
   getInvitationCodeExpiry(): string {
-    if (!this.game?.invitationCodeExpiresAt) {
-      return 'Permanent';
-    }
-    if (this.game.isInvitationCodeExpired) {
-      return 'Expiré';
-    }
-    return this.getTimeAgo(this.game.invitationCodeExpiresAt);
+    return this.ui.getInvitationCodeExpiry(this.game);
   }
 
-  /**
-   * Vérifie si l'utilisateur peut régénérer le code (host uniquement)
-   */
   canRegenerateCode(): boolean {
-    if (!this.game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.gameService.isGameHost(this.game, currentUser.username) &&
-           this.game.status === 'CREATING';
+    return this.permissions.canRegenerateCode(this.game);
   }
 
-  /**
-   * Vérifie si l'utilisateur peut renommer la partie (host uniquement)
-   */
   canRenameGame(): boolean {
-    if (!this.game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.gameService.isGameHost(this.game, currentUser.username) &&
-           this.game.status === 'CREATING';
+    return this.permissions.canRenameGame(this.game);
   }
 
-  /**
-   * Renomme la partie
-   */
   renameGame(): void {
     if (!this.game) return;
-
-    const newName = prompt('Nouveau nom de la partie:', this.game.name);
-    if (!newName || newName.trim() === '' || newName === this.game.name) {
-      return;
-    }
-
-    this.gameService.renameGame(this.gameId, newName.trim()).subscribe({
-      next: (updatedGame) => {
-        if (this.game) {
-          this.game.name = updatedGame.name;
-        }
-      },
-      error: (error) => {
-        console.error('Error renaming game:', error);
+    this.actions.promptRenameGame(this.gameId, this.game.name, (updatedGame) => {
+      if (this.game) {
+        this.game.name = updatedGame.name;
       }
     });
   }
 
   getCreator(): GameParticipant | null {
-    return this.participants.find(p => p.isCreator) || null;
+    return this.ui.getCreator(this.participants);
   }
 
   getNonCreatorParticipants(): GameParticipant[] {
-    return this.participants.filter(p => !p.isCreator);
+    return this.ui.getNonCreatorParticipants(this.participants);
   }
 
   getParticipantStatusIcon(participant: GameParticipant): string {
-    if (participant.isCreator) return 'star';
-    return 'person';
+    return this.ui.getParticipantStatusIcon(participant);
   }
 
   getParticipantStatusColor(participant: GameParticipant): string {
-    if (participant.isCreator) return 'accent';
-    return 'primary';
+    return this.ui.getParticipantStatusColor(participant);
   }
 
   getParticipantStatusLabel(participant: GameParticipant): string {
-    if (participant.isCreator) return 'Créateur';
-    return 'Participant';
+    return this.ui.getParticipantStatusLabel(participant);
   }
 } 
