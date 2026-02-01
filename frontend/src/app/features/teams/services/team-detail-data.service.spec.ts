@@ -1,0 +1,298 @@
+import { TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+
+import { TeamDetailDataService, TeamLoadResult } from './team-detail-data.service';
+import { LeaderboardService } from '../../../core/services/leaderboard.service';
+import { TranslationService } from '../../../core/services/translation.service';
+
+describe('TeamDetailDataService', () => {
+  let service: TeamDetailDataService;
+  let leaderboardServiceSpy: jasmine.SpyObj<LeaderboardService>;
+  let translationServiceSpy: jasmine.SpyObj<TranslationService>;
+
+  const mockLeaderboardTeam = {
+    teamId: 'team1',
+    teamName: 'Team Alpha',
+    ownerUsername: 'testuser',
+    ownerId: 'owner1',
+    totalPoints: 5000,
+    rank: 1,
+    players: [
+      {
+        accountId: 'player1',
+        epicAccountId: 'epic1',
+        userName: 'Player1',
+        region: 'EU',
+        points: 2000,
+        tranche: 'TRANCHE_1'
+      },
+      {
+        accountId: 'player2',
+        epicAccountId: 'epic2',
+        userName: 'Player2',
+        region: 'NAW',
+        points: 3000,
+        tranche: 'TRANCHE_2'
+      }
+    ]
+  };
+
+  const mockAllTeams = [
+    mockLeaderboardTeam,
+    {
+      teamId: 'team2',
+      teamName: 'Team Beta',
+      ownerUsername: 'otheruser',
+      ownerId: 'owner2',
+      totalPoints: 3000,
+      rank: 2,
+      players: []
+    }
+  ];
+
+  beforeEach(() => {
+    leaderboardServiceSpy = jasmine.createSpyObj('LeaderboardService', ['getTeamLeaderboard']);
+    translationServiceSpy = jasmine.createSpyObj('TranslationService', ['t']);
+
+    translationServiceSpy.t.and.returnValue('Team not found');
+
+    TestBed.configureTestingModule({
+      providers: [
+        TeamDetailDataService,
+        { provide: LeaderboardService, useValue: leaderboardServiceSpy },
+        { provide: TranslationService, useValue: translationServiceSpy }
+      ]
+    });
+
+    service = TestBed.inject(TeamDetailDataService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+
+  describe('loadMyTeam', () => {
+    it('should load user team successfully', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeTruthy();
+        expect(result.team?.id).toBe('team1');
+        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.team?.totalPoints).toBe(5000);
+        expect(result.team?.players.length).toBe(2);
+        expect(result.allTeams.length).toBe(2);
+        expect(result.error).toBeNull();
+        done();
+      });
+    });
+
+    it('should handle case-insensitive username matching', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('TESTUSER').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeTruthy();
+        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.error).toBeNull();
+        done();
+      });
+    });
+
+    it('should return error when user has no team', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('nonexistent').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.allTeams.length).toBe(2);
+        expect(result.error).toBe('Team not found');
+        expect(translationServiceSpy.t).toHaveBeenCalledWith('teams.detail.notFoundForUser');
+        done();
+      });
+    });
+
+    it('should handle error when loading teams fails', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
+        throwError(() => new Error('API Error'))
+      );
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.allTeams).toEqual([]);
+        expect(result.error).toBeTruthy();
+        done();
+      });
+    });
+  });
+
+  describe('loadTeamById', () => {
+    it('should load team by ID successfully', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadTeamById('team1').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeTruthy();
+        expect(result.team?.id).toBe('team1');
+        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.allTeams.length).toBe(2);
+        expect(result.error).toBeNull();
+        done();
+      });
+    });
+
+    it('should return error when team not found', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadTeamById('nonexistent').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.allTeams.length).toBe(2);
+        expect(result.error).toBe('Team not found');
+        done();
+      });
+    });
+
+    it('should handle error when loading teams fails', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
+        throwError(() => new Error('API Error'))
+      );
+
+      service.loadTeamById('team1').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.allTeams).toEqual([]);
+        expect(result.error).toBeTruthy();
+        done();
+      });
+    });
+  });
+
+  describe('convertLeaderboardToTeam', () => {
+    it('should convert leaderboard team to Team interface', () => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        const team = result.team!;
+
+        expect(team.id).toBe('team1');
+        expect(team.ownerUsername).toBe('testuser');
+        expect(team.totalPoints).toBe(5000);
+        expect(team.rank).toBe(1);
+        expect(team.players.length).toBe(2);
+
+        // Check first player conversion
+        const firstPlayer = team.players[0];
+        expect(firstPlayer.player.accountId).toBe('player1');
+        expect(firstPlayer.player.userName).toBe('Player1');
+        expect(firstPlayer.player.region).toBe('EU');
+        expect(firstPlayer.player.points).toBe(2000);
+        expect(firstPlayer.player.tranche).toBe('TRANCHE_1');
+      });
+    });
+
+    it('should handle teams with empty player list', () => {
+      const emptyTeam = {
+        ...mockLeaderboardTeam,
+        players: []
+      };
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of([emptyTeam]));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeTruthy();
+        expect(result.team?.players).toEqual([]);
+      });
+    });
+
+    it('should handle teams with missing optional fields', () => {
+      const minimalTeam = {
+        teamId: 'team1',
+        teamName: 'Minimal Team',
+        ownerUsername: 'testuser',
+        players: []
+      };
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of([minimalTeam]));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        const team = result.team!;
+        expect(team.id).toBe('team1');
+        expect(team.ownerUsername).toBe('testuser');
+        expect(team.totalPoints).toBeUndefined();
+        expect(team.rank).toBeUndefined();
+      });
+    });
+  });
+
+  describe('data mapping', () => {
+    it('should correctly map all player fields', (done) => {
+      const detailedPlayer = {
+        accountId: 'p1',
+        epicAccountId: 'epic1',
+        userName: 'TestPlayer',
+        region: 'BR',
+        points: 1500,
+        tranche: 'TRANCHE_3',
+        additionalField: 'ignored'
+      };
+
+      const teamWithDetailedPlayer = {
+        ...mockLeaderboardTeam,
+        players: [detailedPlayer]
+      };
+
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of([teamWithDetailedPlayer]));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        const player = result.team!.players[0].player;
+
+        expect(player.accountId).toBe('p1');
+        expect(player.epicAccountId).toBe('epic1');
+        expect(player.userName).toBe('TestPlayer');
+        expect(player.region).toBe('BR');
+        expect(player.points).toBe(1500);
+        expect(player.tranche).toBe('TRANCHE_3');
+        done();
+      });
+    });
+
+    it('should preserve all teams in allTeams array', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.allTeams).toEqual(mockAllTeams);
+        expect(result.allTeams.length).toBe(2);
+        done();
+      });
+    });
+  });
+
+  describe('error handling', () => {
+    it('should provide user-friendly error message on network failure', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
+        throwError(() => ({ status: 0, message: 'Network Error' }))
+      );
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.error).toContain('indisponibles');
+        done();
+      });
+    });
+
+    it('should handle null or undefined username gracefully', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
+
+      service.loadMyTeam('').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.error).toBeTruthy();
+        done();
+      });
+    });
+
+    it('should handle empty teams array', (done) => {
+      leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of([]));
+
+      service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
+        expect(result.team).toBeNull();
+        expect(result.allTeams).toEqual([]);
+        expect(result.error).toBe('Team not found');
+        done();
+      });
+    });
+  });
+});
