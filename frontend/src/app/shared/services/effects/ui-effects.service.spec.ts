@@ -96,7 +96,7 @@ describe('UiEffectsService', () => {
     expect(notification?.textContent).toBe('Hello');
 
     tick(100);
-    expect(notification?.style.transform).toBe('translateX(0)');
+    expect(notification?.style.transform).toMatch(/^translateX\(0(px)?\)$/);
 
     tick(3000);
     tick(400);

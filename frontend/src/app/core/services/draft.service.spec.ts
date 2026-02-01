@@ -7,7 +7,8 @@ import { environment } from '../../../environments/environment';
 describe('DraftService', () => {
   let service: DraftService;
   let httpMock: HttpTestingController;
-  let zone: jasmine.SpyObj<NgZone>;
+  let zone: NgZone;
+  let zoneRunSpy: jasmine.Spy;
   let originalEventSource: any;
 
   class FakeEventSource {
@@ -38,19 +39,17 @@ describe('DraftService', () => {
   }
 
   beforeEach(() => {
-    zone = jasmine.createSpyObj('NgZone', ['run']);
-    zone.run.and.callFake(((fn: () => unknown) => fn()) as any);
-
     originalEventSource = (window as any).EventSource;
     (window as any).EventSource = FakeEventSource as any;
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
-        DraftService,
-        { provide: NgZone, useValue: zone }
-      ]
+      imports: [HttpClientTestingModule]
     });
+
+    zone = TestBed.inject(NgZone);
+    zoneRunSpy = spyOn(zone, 'run').and.callFake(((fn: (...args: any[]) => any, applyThis?: any, applyArgs?: any[]) => {
+      return fn.apply(applyThis, applyArgs ?? []);
+    }) as any);
 
     service = TestBed.inject(DraftService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -73,7 +72,7 @@ describe('DraftService', () => {
   it('starts a draft with season param', () => {
     service.start(2024).subscribe();
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/api/drafts/start`);
+    const req = httpMock.expectOne((request) => request.url === `${environment.apiUrl}/api/drafts/start`);
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('season')).toBe('2024');
     req.flush({ id: 'draft-1' });
@@ -82,7 +81,7 @@ describe('DraftService', () => {
   it('submits a pick with params', () => {
     service.pick('draft-1', 'player-1', 'user-1').subscribe();
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/api/drafts/pick`);
+    const req = httpMock.expectOne((request) => request.url === `${environment.apiUrl}/api/drafts/pick`);
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('draftId')).toBe('draft-1');
     expect(req.request.params.get('playerId')).toBe('player-1');
@@ -104,7 +103,7 @@ describe('DraftService', () => {
     expect(events.length).toBe(2);
     expect(events[0].event).toBe('START');
     expect(events[1].event).toBe('PICK');
-    expect(zone.run).toHaveBeenCalled();
+    expect(zoneRunSpy).toHaveBeenCalled();
 
     subscription.unsubscribe();
   });

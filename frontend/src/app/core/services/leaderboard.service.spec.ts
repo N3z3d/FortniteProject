@@ -57,6 +57,51 @@ describe('LeaderboardService', () => {
     req.flush(payload);
   });
 
+  it('requests leaderboard with filters and returns data', () => {
+    const payload = [
+      {
+        rank: 1,
+        userId: 'u1',
+        username: 'Team A',
+        isSpecial: false,
+        totalPoints: 100,
+        pointsByRegion: {},
+        regionsWon: 0,
+        firstPlacePlayers: 0,
+        worldChampions: 0,
+        team: { id: 't1', name: 'Team A', season: 2025, tradesRemaining: 1, players: [] },
+        recentMovements: []
+      }
+    ];
+
+    service.getLeaderboard({ season: 2025, region: 'EU', gameId: 'game-1' }).subscribe(entries => {
+      expect(entries.length).toBe(1);
+      expect(entries[0].userId).toBe('u1');
+    });
+
+    const req = httpMock.expectOne(request => {
+      return request.url === `${environment.apiUrl}/api/leaderboard`
+        && request.params.get('season') === '2025'
+        && request.params.get('region') === 'EU'
+        && request.params.get('gameId') === 'game-1';
+    });
+    expect(req.request.method).toBe('GET');
+    req.flush(payload);
+  });
+
+  it('returns empty list and logs error when leaderboard request fails', () => {
+    service.getLeaderboard({ season: 2025 }).subscribe(entries => {
+      expect(entries).toEqual([]);
+    });
+
+    const req = httpMock.expectOne(request => {
+      return request.url === `${environment.apiUrl}/api/leaderboard`
+        && request.params.get('season') === '2025';
+    });
+    req.error(new ProgressEvent('Network error'));
+    expect(logger.error).toHaveBeenCalled();
+  });
+
   it('returns empty list for unexpected payloads', () => {
     service.getPlayerLeaderboard(2025).subscribe(entries => {
       expect(entries).toEqual([]);
