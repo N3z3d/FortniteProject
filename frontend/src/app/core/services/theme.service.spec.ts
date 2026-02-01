@@ -1,0 +1,81 @@
+import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ThemeService } from './theme.service';
+
+describe('ThemeService', () => {
+  const storageKey = 'user-theme-preference';
+
+  const resetDom = () => {
+    document.body.classList.remove('dark-theme', 'light-theme');
+    document.body.removeAttribute('data-theme');
+  };
+
+  const createService = (platformId: Object) => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ThemeService,
+        { provide: PLATFORM_ID, useValue: platformId }
+      ]
+    });
+
+    return TestBed.inject(ThemeService);
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    resetDom();
+  });
+
+  it('initializes from localStorage and applies theme in browser', () => {
+    localStorage.setItem(storageKey, 'light');
+
+    const service = createService('browser');
+
+    expect(service.getCurrentTheme()).toBe('light');
+    expect(document.body.classList.contains('light-theme')).toBeTrue();
+    expect(document.body.getAttribute('data-theme')).toBe('light');
+  });
+
+  it('setTheme falls back to default on invalid value', () => {
+    const warnSpy = spyOn(console, 'warn');
+    const service = createService('browser');
+
+    service.setTheme('invalid' as any);
+
+    expect(warnSpy).toHaveBeenCalled();
+    expect(service.getCurrentTheme()).toBe('dark');
+    expect(document.body.classList.contains('dark-theme')).toBeTrue();
+  });
+
+  it('toggleTheme switches between dark and light', () => {
+    const service = createService('browser');
+
+    service.toggleTheme();
+
+    expect(service.getCurrentTheme()).toBe('light');
+    expect(document.body.classList.contains('light-theme')).toBeTrue();
+  });
+
+  it('handles localStorage errors gracefully', () => {
+    const warnSpy = spyOn(console, 'warn');
+    spyOn(localStorage, 'getItem').and.throwError('fail');
+
+    const service = createService('browser');
+
+    expect(warnSpy).toHaveBeenCalled();
+    expect(service.getCurrentTheme()).toBe('dark');
+  });
+
+  it('skips DOM and storage access on server platform', () => {
+    const getSpy = spyOn(localStorage, 'getItem').and.callThrough();
+    const setSpy = spyOn(localStorage, 'setItem').and.callThrough();
+
+    const service = createService('server');
+
+    expect(service.getCurrentTheme()).toBe('dark');
+    expect(getSpy).not.toHaveBeenCalled();
+    expect(setSpy).not.toHaveBeenCalled();
+    expect(document.body.getAttribute('data-theme')).toBeNull();
+  });
+});
