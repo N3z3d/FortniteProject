@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-01-31 20:00
+Last Updated: 2026-02-01 10:15
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -72,7 +72,7 @@ ESTIMATE: 6-10h (extended)
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-27 09:20
-DERNIERE_MAJ: 2026-02-01 12:45
+DERNIERE_MAJ: 2026-02-01 10:15
 
 DEPENDENCIES: none
 BLOCKED_BY: none
@@ -103,7 +103,7 @@ ROOT CAUSE (Updated):
 2. ✅ RESOLVED: Test polyfills for global/process to prevent sockjs-client afterAll errors
 3. ✅ RESOLVED: i18n expectations + spec type alignment (draft/dashboard/game/websocket)
 4. ✅ RESOLVED: Karma single-run env + ng test via npx
-5. ⚠️ REMAINING: Coverage below threshold (Lines 44.65% < 80%)
+5. ⚠️ REMAINING: Coverage below threshold (Lines 60.08% < 80%)
 
 FILES UPDATED:
 - translation.service.spec.ts (HttpClientTestingModule + req.request.url ✅)
@@ -187,13 +187,24 @@ WORK DONE (01-02-2026 12:45): **SESSION MAJEURE - +9.42 POINTS COVERAGE**
 - [x] All 599 tests passing (462 → 599 = +137 tests)
 - [x] Coverage: Lines 47.29% → 56.71% (+9.42 points) ✅
 
+WORK DONE (01-02-2026 10:01):
+- [x] Added FocusManagementService unit tests (7 tests)
+- [x] Added AccessibilityAnnouncerService unit tests (6 tests)
+- [x] Added AuthSwitchService unit tests (10 tests)
+- [x] Full coverage run completed (TOTAL 622 tests)
+
+WORK DONE (01-02-2026 10:15):
+- [x] Added TradeBusinessService unit tests (12 tests)
+- [x] Added ButtonEffectsService unit tests (4 tests)
+- [x] Full coverage run completed (TOTAL 681 tests)
+
 TOTAL PROGRESS (Session 01-02-2026):
 - Tests created: 3 new spec files (766 lines, 75+ unit tests)
 - Tests fixed: 11 failing tests → 0 failed
 - TypeScript compilation: All errors resolved
 - Code quality: Fixed 1 bug in production code (getTrancheNumber)
 
-TEST RESULTS (Latest - 01-02-2026 12:45):
+TEST RESULTS (Previous - 01-02-2026 12:45):
 - npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
 - Result: TOTAL 599 SUCCESS (0 failed) ✅ (+137 tests vs previous session)
 - Coverage:
@@ -202,10 +213,28 @@ TEST RESULTS (Latest - 01-02-2026 12:45):
   * Functions: 54.6% (765/1401) - was 48.3% → +6.3 points ⬆️
   * Branches: 42.5% (672/1581) - was 39.8% → +2.7 points ⬆️
 
+TEST RESULTS (Previous - 01-02-2026 10:01):
+- npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+- Result: TOTAL 622 SUCCESS (0 failed) ✅
+- Coverage:
+  * Lines: 59.21% (2445/4129) - was 56.71% → +2.50 points ⬆️
+  * Statements: 58.06% (2549/4390) - was 55.7% → +2.36 points ⬆️
+  * Functions: 56.73% (805/1419) - was 54.6% → +2.13 points ⬆️
+  * Branches: 45.05% (719/1596) - was 42.5% → +2.55 points ⬆️
+
+TEST RESULTS (Latest - 01-02-2026 10:15):
+- npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+- Result: TOTAL 681 SUCCESS (0 failed) ✅
+- Coverage:
+  * Lines: 60.08% (2481/4129) - was 59.21% → +0.87 points ⬆️
+  * Statements: 59.08% (2594/4390) - was 58.06% → +1.02 points ⬆️
+  * Functions: 57.43% (815/1419) - was 56.73% → +0.70 points ⬆️
+  * Branches: 47.24% (754/1596) - was 45.05% → +2.19 points ⬆️
+
 CRITERES_D_ACCEPTATION:
-- [x] Tests execute successfully (no timeout) - ✅ 599 SUCCESS (01-02-2026 12:45)
-- [x] 0 critical failures - ✅ 0 failed (01-02-2026 12:45)
-- [ ] Coverage maintained >= 80% - ⏳ Lines 56.71% (GAP: 23.29 points restants)
+- [x] Tests execute successfully (no timeout) - ✅ 681 SUCCESS (01-02-2026 10:15)
+- [x] 0 critical failures - ✅ 0 failed (01-02-2026 10:15)
+- [ ] Coverage maintained >= 80% - ⏳ Lines 60.08% (GAP: 19.92 points restants)
 - [x] Test report generated - ✅ coverage/lcov-report/index.html
 
 READY:
@@ -219,40 +248,40 @@ READY:
 PROGRESS TO 80% TARGET
 ═══════════════════════════════════════════════════════════════════════════════
 Starting point: 47.29% (1844/3899 lines)
-Current state:  56.71% (2317/4085 lines)
-Target:         80.00% (~3268/4085 lines)
+Current state:  60.08% (2481/4129 lines)
+Target:         80.00% (~3303/4129 lines)
 ═══════════════════════════════════════════════════════════════════════════════
-GAP:            23.29 points (~951 lines to cover)
+GAP:            19.92 points (~822 lines to cover)
 Effort:         6-8h (8-12 spec files for priority services)
 ═══════════════════════════════════════════════════════════════════════════════
 
-SERVICES WITHOUT TESTS (20 files analyzed):
+SERVICES WITHOUT TESTS (12 files analyzed):
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ PRIORITY 1 - Large Services with Business Logic (6 files, ~826 lines)      │
+│ PRIORITY 1 - Large Services with Business Logic (6 files, ~755 lines)      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 1. focus-management.service.ts (123 lines)                                 │
-│ 2. auth-switch.service.ts (98 lines)                                       │
-│ 3. accessibility-announcer.service.ts (89 lines)                           │
-│ 4. game-detail-ui.service.ts (216 lines)                                   │
-│ 5. game-detail-permissions.service.ts (153 lines)                          │
-│ 6. game-data.service.ts (147 lines)                                        │
+│ 1. theme.service.ts (147 lines)                                            │
+│ 2. mock-data.service.ts (136 lines)                                        │
+│ 3. ui-effects.service.ts (134 lines)                                       │
+│ 4. trade-timeline.service.ts (126 lines)                                   │
+│ 5. particle-effects.service.ts (111 lines)                                 │
+│ 6. game-detail-permissions.service.ts (101 lines)                          │
 │ Expected coverage gain: +12-15 points → ~68-70%                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ PRIORITY 2 - Medium Services (4 files, ~358 lines)                         │
+│ PRIORITY 2 - Medium Services (4 files, ~239 lines)                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 7. browser-navigation.service.ts (42 lines)                                │
-│ 8. team-detail-ui.service.ts (95 lines)                                    │
-│ 9. team-actions.service.ts (87 lines)                                      │
-│ 10. score-chart-config.service.ts (134 lines)                              │
+│ 7. team.service.ts (81 lines)                                              │
+│ 8. animation-effects.service.ts (63 lines)                                 │
+│ 9. draft.service.ts (54 lines)                                             │
+│ 10. dashboard.service.ts (41 lines)                                        │
 │ Expected coverage gain: +5-8 points → ~75-78%                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ PRIORITY 3 - Small Services & Gaps (10 files, ~663 lines)                  │
+│ PRIORITY 3 - Small Services & Gaps (2 files, ~55 lines)                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 11-20. Remaining services + branch coverage improvement                    │
+│ 11-12. Remaining services + branch coverage improvement                    │
 │ Expected coverage gain: +2-5 points → 80%+                                 │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -280,6 +309,142 @@ STRATEGY:
 - ✅ Comprehensive testing: nominal + 3+ edge cases per method
 - ✅ Maintain 100% test success rate (0 failures)
 - ✅ TDD approach: Red → Green → Refactor
+
+ID: JIRA-TEST-006
+TITRE: Frontend Coverage Phase 1 - Priority Services (68-70%)
+TYPE: Task
+PRIORITE: P1
+STATUT: IN_PROGRESS
+ESTIMATE: 2h
+
+ASSIGNE: @Claude
+ASSIGNE_LE: 2026-02-01 13:00
+DERNIERE_MAJ: 2026-02-01 13:00
+
+DEPENDENCIES: JIRA-TEST-003
+BLOCKED_BY: none
+
+OBJECTIF:
+- Créer specs pour 6 services prioritaires (826 lignes)
+- Atteindre 68-70% coverage (+12-15 points)
+- Maintenir 100% test success rate
+
+CONTEXTE:
+- Coverage actuelle: 56.71% (2317/4085 lines)
+- Target Phase 1: 68-70% coverage
+- Services ciblés: high-value avec logique métier complexe
+- Approche TDD: Red → Green → Refactor
+
+DESCRIPTION:
+Créer des suites de tests complètes pour 6 services prioritaires sans tests:
+1. focus-management.service.ts (123 lines)
+2. auth-switch.service.ts (98 lines)
+3. accessibility-announcer.service.ts (89 lines)
+4. game-detail-ui.service.ts (216 lines)
+5. game-detail-permissions.service.ts (153 lines)
+6. game-data.service.ts (147 lines)
+
+Chaque spec doit inclure:
+- Tests nominal + 3+ edge cases par méthode
+- Mocking des dépendances (jasmine.createSpyObj)
+- Tests erreurs et cas limites
+- Coverage de toutes les branches principales
+
+CRITERES_D_ACCEPTATION:
+- [ ] 6 spec files créés et compilant sans erreurs
+- [ ] Coverage ≥68% (Lines)
+- [ ] 100% tests passing (0 failures)
+- [ ] Chaque service: min 15 tests couvrant nominal + edge cases
+
+NEXT:
+- (1) Créer focus-management.service.spec.ts
+- (2) Créer auth-switch.service.spec.ts
+- (3) Créer accessibility-announcer.service.spec.ts
+
+ID: JIRA-TEST-007
+TITRE: Frontend Coverage Phase 2 - Medium Services (75-78%)
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-TEST-006
+
+OBJECTIF:
+- Créer specs pour 4 services medium (358 lignes)
+- Atteindre 75-78% coverage (+5-8 points)
+- Continuer approche comprehensive testing
+
+CONTEXTE:
+- Coverage après Phase 1: ~68-70%
+- Target Phase 2: 75-78%
+- Services UI helpers et coordinateurs d'actions
+
+DESCRIPTION:
+Créer specs pour services medium priority:
+7. browser-navigation.service.ts (42 lines)
+8. team-detail-ui.service.ts (95 lines)
+9. team-actions.service.ts (87 lines)
+10. score-chart-config.service.ts (134 lines)
+
+Focus sur UI helpers, formatters, navigation coordination.
+
+CRITERES_D_ACCEPTATION:
+- [ ] 4 spec files créés
+- [ ] Coverage ≥75% (Lines)
+- [ ] 100% tests passing
+- [ ] JIRA-TEST-006 DONE
+
+NEXT:
+- (1) Attendre completion JIRA-TEST-006
+- (2) Créer browser-navigation.service.spec.ts
+- (3) Créer team-detail-ui.service.spec.ts
+
+ID: JIRA-TEST-008
+TITRE: Frontend Coverage Phase 3 - Final Push to 80%
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-TEST-007
+
+OBJECTIF:
+- Créer specs pour services restants
+- Améliorer branch coverage (42.5% → 60%+)
+- Atteindre 80%+ coverage finale
+- Clôturer JIRA-TEST-003
+
+CONTEXTE:
+- Coverage après Phase 2: ~75-78%
+- Target final: 80%+ (Lines), 60%+ (Branches)
+- Gap restant: ~5 points
+
+DESCRIPTION:
+Phase finale pour atteindre 80%:
+1. Specs pour petits services restants (~10 files)
+2. Edge cases additionnels sur specs existants
+3. Branch coverage improvement (conditions, switch, try-catch)
+4. Validation complète de tous les tests
+
+CRITERES_D_ACCEPTATION:
+- [ ] Coverage ≥80% (Lines)
+- [ ] Branch coverage ≥60%
+- [ ] 100% tests passing
+- [ ] JIRA-TEST-003 DONE et supprimé du fichier
+
+NEXT:
+- (1) Attendre completion JIRA-TEST-007
+- (2) Identifier gaps coverage avec lcov report
+- (3) Créer specs manquants + edge cases
 
 ID: JIRA-ARCH-001
 TITRE: Migration Hexagonale Complete
@@ -2905,4 +3070,272 @@ WIP COMPLIANCE: 1/2 (@Claude: JIRA-TEST-003 IN_PROGRESS)
 
 ================================================================================
 FIN DU DEBRIEF FINAL - 2026-02-01 17:00
+================================================================================
+
+================================================================================
+DEBRIEF SESSION - 2026-02-01 10:01
+================================================================================
+
+TRAVAIL ACCOMPLI:
+- JIRA-TEST-003: 3 nouveaux specs (focus-management, accessibility-announcer, auth-switch)
+- Coverage run complet (npx ng test --code-coverage) -> TOTAL 622 SUCCESS
+- Coverage actuelle: Lines 59.21%, Statements 58.06%, Functions 56.73%, Branches 45.05%
+
+TICKETS RESTANTS (FORMAT JIRA):
+
+ID: JIRA-TEST-003
+TITRE: Frontend Coverage Improvement (Target 80%)
+TYPE: Task
+PRIORITE: P1
+STATUT: IN_PROGRESS
+ESTIMATE: 6-10h (extended)
+
+ASSIGNE: @Claude
+ASSIGNE_LE: 2026-01-27 09:20
+DERNIERE_MAJ: 2026-02-01 10:01
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Atteindre 80% de coverage frontend avec 0 test en echec.
+
+CONTEXTE:
+- Dernier run: TOTAL 622 SUCCESS (0 failed)
+- Coverage: Lines 59.21% (2445/4129)
+
+DESCRIPTION:
+- Ajouter des specs sur les services non couverts restants.
+- Re-lancer coverage et verifier progression.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Coverage >= 80% (lines)
+- [ ] 0 test failed
+- [ ] Report coverage genere
+
+NEXT:
+- (1) Specs: trade-business, button-effects, game-detail-ui
+- (2) Specs: theme, mock-data, ui-effects
+- (3) Re-run coverage + ajustements
+
+ID: JIRA-ARCH-000
+TITRE: Architecture Review and Clean Code Implementation
+TYPE: Epic
+PRIORITE: P0
+STATUT: TODO
+ESTIMATE: multi-sprint
+
+ASSIGNE: @Team
+ASSIGNE_LE: 2026-01-24 10:14
+DERNIERE_MAJ: 2026-01-25 18:30
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Stabiliser architecture (Hexagonal) et finaliser tests architecture.
+
+CONTEXTE:
+- Backend clean code OK, frontend OK.
+- 4 tests architecture en echec.
+
+DESCRIPTION:
+- Valider decision architecture (JIRA-ARCH-009).
+- Corriger tests architecture (JIRA-TEST-004).
+
+CRITERES_D_ACCEPTATION:
+- [ ] 0 violation architecture
+- [ ] Tests architecture verts
+
+NEXT:
+- (1) Finaliser JIRA-ARCH-009
+- (2) Corriger JIRA-TEST-004
+- (3) Re-valider architecture
+
+ID: JIRA-ARCH-001
+TITRE: Migration Hexagonale Complete
+TYPE: Story
+PRIORITE: P1
+STATUT: TODO
+ESTIMATE: 8-16h (multi-session)
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-31 16:45
+
+DEPENDENCIES: JIRA-ARCH-000
+
+OBJECTIF:
+- Completer migration hexagonale (controllers restants).
+
+CONTEXTE:
+- 8/14 controllers migr�s.
+
+DESCRIPTION:
+- Migrer 6 controllers restants et appliquer DIP.
+
+CRITERES_D_ACCEPTATION:
+- [ ] shouldFollowOnionArchitecture() passe
+- [ ] 0 regression tests
+
+NEXT:
+- (1) Migrer controllers restants
+- (2) Lancer tests integration
+- (3) Valider DIP
+
+ID: JIRA-ARCH-011
+TITRE: Migration Pure Hexagonale - Domaine Game
+TYPE: Story
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 8-16h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-27 07:05
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Isoler Game domain (modeles purs + mapper).
+
+CONTEXTE:
+- Etape 1 de la migration pure hexagonale.
+
+DESCRIPTION:
+- Creer models domain, entites persistence, mapper, adapter repo.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Domain Game sans dependances Spring
+- [ ] Tests OK
+
+NEXT:
+- (1) Creer models domain
+- (2) Implementer mapper
+- (3) Adapter repository + tests
+
+ID: JIRA-ARCH-012
+TITRE: Migration Pure Hexagonale - Domaine Player
+TYPE: Story
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 8-16h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-25 18:30
+
+DEPENDENCIES: JIRA-ARCH-011
+
+OBJECTIF:
+- Migrer Player domain vers pure hexagonal.
+
+CONTEXTE:
+- Bloque par JIRA-ARCH-011.
+
+DESCRIPTION:
+- Suivre pattern JIRA-ARCH-011 (models, mapper, repo).
+
+CRITERES_D_ACCEPTATION:
+- [ ] Domain Player sans dependances Spring
+- [ ] Tests OK
+
+NEXT:
+- (1) Attendre fin JIRA-ARCH-011
+- (2) Creer models Player
+- (3) Mapper + adapter repo
+
+ID: JIRA-ARCH-013
+TITRE: Migration Pure Hexagonale - Domaine Team
+TYPE: Story
+PRIORITE: P2
+STATUT: BLOCKED
+ESTIMATE: 8-16h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-25 18:30
+
+DEPENDENCIES: JIRA-ARCH-012
+
+OBJECTIF:
+- Migrer Team domain vers pure hexagonal.
+
+CONTEXTE:
+- Bloque par JIRA-ARCH-012.
+
+DESCRIPTION:
+- Suivre pattern JIRA-ARCH-011/012.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Domain Team sans dependances Spring
+- [ ] Tests OK
+
+NEXT:
+- (1) Attendre fin JIRA-ARCH-012
+- (2) Creer models Team
+- (3) Mapper + adapter repo
+
+ID: JIRA-ARCH-014
+TITRE: Migration Pure Hexagonale - Domaine Draft
+TYPE: Story
+PRIORITE: P2
+STATUT: BLOCKED
+ESTIMATE: 6-12h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-25 18:30
+
+DEPENDENCIES: JIRA-ARCH-013
+
+OBJECTIF:
+- Migrer Draft domain vers pure hexagonal.
+
+CONTEXTE:
+- Bloque par JIRA-ARCH-013.
+
+DESCRIPTION:
+- Suivre pattern JIRA-ARCH-011/012/013.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Domain Draft sans dependances Spring
+- [ ] Tests OK
+
+NEXT:
+- (1) Attendre fin JIRA-ARCH-013
+- (2) Creer models Draft
+- (3) Mapper + adapter repo
+
+ID: JIRA-ARCH-015
+TITRE: Migration Pure Hexagonale - Domaine Trade
+TYPE: Story
+PRIORITE: P2
+STATUT: BLOCKED
+ESTIMATE: 6-12h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-01-25 18:30
+
+DEPENDENCIES: JIRA-ARCH-014
+
+OBJECTIF:
+- Migrer Trade domain vers pure hexagonal.
+
+CONTEXTE:
+- Bloque par JIRA-ARCH-014.
+
+DESCRIPTION:
+- Suivre pattern JIRA-ARCH-011/012/013/014.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Domain Trade sans dependances Spring
+- [ ] Tests OK
+
+NEXT:
+- (1) Attendre fin JIRA-ARCH-014
+- (2) Creer models Trade
+- (3) Mapper + adapter repo
+
+================================================================================
+FIN DU DEBRIEF - 2026-02-01 10:01
 ================================================================================
