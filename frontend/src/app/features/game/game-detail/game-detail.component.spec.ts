@@ -81,6 +81,17 @@ describe('GameDetailComponent', () => {
       'getParticipantStatusLabel',
       'getInvitationCodeExpiry'
     ]);
+    gameDetailUISpy.getNonCreatorParticipants.and.returnValue([]);
+    gameDetailUISpy.getCreator.and.returnValue(null);
+    gameDetailUISpy.getStatusColor.and.returnValue('primary');
+    gameDetailUISpy.getStatusLabel.and.returnValue('status');
+    gameDetailUISpy.getParticipantPercentage.and.returnValue(0);
+    gameDetailUISpy.getParticipantColor.and.returnValue('primary');
+    gameDetailUISpy.getTimeAgo.and.returnValue('now');
+    gameDetailUISpy.getParticipantStatusIcon.and.returnValue('person');
+    gameDetailUISpy.getParticipantStatusColor.and.returnValue('primary');
+    gameDetailUISpy.getParticipantStatusLabel.and.returnValue('Participant');
+    gameDetailUISpy.getInvitationCodeExpiry.and.returnValue('');
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     activatedRouteStub = { params: of({ id: '1' }) };
 
@@ -93,6 +104,13 @@ describe('GameDetailComponent', () => {
       isNearlyFull: false,
       canAcceptMoreParticipants: game.canJoin && game.participantCount < game.maxParticipants
     }));
+    gameDetailPermissionsSpy.canStartDraft.and.returnValue(false);
+    gameDetailPermissionsSpy.canArchiveGame.and.returnValue(false);
+    gameDetailPermissionsSpy.canLeaveGame.and.returnValue(false);
+    gameDetailPermissionsSpy.canDeleteGame.and.returnValue(false);
+    gameDetailPermissionsSpy.canJoinGame.and.returnValue(false);
+    gameDetailPermissionsSpy.canRegenerateCode.and.returnValue(false);
+    gameDetailPermissionsSpy.canRenameGame.and.returnValue(false);
 
     TestBed.configureTestingModule({
       imports: [GameDetailComponent],
@@ -287,11 +305,13 @@ describe('GameDetailComponent', () => {
   }));
 
   it('should call confirmDelete action', () => {
+    component.gameId = '1';
     component.confirmDelete();
     expect(gameDetailActionsSpy.confirmDelete).toHaveBeenCalledWith('1');
   });
 
   it('should call confirmStartDraft action', () => {
+    component.gameId = '1';
     component.confirmStartDraft();
     expect(gameDetailActionsSpy.confirmStartDraft).toHaveBeenCalledWith('1', jasmine.any(Function));
   });

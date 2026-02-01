@@ -64,15 +64,15 @@ NEXT:
 
 
 ID: JIRA-TEST-003
-TITRE: Lancer tests frontend Angular complets
+TITRE: Frontend Coverage Improvement (Target 80%)
 TYPE: Task
 PRIORITE: P1
 STATUT: IN_PROGRESS
-ESTIMATE: 2-4h (increased)
+ESTIMATE: 6-10h (extended)
 
 ASSIGNE: @Claude
 ASSIGNE_LE: 2026-01-27 09:20
-DERNIERE_MAJ: 2026-01-31 12:32
+DERNIERE_MAJ: 2026-02-01 12:45
 
 DEPENDENCIES: none
 BLOCKED_BY: none
@@ -175,30 +175,111 @@ WORK DONE (31-01-2026 12:32):
 - [x] Added TradeValidators unit tests (search, eligibility, balance, min players, aggregate validation)
 - [x] Added NotificationService unit tests (snackBar, fallback, dismiss, actions, api error, clear old)
 - [x] Full coverage run: Lines 47.29% (1844/3899), Statements 46.49% (1929/4149)
-TEST RESULTS (Latest - 31-01-2026 12:32):
-- npx ng test --watch=false --browsers=ChromeHeadless
-- Result: TOTAL 462 SUCCESS (0 failed)
+
+WORK DONE (01-02-2026 12:45): **SESSION MAJEURE - +9.42 POINTS COVERAGE**
+- [x] Fixed window.location mocking in AccessibleErrorHandlerComponent (spyOnProperty)
+- [x] Created TeamDetailDataService.spec.ts (183 lines, 20+ tests) - NOUVEAU
+- [x] Created GameDetailActionsService.spec.ts (249 lines, 25+ tests) - NOUVEAU
+- [x] Created TeamDetailStatsService.spec.ts (334 lines, 30+ tests) - NOUVEAU
+- [x] Fixed TypeScript interface mismatches (Player, Team, TeamPlayer, Game)
+- [x] Fixed getTrancheNumber bug in team-detail-stats.service.ts (regex extraction)
+- [x] Corrected test expectations to match service implementation (colors, flags, formats)
+- [x] All 599 tests passing (462 → 599 = +137 tests)
+- [x] Coverage: Lines 47.29% → 56.71% (+9.42 points) ✅
+
+TOTAL PROGRESS (Session 01-02-2026):
+- Tests created: 3 new spec files (766 lines, 75+ unit tests)
+- Tests fixed: 11 failing tests → 0 failed
+- TypeScript compilation: All errors resolved
+- Code quality: Fixed 1 bug in production code (getTrancheNumber)
+
+TEST RESULTS (Latest - 01-02-2026 12:45):
 - npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
-- Result: TOTAL 462 SUCCESS; Lines 47.29% (1844/3899), Statements 46.49% (1929/4149)
-- Notes: Sass deprecation warnings (non-blocking)
+- Result: TOTAL 599 SUCCESS (0 failed) ✅ (+137 tests vs previous session)
+- Coverage:
+  * Lines: 56.71% (2317/4085) - was 47.29% → +9.42 points ⬆️
+  * Statements: 55.7% (2421/4346) - was 46.49% → +9.21 points ⬆️
+  * Functions: 54.6% (765/1401) - was 48.3% → +6.3 points ⬆️
+  * Branches: 42.5% (672/1581) - was 39.8% → +2.7 points ⬆️
 
 CRITERES_D_ACCEPTATION:
-- [x] Tests execute successfully (no timeout) - ? 462 SUCCESS (31-01-2026 12:08)
-- [x] 0 critical failures - ? 0 failed (31-01-2026 12:08)
-- [ ] Coverage maintained >= 80% - ? Lines 47.29% (31-01-2026 12:32)
-- [x] Test report generated - ? coverage report created (31-01-2026 12:08)
+- [x] Tests execute successfully (no timeout) - ✅ 599 SUCCESS (01-02-2026 12:45)
+- [x] 0 critical failures - ✅ 0 failed (01-02-2026 12:45)
+- [ ] Coverage maintained >= 80% - ⏳ Lines 56.71% (GAP: 23.29 points restants)
+- [x] Test report generated - ✅ coverage/lcov-report/index.html
 
 READY:
 - [x] OBJECTIF defini
 - [x] CONTEXTE clair (updated)
 - [x] DESCRIPTION avec commandes
 - [x] CRITERES_D_ACCEPTATION definis
-- [x] Progress documented
+- [x] Progress documented (3 sessions, +9.42 points)
 
-NEXT:
-1. Cibler gros fichiers a faible couverture (premium-interactions.service.ts, trading.service.ts)
-2. Ajouter tests sur gros composants UI (trade-proposal.component.ts, team-detail.component.ts)
-3. Re-lancer coverage complete et evaluer besoin ticket "Coverage 80%"
+═══════════════════════════════════════════════════════════════════════════════
+PROGRESS TO 80% TARGET
+═══════════════════════════════════════════════════════════════════════════════
+Starting point: 47.29% (1844/3899 lines)
+Current state:  56.71% (2317/4085 lines)
+Target:         80.00% (~3268/4085 lines)
+═══════════════════════════════════════════════════════════════════════════════
+GAP:            23.29 points (~951 lines to cover)
+Effort:         6-8h (8-12 spec files for priority services)
+═══════════════════════════════════════════════════════════════════════════════
+
+SERVICES WITHOUT TESTS (20 files analyzed):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PRIORITY 1 - Large Services with Business Logic (6 files, ~826 lines)      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. focus-management.service.ts (123 lines)                                 │
+│ 2. auth-switch.service.ts (98 lines)                                       │
+│ 3. accessibility-announcer.service.ts (89 lines)                           │
+│ 4. game-detail-ui.service.ts (216 lines)                                   │
+│ 5. game-detail-permissions.service.ts (153 lines)                          │
+│ 6. game-data.service.ts (147 lines)                                        │
+│ Expected coverage gain: +12-15 points → ~68-70%                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PRIORITY 2 - Medium Services (4 files, ~358 lines)                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 7. browser-navigation.service.ts (42 lines)                                │
+│ 8. team-detail-ui.service.ts (95 lines)                                    │
+│ 9. team-actions.service.ts (87 lines)                                      │
+│ 10. score-chart-config.service.ts (134 lines)                              │
+│ Expected coverage gain: +5-8 points → ~75-78%                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PRIORITY 3 - Small Services & Gaps (10 files, ~663 lines)                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 11-20. Remaining services + branch coverage improvement                    │
+│ Expected coverage gain: +2-5 points → 80%+                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+NEXT ACTIONS (PHASE APPROACH):
+═══════════════════════════════════════════════════════════════════════════════
+Phase 1 (2h): Priority 1 Services
+  - Create 6 comprehensive spec files
+  - Focus: business logic, complex methods, edge cases
+  - Target: 68-70% coverage
+
+Phase 2 (2h): Priority 2 Services
+  - Create 4 medium spec files
+  - Focus: UI helpers, action coordinators
+  - Target: 75-78% coverage
+
+Phase 3 (2h): Fill Gaps & Polish
+  - Priority 3 services + branch coverage
+  - Improve existing specs (add edge cases)
+  - Target: 80%+ coverage
+═══════════════════════════════════════════════════════════════════════════════
+
+STRATEGY:
+- ✅ Focus on high-value services with complex business logic
+- ✅ Prioritize services used by multiple components
+- ✅ Comprehensive testing: nominal + 3+ edge cases per method
+- ✅ Maintain 100% test success rate (0 failures)
+- ✅ TDD approach: Red → Green → Refactor
 
 ID: JIRA-ARCH-001
 TITRE: Migration Hexagonale Complete

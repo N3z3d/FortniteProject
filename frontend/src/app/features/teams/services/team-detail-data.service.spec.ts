@@ -19,17 +19,15 @@ describe('TeamDetailDataService', () => {
     rank: 1,
     players: [
       {
-        accountId: 'player1',
-        epicAccountId: 'epic1',
-        userName: 'Player1',
+        playerId: 'player1',
+        nickname: 'Player1',
         region: 'EU',
         points: 2000,
         tranche: 'TRANCHE_1'
       },
       {
-        accountId: 'player2',
-        epicAccountId: 'epic2',
-        userName: 'Player2',
+        playerId: 'player2',
+        nickname: 'Player2',
         region: 'NAW',
         points: 3000,
         tranche: 'TRANCHE_2'
@@ -54,7 +52,7 @@ describe('TeamDetailDataService', () => {
     leaderboardServiceSpy = jasmine.createSpyObj('LeaderboardService', ['getTeamLeaderboard']);
     translationServiceSpy = jasmine.createSpyObj('TranslationService', ['t']);
 
-    translationServiceSpy.t.and.returnValue('Team not found');
+    translationServiceSpy.t.and.callFake((key: string) => key);
 
     TestBed.configureTestingModule({
       providers: [
@@ -78,7 +76,7 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
         expect(result.team?.id).toBe('team1');
-        expect(result.team?.ownerName).toBe('testuser');
+        expect(result.team?.owner?.username).toBe('testuser');
         expect(result.team?.totalPoints).toBe(5000);
         expect(result.team?.players.length).toBe(2);
         expect(result.allTeams.length).toBe(2);
@@ -92,7 +90,7 @@ describe('TeamDetailDataService', () => {
 
       service.loadMyTeam('TESTUSER').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
-        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.team?.owner?.username).toBe('testuser');
         expect(result.error).toBeNull();
         done();
       });
@@ -104,7 +102,7 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('nonexistent').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.allTeams.length).toBe(2);
-        expect(result.error).toBe('Team not found');
+        expect(result.error).toBe('teams.detail.notFoundForUser');
         expect(translationServiceSpy.t).toHaveBeenCalledWith('teams.detail.notFoundForUser');
         done();
       });
@@ -131,7 +129,7 @@ describe('TeamDetailDataService', () => {
       service.loadTeamById('team1').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
         expect(result.team?.id).toBe('team1');
-        expect(result.team?.ownerName).toBe('testuser');
+        expect(result.team?.owner?.username).toBe('testuser');
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBeNull();
         done();
@@ -144,7 +142,7 @@ describe('TeamDetailDataService', () => {
       service.loadTeamById('nonexistent').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.allTeams.length).toBe(2);
-        expect(result.error).toBe('Team not found');
+        expect(result.error).toBe('teams.detail.notFound');
         done();
       });
     });
@@ -171,7 +169,7 @@ describe('TeamDetailDataService', () => {
         const team = result.team!;
 
         expect(team.id).toBe('team1');
-        expect(team.ownerName).toBe('testuser');
+        expect(team.owner?.username).toBe('testuser');
         expect(team.totalPoints).toBe(5000);
         expect(team.players.length).toBe(2);
 
@@ -210,8 +208,8 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         const team = result.team!;
         expect(team.id).toBe('team1');
-        expect(team.ownerName).toBe('testuser');
-        expect(team.totalPoints).toBeUndefined();
+        expect(team.owner?.username).toBe('testuser');
+        expect(team.totalPoints).toBe(0);
       });
     });
   });
@@ -219,9 +217,8 @@ describe('TeamDetailDataService', () => {
   describe('data mapping', () => {
     it('should correctly map all player fields', (done) => {
       const detailedPlayer = {
-        accountId: 'p1',
-        epicAccountId: 'epic1',
-        userName: 'TestPlayer',
+        playerId: 'p1',
+        nickname: 'TestPlayer',
         region: 'BR',
         points: 1500,
         tranche: 'TRANCHE_3',
@@ -266,7 +263,7 @@ describe('TeamDetailDataService', () => {
 
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
-        expect(result.error).toContain('indisponibles');
+        expect(result.error).toBe('teams.detail.dataUnavailable');
         done();
       });
     });
@@ -287,7 +284,7 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.allTeams).toEqual([]);
-        expect(result.error).toBe('Team not found');
+        expect(result.error).toBe('teams.detail.notFoundForUser');
         done();
       });
     });

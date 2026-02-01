@@ -2,6 +2,7 @@ import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testin
 import { AccessibleErrorHandlerComponent, AccessibleErrorInfo } from './accessible-error-handler.component';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
+import { BrowserNavigationService } from '../../services/browser-navigation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 describe('AccessibleErrorHandlerComponent', () => {
@@ -9,6 +10,7 @@ describe('AccessibleErrorHandlerComponent', () => {
   let fixture: ComponentFixture<AccessibleErrorHandlerComponent>;
   let mockAccessibilityAnnouncer: jasmine.SpyObj<AccessibilityAnnouncerService>;
   let mockFocusManagement: jasmine.SpyObj<FocusManagementService>;
+  let mockNavigation: jasmine.SpyObj<BrowserNavigationService>;
 
   beforeEach(async () => {
     mockAccessibilityAnnouncer = jasmine.createSpyObj('AccessibilityAnnouncerService', [
@@ -21,12 +23,17 @@ describe('AccessibleErrorHandlerComponent', () => {
       'focusElement',
       'restoreFocus'
     ]);
+    mockNavigation = jasmine.createSpyObj('BrowserNavigationService', [
+      'reload',
+      'navigateHome'
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [AccessibleErrorHandlerComponent],
       providers: [
         { provide: AccessibilityAnnouncerService, useValue: mockAccessibilityAnnouncer },
-        { provide: FocusManagementService, useValue: mockFocusManagement }
+        { provide: FocusManagementService, useValue: mockFocusManagement },
+        { provide: BrowserNavigationService, useValue: mockNavigation }
       ]
     }).compileComponents();
 
@@ -40,13 +47,14 @@ describe('AccessibleErrorHandlerComponent', () => {
   });
 
   describe('showError', () => {
-    it('should set currentError and announce', (done) => {
+    it('should set currentError and announce', fakeAsync(() => {
       const error: AccessibleErrorInfo = {
         title: 'Test Error',
         message: 'Test message',
         timestamp: new Date()
       };
 
+      component.errorTitle = { nativeElement: document.createElement('h2') } as any;
       component.showError(error);
 
       expect(component.currentError).toBe(error);
@@ -54,11 +62,9 @@ describe('AccessibleErrorHandlerComponent', () => {
         'Test message. Dialogue d\'erreur ouvert avec actions de récupération'
       );
 
-      setTimeout(() => {
-        expect(mockFocusManagement.focusElement).toHaveBeenCalled();
-        done();
-      }, 150);
-    });
+      tick(150);
+      expect(mockFocusManagement.focusElement).toHaveBeenCalledWith(component.errorTitle.nativeElement);
+    }));
   });
 
   describe('fromHttpError', () => {
@@ -281,18 +287,20 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
 
     it('should have working action callbacks', () => {
-      const reloadSpy = jasmine.createSpy('reload');
-      spyOnProperty(window.location, 'reload', 'get').and.returnValue(reloadSpy);
       spyOn(component, 'hideError');
 
       const actions = component.getDefaultRecoveryActions();
 
-      actions[0].action(); // Réessayer
-      expect(reloadSpy).toHaveBeenCalled();
+      actions[0].action();
+      expect(mockNavigation.reload).toHaveBeenCalled();
 
-      actions[2].action(); // Fermer
+      actions[1].action();
+      expect(mockNavigation.navigateHome).toHaveBeenCalled();
+
+      actions[2].action();
       expect(component.hideError).toHaveBeenCalled();
     });
+
   });
 
   describe('executeRecoveryAction', () => {
@@ -332,28 +340,23 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
 
     it('should reload on Alt+R', () => {
-      const reloadSpy = jasmine.createSpy('reload');
-      spyOnProperty(window.location, 'reload', 'get').and.returnValue(reloadSpy);
-
       const event = new KeyboardEvent('keydown', { key: 'r', altKey: true });
       spyOn(event, 'preventDefault');
 
       component['handleKeydown'](event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(reloadSpy).toHaveBeenCalled();
+      expect(mockNavigation.reload).toHaveBeenCalled();
     });
 
     it('should navigate home on Alt+H', () => {
-      spyOnProperty(window.location, 'href', 'set');
-
       const event = new KeyboardEvent('keydown', { key: 'h', altKey: true });
       spyOn(event, 'preventDefault');
 
       component['handleKeydown'](event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(Object.getOwnPropertyDescriptor(window.location, 'href')?.set).toHaveBeenCalledWith('/');
+      expect(mockNavigation.navigateHome).toHaveBeenCalled();
     });
 
     it('should not trigger keyboard shortcuts when no error', () => {
@@ -379,3 +382,12 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
   });
 });
+
+
+
+
+
+
+
+
+

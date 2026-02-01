@@ -108,8 +108,9 @@ export class TeamDetailStatsService {
       return 1; // Valeur par défaut pour les nouveaux joueurs
     }
 
-    const numericPart = tranche.replaceAll(/[Tt]/g, '');
-    const parsed = Number.parseInt(numericPart, 10);
+    const match = tranche.match(/\d+/);
+    if (!match) return 1;
+    const parsed = Number.parseInt(match[0], 10);
     return Number.isNaN(parsed) ? 1 : parsed;
   }
 

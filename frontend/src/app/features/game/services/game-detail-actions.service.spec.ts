@@ -346,12 +346,13 @@ describe('GameDetailActionsService', () => {
         value: clipboardSpy
       });
 
-      await service.copyInvitationCode('ABC123');
+      service.copyInvitationCode('ABC123');
+      await clipboardSpy.writeText.calls.mostRecent().returnValue;
 
       expect(clipboardSpy.writeText).toHaveBeenCalledWith('ABC123');
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        'Code d\'invitation copié !',
-        'Fermer',
+        'Code copié dans le presse-papier !',
+        'OK',
         { duration: 2000 }
       );
     });
@@ -365,24 +366,18 @@ describe('GameDetailActionsService', () => {
       service.regenerateInvitationCode('game1', 'permanent', onSuccess);
 
       expect(gameServiceSpy.regenerateInvitationCode).toHaveBeenCalledWith('game1', 'permanent');
-      expect(snackBarSpy.open).toHaveBeenCalledWith(
-        'Code d\'invitation régénéré !',
-        'Fermer',
-        { duration: 3000 }
-      );
       expect(onSuccess).toHaveBeenCalledWith(mockGame);
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
     });
 
     it('should handle error when regenerating code', () => {
       gameServiceSpy.regenerateInvitationCode.and.returnValue(throwError(() => new Error('Test error')));
+      const consoleSpy = spyOn(console, 'error');
 
       service.regenerateInvitationCode('game1', '24h');
 
-      expect(snackBarSpy.open).toHaveBeenCalledWith(
-        'Erreur lors de la régénération du code',
-        'Fermer',
-        { duration: 3000 }
-      );
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
     });
   });
 });

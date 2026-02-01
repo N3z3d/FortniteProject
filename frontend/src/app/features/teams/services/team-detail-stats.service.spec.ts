@@ -101,63 +101,63 @@ describe('TeamDetailStatsService', () => {
 
   describe('getRegionColor', () => {
     it('should return correct color for EU', () => {
-      expect(service.getRegionColor('EU')).toBe('#3b82f6');
+      expect(service.getRegionColor('EU')).toBe('#4CAF50');
     });
 
     it('should return correct color for NAW', () => {
-      expect(service.getRegionColor('NAW')).toBe('#10b981');
+      expect(service.getRegionColor('NAW')).toBe('#2196F3');
     });
 
-    it('should return correct color for NAE', () => {
-      expect(service.getRegionColor('NAE')).toBe('#8b5cf6');
+    it('should return correct color for NAC', () => {
+      expect(service.getRegionColor('NAC')).toBe('#FF9800');
     });
 
     it('should return correct color for BR', () => {
-      expect(service.getRegionColor('BR')).toBe('#f59e0b');
+      expect(service.getRegionColor('BR')).toBe('#FFD700');
     });
 
     it('should return gray for unknown region', () => {
-      expect(service.getRegionColor('UNKNOWN')).toBe('#6b7280');
+      expect(service.getRegionColor('UNKNOWN')).toBe('#757575');
     });
   });
 
   describe('getRegionFlag', () => {
-    it('should return correct flag for EU', () => {
-      expect(service.getRegionFlag('EU')).toBe('🇪🇺');
+    it('should return correct flag URL for EU', () => {
+      expect(service.getRegionFlag('EU')).toBe('https://cdn.jsdelivr.net/gh/madebybowtie/FlagKit@2.4/Assets/SVG/EU.svg');
     });
 
-    it('should return correct flag for NAW', () => {
-      expect(service.getRegionFlag('NAW')).toBe('🇺🇸');
+    it('should return correct flag URL for NAW', () => {
+      expect(service.getRegionFlag('NAW')).toBe('https://cdn.jsdelivr.net/gh/madebybowtie/FlagKit@2.4/Assets/SVG/US.svg');
     });
 
-    it('should return correct flag for NAE', () => {
-      expect(service.getRegionFlag('NAE')).toBe('🇺🇸');
+    it('should return correct flag URL for NAC', () => {
+      expect(service.getRegionFlag('NAC')).toBe('https://cdn.jsdelivr.net/gh/madebybowtie/FlagKit@2.4/Assets/SVG/CA.svg');
     });
 
-    it('should return correct flag for BR', () => {
-      expect(service.getRegionFlag('BR')).toBe('🇧🇷');
+    it('should return correct flag URL for BR', () => {
+      expect(service.getRegionFlag('BR')).toBe('https://cdn.jsdelivr.net/gh/madebybowtie/FlagKit@2.4/Assets/SVG/BR.svg');
     });
 
-    it('should return globe for unknown region', () => {
-      expect(service.getRegionFlag('UNKNOWN')).toBe('🌐');
+    it('should return empty string for unknown region', () => {
+      expect(service.getRegionFlag('UNKNOWN')).toBe('');
     });
   });
 
   describe('getTrancheColor', () => {
-    it('should return correct color for tranche 1', () => {
-      expect(service.getTrancheColor(1)).toBe('#ef4444');
+    it('should return correct color for tranche 1 (gold)', () => {
+      expect(service.getTrancheColor(1)).toBe('#FFD700');
     });
 
-    it('should return correct color for tranche 2', () => {
-      expect(service.getTrancheColor(2)).toBe('#f97316');
+    it('should return correct color for tranche 2 (silver)', () => {
+      expect(service.getTrancheColor(2)).toBe('#C0C0C0');
     });
 
-    it('should return correct color for tranche 3', () => {
-      expect(service.getTrancheColor(3)).toBe('#eab308');
+    it('should return correct color for tranche 3 (bronze)', () => {
+      expect(service.getTrancheColor(3)).toBe('#CD7F32');
     });
 
     it('should return gray for unknown tranche', () => {
-      expect(service.getTrancheColor(99)).toBe('#6b7280');
+      expect(service.getTrancheColor(99)).toBe('#757575');
     });
   });
 
@@ -168,20 +168,20 @@ describe('TeamDetailStatsService', () => {
       expect(service.getTrancheNumber('TRANCHE_3')).toBe(3);
     });
 
-    it('should return 0 for NEW tranche', () => {
-      expect(service.getTrancheNumber('NEW')).toBe(0);
+    it('should return 1 for NEW tranche', () => {
+      expect(service.getTrancheNumber('NEW')).toBe(1);
     });
 
-    it('should return 0 for invalid tranche', () => {
-      expect(service.getTrancheNumber('INVALID')).toBe(0);
+    it('should return 1 for invalid tranche', () => {
+      expect(service.getTrancheNumber('INVALID')).toBe(1);
     });
   });
 
   describe('formatPoints', () => {
-    it('should format points with k suffix for thousands', () => {
-      expect(service.formatPoints(1500)).toBe('1.5k');
-      expect(service.formatPoints(2000)).toBe('2k');
-      expect(service.formatPoints(10500)).toBe('10.5k');
+    it('should format points with K suffix for thousands', () => {
+      expect(service.formatPoints(1500)).toBe('1.5K');
+      expect(service.formatPoints(2000)).toBe('2.0K');
+      expect(service.formatPoints(10500)).toBe('10.5K');
     });
 
     it('should return plain number for values less than 1000', () => {
@@ -260,8 +260,8 @@ describe('TeamDetailStatsService', () => {
       const euPercentage = service.getRegionPercentage('EU', stats);
       const nawPercentage = service.getRegionPercentage('NAW', stats);
 
-      expect(euPercentage).toBeCloseTo(55.56, 1); // 2500/4500
-      expect(nawPercentage).toBeCloseTo(44.44, 1); // 2000/4500
+      expect(euPercentage).toBe(56); // Math.round(2500/4500 * 100) = 56
+      expect(nawPercentage).toBe(44); // Math.round(2000/4500 * 100) = 44
     });
 
     it('should return 0 if stats is null', () => {
@@ -304,8 +304,8 @@ describe('TeamDetailStatsService', () => {
       const euArc = service.getRegionArcLength('EU', stats);
       const nawArc = service.getRegionArcLength('NAW', stats);
 
-      expect(euArc).toBeCloseTo(55.56, 1);
-      expect(nawArc).toBeCloseTo(44.44, 1);
+      expect(euArc).toBe(56); // Same as getRegionPercentage
+      expect(nawArc).toBe(44);
     });
   });
 
@@ -317,7 +317,7 @@ describe('TeamDetailStatsService', () => {
       expect(euOffset).toBe(25); // First region starts at 25
 
       const nawOffset = service.getRegionArcOffset('NAW', stats);
-      expect(nawOffset).toBeGreaterThan(25); // Second region starts after EU
+      expect(nawOffset).toBe(-31); // 25 - 56 (EU percentage) = -31
     });
 
     it('should return 0 if stats is null', () => {

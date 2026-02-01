@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
+import { BrowserNavigationService } from '../../services/browser-navigation.service';
 
 export interface AccessibleErrorInfo {
   title: string;
@@ -41,7 +42,8 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
 
   constructor(
     private accessibilityAnnouncer: AccessibilityAnnouncerService,
-    private focusManagement: FocusManagementService
+    private focusManagement: FocusManagementService,
+    private navigation: BrowserNavigationService
   ) {}
 
   ngOnInit(): void {
@@ -188,12 +190,12 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
     return [
       {
         label: 'Réessayer',
-        action: () => window.location.reload(),
+        action: () => this.navigation.reload(),
         keyboardShortcut: 'R'
       },
       {
         label: 'Retour à l\'accueil',
-        action: () => window.location.assign('/'),
+        action: () => this.navigation.navigateHome(),
         keyboardShortcut: 'H'
       },
       {
@@ -227,16 +229,17 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
       case 'R':
         if (event.altKey) {
           event.preventDefault();
-          window.location.reload();
+          this.navigation.reload();
         }
         break;
       case 'h':
       case 'H':
         if (event.altKey) {
           event.preventDefault();
-          window.location.assign('/');
+          this.navigation.navigateHome();
         }
         break;
     }
   }
 }
+
