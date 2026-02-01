@@ -78,7 +78,7 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
         expect(result.team?.id).toBe('team1');
-        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.team?.ownerName).toBe('testuser');
         expect(result.team?.totalPoints).toBe(5000);
         expect(result.team?.players.length).toBe(2);
         expect(result.allTeams.length).toBe(2);
@@ -131,7 +131,7 @@ describe('TeamDetailDataService', () => {
       service.loadTeamById('team1').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
         expect(result.team?.id).toBe('team1');
-        expect(result.team?.ownerUsername).toBe('testuser');
+        expect(result.team?.ownerName).toBe('testuser');
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBeNull();
         done();
@@ -171,15 +171,14 @@ describe('TeamDetailDataService', () => {
         const team = result.team!;
 
         expect(team.id).toBe('team1');
-        expect(team.ownerUsername).toBe('testuser');
+        expect(team.ownerName).toBe('testuser');
         expect(team.totalPoints).toBe(5000);
-        expect(team.rank).toBe(1);
         expect(team.players.length).toBe(2);
 
         // Check first player conversion
         const firstPlayer = team.players[0];
-        expect(firstPlayer.player.accountId).toBe('player1');
-        expect(firstPlayer.player.userName).toBe('Player1');
+        expect(firstPlayer.player.id).toBe('player1');
+        expect(firstPlayer.player.nickname).toBe('Player1');
         expect(firstPlayer.player.region).toBe('EU');
         expect(firstPlayer.player.points).toBe(2000);
         expect(firstPlayer.player.tranche).toBe('TRANCHE_1');
@@ -211,9 +210,8 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         const team = result.team!;
         expect(team.id).toBe('team1');
-        expect(team.ownerUsername).toBe('testuser');
+        expect(team.ownerName).toBe('testuser');
         expect(team.totalPoints).toBeUndefined();
-        expect(team.rank).toBeUndefined();
       });
     });
   });
@@ -240,9 +238,8 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         const player = result.team!.players[0].player;
 
-        expect(player.accountId).toBe('p1');
-        expect(player.epicAccountId).toBe('epic1');
-        expect(player.userName).toBe('TestPlayer');
+        expect(player.id).toBe('p1');
+        expect(player.nickname).toBe('TestPlayer');
         expect(player.region).toBe('BR');
         expect(player.points).toBe(1500);
         expect(player.tranche).toBe('TRANCHE_3');

@@ -1,4 +1,4 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { AccessibleErrorHandlerComponent, AccessibleErrorInfo } from './accessible-error-handler.component';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';

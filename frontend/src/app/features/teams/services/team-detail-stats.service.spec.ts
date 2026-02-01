@@ -6,44 +6,45 @@ describe('TeamDetailStatsService', () => {
   let service: TeamDetailStatsService;
 
   const mockPlayer1: Player = {
-    accountId: 'player1',
-    epicAccountId: 'epic1',
-    userName: 'Player1',
+    id: 'player1',
+    nickname: 'Player1',
+    username: 'Player1',
     region: 'EU',
     points: 1000,
     tranche: 'TRANCHE_1'
   };
 
   const mockPlayer2: Player = {
-    accountId: 'player2',
-    epicAccountId: 'epic2',
-    userName: 'Player2',
+    id: 'player2',
+    nickname: 'Player2',
+    username: 'Player2',
     region: 'NAW',
     points: 2000,
     tranche: 'TRANCHE_2'
   };
 
   const mockPlayer3: Player = {
-    accountId: 'player3',
-    epicAccountId: 'epic3',
-    userName: 'Player3',
+    id: 'player3',
+    nickname: 'Player3',
+    username: 'Player3',
     region: 'EU',
     points: 1500,
     tranche: 'NEW'
   };
 
   const mockTeamPlayers: TeamPlayer[] = [
-    { player: mockPlayer1, joinedAt: new Date().toISOString() },
-    { player: mockPlayer2, joinedAt: new Date().toISOString() },
-    { player: mockPlayer3, joinedAt: new Date().toISOString() }
+    { player: mockPlayer1, position: 1 },
+    { player: mockPlayer2, position: 2 },
+    { player: mockPlayer3, position: 3 }
   ];
 
   const mockTeam: Team = {
     id: 'team1',
-    ownerUsername: 'owner',
+    name: 'Team Alpha',
+    season: 1,
+    ownerName: 'owner',
     players: mockTeamPlayers,
-    totalPoints: 4500,
-    rank: 1
+    totalPoints: 4500
   };
 
   beforeEach(() => {
@@ -82,10 +83,11 @@ describe('TeamDetailStatsService', () => {
     it('should handle team with no players', () => {
       const emptyTeam: Team = {
         id: 'empty',
-        ownerUsername: 'owner',
+        name: 'Empty Team',
+        season: 1,
+        ownerName: 'owner',
         players: [],
-        totalPoints: 0,
-        rank: 1
+        totalPoints: 0
       };
 
       const stats = service.calculateStats(emptyTeam);
@@ -201,10 +203,11 @@ describe('TeamDetailStatsService', () => {
     it('should return fewer players if team has less than 3', () => {
       const smallTeam: Team = {
         id: 'small',
-        ownerUsername: 'owner',
+        name: 'Small Team',
+        season: 1,
+        ownerName: 'owner',
         players: [mockTeamPlayers[0]],
-        totalPoints: 1000,
-        rank: 1
+        totalPoints: 1000
       };
 
       const topPlayers = service.getTopPlayers(smallTeam);

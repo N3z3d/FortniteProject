@@ -26,7 +26,7 @@ describe('GameDetailActionsService', () => {
     canJoin: true,
     regionRules: { EU: 2, NAW: 3 },
     invitationCode: 'ABC123',
-    invitationCodeExpiresAt: null,
+    invitationCodeExpiresAt: undefined,
     isInvitationCodeExpired: false
   };
 

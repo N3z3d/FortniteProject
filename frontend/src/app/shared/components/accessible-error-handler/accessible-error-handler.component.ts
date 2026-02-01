@@ -193,7 +193,7 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
       },
       {
         label: 'Retour à l\'accueil',
-        action: () => window.location.href = '/',
+        action: () => window.location.assign('/'),
         keyboardShortcut: 'H'
       },
       {
@@ -234,7 +234,7 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
       case 'H':
         if (event.altKey) {
           event.preventDefault();
-          window.location.href = '/';
+          window.location.assign('/');
         }
         break;
     }

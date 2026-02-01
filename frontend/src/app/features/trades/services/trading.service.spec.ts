@@ -185,13 +185,14 @@ describe('TradingService', () => {
     expect(resultDate instanceof Date).toBeTrue();
   });
 
-  it('getTradingStats emits error and sets errorSubject on failure', () => {
-    let error: any;
+  it('getTradingStats emits error and sets errorSubject on failure', (done) => {
     const url = `${environment.apiBaseUrl}/api/trades/game/game-1/statistics`;
 
     service.getTradingStats('game-1').subscribe({
       error: err => {
-        error = err;
+        expect(err).toBeTruthy();
+        expect((service as any).errorSubject.value).toBe('Failed to load trading statistics');
+        done();
       }
     });
 
@@ -201,8 +202,5 @@ describe('TradingService', () => {
     req2.flush('Boom', { status: 500, statusText: 'Server Error' });
     const req3 = httpMock.expectOne(url);
     req3.flush('Boom', { status: 500, statusText: 'Server Error' });
-
-    expect(error).toBeTruthy();
-    expect((service as any).errorSubject.value).toBe('Failed to load trading statistics');
   });
 });

@@ -1,16 +1,12 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { GameDetailComponent } from './game-detail.component';
-import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
 import { GameDetailActionsService } from '../services/game-detail-actions.service';
 import { GameDetailPermissionsService } from '../services/game-detail-permissions.service';
 import { GameDetailUIService } from '../services/game-detail-ui.service';
 import { Game, GameParticipant } from '../models/game.interface';
-import { UserContextService } from '../../../core/services/user-context.service';
-import { UserGamesStore } from '../../../core/services/user-games.store';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 const mockGame: Game = {
@@ -33,32 +29,14 @@ const mockParticipants: GameParticipant[] = [
 describe('GameDetailComponent', () => {
   let component: GameDetailComponent;
   let fixture: ComponentFixture<GameDetailComponent>;
-  let gameServiceSpy: jasmine.SpyObj<GameService>;
   let gameDataServiceSpy: jasmine.SpyObj<GameDataService>;
   let gameDetailActionsSpy: jasmine.SpyObj<GameDetailActionsService>;
   let gameDetailPermissionsSpy: jasmine.SpyObj<GameDetailPermissionsService>;
   let gameDetailUISpy: jasmine.SpyObj<GameDetailUIService>;
   let routerSpy: jasmine.SpyObj<Router>;
-  let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
-  let userContextServiceSpy: jasmine.SpyObj<UserContextService>;
-  let userGamesStoreSpy: jasmine.SpyObj<UserGamesStore>;
   let activatedRouteStub: any;
 
   beforeEach(async () => {
-    gameServiceSpy = jasmine.createSpyObj('GameService', [
-      'getGameById',
-      'getGameParticipants',
-      'deleteGame',
-      'startDraft',
-      'joinGame',
-      'generateInvitationCode',
-      'getDraftState',
-      'archiveGame',
-      'leaveGame',
-      'regenerateInvitationCode',
-      'renameGame',
-      'isGameHost'
-    ]);
     gameDataServiceSpy = jasmine.createSpyObj('GameDataService', [
       'getGameById',
       'getGameParticipants',
@@ -104,9 +82,6 @@ describe('GameDetailComponent', () => {
       'getInvitationCodeExpiry'
     ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
-    userContextServiceSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
-    userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame']);
     activatedRouteStub = { params: of({ id: '1' }) };
 
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
@@ -122,24 +97,14 @@ describe('GameDetailComponent', () => {
     TestBed.configureTestingModule({
       imports: [GameDetailComponent],
       providers: [
-        { provide: GameService, useValue: gameServiceSpy },
         { provide: GameDataService, useValue: gameDataServiceSpy },
         { provide: GameDetailActionsService, useValue: gameDetailActionsSpy },
         { provide: GameDetailPermissionsService, useValue: gameDetailPermissionsSpy },
         { provide: GameDetailUIService, useValue: gameDetailUISpy },
         { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: activatedRouteStub },
-        { provide: UserContextService, useValue: userContextServiceSpy },
-        { provide: UserGamesStore, useValue: userGamesStoreSpy }
+        { provide: ActivatedRoute, useValue: activatedRouteStub }
       ],
       schemas: [NO_ERRORS_SCHEMA]
-    });
-
-    TestBed.overrideComponent(GameDetailComponent, {
-      set: {
-        template: '',
-        providers: [{ provide: MatSnackBar, useValue: snackBarSpy }]
-      }
     });
 
     await TestBed.compileComponents();
@@ -204,54 +169,22 @@ describe('GameDetailComponent', () => {
     expect(gameDetailActionsSpy.joinGame).toHaveBeenCalledWith('1', jasmine.any(Function));
   }));
 
-  it('should allow deleting a game', fakeAsync(() => {
+  it('should call permanentlyDeleteGame when deleteGame is invoked', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
     gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.deleteGame.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
     component.deleteGame();
-    tick();
-    expect(gameServiceSpy.deleteGame).toHaveBeenCalledWith('1');
-    expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('1');
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
-    expect(snackBarSpy.open).not.toHaveBeenCalled();
+    expect(gameDetailActionsSpy.permanentlyDeleteGame).toHaveBeenCalledWith('1');
   }));
 
-  it('should handle error when deleting a game', fakeAsync(() => {
+  it('should call startDraft action', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
     gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.deleteGame.and.returnValue(throwError(() => new Error('Erreur')));
-    fixture.detectChanges();
-    tick();
-    component.deleteGame();
-    tick();
-    expect(component.error).toBeNull();
-    expect(snackBarSpy.open).not.toHaveBeenCalled();
-  }));
-
-  it('should allow starting a draft', fakeAsync(() => {
-    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.startDraft.and.returnValue(of(true));
     fixture.detectChanges();
     tick();
     component.startDraft();
-    tick();
-    expect(gameServiceSpy.startDraft).toHaveBeenCalledWith('1');
-    expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/draft/i), 'Fermer', jasmine.any(Object));
-  }));
-
-  it('should handle error when starting a draft', fakeAsync(() => {
-    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
-    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
-    gameServiceSpy.startDraft.and.returnValue(throwError(() => new Error('Erreur')));
-    fixture.detectChanges();
-    tick();
-    component.startDraft();
-    tick();
-    expect(component.error).toBeNull();
-    expect(snackBarSpy.open).toHaveBeenCalled();
+    expect(gameDetailActionsSpy.startDraft).toHaveBeenCalledWith('1', jasmine.any(Function));
   }));
 
   it('should display participants with correct status', fakeAsync(() => {
@@ -264,49 +197,37 @@ describe('GameDetailComponent', () => {
     expect(component.participants[1].isCreator).toBeFalse();
   }));
 
-  it('should return correct status color', () => {
+  it('should delegate status color to UI service', () => {
+    gameDetailUISpy.getStatusColor.and.returnValue('primary');
     expect(component.getStatusColor('CREATING')).toBe('primary');
-    expect(component.getStatusColor('DRAFTING')).toBe('accent');
-    expect(component.getStatusColor('ACTIVE')).toBe('warn');
-    expect(component.getStatusColor('FINISHED')).toBe('default');
-    expect(component.getStatusColor('CANCELLED')).toBe('default');
+    expect(gameDetailUISpy.getStatusColor).toHaveBeenCalledWith('CREATING');
   });
 
-  it('should return correct status label', () => {
-    expect(component.getStatusLabel('CREATING')).toBe(component.t.t('games.home.statusCreating'));
-    expect(component.getStatusLabel('DRAFTING')).toBe(component.t.t('games.home.statusDrafting'));
-    expect(component.getStatusLabel('ACTIVE')).toBe(component.t.t('games.home.statusActive'));
-    expect(component.getStatusLabel('FINISHED')).toBe(component.t.t('games.home.statusFinished'));
-    expect(component.getStatusLabel('CANCELLED')).toBe(component.t.t('games.home.statusCancelled'));
+  it('should delegate status label to UI service', () => {
+    gameDetailUISpy.getStatusLabel.and.returnValue('status-label');
+    expect(component.getStatusLabel('CREATING')).toBe('status-label');
+    expect(gameDetailUISpy.getStatusLabel).toHaveBeenCalledWith('CREATING');
   });
 
-  it('should calculate participant percentage', () => {
+  it('should delegate participant percentage to UI service', () => {
     component.game = { ...mockGame, participantCount: 2, maxParticipants: 5 };
+    gameDetailUISpy.getParticipantPercentage.and.returnValue(40);
     expect(component.getParticipantPercentage()).toBe(40);
-    component.game = { ...mockGame, participantCount: 0, maxParticipants: 5 };
-    expect(component.getParticipantPercentage()).toBe(0);
-    component.game = { ...mockGame, participantCount: 5, maxParticipants: 5 };
-    expect(component.getParticipantPercentage()).toBe(100);
+    expect(gameDetailUISpy.getParticipantPercentage).toHaveBeenCalledWith(component.game);
   });
 
-  it('should return correct participant color', () => {
+  it('should delegate participant color to UI service', () => {
     component.game = { ...mockGame, participantCount: 1, maxParticipants: 5 };
+    gameDetailUISpy.getParticipantColor.and.returnValue('primary');
     expect(component.getParticipantColor()).toBe('primary');
-    component.game = { ...mockGame, participantCount: 4, maxParticipants: 5 };
-    expect(component.getParticipantColor()).toBe('accent');
-    component.game = { ...mockGame, participantCount: 5, maxParticipants: 5 };
-    expect(component.getParticipantColor()).toBe('warn');
+    expect(gameDetailUISpy.getParticipantColor).toHaveBeenCalledWith(component.game);
   });
 
-  it('should return correct time ago', () => {
-    const now = new Date();
-    expect(component.getTimeAgo(now.toISOString())).toBe("À l'instant");
-    const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
-    expect(component.getTimeAgo(thirtyMinAgo)).toBe('Il y a 30 min');
-    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
-    expect(component.getTimeAgo(threeHoursAgo)).toBe('Il y a 3h');
-    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
-    expect(component.getTimeAgo(twoDaysAgo)).toBe('Il y a 2j');
+  it('should delegate time ago to UI service', () => {
+    const now = new Date().toISOString();
+    gameDetailUISpy.getTimeAgo.and.returnValue('just-now');
+    expect(component.getTimeAgo(now)).toBe('just-now');
+    expect(gameDetailUISpy.getTimeAgo).toHaveBeenCalledWith(now);
   });
 
   it('should navigate back to games list', () => {
@@ -314,31 +235,23 @@ describe('GameDetailComponent', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
   });
 
-  it('should return creator from participants', () => {
-    component.participants = [
-      { id: 'u1', username: 'Alice', joinedAt: '', isCreator: true },
-      { id: 'u2', username: 'Bob', joinedAt: '', isCreator: false }
-    ];
-    const creator = component.getCreator();
-    expect(creator).toEqual(component.participants[0]);
+  it('should delegate creator lookup to UI service', () => {
+    const creator = { id: 'u1', username: 'Alice', joinedAt: '', isCreator: true };
+    component.participants = [creator];
+    gameDetailUISpy.getCreator.and.returnValue(creator);
+    expect(component.getCreator()).toEqual(creator);
+    expect(gameDetailUISpy.getCreator).toHaveBeenCalledWith(component.participants);
   });
 
-  it('should return null if no creator found', () => {
-    component.participants = [
-      { id: 'u2', username: 'Bob', joinedAt: '', isCreator: false }
-    ];
-    const creator = component.getCreator();
-    expect(creator).toBeNull();
-  });
-
-  it('should return non-creator participants', () => {
+  it('should delegate non-creator lookup to UI service', () => {
+    const nonCreators = [{ id: 'u2', username: 'Bob', joinedAt: '', isCreator: false }];
     component.participants = [
       { id: 'u1', username: 'Alice', joinedAt: '', isCreator: true },
-      { id: 'u2', username: 'Bob', joinedAt: '', isCreator: false }
+      nonCreators[0]
     ];
-    const nonCreators = component.getNonCreatorParticipants();
-    expect(nonCreators.length).toBe(1);
-    expect(nonCreators[0].isCreator).toBeFalse();
+    gameDetailUISpy.getNonCreatorParticipants.and.returnValue(nonCreators);
+    expect(component.getNonCreatorParticipants()).toEqual(nonCreators);
+    expect(gameDetailUISpy.getNonCreatorParticipants).toHaveBeenCalledWith(component.participants);
   });
 
   it('should not set page error when loading participants fails', fakeAsync(() => {
@@ -373,86 +286,57 @@ describe('GameDetailComponent', () => {
     expect(component.participants).toEqual(mockParticipants);
   }));
 
-  it('should call deleteGame if confirmDelete is confirmed', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    spyOn(component, 'deleteGame');
+  it('should call confirmDelete action', () => {
     component.confirmDelete();
-    expect(component.deleteGame).toHaveBeenCalled();
+    expect(gameDetailActionsSpy.confirmDelete).toHaveBeenCalledWith('1');
   });
 
-  it('should not call deleteGame if confirmDelete is cancelled', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
-    spyOn(component, 'deleteGame');
-    component.confirmDelete();
-    expect(component.deleteGame).not.toHaveBeenCalled();
-  });
-
-  it('should call startDraft if confirmStartDraft is confirmed', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
-    spyOn(component, 'startDraft');
+  it('should call confirmStartDraft action', () => {
     component.confirmStartDraft();
-    expect(component.startDraft).toHaveBeenCalled();
+    expect(gameDetailActionsSpy.confirmStartDraft).toHaveBeenCalledWith('1', jasmine.any(Function));
   });
 
-  it('should not call startDraft if confirmStartDraft is cancelled', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
-    spyOn(component, 'startDraft');
-    component.confirmStartDraft();
-    expect(component.startDraft).not.toHaveBeenCalled();
+  it('should delegate participant status icon to UI service', () => {
+    const participant = { id: 'u1', username: 'Alice', joinedAt: '', isCreator: true } as any;
+    gameDetailUISpy.getParticipantStatusIcon.and.returnValue('star');
+    expect(component.getParticipantStatusIcon(participant)).toBe('star');
+    expect(gameDetailUISpy.getParticipantStatusIcon).toHaveBeenCalledWith(participant);
   });
 
-  it('should return correct participant status icon', () => {
-    expect(component.getParticipantStatusIcon({ isCreator: true } as any)).toBe('star');
-    expect(component.getParticipantStatusIcon({ isCreator: false } as any)).toBe('person');
+  it('should delegate participant status color to UI service', () => {
+    const participant = { id: 'u2', username: 'Bob', joinedAt: '', isCreator: false } as any;
+    gameDetailUISpy.getParticipantStatusColor.and.returnValue('primary');
+    expect(component.getParticipantStatusColor(participant)).toBe('primary');
+    expect(gameDetailUISpy.getParticipantStatusColor).toHaveBeenCalledWith(participant);
   });
 
-  it('should return correct participant status color', () => {
-    expect(component.getParticipantStatusColor({ isCreator: true } as any)).toBe('accent');
-    expect(component.getParticipantStatusColor({ isCreator: false } as any)).toBe('primary');
+  it('should delegate participant status label to UI service', () => {
+    const participant = { id: 'u2', username: 'Bob', joinedAt: '', isCreator: false } as any;
+    gameDetailUISpy.getParticipantStatusLabel.and.returnValue('Participant');
+    expect(component.getParticipantStatusLabel(participant)).toBe('Participant');
+    expect(gameDetailUISpy.getParticipantStatusLabel).toHaveBeenCalledWith(participant);
   });
 
-  it('should return correct participant status label', () => {
-    expect(component.getParticipantStatusLabel({ isCreator: true } as any)).toBe('Créateur');
-    expect(component.getParticipantStatusLabel({ isCreator: false } as any)).toBe('Participant');
-  });
-
-  it('should return true for canStartDraft if status is CREATING and >=2 participants', () => {
-    component.game = { ...mockGame, status: 'CREATING', participantCount: 2 };
+  it('should delegate canStartDraft to permissions service', () => {
+    component.game = { ...mockGame };
+    gameDetailPermissionsSpy.canStartDraft.and.returnValue(true);
     expect(component.canStartDraft()).toBeTrue();
-  });
-  it('should return false for canStartDraft if status is not CREATING', () => {
-    component.game = { ...mockGame, status: 'ACTIVE', participantCount: 2 };
-    expect(component.canStartDraft()).toBeFalse();
-  });
-  it('should return false for canStartDraft if participants < 2', () => {
-    component.game = { ...mockGame, status: 'CREATING', participantCount: 1 };
-    expect(component.canStartDraft()).toBeFalse();
+    expect(gameDetailPermissionsSpy.canStartDraft).toHaveBeenCalledWith(component.game);
   });
 
-  it('should return true for canDeleteGame if status is CREATING', () => {
-    userContextServiceSpy.getCurrentUser.and.returnValue({ id: 'u1', username: 'Alice', email: 'alice@test.com' });
-    gameServiceSpy.isGameHost.and.returnValue(true);
-    component.game = { ...mockGame, status: 'CREATING' };
-    expect(component.canDeleteGame()).toBeTrue();
-  });
-  it('should return false for canDeleteGame if status is not CREATING', () => {
-    userContextServiceSpy.getCurrentUser.and.returnValue({ id: 'u1', username: 'Alice', email: 'alice@test.com' });
-    gameServiceSpy.isGameHost.and.returnValue(true);
-    component.game = { ...mockGame, status: 'ACTIVE' };
+  it('should delegate canDeleteGame to permissions service', () => {
+    component.game = { ...mockGame };
+    gameDetailPermissionsSpy.canDeleteGame.and.returnValue(false);
     expect(component.canDeleteGame()).toBeFalse();
+    expect(gameDetailPermissionsSpy.canDeleteGame).toHaveBeenCalledWith(component.game);
   });
 
-  it('should return true for canJoinGame if canJoin and not full', () => {
-    component.game = { ...mockGame, canJoin: true, participantCount: 2, maxParticipants: 5 };
+  it('should delegate canJoinGame to permissions service', () => {
+    component.game = { ...mockGame };
+    gameDetailPermissionsSpy.canJoinGame.and.returnValue(true);
     expect(component.canJoinGame()).toBeTrue();
-  });
-  it('should return false for canJoinGame if canJoin is false', () => {
-    component.game = { ...mockGame, canJoin: false, participantCount: 2, maxParticipants: 5 };
-    expect(component.canJoinGame()).toBeFalse();
-  });
-  it('should return false for canJoinGame if full', () => {
-    component.game = { ...mockGame, canJoin: true, participantCount: 5, maxParticipants: 5 };
-    expect(component.canJoinGame()).toBeFalse();
+    expect(gameDetailPermissionsSpy.canJoinGame).toHaveBeenCalledWith(component.game);
   });
 }); 
+
 
