@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { TeamEditComponent } from './team-edit.component';
 import { TeamService } from '../../../core/services/team.service';
 import { TranslationService } from '../../../core/services/translation.service';
@@ -33,15 +33,14 @@ describe('TeamEditComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [TeamEditComponent, ReactiveFormsModule],
-      providers: [
-        { provide: Router, useValue: router },
-        { provide: ActivatedRoute, useValue: activatedRoute },
-        { provide: MatSnackBar, useValue: snackBar },
-        { provide: TeamService, useValue: teamService },
-        { provide: TranslationService, useValue: translationService }
-      ]
-    }).compileComponents();
+      imports: [TeamEditComponent, ReactiveFormsModule]
+    })
+    .overrideProvider(Router, { useValue: router })
+    .overrideProvider(ActivatedRoute, { useValue: activatedRoute })
+    .overrideProvider(MatSnackBar, { useValue: snackBar })
+    .overrideProvider(TeamService, { useValue: teamService })
+    .overrideProvider(TranslationService, { useValue: translationService })
+    .compileComponents();
 
     fixture = TestBed.createComponent(TeamEditComponent);
     component = fixture.componentInstance;
@@ -152,9 +151,22 @@ describe('TeamEditComponent', () => {
 
   it('should remove player and show undo option', fakeAsync(() => {
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
-    component.players = [player];
-    translationService.t.and.returnValues('{player} retiré', 'common.cancel');
 
+    // Use Subject instead of of() to prevent immediate emission
+    const onActionSubject = new Subject<void>();
+    snackBarRef.onAction = jasmine.createSpy('onAction').and.returnValue(onActionSubject.asObservable());
+
+    // Use callFake instead of returnValues to avoid NG0100 error
+    const translations: { [key: string]: string } = {
+      'teams.edit.snackbar.playerRemoved': '{player} retiré',
+      'common.cancel': 'common.cancel'
+    };
+    translationService.t.and.callFake((key: string) => translations[key] || key);
+
+    fixture.detectChanges();
+    tick(1000);
+
+    component.players = [player];
     component.removePlayer(player);
 
     expect(component.players.length).toBe(0);
@@ -163,14 +175,33 @@ describe('TeamEditComponent', () => {
 
   it('should restore player on undo', fakeAsync(() => {
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
-    component.players = [player];
-    translationService.t.and.returnValues('{player} retiré', 'common.cancel', 'teams.edit.snackbar.playerRestored', 'common.close');
 
+    // Use Subject to control when onAction emits
+    const onActionSubject = new Subject<void>();
+    snackBarRef.onAction = jasmine.createSpy('onAction').and.returnValue(onActionSubject.asObservable());
+
+    // Use callFake instead of returnValues to avoid NG0100 error
+    const translations: { [key: string]: string } = {
+      'teams.edit.snackbar.playerRemoved': '{player} retiré',
+      'common.cancel': 'common.cancel',
+      'teams.edit.snackbar.playerRestored': 'teams.edit.snackbar.playerRestored',
+      'common.close': 'common.close'
+    };
+    translationService.t.and.callFake((key: string) => translations[key] || key);
+
+    fixture.detectChanges();
+    tick(1000);
+
+    component.players = [player];
     component.removePlayer(player);
     expect(component.players.length).toBe(0);
 
-    // Simulate undo action - the callback is called in the component
+    // Simulate undo action - trigger the Subject
+    onActionSubject.next();
     tick();
+
+    expect(component.players.length).toBe(1);
+    expect(component.players[0]).toBe(player);
   }));
 
   it('should return correct region color', () => {
