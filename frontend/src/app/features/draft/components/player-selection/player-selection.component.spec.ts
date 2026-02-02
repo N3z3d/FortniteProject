@@ -192,18 +192,18 @@ describe('PlayerSelectionComponent', () => {
   });
 
   it('should debounce search changes', fakeAsync(() => {
-    spyOn<any>(component, 'updateFilteredPlayers');
-
     fixture.detectChanges();
+
+    const spy = spyOn<any>(component, 'updateFilteredPlayers');
 
     const event = { target: { value: 'ninja' } } as any;
 
     component.onSearchChange(event);
-    tick(150); // Before debounce
-    expect(component['updateFilteredPlayers']).not.toHaveBeenCalled();
+    tick(150); // Before debounce (300ms)
+    expect(spy).not.toHaveBeenCalled();
 
-    tick(200); // After debounce
-    expect(component['updateFilteredPlayers']).toHaveBeenCalled();
+    tick(200); // After debounce (total 350ms > 300ms)
+    expect(spy).toHaveBeenCalled();
   }));
 
   it('should get region label from translation', () => {
@@ -266,7 +266,7 @@ describe('PlayerSelectionComponent', () => {
   });
 
   it('should get player aria label', () => {
-    translationService.t.and.returnValues('Europe', 'Tier 1', '{nickname} from {region} tier {tranche}');
+    translationService.t.and.returnValues('{nickname} from {region} tier {tranche}', 'Europe');
 
     const label = component.getPlayerAriaLabel(mockPlayers[3]);
 
