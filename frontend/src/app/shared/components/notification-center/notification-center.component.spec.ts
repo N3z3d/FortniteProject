@@ -148,19 +148,19 @@ describe('NotificationCenterComponent', () => {
   });
 
   it('should return correct icon for info notification', () => {
-    expect(component.getNotificationIcon('info')).toBe('info');
+    expect(component.getNotificationIcon('info')).toBe('notifications');
   });
 
   it('should return correct icon for success notification', () => {
-    expect(component.getNotificationIcon('success')).toBe('info');
+    expect(component.getNotificationIcon('success')).toBe('notifications');
   });
 
   it('should return correct icon for error notification', () => {
-    expect(component.getNotificationIcon('error')).toBe('info');
+    expect(component.getNotificationIcon('error')).toBe('notifications');
   });
 
   it('should return correct icon for warning notification', () => {
-    expect(component.getNotificationIcon('warning')).toBe('info');
+    expect(component.getNotificationIcon('warning')).toBe('notifications');
   });
 
   it('should return default icon for unknown type', () => {
