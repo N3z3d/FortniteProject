@@ -151,7 +151,7 @@ export class TradeHistoryComponent implements OnInit {
 
   hasActiveFilters(): boolean {
     const values = this.filtersForm.value;
-    return values.status || values.team || values.player;
+    return !!(values.status || values.team || values.player);
   }
 
   viewTrade(tradeId: string): void {
