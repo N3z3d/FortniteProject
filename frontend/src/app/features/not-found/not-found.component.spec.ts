@@ -105,27 +105,43 @@ describe('NotFoundComponent', () => {
   });
 
   it('should go back in history when available', () => {
-    const originalLength = window.history.length;
-    (window.history as any).length = 5;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      writable: true,
+      value: 5
+    });
 
     component.goBack();
 
     expect(location.back).toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
 
-    (window.history as any).length = originalLength;
+    // Restore original descriptor
+    if (originalDescriptor) {
+      Object.defineProperty(window.history, 'length', originalDescriptor);
+    }
   });
 
   it('should navigate to games when no history', () => {
-    const originalLength = window.history.length;
-    (window.history as any).length = 1;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      writable: true,
+      value: 1
+    });
 
     component.goBack();
 
     expect(router.navigate).toHaveBeenCalledWith(['/games']);
     expect(location.back).not.toHaveBeenCalled();
 
-    (window.history as any).length = originalLength;
+    // Restore original descriptor
+    if (originalDescriptor) {
+      Object.defineProperty(window.history, 'length', originalDescriptor);
+    }
   });
 
   it('should have gradient background', () => {
