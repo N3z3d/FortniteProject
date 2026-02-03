@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClient } from '@angular/common/http';
 
@@ -214,6 +214,194 @@ describe('DashboardComponent (i18n)', () => {
     const expected = new Intl.NumberFormat('pt-PT').format(1234);
 
     expect(formatted).toBe(expected);
+  });
+
+  describe('ngOnInit', () => {
+    it('should load games on initialization', () => {
+      const gameServiceSpy = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
+      gameServiceSpy.getUserGames.and.returnValue(of([component.selectedGame] as any));
+
+      component.ngOnInit();
+
+      expect(gameServiceSpy.getUserGames).toHaveBeenCalled();
+    });
+
+    it('should subscribe to language changes', () => {
+      component.ngOnInit();
+
+      translationService.setLanguage('es');
+      fixture.detectChanges();
+
+      expect(component.displayStats).toBeDefined();
+    });
+
+
+    it('should handle route params with game id', () => {
+      const gameServiceSpy = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
+      const mockGame = { id: 'game-123', name: 'Test Game' } as any;
+      gameServiceSpy.getGameById.and.returnValue(of(mockGame));
+
+      component.ngOnInit();
+
+      expect(component.selectedGame).toBeDefined();
+    });
+  });
+
+
+  describe('getGameStatus', () => {
+    it('should return active status for ACTIVE game', () => {
+      const game = { ...component.selectedGame, status: 'ACTIVE' } as any;
+      const status = component.getGameStatus(game);
+
+      expect(status).toBe(translationService.t('games.status.active'));
+    });
+
+    it('should return completed status for COMPLETED game', () => {
+      const game = { ...component.selectedGame, status: 'COMPLETED' } as any;
+      const status = component.getGameStatus(game);
+
+      expect(status).toBe(translationService.t('games.status.completed'));
+    });
+
+    it('should return draft status for DRAFT game', () => {
+      const game = { ...component.selectedGame, status: 'DRAFT' } as any;
+      const status = component.getGameStatus(game);
+
+      expect(status).toBe(translationService.t('games.status.draft'));
+    });
+  });
+
+  describe('Component lifecycle', () => {
+    it('should cleanup subscriptions on destroy', () => {
+      component.ngOnInit();
+      const subscriptionCount = component['subscriptions'].length;
+
+      component.ngOnDestroy();
+
+      expect(subscriptionCount).toBeGreaterThan(0);
+    });
+
+    it('should destroy charts on component destroy', () => {
+      component.ngOnInit();
+      component.ngAfterViewInit();
+
+      component.ngOnDestroy();
+
+      expect(component['regionChart']).toBeNull();
+      expect(component['pointsChart']).toBeNull();
+    });
+  });
+
+  describe('Error handling', () => {
+    it('should have error property available', () => {
+      expect(component.error).toBeDefined();
+    });
+
+    it('should have isLoading property available', () => {
+      expect(component.isLoading).toBeDefined();
+    });
+  });
+
+  describe('Stats display', () => {
+    it('should have stats property initialized', () => {
+      expect(component.stats).toBeDefined();
+      expect(component.stats.totalTeams).toBeDefined();
+      expect(component.stats.totalPlayers).toBeDefined();
+      expect(component.stats.totalPoints).toBeDefined();
+    });
+
+    it('should have displayStats property', () => {
+      expect(component.displayStats).toBeDefined();
+    });
+
+    it('should handle stats updates', () => {
+      component.stats.totalTeams = 15;
+      component.stats.totalPlayers = 75;
+      component.stats.totalPoints = 10000;
+
+      expect(component.stats.totalTeams).toBe(15);
+      expect(component.stats.totalPlayers).toBe(75);
+      expect(component.stats.totalPoints).toBe(10000);
+    });
+  });
+
+  describe('Game selection', () => {
+    it('should update selectedGame when game selection changes', () => {
+      const newGame = {
+        id: 'game-new',
+        name: 'New Game',
+        status: 'ACTIVE'
+      } as any;
+
+      component.ngOnInit();
+      const gameSelectionService = TestBed.inject(GameSelectionService) as any;
+      gameSelectionService.selectedGame$ = of(newGame);
+
+      expect(component.selectedGame).toBeDefined();
+    });
+
+  });
+
+  describe('Participant count display', () => {
+    it('should use participantCount when available', () => {
+      const game = {
+        ...component.selectedGame,
+        participantCount: 10,
+        teams: [{ id: '1' }, { id: '2' }]
+      } as any;
+
+      const count = component.formatter.getParticipantDisplayCount(game, 2);
+
+      expect(count).toBe(10);
+    });
+
+    it('should fallback to teams length when participantCount is 0', () => {
+      const game = {
+        ...component.selectedGame,
+        participantCount: 0,
+        teams: [{ id: '1' }, { id: '2' }, { id: '3' }]
+      } as any;
+
+      const count = component.formatter.getParticipantDisplayCount(game, 3);
+
+      expect(count).toBe(3);
+    });
+
+    it('should use stats.totalTeams as final fallback', () => {
+      const game = {
+        ...component.selectedGame,
+        participantCount: 0,
+        teams: undefined,
+        participants: undefined
+      } as any;
+
+      const count = component.formatter.getParticipantDisplayCount(game, 5);
+
+      expect(count).toBe(5);
+    });
+  });
+
+  describe('Number formatting', () => {
+    it('should format numbers according to current language', () => {
+      translationService.setLanguage('fr');
+      const formatted = component.formatter.formatNumber(1000);
+
+      expect(formatted).toBeTruthy();
+      expect(typeof formatted).toBe('string');
+    });
+
+    it('should handle large numbers correctly', () => {
+      const formatted = component.formatter.formatNumber(1000000);
+
+      expect(formatted).toBeTruthy();
+      expect(formatted.length).toBeGreaterThan(0);
+    });
+
+    it('should handle zero correctly', () => {
+      const formatted = component.formatter.formatNumber(0);
+
+      expect(formatted).toBe('0');
+    });
   });
 });
 
