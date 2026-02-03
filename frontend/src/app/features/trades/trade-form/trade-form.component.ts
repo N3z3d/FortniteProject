@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -365,7 +365,7 @@ interface Team {
     }
   `]
 })
-export class TradeFormComponent implements OnInit {
+export class TradeFormComponent implements OnInit, OnDestroy {
   tradeForm: FormGroup;
   isEditMode = false;
   isSubmitting = false;
@@ -373,6 +373,7 @@ export class TradeFormComponent implements OnInit {
   availablePlayers: Player[] = [];
   selectedTeam: Team | null = null;
   public readonly t = inject(TranslationService);
+  private submitTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(
     private fb: FormBuilder,
@@ -389,6 +390,12 @@ export class TradeFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    if (this.submitTimeoutId) {
+      clearTimeout(this.submitTimeoutId);
+    }
   }
 
   private loadData(): void {
@@ -438,12 +445,12 @@ export class TradeFormComponent implements OnInit {
   onSubmit(): void {
     if (this.tradeForm.valid && !this.hasSamePlayerError()) {
       this.isSubmitting = true;
-      
+
       const tradeData = this.tradeForm.value;
       this.logger.debug('TradeForm: creating trade', tradeData);
-      
+
       // Simulate API call
-      setTimeout(() => {
+      this.submitTimeoutId = setTimeout(() => {
         this.isSubmitting = false;
         this.snackBar.open(this.t.t('trades.form.createdSuccess'), this.t.t('common.close'), {
           duration: 3000,
