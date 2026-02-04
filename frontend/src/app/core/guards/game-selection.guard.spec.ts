@@ -91,5 +91,68 @@ describe('GameSelectionGuard', () => {
         jasmine.objectContaining({ attemptedUrl: '/dashboard' })
       );
     });
+
+    it('should handle null game when hasSelectedGame returns true but getSelectedGame returns null', () => {
+      gameSelectionService.hasSelectedGame.and.returnValue(true);
+      gameSelectionService.getSelectedGame.and.returnValue(null as any);
+
+      const result = guard.canActivate(mockRoute, mockState);
+
+      expect(result).toBe(true);
+      expect(logger.debug).toHaveBeenCalled();
+    });
+
+    it('should allow access with different game IDs', () => {
+      gameSelectionService.hasSelectedGame.and.returnValue(true);
+      gameSelectionService.getSelectedGame.and.returnValue({ id: 'different-game', name: 'Different' } as any);
+
+      const result = guard.canActivate(mockRoute, mockState);
+
+      expect(result).toBe(true);
+      expect(logger.debug).toHaveBeenCalledWith(
+        'GameSelectionGuard: Access granted',
+        jasmine.objectContaining({ gameId: 'different-game' })
+      );
+    });
+
+    it('should redirect consistently across multiple checks when no game selected', () => {
+      gameSelectionService.hasSelectedGame.and.returnValue(false);
+      const mockUrlTree = {} as UrlTree;
+      router.createUrlTree.and.returnValue(mockUrlTree);
+
+      const state1 = { url: '/dashboard' } as RouterStateSnapshot;
+      const state2 = { url: '/teams' } as RouterStateSnapshot;
+
+      const result1 = guard.canActivate(mockRoute, state1);
+      const result2 = guard.canActivate(mockRoute, state2);
+
+      expect(result1).toBe(mockUrlTree);
+      expect(result2).toBe(mockUrlTree);
+      expect(snackBar.open).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow access with empty game name', () => {
+      gameSelectionService.hasSelectedGame.and.returnValue(true);
+      gameSelectionService.getSelectedGame.and.returnValue({ id: 'game-1', name: '' } as any);
+
+      const result = guard.canActivate(mockRoute, mockState);
+
+      expect(result).toBe(true);
+    });
+
+    it('should redirect with different attempted URLs', () => {
+      gameSelectionService.hasSelectedGame.and.returnValue(false);
+      const mockUrlTree = {} as UrlTree;
+      router.createUrlTree.and.returnValue(mockUrlTree);
+
+      const complexState = { url: '/dashboard?tab=stats&filter=active' } as RouterStateSnapshot;
+
+      guard.canActivate(mockRoute, complexState);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        'GameSelectionGuard: No game selected, redirecting to games list',
+        jasmine.objectContaining({ attemptedUrl: '/dashboard?tab=stats&filter=active' })
+      );
+    });
   });
 });
