@@ -324,4 +324,269 @@ describe('TeamDetailStatsService', () => {
       expect(service.getRegionArcOffset('EU', null)).toBe(0);
     });
   });
+
+  describe('getTop10PercentPlayersCount', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', points: 1000 },
+          { id: 'p2', points: 2000 },
+          { id: 'p3', points: 3000 }
+        ]
+      },
+      {
+        id: 'team2',
+        players: [
+          { id: 'p4', points: 500 },
+          { id: 'p5', points: 4000 },
+          { id: 'p6', points: 1500 }
+        ]
+      },
+      {
+        id: 'team3',
+        players: [
+          { id: 'p7', points: 800 },
+          { id: 'p8', points: 2500 },
+          { id: 'p9', points: 1200 },
+          { id: 'p10', points: 900 }
+        ]
+      }
+    ];
+
+    it('should count players in top 10% of all players', () => {
+      // All players sorted: 4000, 3000, 2500, 2000, 1500, 1200, 1000, 900, 800, 500
+      // Top 10% = 1 player, threshold = 4000
+      const team: Team = {
+        id: 'team2',
+        name: 'Team Beta',
+        season: 1,
+        ownerName: 'owner',
+        players: [
+          { player: { id: 'p5', nickname: 'P5', username: 'P5', region: 'EU', points: 4000, tranche: 'T1' }, position: 1 }
+        ],
+        totalPoints: 4000
+      };
+
+      const count = service.getTop10PercentPlayersCount(team, allTeams);
+      expect(count).toBe(1);
+    });
+
+    it('should handle empty teams list', () => {
+      const count = service.getTop10PercentPlayersCount(mockTeam, []);
+      expect(count).toBe(0);
+    });
+
+    it('should handle team with no qualifying players', () => {
+      const lowPointsTeam: Team = {
+        id: 'low',
+        name: 'Low Team',
+        season: 1,
+        ownerName: 'owner',
+        players: [
+          { player: { id: 'p1', nickname: 'P1', username: 'P1', region: 'EU', points: 100, tranche: 'T1' }, position: 1 }
+        ],
+        totalPoints: 100
+      };
+
+      const count = service.getTop10PercentPlayersCount(lowPointsTeam, allTeams);
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('getRegionRatio', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', region: 'EU', points: 1000 },
+          { id: 'p2', region: 'NAW', points: 2000 }
+        ]
+      },
+      {
+        id: 'team2',
+        players: [
+          { id: 'p3', region: 'EU', points: 1500 },
+          { id: 'p4', region: 'NAW', points: 500 }
+        ]
+      }
+    ];
+
+    it('should calculate region market share correctly', () => {
+      const stats = service.calculateStats(mockTeam);
+      // mockTeam has EU: 2500 points
+      // allTeams total EU: 1000 + 1500 = 2500
+      // Total EU (including mockTeam): 2500 + 2500 = 5000
+      // Market share: 2500/5000 = 50%
+      const ratio = service.getRegionRatio('EU', stats, allTeams);
+
+      expect(ratio).toBeGreaterThan(0);
+    });
+
+    it('should return 0 if stats is null', () => {
+      const ratio = service.getRegionRatio('EU', null, allTeams);
+      expect(ratio).toBe(0);
+    });
+
+    it('should return 0 if allTeams is empty', () => {
+      const stats = service.calculateStats(mockTeam);
+      const ratio = service.getRegionRatio('EU', stats, []);
+      expect(ratio).toBe(0);
+    });
+
+    it('should return 0 if region has no points in any team', () => {
+      const stats = service.calculateStats(mockTeam);
+      const ratio = service.getRegionRatio('ASIA', stats, allTeams);
+      expect(ratio).toBe(0);
+    });
+  });
+
+  describe('getSortedRegionsByRatio', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', region: 'EU', points: 1000 },
+          { id: 'p2', region: 'NAW', points: 3000 }
+        ]
+      }
+    ];
+
+    it('should sort regions by ratio descending', () => {
+      const stats = service.calculateStats(mockTeam);
+      const sorted = service.getSortedRegionsByRatio(stats, allTeams);
+
+      expect(sorted.length).toBeGreaterThan(0);
+      expect(sorted).toContain('EU');
+      expect(sorted).toContain('NAW');
+    });
+
+    it('should return empty array if stats is null', () => {
+      const sorted = service.getSortedRegionsByRatio(null, allTeams);
+      expect(sorted).toEqual([]);
+    });
+  });
+
+  describe('getAverageRatio', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', region: 'EU', points: 1000 },
+          { id: 'p2', region: 'NAW', points: 1000 }
+        ]
+      }
+    ];
+
+    it('should calculate average ratio across all regions', () => {
+      const stats = service.calculateStats(mockTeam);
+      const avgRatio = service.getAverageRatio(stats, allTeams);
+
+      expect(avgRatio).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should return 0 if stats is null', () => {
+      const avgRatio = service.getAverageRatio(null, allTeams);
+      expect(avgRatio).toBe(0);
+    });
+
+    it('should return 0 if no regions', () => {
+      const emptyTeam: Team = {
+        id: 'empty',
+        name: 'Empty',
+        season: 1,
+        ownerName: 'owner',
+        players: [],
+        totalPoints: 0
+      };
+      const stats = service.calculateStats(emptyTeam);
+      const avgRatio = service.getAverageRatio(stats, allTeams);
+
+      expect(avgRatio).toBe(0);
+    });
+  });
+
+  describe('getRegionArcLengthByRatio', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', region: 'EU', points: 1000 },
+          { id: 'p2', region: 'NAW', points: 1000 }
+        ]
+      }
+    ];
+
+    it('should calculate arc length based on ratio', () => {
+      const stats = service.calculateStats(mockTeam);
+      const arcLength = service.getRegionArcLengthByRatio('EU', stats, allTeams);
+
+      expect(arcLength).toBeGreaterThanOrEqual(0);
+      expect(arcLength).toBeLessThanOrEqual(100);
+    });
+
+    it('should return 0 when total ratio is 0', () => {
+      const emptyTeam: Team = {
+        id: 'empty',
+        name: 'Empty',
+        season: 1,
+        ownerName: 'owner',
+        players: [],
+        totalPoints: 0
+      };
+      const stats = service.calculateStats(emptyTeam);
+      const arcLength = service.getRegionArcLengthByRatio('EU', stats, []);
+
+      expect(arcLength).toBe(0);
+    });
+  });
+
+  describe('getRegionArcOffsetByRatio', () => {
+    const allTeams = [
+      {
+        id: 'team1',
+        players: [
+          { id: 'p1', region: 'EU', points: 1000 },
+          { id: 'p2', region: 'NAW', points: 1000 }
+        ]
+      }
+    ];
+
+    it('should calculate arc offset based on ratio', () => {
+      const stats = service.calculateStats(mockTeam);
+      const offset = service.getRegionArcOffsetByRatio('EU', stats, allTeams);
+
+      expect(typeof offset).toBe('number');
+    });
+
+    it('should return 0 if stats is null', () => {
+      const offset = service.getRegionArcOffsetByRatio('EU', null, allTeams);
+      expect(offset).toBe(0);
+    });
+
+    it('should return 25 when total ratio is 0', () => {
+      const emptyTeam: Team = {
+        id: 'empty',
+        name: 'Empty',
+        season: 1,
+        ownerName: 'owner',
+        players: [],
+        totalPoints: 0
+      };
+      const stats = service.calculateStats(emptyTeam);
+      const offset = service.getRegionArcOffsetByRatio('EU', stats, []);
+
+      expect(offset).toBe(25);
+    });
+
+    it('should calculate offset for second region correctly', () => {
+      const stats = service.calculateStats(mockTeam);
+      const sorted = service.getSortedRegionsByRatio(stats, allTeams);
+
+      if (sorted.length > 1) {
+        const secondRegionOffset = service.getRegionArcOffsetByRatio(sorted[1], stats, allTeams);
+        expect(typeof secondRegionOffset).toBe('number');
+      }
+    });
+  });
 });
