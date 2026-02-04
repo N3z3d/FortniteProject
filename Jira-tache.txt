@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-03 20:00
+Last Updated: 2026-02-04 18:22
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -36,34 +36,23 @@ OBJECTIF:
 - Atteindre 100% conformite clean code (max 500 lignes par classe).
 
 CONTEXTE:
-- Architecture cible: Pure Hexagonal (migration incrementale).
-- Backend: 100% conforme (0 violations).
-- Frontend: 11 violations (1 CRITIQUE resolved: translation.service.ts).
+- Architecture cible: pure hexagonale (migration incrementale).
+- Backend clean code: conforme (0 violations).
+- Frontend clean code: 11 violations restantes (1 critique deja corrigee).
+- Tests: backend 1282/1286 (99.7%), frontend 1415/1415 (100%).
 
 DESCRIPTION:
-- Piloter les decisions d'architecture, refactors et strategie de tests.
-- Appliquer des regles de dependances et separation des responsabilites.
-- Maintenir stabilite tests: 1282/1286 backend (99.7%), ~1299/1299 frontend (100%).
+- Piloter decisions d'architecture, refactors et strategie de tests.
+- Appliquer regles de dependances et separation des responsabilites.
+- Etat recent: compilation OK, mojibakes corriges, translation.service.ts refactored (<200 lignes), 4 tests architecture en echec, 11 violations frontend restantes.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Architecture cible documentee et verifiee par des tests.
 - [ ] Services et controleurs respectent SRP et DIP.
 - [ ] 100% conformite clean code (0 violations frontend/backend).
 
-PROGRESS:
-- [x] Backend clean code: 100% conforme
-- [x] Mojibakes: 100% corriges (986 total, 0 remaining)
-- [x] Compilation: 100% success (0 errors)
-- [x] Frontend critical violation: translation.service.ts refactored (5353 → <200 lignes)
-- [x] Frontend tests: 100% passing (1415/1415 SUCCESS, 0 FAILED ✅)
-- [x] TEST-012: Phase 7 COMPLETE (+204 tests, 71% → ~75%) ✅
-- [x] TEST-013: Phase 8b COMPLETE (+116 tests, 73.24% → 76.06%) ✅
-- [x] Test suite timeout fixed (e551c3a) ✅
-- [ ] Frontend clean code: 11 remaining violations (JIRA-CLEAN-002 to 005)
-- [ ] Architecture tests: 4 failures (JIRA-TEST-004)
-
 NEXT:
-- (1) JIRA-TEST-013: Phase 8c/8d to reach 80% (current: 76.06%, gap: 3.94%) - P1
+- (1) JIRA-TEST-013: Phase 8c/8d pour atteindre 80% (actuel: 76.06%, gap: 3.94%) - P1
 - (2) JIRA-ARCH-009: Finaliser decision architecture pure hexagonal - P1
 - (3) JIRA-TEST-004: Corriger 4 tests architecture - P1
 
@@ -77,7 +66,7 @@ ESTIMATE: 2-4h
 
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-02-03 17:39
-DERNIERE_MAJ: 2026-02-03 19:45
+DERNIERE_MAJ: 2026-02-04 18:11
 
 DEPENDENCIES: none
 
@@ -92,11 +81,10 @@ CONTEXTE:
 
 DESCRIPTION:
 - Valider ADR-001 (scope hexagonal, limites domain/application/adapter).
+- ADR-001 localise dans docs/architecture/ADR-001-layered-architecture.md (contenu layered a adapter).
 - Definir conventions de packages, naming des ports, regles de mapping entity <-> domain.
-- Draft template de migration (sections + checklist) reutilisable pour les 5 domaines.
-- Template migration (draft): Scope + pre-requis, Modeles domaine, Ports in/out, Adapters, Mappers, Tests, Validation.
-- Decisions a trancher (draft): packages cibles, conventions ports, localisation des mappers, DTO/frontieres, regles d'erreur.
-- Table decisions (draft): Sujet | Option | Decision | Rationale | Impact | Owner | Date.
+- Drafts prets a inserer dans ADR-001: template migration, table de decisions, checklist, sujets pre-remplis.
+- Etat ADR-001: titre "Pure Hexagonal" mais contient sections hybrides/layered (Layer Responsibilities, Implementation Guidelines layered, Hybrid additions) et contradictions avec decision "pure hexagonal"; diagrammes avec caracteres mojibake a nettoyer.
 
 CRITERES_D_ACCEPTATION:
 - [ ] ADR-001 finalise et commite
@@ -104,9 +92,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] JIRA-ARCH-011 debloque
 
 NEXT:
-- (1) Ajouter dans ADR-001 la table de decisions (packages, ports, mappers, DTO, erreurs)
-- (2) Transformer le template draft en checklist utilisable (sections + criteres mesurables)
-- (3) Mettre a jour ADR-001 puis confirmer le debloquage de JIRA-ARCH-011
+- (1) Lister sections a retirer/remplacer (Layer Responsibilities, Implementation Guidelines layered, Hybrid additions, Compliance hybrid) et choisir strategie (update in-place vs nouveau fichier) puis noter la decision
+- (2) Ajouter table de decisions (Sujet|Option|Decision|Rationale|Impact|Owner|Date) avec 5 sujets pre-remplis: limites domain/app/adapter, naming ports, emplacement mappers, DTO/frontieres, strategie erreurs
+- (3) Ajouter checklist migration + template, corriger mojibake dans les diagrammes, relire ADR-001, noter la date de validation, debloquer JIRA-ARCH-011
 
 
 ID: JIRA-TEST-004
@@ -146,7 +134,7 @@ CRITERES_D_ACCEPTATION:
 NEXT:
 - (1) Creer Pagination domain DTO
 - (2) Migrer usages Spring Pagination
-- (3) Run architecture tests et valider
+- (3) Lancer les tests d'architecture et valider
 
 
 ID: JIRA-TEST-003
@@ -164,62 +152,35 @@ DEPENDENCIES: none
 
 OBJECTIF:
 - Atteindre 80% de coverage frontend avec 0 test en echec.
-- Stabiliser suite de tests (100% passing) ✅ ACHIEVED.
+- Stabiliser suite de tests (100% passing) - atteint.
 
 CONTEXTE:
-- Compilation: ✅ Successful
-- Browser: ChromeHeadless
-- Coverage tracking: Lines (cible principale), Statements, Functions, Branches
-
-PROGRESS:
-✅ Phase 1-6: 61.46% → 71.13% (+9.67 pts, 655 → 1092 tests) - DONE
-✅ Fix failing tests (JIRA-TEST-014): 13 FAILED → 0 FAILED (1095/1095 passing) - DONE
-✅ Phase 7 (JIRA-TEST-012): 71.13% → 73.24% (+204 tests, 1095 → 1299) - DONE ✅
-✅ Phase 8b (JIRA-TEST-013): 73.24% → 76.06% (+116 tests, 1299 → 1415) - DONE ✅
-🔄 Phase 8c/8d (JIRA-TEST-013): 76.06% → 80%+ (gap: 3.94%) - IN_PROGRESS @Claude
-📊 TOTAL: 61.46% → 76.06% (+14.60 pts, 655 → 1415 tests, 0 FAILED ✅)
-
-TEST RESULTS (Latest - 2026-02-03 19:55):
-- Executed: 1415 tests (100% ✅)
-- SUCCESS: 1415 tests
-- FAILED: 0 tests
-- Time: 7.2s (vs 120s timeout before fix)
-
-COVERAGE DETAILS (2026-02-03 19:55):
-- Lines: 76.06% (4030/5298) ← PRIMARY
-- Statements: 75.31% (4251/5644)
-- Functions: 73.71% (1360/1845)
-- Branches: 63.35% (1264/1995)
-
-GAP TO 80%:
-- Current: 76.06% lines (4030/5298)
-- Target: 80.00% lines (~4238/5298)
-- Remaining: 3.94 points (~208 lines, ~40-60 tests estimated)
-- Strategy: Phase 8c/8d (branch coverage + edge cases)
+- Compilation OK; navigateur: ChromeHeadless.
+- Coverage (2026-02-03 19:55): Lines 76.06% (4030/5298), Statements 75.31% (4251/5644), Functions 73.71% (1360/1845), Branches 63.35% (1264/1995).
+- Gap to 80% lines: 3.94 points (~208 lignes, ~40-60 tests).
+- Tests: 1415/1415 SUCCESS, 0 FAILED, 7.2s.
 
 DESCRIPTION:
-Run full Angular test suite avec Brave browser (ChromeHeadless mode).
-
-COMMANDES:
-```bash
-cd frontend
-npm test -- --watch=false --browsers=ChromeHeadless --code-coverage
-```
+- Commandes pour coverage:
+- `cd frontend`
+- `npm test -- --watch=false --browsers=ChromeHeadless --code-coverage`
+- Coordonner Phase 8c/8d (branch coverage + error paths) via JIRA-TEST-013.
+- Marquer DONE quand coverage >= 80% et report genere.
 
 CRITERES_D_ACCEPTATION:
-- [x] Tests execute successfully (no timeout) - OK ~1299 tests
-- [x] 0 test failures - ✅ ~1299 SUCCESS, 0 FAILED
-- [ ] Coverage >= 80% - Lines ~75% (GAP: ~5 points remaining)
+- [x] Tests execute successfully (no timeout) - OK 1415 tests
+- [x] 0 test failures - OK 1415 SUCCESS
+- [ ] Coverage >= 80% - Lines 76.06% (gap 3.94)
 - [x] Test report generated - OK coverage/frontend/index.html
 
 NEXT:
-- (1) Execute Phase 8 (JIRA-TEST-013) to reach 80%
-- (2) Run full coverage report to validate exact %
-- (3) Mark DONE when 80% achieved
+- (1) Executer Phase 8 (JIRA-TEST-013) pour atteindre 80%
+- (2) Re-run coverage report pour valider le %
+- (3) Marquer DONE quand 80% atteint
 
 
 ID: JIRA-TEST-013
-TITRE: Frontend Coverage Phase 8 (73.24% → 80%+)
+TITRE: Frontend Coverage Phase 8 (73.24% -> 80%+)
 TYPE: Task
 PRIORITE: P1
 STATUT: IN_PROGRESS
@@ -236,63 +197,29 @@ OBJECTIF:
 - Combler gaps restants + augmenter branch coverage.
 
 CONTEXTE:
-- Current (exact): 76.06% lines (4030/5298 lines covered)
-- Target: 80%+ lines (~208 more lines to cover, ~40-60 tests)
-- Strategy: Branch coverage enhancement + edge cases
-- Gap: 3.94 percentage points remaining
-
-COVERAGE REPORT (2026-02-03 19:55):
-```
-Chrome Headless: Executed 1415 of 1415 SUCCESS (7.2s, 0 FAILED ✅)
-
-Statements   : 75.31% (4251/5644)
-Branches     : 63.35% (1264/1995)
-Functions    : 73.71% (1360/1845)
-Lines        : 76.06% (4030/5298) ← PRIMARY METRIC
-```
+- Coverage actuel (2026-02-03 19:55): Lines 76.06% (4030/5298), Statements 75.31% (4251/5644), Functions 73.71% (1360/1845), Branches 63.35% (1264/1995).
+- Target: 80% lines; gap 3.94 points (~208 lignes, ~40-60 tests).
+- Strategy: branch coverage enhancement + error paths.
 
 DESCRIPTION:
-Final coverage push (Phase 8):
-1. ✅ Run coverage report to identify exact gaps - DONE (73.24% exact)
-2. ✅ Identify low-coverage files from detailed report - DONE (4 files prioritaires)
-3. ✅ Create specs for remaining untested components - COMPLETE (4/4 done)
-4. ✅ Fix test suite timeout (trade-form cleanup) - DONE (commit e551c3a)
-5. 🔄 Add edge cases to existing specs for branch coverage - IN_PROGRESS
-6. 🔄 Test error paths and exceptional cases - PENDING
-
-APPROACH:
-- Phase 8a: ✅ Coverage analysis and gap identification - DONE
-- Phase 8b: ✅ New component specs (4/4 files done: +116 tests) - COMPLETE ✅
-  - ✅ premium-interactions.directive.spec.ts (25 tests) - commit 0eec7eb
-  - ✅ stats-api.mapper.spec.ts (40 tests) - commit cdc5fe9
-  - ✅ dashboard.component.spec.ts (16 → 31 tests, +15) - commit fda2d8c
-  - ✅ team-detail.component.spec.ts (1 → 32 tests, +31) - commit fda2d8c
-  - ✅ Fix timeout: trade-form timer cleanup - commit e551c3a
-- Phase 8c: 🔄 Branch coverage enhancement (existing specs) - IN_PROGRESS
-- Phase 8d: 🔄 Error paths and edge cases - PENDING
-
-PROGRESS (2026-02-03 20:00):
-- ✅ Phase 8b COMPLETE: 4/4 spec files enhanced (+116 tests)
-- ✅ Test suite timeout FIXED (e551c3a): 7.2s vs 120s before
-- ✅ All tests passing (100% SUCCESS)
-- Tests: 1299 → 1415 (+116 actual)
-- Coverage: 73.24% → 76.06% (+2.82 points validated ✅)
-- Commits: 4 (0eec7eb, cdc5fe9, fda2d8c, e551c3a)
-- Gap to 80%: 3.94 percentage points remaining (~208 lines, ~40-60 tests)
+- Phase 8a terminee: analyse coverage et identification de 4 fichiers low-coverage.
+- Phase 8b terminee: specs ajoutees pour premium-interactions.directive, stats-api.mapper, dashboard, team-detail; +116 tests; timeout fixe.
+- Phase 8c en cours: enrichir branch coverage dans specs existantes.
+- Phase 8d a faire: error paths et edge cases.
+- Tous les tests passent (1415/1415) sur le dernier run.
 
 CRITERES_D_ACCEPTATION:
-- [ ] Coverage: Lines >= 80% (current: 76.06%, gap: 3.94 points)
-- [x] Tests: ~1380-1420 tests ✅ (current: 1415)
-- [x] Branch coverage >= 55% ✅ (current: 63.35% EXCEEDS)
-- [x] 0 test failures ✅ (1415/1415 SUCCESS)
-- [x] Test suite timeout fixed ✅ (e551c3a)
+- [ ] Coverage: Lines >= 80% (actuel: 76.06%, gap: 3.94 points)
+- [x] Tests: ~1380-1420 tests (current: 1415)
+- [x] Branch coverage >= 55% (current: 63.35%)
+- [x] 0 test failures (1415/1415 SUCCESS)
+- [x] Test suite timeout fixed (e551c3a)
 - [ ] JIRA-TEST-003 marked as DONE
 
 NEXT:
-- (1) Phase 8c: Enhance branch coverage in existing specs (~20-30 tests)
-- (2) Phase 8d: Add error paths and edge cases (~20-30 tests)
-- (3) Run final coverage report to validate 80%+
-- (4) Mark JIRA-TEST-003 as DONE when 80% achieved
+- (1) Phase 8c: augmenter branch coverage dans specs existantes (~20-30 tests)
+- (2) Phase 8d: ajouter error paths et edge cases (~20-30 tests)
+- (3) Lancer coverage report final et mettre a jour JIRA-TEST-003
 
 
 ID: JIRA-ARCH-001
@@ -313,39 +240,23 @@ OBJECTIF:
 - Finaliser la migration layered -> hexagonal.
 
 CONTEXTE:
-- Architecture cible: Pure Hexagonal (decision JIRA-ARCH-009).
-- Test shouldFollowOnionArchitecture() desactive.
-- Packages existants: domain/, application/facade/, core/usecase/.
-- Packages a migrer: controller/, repository/, service/.
+- Architecture cible: pure hexagonale (decision JIRA-ARCH-009).
+- Test shouldFollowOnionArchitecture() desactive (1499 violations).
+- Packages existants: domain/, application/facade/, core/usecase/, controller/, repository/, service/.
+- Etat actuel: ports/use cases crees; migration DIP controllers partielle (8/14).
 
 DESCRIPTION:
-- Phase 1: creer les ports (domain/port/in/*UseCase, domain/port/out/*Port).
-- Phase 2: restructurer les adapters (adapter/in/web/, adapter/out/persistence/).
-- Phase 3: refactorer les services et faire appeler l'application par les controllers.
+- Finaliser la migration layered -> hexagonal en 3 axes: ports, adapters, services/controllers.
+- Controllers migres: Player, Team, Draft, Trade, GameDetail, GameStatistics, Game, Score.
+- ScoreController utilise CQRS (ScoreQueryUseCase + ScoreCommandUseCase).
+- DraftWorkflowIntegrationTest corrige; compilation OK; 1282/1286 tests passent.
+- Controllers restants (non critiques/P3): Leaderboard, User, Auth, PrIngestion, Api, Home.
 
 CRITERES_D_ACCEPTATION:
 - [ ] shouldFollowOnionArchitecture() passe (0 violations).
 - [ ] Tous les tests existants passent.
 - [ ] Package structure respecte ADR-001 (Hexagonal).
 - [ ] Aucune regression fonctionnelle.
-
-PROGRESS:
-- [x] Phase 1: Ports/UseCases crees (12 ports + 10 use cases)
-- [x] Phase 2: Migration DIP controllers (8/14 done - 57%)
-      Controllers migres: Player, Team, Draft, Trade, GameDetail, GameStatistics, Game, Score
-- [x] ScoreController: Pattern CQRS applique (ScoreQueryUseCase + ScoreCommandUseCase)
-- [x] DraftWorkflowIntegrationTest: 12 tests corriges
-- [x] Tous les tests compilent: 1282/1286 passing (99.7%)
-- [x] Port interface migration: 30+ services migres
-- [x] Compilation: 100% success (0 errors)
-
-CONTROLLERS RESTANTS (6/14):
-- LeaderboardController (5 services specialises - architecture propre, P3)
-- UserController (CRUD simple - Service suffisant, migration non justifiee)
-- AuthController (UnifiedAuthService - peut rester, P3)
-- PrIngestionController (ingestion - pas de migration, P3)
-- ApiController (minimal - pas de migration)
-- HomeController (minimal - pas de migration)
 
 NEXT:
 - (1) Finaliser JIRA-ARCH-009 (architecture decision)
@@ -354,11 +265,11 @@ NEXT:
 
 
 ID: JIRA-CLEAN-002
-TITRE: Refactor Trade Components
-TYPE: Task
+TITRE: Refactor Trade Components (Parent)
+TYPE: Story
 PRIORITE: P1
 STATUT: TODO
-ESTIMATE: 4-6h
+ESTIMATE: 1-2j
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
@@ -367,38 +278,183 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser 3 trade components (611-627 lignes → <500 lignes chacun).
-- Extraire business logic vers services dedies.
+- Refactoriser les composants Trade pour respecter <500 lignes.
+- Extraire la logique metier vers des services partageables.
 
 CONTEXTE:
-- Current violations: 3 HIGH priority (611-627 lines each)
-- Files: trade-proposal.component.ts, trade-review.component.ts, trade-detail.component.ts
-- Target: <500 lines per component (Clean Code compliance)
+- Violations HIGH: 3 composants (611-627 lignes).
+- Fichiers: trade-proposal.component.ts, trade-review.component.ts, trade-detail.component.ts.
+- Besoin de services dedies (validation, calculs, formatting).
 
 DESCRIPTION:
-Extract business logic to services:
-1. Create TradeValidationService (validation logic)
-2. Create TradeCalculationService (balance, value calculations)
-3. Create TradeFormattingService (display formatting)
-4. Refactor components to use services (UI orchestration only)
-
-APPROACH:
-- Component 1: trade-proposal.component.ts (627 → <500 lines)
-- Component 2: trade-review.component.ts (618 → <500 lines)
-- Component 3: trade-detail.component.ts (611 → <500 lines)
-- Services: Create 3 dedicated services with unit tests
+- Ticket parent pour orchestrer la refonte Trade UI + extraction de logique.
+- Sous-chantiers (split):
+- Creer services Trade (validation/calcul/formatting) + specs unitaires.
+- Refactor trade-proposal.component.ts avec services et reduction <500 lignes.
+- Refactor trade-review.component.ts avec services et reduction <500 lignes.
+- Refactor trade-detail.component.ts avec services et reduction <500 lignes.
 
 CRITERES_D_ACCEPTATION:
-- [ ] All 3 components < 500 lines
-- [ ] Business logic extracted to services
-- [ ] All existing tests pass (0 regressions)
-- [ ] New service specs added (>80% coverage)
-- [ ] Clean Code compliance: 11 → 8 violations
+- [ ] 3 composants Trade < 500 lignes
+- [ ] Services metier extraits et reutilisables
+- [ ] Tests unitaires services ajoutes (nominal + edge cases)
+- [ ] Tous les tests existants passent (0 regressions)
+- [ ] Clean Code compliance: 11 -> 8 violations
 
 NEXT:
-- (1) Start with trade-proposal.component.ts refactor
-- (2) Extract validation logic to TradeValidationService
-- (3) Create service specs and validate
+- (1) JIRA-CLEAN-006: Creer services Trade + specs unitaires
+- (2) JIRA-CLEAN-007: Refactor trade-proposal.component.ts
+- (3) JIRA-CLEAN-008: Refactor trade-review.component.ts
+
+
+ID: JIRA-CLEAN-006
+TITRE: Creer services Trade (validation/calcul/formatting)
+TYPE: Task
+PRIORITE: P1
+STATUT: IN_PROGRESS
+ESTIMATE: 4-6h
+
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-02-03 21:56
+DERNIERE_MAJ: 2026-02-04 18:22
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Extraire la logique metier Trade vers 3 services dedies.
+- Assurer une couverture de tests unitaires deterministes.
+
+CONTEXTE:
+- Les composants Trade contiennent validation/calcul/format.
+- Ces services seront reutilises par proposal/review/detail.
+
+DESCRIPTION:
+- Creer TradeValidationService (regles, erreurs, preconditions).
+- Creer TradeCalculationService (balance, value, totals).
+- Creer TradeFormattingService (affichage, labels, monnaie).
+- Ajouter specs unitaires (nominal + >=3 edge cases par service).
+- Sources identifiees: frontend/src/app/features/trades/components/trade-proposal/trade-proposal.component.ts, frontend/src/app/features/trades/trade-detail/trade-detail.component.ts.
+- Verifier fichier "trade-review" (non trouve) et valider si trade-details.component.ts est le bon candidat.
+- Fait: services crees (trade-validation, trade-calculation, trade-formatting) + specs unitaires; TradeBusinessService delegue a ces services; spec TradeBusinessService mise a jour.
+
+CRITERES_D_ACCEPTATION:
+- [ ] 3 services crees et injectables
+- [ ] Tests unitaires pour chaque service (nominal + 3 edge cases)
+- [ ] 0 dependance UI dans les services
+- [ ] Lint/tests passent localement si disponibles
+
+NEXT:
+- (1) Confirmer si "trade-review" = frontend/src/app/features/trades/components/trade-details/trade-details.component.ts et aligner le ticket JIRA-CLEAN-008
+- (2) Lancer les tests unitaires frontend pour valider les nouveaux services (si dispo)
+- (3) Si tests OK, passer JIRA-CLEAN-006 en DONE puis le supprimer du fichier
+
+
+ID: JIRA-CLEAN-007
+TITRE: Refactor trade-proposal.component.ts
+TYPE: Task
+PRIORITE: P1
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-006
+
+OBJECTIF:
+- Reduire trade-proposal.component.ts a <500 lignes.
+- Remplacer la logique inline par les services Trade.
+
+CONTEXTE:
+- trade-proposal.component.ts ~627 lignes (HIGH violation).
+- Services Trade disponibles via JIRA-CLEAN-006.
+
+DESCRIPTION:
+- Rebrancher validation/calcul/formatting vers services.
+- Nettoyer les methodes redondantes et simplifier l'orchestration UI.
+
+CRITERES_D_ACCEPTATION:
+- [ ] trade-proposal.component.ts < 500 lignes
+- [ ] Aucune logique metier inline non necessaire
+- [ ] Tests existants passent (0 regressions)
+
+NEXT:
+- (1) Remplacer appels inline par services Trade
+- (2) Supprimer duplication/unused methods
+- (3) Lancer tests cibles si dispo
+
+
+ID: JIRA-CLEAN-008
+TITRE: Refactor trade-review.component.ts
+TYPE: Task
+PRIORITE: P1
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-006
+
+OBJECTIF:
+- Reduire trade-review.component.ts a <500 lignes.
+- Utiliser les services Trade pour logique metier.
+
+CONTEXTE:
+- trade-review.component.ts ~618 lignes (HIGH violation).
+- Services Trade disponibles via JIRA-CLEAN-006.
+
+DESCRIPTION:
+- Remplacer validation/calcul/formatting par services.
+- Simplifier le composant et limiter aux actions UI.
+
+CRITERES_D_ACCEPTATION:
+- [ ] trade-review.component.ts < 500 lignes
+- [ ] Services Trade utilises pour logique metier
+- [ ] Tests existants passent (0 regressions)
+
+NEXT:
+- (1) Rebrancher les appels vers services Trade
+- (2) Nettoyer le composant (methods inutiles)
+- (3) Lancer tests cibles si dispo
+
+
+ID: JIRA-CLEAN-009
+TITRE: Refactor trade-detail.component.ts
+TYPE: Task
+PRIORITE: P1
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-006
+
+OBJECTIF:
+- Reduire trade-detail.component.ts a <500 lignes.
+- Utiliser les services Trade pour logique metier.
+
+CONTEXTE:
+- trade-detail.component.ts ~611 lignes (HIGH violation).
+- Services Trade disponibles via JIRA-CLEAN-006.
+
+DESCRIPTION:
+- Deplacer validation/calcul/formatting vers services.
+- Simplifier le composant (UI only).
+
+CRITERES_D_ACCEPTATION:
+- [ ] trade-detail.component.ts < 500 lignes
+- [ ] Services Trade utilises pour logique metier
+- [ ] Tests existants passent (0 regressions)
+
+NEXT:
+- (1) Rebrancher les appels vers services Trade
+- (2) Nettoyer le composant (methods inutiles)
+- (3) Lancer tests cibles si dispo
 
 
 ID: JIRA-CLEAN-003
@@ -415,7 +471,7 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser game.service.ts (594 lignes → <100 lignes).
+- Refactoriser game.service.ts (594 lignes -> <100 lignes).
 - Appliquer pattern CQRS (Command/Query separation).
 
 CONTEXTE:
@@ -424,18 +480,18 @@ CONTEXTE:
 - Pattern: CQRS with GameCommandService + GameQueryService
 
 DESCRIPTION:
-Split game.service.ts using CQRS:
-1. Create game-command.service.ts (create, update, delete, start)
-2. Create game-query.service.ts (get, list, search, stats)
-3. Refactor game.service.ts to facade (delegates to command/query)
-4. Add unit tests for new services
+- Split game.service.ts using CQRS:
+- Create game-command.service.ts (create, update, delete, start)
+- Create game-query.service.ts (get, list, search, stats)
+- Refactor game.service.ts to facade (delegates to command/query)
+- Add unit tests for new services
 
 CRITERES_D_ACCEPTATION:
 - [ ] game.service.ts < 100 lines (facade only)
 - [ ] game-command.service.ts created with unit tests
 - [ ] game-query.service.ts created with unit tests
 - [ ] All existing tests pass (0 regressions)
-- [ ] Clean Code compliance: 8 → 7 violations
+- [ ] Clean Code compliance: 8 -> 7 violations
 
 NEXT:
 - (1) Create game-command.service.ts and game-query.service.ts
@@ -457,7 +513,7 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser draft.component.ts (584 lignes → <300 lignes).
+- Refactoriser draft.component.ts (584 lignes -> <300 lignes).
 - Componentiser UI (extract subcomponents).
 
 CONTEXTE:
@@ -466,18 +522,18 @@ CONTEXTE:
 - Strategy: Extract UI sections to child components
 
 DESCRIPTION:
-Extract subcomponents:
-1. Create draft-timer.component (timer display + logic)
-2. Create draft-player-list.component (available players list)
-3. Create draft-roster.component (current team roster display)
-4. Refactor draft.component.ts to orchestrator (delegates to children)
+- Extract subcomponents:
+- Create draft-timer.component (timer display + logic)
+- Create draft-player-list.component (available players list)
+- Create draft-roster.component (current team roster display)
+- Refactor draft.component.ts to orchestrator (delegates to children)
 
 CRITERES_D_ACCEPTATION:
 - [ ] draft.component.ts < 300 lines
 - [ ] 3 child components created with specs
 - [ ] All existing tests pass (0 regressions)
 - [ ] UI behavior unchanged (smoke tests)
-- [ ] Clean Code compliance: 7 → 6 violations
+- [ ] Clean Code compliance: 7 -> 6 violations
 
 NEXT:
 - (1) Extract draft-timer.component first
@@ -486,11 +542,11 @@ NEXT:
 
 
 ID: JIRA-CLEAN-005
-TITRE: Refactor Premium Services & Detail Components
-TYPE: Task
+TITRE: Refactor Premium Services & Detail Components (Parent)
+TYPE: Story
 PRIORITE: P2
 STATUT: TODO
-ESTIMATE: 6-8h
+ESTIMATE: 1-2j
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
@@ -499,37 +555,253 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser 6 fichiers (501-590 lignes → <500 lignes chacun).
+- Orchestrer la refonte de 6 fichiers pour passer sous 500 lignes.
 - Atteindre 100% conformite clean code frontend.
 
 CONTEXTE:
-- Current: 8 MEDIUM violations (501-590 lines each)
-- Target: 0 violations (all files < 500 lines)
-- Files: premium services (3) + detail components (3)
+- Violations MEDIUM: 6 fichiers entre 501 et 590 lignes.
+- Deux familles: premium services (3) et detail components (3).
 
 DESCRIPTION:
-Refactor 6 files:
-1. premium-interactions.service.ts (590 → <500)
-2. premium-animations.service.ts (567 → <500)
-3. premium-effects.service.ts (543 → <500)
-4. team-detail.component.ts (534 → <500)
-5. player-detail.component.ts (521 → <500)
-6. game-detail.component.ts (501 → <500)
-
-Strategy:
-- Services: Extract helper methods to utilities
-- Components: Extract display sections to child components
+- Ticket parent. Sous-tickets livrables par fichier.
+- Fichiers: premium-interactions.service.ts, premium-animations.service.ts, premium-effects.service.ts, team-detail.component.ts, player-detail.component.ts, game-detail.component.ts.
 
 CRITERES_D_ACCEPTATION:
-- [ ] All 6 files < 500 lines
-- [ ] All existing tests pass (0 regressions)
-- [ ] New child components have specs
-- [ ] Clean Code compliance: 100% (0 violations)
+- [ ] Tous les sous-tickets (JIRA-CLEAN-010 a JIRA-CLEAN-015) termines
+- [ ] Chaque fichier cible < 500 lignes
+- [ ] Tests unitaires/specs ajoutes quand extraction de logique
+- [ ] Tous les tests existants passent (0 regressions)
+- [ ] Clean Code compliance frontend: 0 violations
 
 NEXT:
-- (1) Start with premium-interactions.service.ts
-- (2) Extract helper methods to utilities
-- (3) Create specs for extracted code
+- (1) JIRA-CLEAN-010: premium-interactions.service.ts
+- (2) JIRA-CLEAN-011: premium-animations.service.ts
+- (3) JIRA-CLEAN-012: premium-effects.service.ts
+
+
+ID: JIRA-CLEAN-010
+TITRE: Refactor premium-interactions.service.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire premium-interactions.service.ts sous 500 lignes.
+- Extraire logique reutilisable vers utilitaires/services.
+
+CONTEXTE:
+- Fichier actuel ~590 lignes (violation MEDIUM).
+- Service oriente interactions premium.
+
+DESCRIPTION:
+- Identifier methodes longues et blocs repetes.
+- Extraire helpers vers un module utilitaire ou service interne.
+- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
+
+CRITERES_D_ACCEPTATION:
+- [ ] premium-interactions.service.ts < 500 lignes
+- [ ] Helpers extraits et reutilisables
+- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Inventorier methodes candidates a extraction
+- (2) Extraire helpers et mettre a jour les appels
+- (3) Ajouter specs unitaires pour la logique extraite
+
+
+ID: JIRA-CLEAN-011
+TITRE: Refactor premium-animations.service.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire premium-animations.service.ts sous 500 lignes.
+- Extraire logique reutilisable vers utilitaires/services.
+
+CONTEXTE:
+- Fichier actuel ~567 lignes (violation MEDIUM).
+- Service oriente animations premium.
+
+DESCRIPTION:
+- Identifier methodes longues et blocs repetes.
+- Extraire helpers vers un module utilitaire ou service interne.
+- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
+
+CRITERES_D_ACCEPTATION:
+- [ ] premium-animations.service.ts < 500 lignes
+- [ ] Helpers extraits et reutilisables
+- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Inventorier methodes candidates a extraction
+- (2) Extraire helpers et mettre a jour les appels
+- (3) Ajouter specs unitaires pour la logique extraite
+
+
+ID: JIRA-CLEAN-012
+TITRE: Refactor premium-effects.service.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire premium-effects.service.ts sous 500 lignes.
+- Extraire logique reutilisable vers utilitaires/services.
+
+CONTEXTE:
+- Fichier actuel ~543 lignes (violation MEDIUM).
+- Service oriente effets premium.
+
+DESCRIPTION:
+- Identifier methodes longues et blocs repetes.
+- Extraire helpers vers un module utilitaire ou service interne.
+- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
+
+CRITERES_D_ACCEPTATION:
+- [ ] premium-effects.service.ts < 500 lignes
+- [ ] Helpers extraits et reutilisables
+- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Inventorier methodes candidates a extraction
+- (2) Extraire helpers et mettre a jour les appels
+- (3) Ajouter specs unitaires pour la logique extraite
+
+
+ID: JIRA-CLEAN-013
+TITRE: Refactor team-detail.component.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire team-detail.component.ts sous 500 lignes.
+- Extraire sections UI en sous-composants testables.
+
+CONTEXTE:
+- Fichier actuel ~534 lignes (violation MEDIUM).
+- Composant detail equipe avec sections repetitives.
+
+DESCRIPTION:
+- Identifier sections UI stables et extraire en child components.
+- Remplacer logique inline par inputs/outputs clairs.
+- Ajouter specs pour les nouveaux components.
+
+CRITERES_D_ACCEPTATION:
+- [ ] team-detail.component.ts < 500 lignes
+- [ ] Sous-composants crees et testes
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Decouper les sections UI candidates
+- (2) Creer les sous-composants et rebrancher le template
+- (3) Ajouter specs unitaires pour les nouveaux components
+
+
+ID: JIRA-CLEAN-014
+TITRE: Refactor player-detail.component.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire player-detail.component.ts sous 500 lignes.
+- Extraire sections UI en sous-composants testables.
+
+CONTEXTE:
+- Fichier actuel ~521 lignes (violation MEDIUM).
+- Composant detail joueur avec sections repetitives.
+
+DESCRIPTION:
+- Identifier sections UI stables et extraire en child components.
+- Remplacer logique inline par inputs/outputs clairs.
+- Ajouter specs pour les nouveaux components.
+
+CRITERES_D_ACCEPTATION:
+- [ ] player-detail.component.ts < 500 lignes
+- [ ] Sous-composants crees et testes
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Decouper les sections UI candidates
+- (2) Creer les sous-composants et rebrancher le template
+- (3) Ajouter specs unitaires pour les nouveaux components
+
+
+ID: JIRA-CLEAN-015
+TITRE: Refactor game-detail.component.ts
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-CLEAN-005
+
+OBJECTIF:
+- Reduire game-detail.component.ts sous 500 lignes.
+- Extraire sections UI en sous-composants testables.
+
+CONTEXTE:
+- Fichier actuel ~501 lignes (violation MEDIUM).
+- Composant detail game avec sections repetitives.
+
+DESCRIPTION:
+- Identifier sections UI stables et extraire en child components.
+- Remplacer logique inline par inputs/outputs clairs.
+- Ajouter specs pour les nouveaux components.
+
+CRITERES_D_ACCEPTATION:
+- [ ] game-detail.component.ts < 500 lignes
+- [ ] Sous-composants crees et testes
+- [ ] 0 regressions tests
+
+NEXT:
+- (1) Decouper les sections UI candidates
+- (2) Creer les sous-composants et rebrancher le template
+- (3) Ajouter specs unitaires pour les nouveaux components
 
 
 ID: JIRA-ARCH-011
@@ -544,7 +816,6 @@ ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
 DEPENDENCIES: JIRA-ARCH-009
-BLOCKED_BY: JIRA-ARCH-009
 
 OBJECTIF:
 - Migrer Game domain vers pure hexagonal architecture (first incremental step).
@@ -552,37 +823,16 @@ OBJECTIF:
 - Implementer mappers bidirectionnels domain <-> entity.
 
 CONTEXTE:
-- Current: Game entities are JPA entities (Spring dependencies)
-- Target: Pure domain models with zero framework dependencies
-- Strategy: Incremental migration with test validation
+- Demarre apres validation ADR-001 (JIRA-ARCH-009).
+- Current: Game entities are JPA entities (Spring dependencies).
+- Target: Pure domain models with zero framework dependencies.
+- Strategy: Incremental migration with test validation.
 
-MIGRATION STEPS:
-
-Step 1: Create Domain Models
-```
-domain/
-  └── game/
-      └── model/
-          ├── Game.java (pure domain - no JPA)
-          ├── GameStatus.java (enum)
-          └── GameSettings.java (value object)
-```
-
-Step 2: Create Mappers
-```
-adapter/
-  └── out/
-      └── persistence/
-          └── mapper/
-              └── GameEntityMapper.java
-```
-
-Step 3: Update Repository Adapter
-- GameRepositoryAdapter uses mapper to convert JPA <-> Domain
-
-Step 4: Validate Tests
-- All 1286 tests pass
-- No functional regressions
+DESCRIPTION:
+- Step 1: Create domain models (domain/game/model: Game, GameStatus, GameSettings) sans JPA.
+- Step 2: Create GameEntityMapper in adapter/out/persistence/mapper.
+- Step 3: Update GameRepositoryAdapter pour mapper JPA <-> domain.
+- Step 4: Valider tests (1286) + smoke tests; mettre a jour documentation.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Pure Game domain models created (0 Spring dependencies)
@@ -592,9 +842,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Documentation updated
 
 NEXT:
-- (1) Wait for JIRA-ARCH-009 completion
-- (2) Create Game domain models
-- (3) Create GameEntityMapper
+- (1) Attendre validation JIRA-ARCH-009
+- (2) Creer models domain Game
+- (3) Implementer GameEntityMapper
 
 
 ID: JIRA-ARCH-012
@@ -609,17 +859,20 @@ ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
 DEPENDENCIES: JIRA-ARCH-011
-BLOCKED_BY: JIRA-ARCH-011 (Game domain must complete first)
 
 OBJECTIF:
 - Migrer Player domain vers pure hexagonal (incremental step 2).
 
+CONTEXTE:
+- Bloque par JIRA-ARCH-011 (Game domain).
+- Suit le pattern de migration defini dans JIRA-ARCH-011.
+
 DESCRIPTION:
-Follow same pattern as JIRA-ARCH-011:
-1. Create pure Player domain models
-2. Create PlayerEntityMapper
-3. Update PlayerRepositoryAdapter
-4. Validate all tests pass
+- Follow same pattern as JIRA-ARCH-011:
+- Create pure Player domain models
+- Create PlayerEntityMapper
+- Update PlayerRepositoryAdapter
+- Validate all tests pass
 
 CRITERES_D_ACCEPTATION:
 - [ ] Pure Player domain models created (0 Spring dependencies)
@@ -627,9 +880,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Manual smoke tests pass
 
 NEXT:
-- (1) Wait for JIRA-ARCH-011 completion
-- (2) Create Player domain models
-- (3) Create PlayerEntityMapper
+- (1) Attendre completion JIRA-ARCH-011
+- (2) Creer Player domain models
+- (3) Creer PlayerEntityMapper
 
 
 ID: JIRA-ARCH-013
@@ -644,13 +897,16 @@ ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
 DEPENDENCIES: JIRA-ARCH-012
-BLOCKED_BY: JIRA-ARCH-012 (Player domain must complete first)
 
 OBJECTIF:
 - Migrer Team domain vers pure hexagonal (incremental step 3).
 
+CONTEXTE:
+- Bloque par JIRA-ARCH-012 (Player domain).
+- Suit le pattern de migration defini dans JIRA-ARCH-011.
+
 DESCRIPTION:
-Follow same pattern as JIRA-ARCH-011/012.
+- Follow same pattern as JIRA-ARCH-011/012.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Pure Team domain models created (0 Spring dependencies)
@@ -658,9 +914,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Manual smoke tests pass
 
 NEXT:
-- (1) Wait for JIRA-ARCH-012 completion
-- (2) Create Team domain models
-- (3) Create TeamEntityMapper
+- (1) Attendre completion JIRA-ARCH-012
+- (2) Creer Team domain models
+- (3) Creer TeamEntityMapper
 
 
 ID: JIRA-ARCH-014
@@ -675,13 +931,16 @@ ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
 DEPENDENCIES: JIRA-ARCH-013
-BLOCKED_BY: JIRA-ARCH-013 (Team domain must complete first)
 
 OBJECTIF:
 - Migrer Draft domain vers pure hexagonal (incremental step 4).
 
+CONTEXTE:
+- Bloque par JIRA-ARCH-013 (Team domain).
+- Suit le pattern de migration defini dans JIRA-ARCH-011.
+
 DESCRIPTION:
-Follow same pattern as previous domain migrations.
+- Follow same pattern as previous domain migrations.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Pure Draft domain models created (0 Spring dependencies)
@@ -689,9 +948,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Manual smoke tests pass
 
 NEXT:
-- (1) Wait for JIRA-ARCH-013 completion
-- (2) Create Draft domain models
-- (3) Create DraftEntityMapper
+- (1) Attendre completion JIRA-ARCH-013
+- (2) Creer Draft domain models
+- (3) Creer DraftEntityMapper
 
 
 ID: JIRA-ARCH-015
@@ -706,13 +965,16 @@ ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
 DEPENDENCIES: JIRA-ARCH-014
-BLOCKED_BY: JIRA-ARCH-014 (Draft domain must complete first)
 
 OBJECTIF:
 - Migrer Trade domain vers pure hexagonal (incremental step 5 - final).
 
+CONTEXTE:
+- Bloque par JIRA-ARCH-014 (Draft domain).
+- Suit le pattern de migration defini dans JIRA-ARCH-011.
+
 DESCRIPTION:
-Follow same pattern as previous domain migrations.
+- Follow same pattern as previous domain migrations.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Trade domain models created (0 Spring dependencies)
@@ -721,110 +983,6 @@ CRITERES_D_ACCEPTATION:
 - [ ] All 5 domains migrated successfully
 
 NEXT:
-- (1) Wait for JIRA-ARCH-014 completion
-- (2) Create Trade domain models
-- (3) Create TradeEntityMapper
-
-
-================================================================================
-BACKLOG SUMMARY
-================================================================================
-
-TOTAL TICKETS: 15 (was 16, -1 after TEST-012 DONE deletion)
-- P0: 1 (ARCH-000 Epic)
-- P1: 6 (ARCH-009, TEST-003, TEST-004, TEST-013, ARCH-001, CLEAN-002)
-- P2: 8 (CLEAN-003, CLEAN-004, CLEAN-005, ARCH-011, ARCH-012, ARCH-013, ARCH-014, ARCH-015)
-
-STATUT DISTRIBUTION:
-- TODO: 8
-- IN_PROGRESS: 3 (TEST-003 @Claude, TEST-013 @Claude, ARCH-009 @Codex)
-- BLOCKED: 4 (ARCH-012/013/014/015 blocked by chain)
-- DONE: 0 (all DONE tickets removed per JiraFlow rules)
-
-PRIORITIES IMMEDIATES (P0-P1):
-1. JIRA-TEST-013: Phase 8 coverage to 80% (P1, IN_PROGRESS @Claude) - **NEXT PRIORITY**
-2. JIRA-ARCH-009: Architecture decision (P1, IN_PROGRESS @Codex, unblocker)
-3. JIRA-TEST-004: Fix 4 architecture tests (P1, blocked by ARCH-009)
-4. JIRA-CLEAN-002: Refactor trade components (P1, READY)
-5. JIRA-TEST-003: Coverage coordination (P1, IN_PROGRESS @Claude)
-
-CRITICAL PATH:
-TEST-013 (Phase 8 to 80%) → TEST-003 DONE → COVERAGE TARGET ACHIEVED ✅
-ARCH-009 → TEST-004 → ARCH-011 → ARCH-012 → ARCH-013 → ARCH-014 → ARCH-015
-
-CLEAN CODE PATH:
-CLEAN-002 (P1) → CLEAN-003/004/005 (P2) → 100% FRONTEND COMPLIANCE
-
-PROGRESS TODAY (2026-02-02 SESSION):
-SESSION 1 (18:00-19:40):
-- ✅ TEST-015: TeamEditComponent fixed (24/24 passing) - commit 9496776
-- ✅ TEST-016: NotificationCenterComponent fixed (28/28 passing) - commit 6d29268
-- ✅ TEST-017: NotFoundComponent fixed (16/16 passing) - commit 8d2eb10
-- ✅ TEST-018: PlayerSelectionComponent fixed (30/30 passing) - commit ced9e12
-- ✅ TEST-019: TradeHistoryComponent fixed (30/30 passing) - commit ee112c0
-- ✅ TEST-014: Parent ticket COMPLETE (all 5 subtasks done, 13 tests fixed)
-- 📊 13 FAILED → 0 FAILED (100% tests passing ✅)
-
-SESSION 2 (19:45-22:05 @Claude):
-- ✅ TEST-012: Phase 7 coverage COMPLETE (+204 tests, 3 commits) ✅
-- ✅ login.component.spec.ts (19 tests) - commit 72a0912
-- ✅ game-creation-wizard.component.spec.ts (22 tests) - commit ee279f3
-- ✅ trade-details.component.spec.ts (39 tests, fixed) - commit ee279f3
-- ✅ trading-dashboard.component.spec.ts (28 tests, fixed) - commit ee279f3
-- ✅ skeleton-loader.component.spec.ts (30 tests, fixed) - commit 3a84e9e
-- ✅ game-card-skeleton.component.spec.ts (24 tests, fixed) - commit 3a84e9e
-- ✅ trade-form.component.spec.ts (42 tests, fixed 2 falsy checks) - commit 3a84e9e
-- 📊 +204 tests (1095 → 1299 tests)
-- 📊 Coverage: 71.13% → 73.24% (+2.11 points)
-- 🔄 TEST-013: Attributed to @Claude, coverage report completed
-- 📊 Exact metrics: 73.24% lines (3879/5296), Gap to 80%: 6.76 points
-
-SESSION 3 (22:05-07:30 @Claude - TEST-013 Phase 8):
-- ✅ TEST-013: Phase 8a coverage analysis COMPLETE ✅
-- ✅ Identified 4 low-coverage files (premium-interactions, stats-api-mapper, dashboard, team-detail)
-- ✅ premium-interactions.directive.spec.ts (25 tests, 9 directives) - commit 0eec7eb
-- ✅ stats-api.mapper.spec.ts (40 tests, all mapper methods) - commit cdc5fe9
-- 📊 +65 tests (1299 → ~1364 tests estimated)
-- 📊 Coverage: 73.24% → ~75-76% (estimated, final report pending)
-- 🔄 TEST-013 Phase 8b: 2/4 fichiers complétés (50%)
-
-SESSION 4 (18:00-18:30 @Claude - TEST-013 Phase 8b completion):
-- ✅ TEST-013: Phase 8b COMPLETE ✅
-- ✅ dashboard.component.spec.ts (16 → 31 tests, +15) - commit fda2d8c
-- ✅ team-detail.component.spec.ts (1 → 32 tests, +31) - commit fda2d8c
-- 📊 +46 tests this session (1364 → ~1410 tests estimated)
-- 📊 Coverage: ~75-76% → ~77-78% (estimated, final report pending)
-- ✅ TEST-013 Phase 8b: 4/4 fichiers complétés (100%) ✅
-
-COMMITS TODAY:
-SESSION 1:
-- 9496776: fix(tests): resolve TeamEditComponent test failures
-- 6d29268: fix(tests): correct NotificationCenterComponent icon mapping expectations
-- 8d2eb10: fix(tests): correct NotFoundComponent window.history.length mocking
-- ced9e12: fix(tests): correct PlayerSelectionComponent spy timing and translation mock order
-- ee112c0: fix(trades): convert hasActiveFilters return value to boolean
-
-SESSION 2:
-- 72a0912: test(frontend): add login component comprehensive test suite
-- ee279f3: test(frontend): add game-creation-wizard spec + fix trade component specs
-- 3a84e9e: test(frontend): add skeleton-loader, game-card-skeleton, and trade-form specs
-
-SESSION 3:
-- 0eec7eb: test(frontend): add comprehensive premium-interactions directive specs
-- cdc5fe9: test(frontend): add comprehensive stats-api.mapper spec
-
-SESSION 4:
-- fda2d8c: test(frontend): add comprehensive tests for dashboard and team-detail components
-
-ACHIEVEMENT:
-🎉 MILESTONE: 100% FRONTEND TESTS PASSING (~1410/1410 SUCCESS, 0 FAILED)
-🎉 SESSION 2: +204 TESTS ADDED (1095 → 1299) via 7 spec files
-🎉 SESSION 3: +65 TESTS ADDED (1299 → ~1364) via 2 spec files ✅
-🎉 SESSION 4: +46 TESTS ADDED (~1364 → ~1410) via 2 spec files ✅
-🎉 TEST-012 (Phase 7): COMPLETE AND DONE (target +85, achieved +204) ✅
-🔄 TEST-013 (Phase 8): IN_PROGRESS (Phase 8b COMPLETE 4/4, ~77-78% coverage estimated)
-🎯 NEXT TARGET: 80% Coverage via TEST-013 (remaining ~2-3 percentage points, ~20-40 tests)
-
-================================================================================
-END OF BACKLOG
-================================================================================
+- (1) Attendre completion JIRA-ARCH-014
+- (2) Creer Trade domain models
+- (3) Creer TradeEntityMapper
