@@ -68,6 +68,29 @@ describe('GameApiMapper', () => {
       expect(game.creatorName).toBe('Créateur inconnu');
     });
 
+    it('should map creatorId and fallback creatorName from participants map', () => {
+      // Arrange
+      const apiResponse = {
+        id: 'game-123',
+        name: 'Test Game',
+        creatorId: 'uuid-creator',
+        participants: {
+          'uuid-creator': 'Thibaut',
+          'uuid-other': 'Teddy'
+        },
+        maxParticipants: 10,
+        status: 'ACTIVE',
+        createdAt: '2025-01-15T10:30:00Z'
+      };
+
+      // Act
+      const game = GameApiMapper.mapApiResponseToGame(apiResponse);
+
+      // Assert
+      expect(game.creatorId).toBe('uuid-creator');
+      expect(game.creatorName).toBe('Thibaut');
+    });
+
     it('should handle currentParticipantCount vs participantCount', () => {
       // Arrange - API uses currentParticipantCount
       const apiResponse1 = {

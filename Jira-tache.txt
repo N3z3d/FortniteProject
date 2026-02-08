@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-04 22:25
+Last Updated: 2026-02-08 11:54
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -17,182 +17,10 @@ RULES
 TICKETS
 ================================================================================
 
-ID: JIRA-ARCH-000
-TITRE: Architecture Review and Clean Code Implementation
-TYPE: Epic
-PRIORITE: P0
-STATUT: TODO
-ESTIMATE: multi-sprint
-
-ASSIGNE: @Team
-ASSIGNE_LE: 2026-01-24 10:14
-DERNIERE_MAJ: 2026-02-02 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Refactoriser et stabiliser l'architecture (SOLID, limites claires).
-- Reduire la duplication et clarifier les responsabilites.
-- Atteindre 100% conformite clean code (max 500 lignes par classe).
-
-CONTEXTE:
-- Architecture cible: pure hexagonale (migration incrementale).
-- Backend clean code: conforme (0 violations).
-- Frontend clean code: 11 violations restantes (1 critique deja corrigee).
-- Tests: backend 1282/1286 (99.7%), frontend 1580/1580 (100%).
-- Coverage frontend: Lines 79.99% (4258/5323), Statements 79.41%, Functions 78.74%, Branches 66.96% - objectif 80% atteint.
-
-DESCRIPTION:
-- Piloter decisions d'architecture, refactors et strategie de tests.
-- Appliquer regles de dependances et separation des responsabilites.
-- Etat recent (2026-02-04 22:25): compilation OK, mojibakes corriges, translation.service.ts refactored (<200 lignes), 4 tests architecture en echec, 11 violations frontend restantes.
-- Coverage frontend: objectif 80% atteint (79.99%, +110 tests, commit b916a12).
-
-CRITERES_D_ACCEPTATION:
-- [ ] Architecture cible documentee et verifiee par des tests.
-- [ ] Services et controleurs respectent SRP et DIP.
-- [ ] 100% conformite clean code (0 violations frontend/backend).
-
-NEXT:
-- (1) JIRA-TEST-003: Valider et marquer DONE (coverage 79.99% atteint, ~80%) - P1
-- (2) JIRA-ARCH-009: Finaliser decision architecture pure hexagonal - P1
-- (3) JIRA-TEST-004: Corriger 4 tests architecture - P1
-
-
-ID: JIRA-ARCH-009
-TITRE: Finaliser Decision Architecture Pure Hexagonal
+ID: JIRA-FIX-002
+TITRE: Audit complet traductions non cablees (toutes langues)
 TYPE: Task
-PRIORITE: P1
-STATUT: IN_PROGRESS
-ESTIMATE: 2-4h
-
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-03 17:39
-DERNIERE_MAJ: 2026-02-04 21:10
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Formaliser et documenter la decision d'architecture pure hexagonal.
-- Debloquer les 5 migrations de domaines (JIRA-ARCH-011 to 015).
-
-CONTEXTE:
-- ADR-001 existe mais necessite validation finale.
-- 5 domaines a migrer: Game, Player, Team, Draft, Trade.
-- Pattern incremental valide (1 domaine a la fois).
-
-DESCRIPTION:
-- Valider ADR-001 (scope hexagonal, limites domain/application/adapter).
-- ADR-001 localise dans docs/architecture/ADR-001-layered-architecture.md (contenu layered a adapter).
-- Definir conventions de packages, naming des ports, regles de mapping entity <-> domain.
-- Drafts prets a inserer dans ADR-001: template migration, table de decisions, checklist, sujets pre-remplis.
-- Etat ADR-001: titre "Pure Hexagonal" mais contient sections hybrides/layered (Layer Responsibilities, Implementation Guidelines layered, Hybrid additions) et contradictions avec decision "pure hexagonal"; diagrammes avec caracteres mojibake a nettoyer.
-- Decision (draft): mettre a jour ADR-001 in-place (garder le fichier et l'ID); creer un nouvel ADR uniquement si incompatibilites majeures detectees.
-- Table de decisions (draft a valider, a copier dans ADR-001):
-- Sujet: Limites Domain/Application/Adapter | Option: separation stricte | Decision: Domain pur + Application orchestration + Adapters I/O | Rationale: alignement hexagonal | Impact: packages + dependances | Owner: @Codex | Date: 2026-02-04
-- Sujet: Naming ports | Option: <UseCase>Port / <UseCase>UseCase | Decision: suffixe "Port" pour interfaces entree/sortie | Rationale: clarte boundaries | Impact: conventions packages | Owner: @Codex | Date: 2026-02-04
-- Sujet: Emplacement mappers | Option: adapters/out/persistence/mapper | Decision: mappers uniquement cote adapter | Rationale: eviter dependances domain | Impact: repo adapters | Owner: @Codex | Date: 2026-02-04
-- Sujet: DTO/frontieres | Option: DTOs en adapters + mappers | Decision: DTOs limites aux frontieres, domain sans DTO | Rationale: domain pur | Impact: controllers/adapters | Owner: @Codex | Date: 2026-02-04
-- Sujet: Strategie erreurs | Option: erreurs domain mappees en adapters | Decision: erreurs domain sans framework + mapping en adapters | Rationale: DIP | Impact: error mapping | Owner: @Codex | Date: 2026-02-04
-
-CRITERES_D_ACCEPTATION:
-- [ ] ADR-001 finalise et commite
-- [ ] Template de migration documente
-- [ ] JIRA-ARCH-011 debloque
-
-NEXT:
-- (1) Appliquer la strategie "update in-place": remplacer sections layered/hybrid (Layer Responsibilities, Implementation Guidelines layered, Hybrid additions, Compliance hybrid) par sections hexagonales coherentes
-- (2) Inserer la table de decisions + checklist migration + template, puis noter la date de validation ADR-001
-- (3) Nettoyer le mojibake des diagrammes, relire l'ADR, puis debloquer JIRA-ARCH-011
-
-
-ID: JIRA-TEST-004
-TITRE: Corriger 4 Tests Architecture
-TYPE: Task
-PRIORITE: P1
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-009
-
-OBJECTIF:
-- Corriger les 4 tests architecture en echec.
-- Atteindre 100% tests backend passing (1286/1286).
-
-CONTEXTE:
-- Current: 1282/1286 passing (99.7%)
-- Root cause: Spring dependency in domain (Pagination)
-- Solution: Create pure domain Pagination DTO
-
-DESCRIPTION:
-- Identifier les violations Spring dans domain/.
-- Creer Pagination domain DTO sans dependances framework.
-- Migrer les usages vers le DTO pur.
-- Valider shouldFollowOnionArchitecture() passe.
-
-CRITERES_D_ACCEPTATION:
-- [ ] 0 Spring dependencies in domain/
-- [ ] shouldFollowOnionArchitecture() passes (0 violations)
-- [ ] All 1286 backend tests pass
-- [ ] No functional regressions
-
-NEXT:
-- (1) Creer Pagination domain DTO
-- (2) Migrer usages Spring Pagination
-- (3) Lancer les tests d'architecture et valider
-
-
-
-ID: JIRA-ARCH-001
-TITRE: Migration Hexagonale Complete
-TYPE: Story
-PRIORITE: P1
-STATUT: TODO
-ESTIMATE: 8-16h (multi-session)
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-000
-
-OBJECTIF:
-- Activer le test onion architecture (actuellement 1499 violations).
-- Finaliser la migration layered -> hexagonal.
-
-CONTEXTE:
-- Architecture cible: pure hexagonale (decision JIRA-ARCH-009).
-- Test shouldFollowOnionArchitecture() desactive (1499 violations).
-- Packages existants: domain/, application/facade/, core/usecase/, controller/, repository/, service/.
-- Etat actuel: ports/use cases crees; migration DIP controllers partielle (8/14).
-
-DESCRIPTION:
-- Finaliser la migration layered -> hexagonal en 3 axes: ports, adapters, services/controllers.
-- Controllers migres: Player, Team, Draft, Trade, GameDetail, GameStatistics, Game, Score.
-- ScoreController utilise CQRS (ScoreQueryUseCase + ScoreCommandUseCase).
-- DraftWorkflowIntegrationTest corrige; compilation OK; 1282/1286 tests passent.
-- Controllers restants (non critiques/P3): Leaderboard, User, Auth, PrIngestion, Api, Home.
-
-CRITERES_D_ACCEPTATION:
-- [ ] shouldFollowOnionArchitecture() passe (0 violations).
-- [ ] Tous les tests existants passent.
-- [ ] Package structure respecte ADR-001 (Hexagonal).
-- [ ] Aucune regression fonctionnelle.
-
-NEXT:
-- (1) Finaliser JIRA-ARCH-009 (architecture decision)
-- (2) Corriger 4 architecture tests (JIRA-TEST-004)
-- (3) Demarrer JIRA-ARCH-011 (Game domain migration)
-
-
-ID: JIRA-CLEAN-002
-TITRE: Refactor Trade Components (Parent)
-TYPE: Story
-PRIORITE: P1
+PRIORITE: P2
 STATUT: TODO
 ESTIMATE: 1-2j
 
@@ -203,75 +31,188 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser les composants Trade pour respecter <500 lignes.
-- Extraire la logique metier vers des services partageables.
+- Identifier et corriger toutes les cles i18n brutes restantes dans l'application.
+- Harmoniser les traductions `en/fr/es/pt` au-dela du seul ecran rejoindre.
 
 CONTEXTE:
-- Violations HIGH: 3 composants (611-627 lignes).
-- Fichiers: trade-proposal.component.ts, trade-details.component.ts, trade-detail.component.ts.
-- Besoin de services dedies (validation, calculs, formatting).
+- Le flow rejoindre est traite par `JIRA-FIX-001`, mais d'autres ecrans peuvent afficher des placeholders non traduits.
+- Besoin d'un audit systematique sur l'ensemble des templates.
 
 DESCRIPTION:
-- Ticket parent pour orchestrer la refonte Trade UI + extraction de logique.
-- Sous-chantiers (split):
-- Creer services Trade (validation/calcul/formatting) + specs unitaires.
-- Refactor trade-proposal.component.ts avec services et reduction <500 lignes.
-- Refactor trade-details.component.ts avec services et reduction <500 lignes.
-- Refactor trade-detail.component.ts avec services et reduction <500 lignes.
+- Scanner tous les templates front pour detecter les textes `xxx.yyy.zzz` visibles et cles absentes des fichiers i18n.
+- Completer les fichiers i18n `en/fr/es/pt` pour les ecrans critiques (navigation, games, profil, trades).
+- Ajouter/mettre a jour des specs de non-regression i18n sur les zones corrigees.
 
 CRITERES_D_ACCEPTATION:
-- [ ] 3 composants Trade < 500 lignes
-- [ ] Services metier extraits et reutilisables
-- [ ] Tests unitaires services ajoutes (nominal + edge cases)
-- [ ] Tous les tests existants passent (0 regressions)
-- [ ] Clean Code compliance: 11 -> 8 violations
+- [ ] Aucune cle i18n brute visible sur les parcours principaux.
+- [ ] Parite des cles corrigees entre `en/fr/es/pt`.
+- [ ] Tests frontend cibles i18n verts.
 
 NEXT:
-- (1) JIRA-CLEAN-007: Refactor trade-proposal.component.ts
-- (2) JIRA-CLEAN-008: Refactor trade-details.component.ts
-- (3) JIRA-CLEAN-009: Refactor trade-detail.component.ts
+- (1) Generer l'inventaire des cles manquantes/hors-cablage sur ecrans principaux
+- (2) Corriger les fichiers i18n et les bindings templates correspondants
+- (3) Executer specs i18n cibles + smoke frontend
 
 
-ID: JIRA-CLEAN-007
-TITRE: Refactor trade-proposal.component.ts
-TYPE: Task
+ID: JIRA-FIX-003
+TITRE: Endpoint mismatch join-with-code (404 ou erreur)
+TYPE: Bug
 PRIORITE: P1
 STATUT: IN_PROGRESS
 ESTIMATE: 2-4h
 
 ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-04 20:25
-DERNIERE_MAJ: 2026-02-04 20:25
+ASSIGNE_LE: 2026-02-07 21:40
+DERNIERE_MAJ: 2026-02-08 11:40
 
 DEPENDENCIES: none
 
 OBJECTIF:
-- Reduire trade-proposal.component.ts a <500 lignes.
-- Remplacer la logique inline par les services Trade.
+- Corriger le mismatch entre l'URL appelee par le frontend pour rejoindre une partie avec code et l'endpoint backend correspondant.
 
 CONTEXTE:
-- trade-proposal.component.ts ~627 lignes (HIGH violation).
-- Services Trade disponibles via JIRA-CLEAN-006.
+- Le flow "rejoindre une partie avec un code d'invitation" echoue (404 ou erreur inattendue).
+- Cause probable: le frontend appelle un chemin different de celui expose par le controller backend.
+- Le flow Thibaut -> Teddy (invitation) est bloque a cette etape.
 
 DESCRIPTION:
-- Rebrancher validation/calcul/formatting vers services.
-- Nettoyer les methodes redondantes et simplifier l'orchestration UI.
-- Plan: remplacer la logique metier locale par TradeValidationService/TradeCalculationService/TradeFormattingService, supprimer helpers locaux obsoletes, ajuster injections si necessaire.
+- Tracer l'URL appelee par le service Angular (game.service.ts ou equivalent) lors du join-with-code.
+- Comparer avec l'endpoint expose dans le GameController backend.
+- Aligner le path frontend sur le path backend (ou inversement, selon la convention du projet).
+- Tester le flow complet join-with-code de bout en bout.
+- Avancement 2026-02-07 21:40: ajout endpoint backend `POST /api/games/join-with-code` compatible payload frontend `{ code: ... }`.
+- Avancement 2026-02-07 21:40: endpoint normalise le code, valide l'utilisateur, execute `joinGame` et renvoie `GameDto`.
+- Avancement 2026-02-07 21:40: tests verts backend (`GameControllerSimpleTest`) + frontend cible (`game-command.service.spec.ts`).
+- Avancement 2026-02-07 22:52: frontend `joinGameWithCode` force `trim().toUpperCase()` avant envoi pour eviter les rejets de code.
+- Avancement 2026-02-07 22:52: `join-game.component` affiche maintenant le message d'erreur backend detaille (au lieu d'un message generique).
+- Avancement 2026-02-07 22:52: suites vertes `frontend game specs (317/317)` + backend `GameControllerSimpleTest,CreateGameUseCaseTest,JoinGameUseCaseTest`.
+- Avancement 2026-02-07 23:31: backend relance localement et creation game revalidee via API (`POST /api/games`) avec code d'invitation retourne.
+- Avancement 2026-02-07 23:31: feedback utilisateur conserve les messages backend detailles cote frontend (`game-command.service`).
+- Avancement 2026-02-08 11:40: retour utilisateur confirme que le join-with-code fonctionne depuis le panneau lateral gauche.
+- Avancement 2026-02-08 11:40: nouveau ecart detecte, le CTA "rejoindre avec un code" depuis la page Mes parties ne declenche pas le meme flow.
 
 CRITERES_D_ACCEPTATION:
-- [ ] trade-proposal.component.ts < 500 lignes
-- [ ] Aucune logique metier inline non necessaire
-- [ ] Tests existants passent (0 regressions)
+- [ ] Le frontend appelle le bon endpoint backend pour join-with-code.
+- [ ] Le flow rejoindre avec code fonctionne de bout en bout.
+- [ ] Tests frontend/backend cibles verts.
 
 NEXT:
-- (1) Mettre a jour frontend/src/app/features/trades/components/trade-proposal/trade-proposal.component.ts pour deleguer validation/calcul/formatting aux services Trade
-- (2) Supprimer methodes/constantes devenues inutiles et ajuster le constructeur/injections
-- (3) Lancer les tests frontend (commande standard) pour valider
+- (1) Tracer le clic "rejoindre avec un code" depuis la page Mes parties et comparer avec le flow sidebar
+- (2) Aligner les deux points d'entree sur la meme methode `joinGameWithCode` + meme gestion d'erreurs
+- (3) Revalider en manuel Thibaut -> Teddy depuis les deux emplacements UI
 
 
-ID: JIRA-CLEAN-008
-TITRE: Refactor trade-details.component.ts
-TYPE: Task
+ID: JIRA-FIX-004
+TITRE: Code invitation visible et partageable pour le createur
+TYPE: Bug
+PRIORITE: P1
+STATUT: BLOCKED
+ESTIMATE: 4-8h
+
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-02-07 21:12
+DERNIERE_MAJ: 2026-02-08 11:54
+
+DEPENDENCIES: JIRA-FIX-007
+
+OBJECTIF:
+- Garantir que le createur d'une partie peut voir et partager le code d'invitation.
+- Rendre deterministe le cycle creation -> stockage -> lecture -> affichage du code.
+
+CONTEXTE:
+- Incoherence constatee: certaines parties ont un code visible, d'autres non.
+- Le flow d'invitation est bloque si le createur ne peut pas transmettre le code.
+- Le code doit etre visible dans le detail de la partie et copiable.
+
+DESCRIPTION:
+- Auditer les chemins `createGame`, `regenerateInvitationCode`, query game et mappings DTO.
+- Uniformiser la regle: code genere et persiste systematiquement a la creation.
+- Verifier la visibilite du code dans la reponse API et dans le composant frontend (detail partie).
+- Ajouter un bouton copier/partager si absent.
+- Ajouter/mettre a jour les tests backend et frontend.
+- Avancement 2026-02-07 21:17: `CreateGameUseCase` corrige pour generer/persister `invitationCode` via `InvitationCodeService`.
+- Avancement 2026-02-07 21:17: tests backend verts (`CreateGameUseCaseTest`, `GameDetailControllerTest`).
+- Avancement 2026-02-07 21:47: feedback UI creation ajuste pour afficher immediatement le code d'invitation dans la snackbar si disponible.
+- Avancement 2026-02-07 21:47: test frontend vert `create-game.component.spec.ts` (cas avec code d'invitation).
+- Avancement 2026-02-07 22:11: `game-detail.component.html` corrige pour afficher le bloc invitation meme sans code si le createur peut en generer un (`*ngIf=\"game.invitationCode || canRegenerateCode()\"`).
+- Avancement 2026-02-07 22:11: ajout fallback UI "pas de code" + bouton `generate-code-btn` qui declenche `promptRegenerateCode()`.
+- Avancement 2026-02-07 22:11: tests frontend verts (`game-detail.component.spec.ts`, `join-game.component.spec.ts`, `game-detail.component.tdd.spec.ts`).
+- Avancement 2026-02-07 22:52: `regenerateInvitationCode` frontend aligne sur backend (`duration` en query param) pour corriger les regenerations qui echouaient.
+- Avancement 2026-02-07 22:52: `canRegenerateCode` autorise le createur meme hors `CREATING` pour coherence anciennes/nouvelles parties.
+- Avancement 2026-02-07 22:52: UI invitation durcie (wrapper flex-wrap + libelle court `regenerateCode`) pour limiter les debordements.
+- Avancement 2026-02-07 22:52: creation game affiche la cause d'erreur backend cote utilisateur (message explicite).
+- Avancement 2026-02-07 23:31: quota creation actif corrige pour ignorer les games soft-deleted (`countByCreatorAndStatusInAndDeletedAtIsNull`).
+- Avancement 2026-02-07 23:31: ajout handler `InvalidGameRequestException` dans `GlobalExceptionHandler` + test dedie (`GlobalExceptionHandlerTest`).
+- Avancement 2026-02-07 23:31: tests backend verts `GameRepositoryAdapterTest,CreateGameUseCaseTest,GlobalExceptionHandlerTest` + test frontend vert `game-command.service.spec.ts`.
+- Avancement 2026-02-07 23:37: remplacement du prompt texte de regeneration par une modale UX dediee (choix 24h/48h/7d/permanent) dans `game-detail`.
+- Avancement 2026-02-07 23:37: nouvelles traductions ajoutees `fr/en/es/pt` pour la modale de duree.
+- Avancement 2026-02-07 23:37: tests frontend game verts (322/322) + build frontend vert.
+- Avancement 2026-02-08 11:32: harmonisation des actions `archive/quitter/supprimer/demarrer draft` vers la meme modale UX (`ConfirmDialogComponent`) dans `GameDetailActionsService`.
+- Avancement 2026-02-08 11:32: specs converties de `window.confirm` vers `MatDialog.afterClosed()` dans `game-detail-actions.service.spec.ts`.
+- Avancement 2026-02-08 11:32: validations vertes `game-detail-actions.service.spec.ts`, `features/game/**/*.spec.ts` (322/322), `npm run build`.
+- Avancement 2026-02-08 11:40: retour utilisateur confirme que join-with-code fonctionne au moins depuis un point d'entree et que les traductions de l'ecran sont OK.
+- Avancement 2026-02-08 11:40: regressions fonctionnelles remontees sur certaines games (code non regenerable, bouton supprimer absent), tickets dedies ouverts.
+- Avancement 2026-02-08 11:54: ticket passe BLOCKED en attente de la correction owner/permissions `JIRA-FIX-007` pour valider la regeneration et les droits host sur toutes les games.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Toute partie nouvellement creee dispose d'un code d'invitation.
+- [ ] Le code est visible dans le detail de la partie pour le createur.
+- [ ] Le code est copiable/partageable depuis l'interface.
+- [ ] Tests cibles creation/query/affichage code sont verts.
+
+NEXT:
+- (1) Debloquer `JIRA-FIX-007` (creatorId/creatorName + permissions host coherentes)
+- (2) Revalider create -> detail -> generer/copier code -> join with code sur games neuves et legacy
+- (3) Clore le ticket puis le supprimer du backlog si tous les AC sont verifies
+
+
+ID: JIRA-FIX-007
+TITRE: Games "createur inconnu" et droits host incoherents
+TYPE: Bug
+PRIORITE: P1
+STATUT: IN_PROGRESS
+ESTIMATE: 4-8h
+
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-02-08 11:54
+DERNIERE_MAJ: 2026-02-08 11:54
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Identifier pourquoi certaines games apparaissent avec `createur inconnu`.
+- Retablir des droits host coherents (supprimer/regenerer code) pour les games valides.
+
+CONTEXTE:
+- Retour utilisateur: des games visibles sur le profil Thibaut affichent `createur inconnu`.
+- Sur ces games, les actions host disparaissent et seul "rejoindre" reste disponible.
+- Suspicions: donnees legacy/orphelines, mapping incomplet `creatorId/creatorName`, ou regle permissions trop stricte.
+
+DESCRIPTION:
+- Tracer les payloads API (`creatorId`, `creatorName`, `status`, flags permissions) pour les games problematiques.
+- Verifier en base les enregistrements orphelins (creator absent/null) et leur traitement applicatif.
+- Definir une regle explicite pour games orphelines: correction data, fallback lisible, et blocage propre des actions host.
+- Corriger la logique backend/frontend pour ne plus avoir de faux etats "joinable only" pour le createur legitime.
+- Ajouter des tests backend + frontend sur cas nominal, cas legacy/orphelin, et permissions.
+- Avancement 2026-02-08 11:54: `GameEntityMapper.toDomain` complete maintenant les games legacy sans participant createur en injectant un participant createur synthetique (id+username).
+- Avancement 2026-02-08 11:54: `GameDtoMapper.fromDomainGame` resolve `creatorUsername/creatorName` via `creatorId` meme si le flag `isCreator` est absent.
+- Avancement 2026-02-08 11:54: `GameApiMapper` mappe `creatorId` et ajoute un fallback `participants[creatorId]` avant `createur inconnu`.
+- Avancement 2026-02-08 11:54: tests verts backend (`GameEntityMapperTest`, `GameDtoMapperTest`) et frontend (`game-api.mapper.spec.ts`).
+
+CRITERES_D_ACCEPTATION:
+- [ ] Aucune game active n'affiche `createur inconnu` sans raison explicite.
+- [ ] Les droits host (supprimer/regenerer) sont coherents avec `creatorId`.
+- [ ] Les games orphelines ont un comportement documente et teste.
+
+NEXT:
+- (1) Reproduire avec IDs reels + capturer payload `/api/games` apres patch pour confirmer disparition des cas `createur inconnu`
+- (2) Corriger/valider `canDeleteGame` et `canRegenerateCode` sur games legacy (host vs non-host)
+- (3) Validation manuelle Thibaut/Teddy sur game legacy + game neuve puis cloture ticket
+
+
+ID: JIRA-FIX-008
+TITRE: Bouton supprimer game absent ou incoherent selon le contexte
+TYPE: Bug
 PRIORITE: P1
 STATUT: TODO
 ESTIMATE: 2-4h
@@ -280,34 +221,36 @@ ASSIGNE: ->
 ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
-DEPENDENCIES: none
+DEPENDENCIES: JIRA-FIX-007
 
 OBJECTIF:
-- Reduire trade-details.component.ts a <500 lignes.
-- Utiliser les services Trade pour logique metier.
+- Restaurer la visibilite et le comportement du bouton supprimer pour le createur quand l'action est autorisee.
 
 CONTEXTE:
-- trade-details.component.ts ~600+ lignes (HIGH violation).
-- Services Trade disponibles via JIRA-CLEAN-006.
+- Retour utilisateur: le bouton supprimer etait visible puis a disparu sur plusieurs games.
+- L'incoherence apparait selon la game et le contexte d'affichage.
+- Le bouton est critique pour nettoyer les games de test.
 
 DESCRIPTION:
-- Remplacer validation/calcul/formatting par services.
-- Simplifier le composant et limiter aux actions UI.
+- Auditer `GameDetailPermissionsService` et `game-detail.component` pour les conditions `canDeleteGame`.
+- S'assurer que la regle d'affichage est stable et alignee avec le backend (creator + statut + soft delete).
+- En cas d'interdiction, afficher un etat explicite (disabled + raison) plutot qu'une disparition silencieuse.
+- Ajouter des tests de non-regression (host autorise, host non autorise, non-host).
 
 CRITERES_D_ACCEPTATION:
-- [ ] trade-details.component.ts < 500 lignes
-- [ ] Services Trade utilises pour logique metier
-- [ ] Tests existants passent (0 regressions)
+- [ ] Le createur voit toujours l'action supprimer quand les preconditions sont remplies.
+- [ ] Les non-createurs ne voient pas l'action supprimer.
+- [ ] Les cas non supprimables sont expliques de facon explicite dans l'UI.
 
 NEXT:
-- (1) Rebrancher les appels vers services Trade dans frontend/src/app/features/trades/components/trade-details/trade-details.component.ts
-- (2) Nettoyer le composant (methods inutiles)
-- (3) Lancer tests cibles si dispo
+- (1) Cartographier les conditions actuelles `canDeleteGame` front + backend
+- (2) Corriger regle d'affichage et fallback UX
+- (3) Valider manuellement + specs game-detail/permissions
 
 
-ID: JIRA-CLEAN-009
-TITRE: Refactor trade-detail.component.ts
-TYPE: Task
+ID: JIRA-FIX-009
+TITRE: Regeneration code invitation incoherente selon les games
+TYPE: Bug
 PRIORITE: P1
 STATUT: TODO
 ESTIMATE: 2-4h
@@ -316,37 +259,39 @@ ASSIGNE: ->
 ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
-DEPENDENCIES: none
+DEPENDENCIES: JIRA-FIX-007
 
 OBJECTIF:
-- Reduire trade-detail.component.ts a <500 lignes.
-- Utiliser les services Trade pour logique metier.
+- Garantir que le createur peut regenerer un code invitation de facon fiable sur toutes les games eligibles.
 
 CONTEXTE:
-- trade-detail.component.ts ~611 lignes (HIGH violation).
-- Services Trade disponibles via JIRA-CLEAN-006.
+- Retour utilisateur: certaines games permettent la regeneration, d'autres non, sans logique visible.
+- Impact direct sur l'invitation de nouveaux joueurs.
+- Peut etre lie aux memes causes ownership que `createur inconnu`.
 
 DESCRIPTION:
-- Deplacer validation/calcul/formatting vers services.
-- Simplifier le composant (UI only).
+- Auditer les conditions d'affichage `canRegenerateCode` et les flags backend associes.
+- Verifier la disponibilite endpoint de regeneration selon `status`, `creatorId`, `deletedAt`.
+- Uniformiser regles front/back et afficher un message explicite quand l'action est refusee.
+- Ajouter tests frontend/backend pour couvrir games neuves, games legacy, et statuts limites.
 
 CRITERES_D_ACCEPTATION:
-- [ ] trade-detail.component.ts < 500 lignes
-- [ ] Services Trade utilises pour logique metier
-- [ ] Tests existants passent (0 regressions)
+- [ ] Le createur peut regenerer sur toutes les games eligibles.
+- [ ] En cas de refus, la raison est explicite pour l'utilisateur.
+- [ ] Tests de regression regeneration verts.
 
 NEXT:
-- (1) Rebrancher les appels vers services Trade
-- (2) Nettoyer le composant (methods inutiles)
-- (3) Lancer tests cibles si dispo
+- (1) Reproduire sur les games qui ne proposent pas la regeneration
+- (2) Aligner les regles front/back de disponibilite du bouton et de l'endpoint
+- (3) Revalider createur Thibaut sur plusieurs games
 
 
-ID: JIRA-CLEAN-003
-TITRE: Refactor game.service.ts (CQRS Pattern)
+ID: JIRA-FIX-006
+TITRE: Audit filtrage soft delete dans les requetes
 TYPE: Task
 PRIORITE: P2
 STATUT: TODO
-ESTIMATE: 2-3h
+ESTIMATE: 1-2j
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
@@ -355,40 +300,39 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser game.service.ts (594 lignes -> <100 lignes).
-- Appliquer pattern CQRS (Command/Query separation).
+- Verifier que les parties supprimees en soft delete sont correctement filtrees dans toutes les requetes.
+- Auditer les usages de hard delete et migrer vers soft delete si necessaire.
 
 CONTEXTE:
-- Current: 594 lines (MEDIUM violation)
-- Target: <100 lines (service becomes facade only)
-- Pattern: CQRS with GameCommandService + GameQueryService
+- Exigence produit: conserver l'historique en base, pas de suppression physique.
+- Risque de suppressions physiques residuelles dans services/repositories.
+- Risque que les requetes de listing ne filtrent pas le champ soft delete.
 
 DESCRIPTION:
-- Split game.service.ts using CQRS:
-- Create game-command.service.ts (create, update, delete, start)
-- Create game-query.service.ts (get, list, search, stats)
-- Refactor game.service.ts to facade (delegates to command/query)
-- Add unit tests for new services
+- Scanner services/repositories pour operations `delete` sur Game et agregats associes.
+- Classer les cas: acceptable (maintenance) vs non conforme produit.
+- Corriger les cas non conformes vers soft delete.
+- Verifier que toutes les requetes de listing filtrent les enregistrements soft-deleted.
+- Etendre l'audit aux autres domaines (Player, Team, Draft, Trade) si pertinent.
 
 CRITERES_D_ACCEPTATION:
-- [ ] game.service.ts < 100 lines (facade only)
-- [ ] game-command.service.ts created with unit tests
-- [ ] game-query.service.ts created with unit tests
-- [ ] All existing tests pass (0 regressions)
-- [ ] Clean Code compliance: 8 -> 7 violations
+- [ ] Inventaire des suppressions hard delete produit.
+- [ ] Cas non conformes corriges en soft delete.
+- [ ] Requetes de listing filtrent correctement les soft-deleted.
+- [ ] Tests cibles suppression + listing passent.
 
 NEXT:
-- (1) Create game-command.service.ts and game-query.service.ts
-- (2) Refactor game.service.ts to facade
-- (3) Add unit tests for new services
+- (1) Scanner usages `delete` sur domaine game et autres domaines
+- (2) Corriger flux non conformes vers soft delete
+- (3) Verifier filtrage dans les requetes de listing
 
 
-ID: JIRA-CLEAN-004
-TITRE: Refactor draft.component.ts
-TYPE: Task
-PRIORITE: P2
+ID: JIRA-QUAL-001
+TITRE: Migration consumers vers domain ports (services -> domain models)
+TYPE: Story
+PRIORITE: P3
 STATUT: TODO
-ESTIMATE: 2-3h
+ESTIMATE: multi-session
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
@@ -397,36 +341,77 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Refactoriser draft.component.ts (584 lignes -> <300 lignes).
-- Componentiser UI (extract subcomponents).
+- Migrer progressivement les services applicatifs pour utiliser les domain ports au lieu des JPA repositories directs.
+- Reduire le couplage entre couche service et couche persistence.
 
 CONTEXTE:
-- Current: 584 lines (MEDIUM violation)
-- Target: <300 lines (main component orchestrates subcomponents)
-- Strategy: Extract UI sections to child components
+- 5 domaines ont des pure domain models + ports + adapters (Game, Player, Team, Draft, Trade).
+- Les services (TradingService, TradeQueryService, TeamService, etc.) utilisent encore les JPA repositories et model entities directement.
+- La migration est incrementale : chaque service peut etre migre independamment.
+- Pas bloquant pour la prod. Amelioration structurelle progressive.
 
 DESCRIPTION:
-- Extract subcomponents:
-- Create draft-timer.component (timer display + logic)
-- Create draft-player-list.component (available players list)
-- Create draft-roster.component (current team roster display)
-- Refactor draft.component.ts to orchestrator (delegates to children)
+- Ticket parent de migration incremental par service.
+- `JIRA-QUAL-002` est traite hors perimetre Codex (autre IA).
+- `JIRA-CLEAN-016` termine par Codex (refactor TradingService + tests verts).
+- `JIRA-QUAL-003` termine par Codex: TeamService migre vers TeamDomainRepositoryPort/PlayerDomainRepositoryPort + tests TeamService verts.
+- `JIRA-QUAL-004` termine et nettoye du backlog: sweep imports model effectue (118 imports, classification runtime vs bootstrap).
+- `JIRA-QUAL-005` termine par @Claude: GameParticipantService deja sur ports domain (verification + tests verts).
+- `JIRA-QUAL-006` termine par @Claude: GameDraftService migre vers DraftRepositoryPort/DraftPickRepositoryPort/PlayerRepositoryPort/GameParticipantRepositoryPort.
+- `JIRA-QUAL-007` termine par Codex: TradeQueryService migre vers TradeDomainRepositoryPort avec bridge compat legacy, tests verts.
+- `JIRA-QUAL-009` cree pour migration full-domain `TradeQueryUseCase + TradeController + TradeResponseDto`.
+- Priorite temporairement abaissee derriere les tickets P1 issus du report utilisateur creation/rejoindre/suppression.
 
 CRITERES_D_ACCEPTATION:
-- [ ] draft.component.ts < 300 lines
-- [ ] 3 child components created with specs
-- [ ] All existing tests pass (0 regressions)
-- [ ] UI behavior unchanged (smoke tests)
-- [ ] Clean Code compliance: 7 -> 6 violations
+- [ ] Au moins 1 service migre vers domain ports par sous-ticket.
+- [ ] 0 regressions backend par migration.
+- [ ] Tests unitaires mis a jour pour chaque service migre.
 
 NEXT:
-- (1) Extract draft-timer.component first
-- (2) Create draft-player-list.component
-- (3) Create draft-roster.component
+- (1) Traiter d'abord les tickets JIRA-FIX P1 (bloquants UX)
+- (2) Reprendre JIRA-QUAL-009 puis JIRA-QUAL-008
 
 
-ID: JIRA-CLEAN-005
-TITRE: Refactor Premium Services & Detail Components (Parent)
+ID: JIRA-QUAL-008
+TITRE: Sweep final imports model.* apres migrations runtime
+TYPE: Task
+PRIORITE: P3
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: ->
+
+DEPENDENCIES: JIRA-QUAL-009
+
+OBJECTIF:
+- Finaliser la reduction des usages `com.fortnite.pronos.model.*` dans services/controleurs.
+- Produire la liste finale des ecarts acceptes temporairement vs tickets correctifs restants.
+
+CONTEXTE:
+- Sweep intermediaire deja fait dans `JIRA-QUAL-004`.
+- Il reste des zones runtime et des zones bootstrap/seed/auth a traiter explicitement.
+- Ce ticket intervient apres migration trade full-domain (`JIRA-QUAL-009`).
+
+DESCRIPTION:
+- Re-scanner services et controllers.
+- Classer en 3 groupes: `runtime corrige`, `runtime restant`, `bootstrap/seed/auth`.
+- Ouvrir les derniers tickets READY necessaires avec dependances explicites.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Inventaire final a jour.
+- [ ] Classification priorisee finalisee.
+- [ ] Backlog restant compose uniquement de tickets READY actionnables.
+
+NEXT:
+- (1) Re-executer le scan imports `model.*` sur services/controllers
+- (2) Comparer avec baseline (118 imports) et mesurer delta
+- (3) Creer les tickets correctifs restants ou clore parent si fini
+
+
+ID: JIRA-QUAL-009
+TITRE: Migration full-domain TradeQueryUseCase + TradeController + TradeResponseDto
 TYPE: Story
 PRIORITE: P2
 STATUT: TODO
@@ -439,434 +424,27 @@ DERNIERE_MAJ: ->
 DEPENDENCIES: none
 
 OBJECTIF:
-- Orchestrer la refonte de 6 fichiers pour passer sous 500 lignes.
-- Atteindre 100% conformite clean code frontend.
+- Supprimer le bridge compat temporaire trade query et migrer le flux read trade en full-domain.
+- Conserver l'API REST publique stable (payload fonctionnellement equivalent).
 
 CONTEXTE:
-- Violations MEDIUM: 6 fichiers entre 501 et 590 lignes.
-- Deux familles: premium services (3) et detail components (3).
+- `JIRA-QUAL-007` a migre `TradeQueryService` vers `TradeDomainRepositoryPort` avec bridge legacy.
+- `TradeQueryUseCase` et `TradeController` retournent encore `model.Trade`.
+- `TradeResponseDto` depend de `model.Trade` et `model.Player`.
 
 DESCRIPTION:
-- Ticket parent. Sous-tickets livrables par fichier.
-- Fichiers: premium-interactions.service.ts, premium-animations.service.ts, premium-effects.service.ts, team-detail.component.ts, player-detail.component.ts, game-detail.component.ts.
+- Migrer `TradeQueryUseCase` pour retourner `domain.trade.model.Trade`.
+- Adapter `TradeController` pour consommer le modele domain.
+- Introduire un mapper DTO dedie trade-domain -> `TradeResponseDto`.
+- Adapter `TradeResponseDto` (ou mapper associe) pour supprimer dependance directe `model.Trade`.
 
 CRITERES_D_ACCEPTATION:
-- [ ] Tous les sous-tickets (JIRA-CLEAN-010 a JIRA-CLEAN-015) termines
-- [ ] Chaque fichier cible < 500 lignes
-- [ ] Tests unitaires/specs ajoutes quand extraction de logique
-- [ ] Tous les tests existants passent (0 regressions)
-- [ ] Clean Code compliance frontend: 0 violations
+- [ ] `TradeQueryUseCase` n'expose plus `model.Trade`.
+- [ ] `TradeController` fonctionne sur modele domain sans regression API.
+- [ ] `TradeResponseDto` mappe depuis domain via mapper dedie.
+- [ ] Tests cibles + architecture passent.
 
 NEXT:
-- (1) JIRA-CLEAN-010: premium-interactions.service.ts
-- (2) JIRA-CLEAN-011: premium-animations.service.ts
-- (3) JIRA-CLEAN-012: premium-effects.service.ts
-
-
-ID: JIRA-CLEAN-010
-TITRE: Refactor premium-interactions.service.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire premium-interactions.service.ts sous 500 lignes.
-- Extraire logique reutilisable vers utilitaires/services.
-
-CONTEXTE:
-- Fichier actuel ~590 lignes (violation MEDIUM).
-- Service oriente interactions premium.
-
-DESCRIPTION:
-- Identifier methodes longues et blocs repetes.
-- Extraire helpers vers un module utilitaire ou service interne.
-- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
-
-CRITERES_D_ACCEPTATION:
-- [ ] premium-interactions.service.ts < 500 lignes
-- [ ] Helpers extraits et reutilisables
-- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Inventorier methodes candidates a extraction
-- (2) Extraire helpers et mettre a jour les appels
-- (3) Ajouter specs unitaires pour la logique extraite
-
-
-ID: JIRA-CLEAN-011
-TITRE: Refactor premium-animations.service.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire premium-animations.service.ts sous 500 lignes.
-- Extraire logique reutilisable vers utilitaires/services.
-
-CONTEXTE:
-- Fichier actuel ~567 lignes (violation MEDIUM).
-- Service oriente animations premium.
-
-DESCRIPTION:
-- Identifier methodes longues et blocs repetes.
-- Extraire helpers vers un module utilitaire ou service interne.
-- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
-
-CRITERES_D_ACCEPTATION:
-- [ ] premium-animations.service.ts < 500 lignes
-- [ ] Helpers extraits et reutilisables
-- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Inventorier methodes candidates a extraction
-- (2) Extraire helpers et mettre a jour les appels
-- (3) Ajouter specs unitaires pour la logique extraite
-
-
-ID: JIRA-CLEAN-012
-TITRE: Refactor premium-effects.service.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire premium-effects.service.ts sous 500 lignes.
-- Extraire logique reutilisable vers utilitaires/services.
-
-CONTEXTE:
-- Fichier actuel ~543 lignes (violation MEDIUM).
-- Service oriente effets premium.
-
-DESCRIPTION:
-- Identifier methodes longues et blocs repetes.
-- Extraire helpers vers un module utilitaire ou service interne.
-- Ajouter/mettre a jour tests unitaires pour logique extraite (nominal + edge cases).
-
-CRITERES_D_ACCEPTATION:
-- [ ] premium-effects.service.ts < 500 lignes
-- [ ] Helpers extraits et reutilisables
-- [ ] Tests unitaires ajoutes/MAJ (nominal + edge cases)
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Inventorier methodes candidates a extraction
-- (2) Extraire helpers et mettre a jour les appels
-- (3) Ajouter specs unitaires pour la logique extraite
-
-
-ID: JIRA-CLEAN-013
-TITRE: Refactor team-detail.component.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire team-detail.component.ts sous 500 lignes.
-- Extraire sections UI en sous-composants testables.
-
-CONTEXTE:
-- Fichier actuel ~534 lignes (violation MEDIUM).
-- Composant detail equipe avec sections repetitives.
-
-DESCRIPTION:
-- Identifier sections UI stables et extraire en child components.
-- Remplacer logique inline par inputs/outputs clairs.
-- Ajouter specs pour les nouveaux components.
-
-CRITERES_D_ACCEPTATION:
-- [ ] team-detail.component.ts < 500 lignes
-- [ ] Sous-composants crees et testes
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Decouper les sections UI candidates
-- (2) Creer les sous-composants et rebrancher le template
-- (3) Ajouter specs unitaires pour les nouveaux components
-
-
-ID: JIRA-CLEAN-014
-TITRE: Refactor player-detail.component.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire player-detail.component.ts sous 500 lignes.
-- Extraire sections UI en sous-composants testables.
-
-CONTEXTE:
-- Fichier actuel ~521 lignes (violation MEDIUM).
-- Composant detail joueur avec sections repetitives.
-
-DESCRIPTION:
-- Identifier sections UI stables et extraire en child components.
-- Remplacer logique inline par inputs/outputs clairs.
-- Ajouter specs pour les nouveaux components.
-
-CRITERES_D_ACCEPTATION:
-- [ ] player-detail.component.ts < 500 lignes
-- [ ] Sous-composants crees et testes
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Decouper les sections UI candidates
-- (2) Creer les sous-composants et rebrancher le template
-- (3) Ajouter specs unitaires pour les nouveaux components
-
-
-ID: JIRA-CLEAN-015
-TITRE: Refactor game-detail.component.ts
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-CLEAN-005
-
-OBJECTIF:
-- Reduire game-detail.component.ts sous 500 lignes.
-- Extraire sections UI en sous-composants testables.
-
-CONTEXTE:
-- Fichier actuel ~501 lignes (violation MEDIUM).
-- Composant detail game avec sections repetitives.
-
-DESCRIPTION:
-- Identifier sections UI stables et extraire en child components.
-- Remplacer logique inline par inputs/outputs clairs.
-- Ajouter specs pour les nouveaux components.
-
-CRITERES_D_ACCEPTATION:
-- [ ] game-detail.component.ts < 500 lignes
-- [ ] Sous-composants crees et testes
-- [ ] 0 regressions tests
-
-NEXT:
-- (1) Decouper les sections UI candidates
-- (2) Creer les sous-composants et rebrancher le template
-- (3) Ajouter specs unitaires pour les nouveaux components
-
-
-ID: JIRA-ARCH-011
-TITRE: Migration Pure Hexagonale - Domaine Game
-TYPE: Story
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 8-16h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-009
-
-OBJECTIF:
-- Migrer Game domain vers pure hexagonal architecture (first incremental step).
-- Creer domain models sans dependances JPA/Spring.
-- Implementer mappers bidirectionnels domain <-> entity.
-
-CONTEXTE:
-- Demarre apres validation ADR-001 (JIRA-ARCH-009).
-- Current: Game entities are JPA entities (Spring dependencies).
-- Target: Pure domain models with zero framework dependencies.
-- Strategy: Incremental migration with test validation.
-
-DESCRIPTION:
-- Step 1: Create domain models (domain/game/model: Game, GameStatus, GameSettings) sans JPA.
-- Step 2: Create GameEntityMapper in adapter/out/persistence/mapper.
-- Step 3: Update GameRepositoryAdapter pour mapper JPA <-> domain.
-- Step 4: Valider tests (1286) + smoke tests; mettre a jour documentation.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Pure Game domain models created (0 Spring dependencies)
-- [ ] GameEntityMapper implemented and tested
-- [ ] All tests pass (0 regressions)
-- [ ] Manual smoke tests pass
-- [ ] Documentation updated
-
-NEXT:
-- (1) Attendre validation JIRA-ARCH-009
-- (2) Creer models domain Game
-- (3) Implementer GameEntityMapper
-
-
-ID: JIRA-ARCH-012
-TITRE: Migration Pure Hexagonale - Domaine Player
-TYPE: Story
-PRIORITE: P2
-STATUT: BLOCKED
-ESTIMATE: 6-12h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-011
-
-OBJECTIF:
-- Migrer Player domain vers pure hexagonal (incremental step 2).
-
-CONTEXTE:
-- Bloque par JIRA-ARCH-011 (Game domain).
-- Suit le pattern de migration defini dans JIRA-ARCH-011.
-
-DESCRIPTION:
-- Follow same pattern as JIRA-ARCH-011:
-- Create pure Player domain models
-- Create PlayerEntityMapper
-- Update PlayerRepositoryAdapter
-- Validate all tests pass
-
-CRITERES_D_ACCEPTATION:
-- [ ] Pure Player domain models created (0 Spring dependencies)
-- [ ] All tests pass (0 regressions)
-- [ ] Manual smoke tests pass
-
-NEXT:
-- (1) Attendre completion JIRA-ARCH-011
-- (2) Creer Player domain models
-- (3) Creer PlayerEntityMapper
-
-
-ID: JIRA-ARCH-013
-TITRE: Migration Pure Hexagonale - Domaine Team
-TYPE: Story
-PRIORITE: P2
-STATUT: BLOCKED
-ESTIMATE: 6-12h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-012
-
-OBJECTIF:
-- Migrer Team domain vers pure hexagonal (incremental step 3).
-
-CONTEXTE:
-- Bloque par JIRA-ARCH-012 (Player domain).
-- Suit le pattern de migration defini dans JIRA-ARCH-011.
-
-DESCRIPTION:
-- Follow same pattern as JIRA-ARCH-011/012.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Pure Team domain models created (0 Spring dependencies)
-- [ ] All tests pass (0 regressions)
-- [ ] Manual smoke tests pass
-
-NEXT:
-- (1) Attendre completion JIRA-ARCH-012
-- (2) Creer Team domain models
-- (3) Creer TeamEntityMapper
-
-
-ID: JIRA-ARCH-014
-TITRE: Migration Pure Hexagonale - Domaine Draft
-TYPE: Story
-PRIORITE: P2
-STATUT: BLOCKED
-ESTIMATE: 6-12h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-013
-
-OBJECTIF:
-- Migrer Draft domain vers pure hexagonal (incremental step 4).
-
-CONTEXTE:
-- Bloque par JIRA-ARCH-013 (Team domain).
-- Suit le pattern de migration defini dans JIRA-ARCH-011.
-
-DESCRIPTION:
-- Follow same pattern as previous domain migrations.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Pure Draft domain models created (0 Spring dependencies)
-- [ ] All tests pass (0 regressions)
-- [ ] Manual smoke tests pass
-
-NEXT:
-- (1) Attendre completion JIRA-ARCH-013
-- (2) Creer Draft domain models
-- (3) Creer DraftEntityMapper
-
-
-ID: JIRA-ARCH-015
-TITRE: Migration Pure Hexagonale - Domaine Trade
-TYPE: Story
-PRIORITE: P2
-STATUT: BLOCKED
-ESTIMATE: 6-12h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-ARCH-014
-
-OBJECTIF:
-- Migrer Trade domain vers pure hexagonal (incremental step 5 - final).
-
-CONTEXTE:
-- Bloque par JIRA-ARCH-014 (Draft domain).
-- Suit le pattern de migration defini dans JIRA-ARCH-011.
-
-DESCRIPTION:
-- Follow same pattern as previous domain migrations.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Trade domain models created (0 Spring dependencies)
-- [ ] All tests pass (0 regressions)
-- [ ] Manual smoke tests pass
-- [ ] All 5 domains migrated successfully
-
-NEXT:
-- (1) Attendre completion JIRA-ARCH-014
-- (2) Creer Trade domain models
-- (3) Creer TradeEntityMapper
+- (1) Migrer interface `TradeQueryUseCase` et `TradeQueryService` vers retour domain
+- (2) Adapter `TradeController` + mapping `TradeResponseDto`
+- (3) Executer `mvn "-Dtest=TradeControllerTest,TradeQueryServiceTddTest,HexagonalArchitectureTest" test`
