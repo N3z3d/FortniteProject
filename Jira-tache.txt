@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-08 11:54
+Last Updated: 2026-02-08 12:06
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -175,7 +175,7 @@ ESTIMATE: 4-8h
 
 ASSIGNE: @Codex
 ASSIGNE_LE: 2026-02-08 11:54
-DERNIERE_MAJ: 2026-02-08 11:54
+DERNIERE_MAJ: 2026-02-08 12:06
 
 DEPENDENCIES: none
 
@@ -198,6 +198,8 @@ DESCRIPTION:
 - Avancement 2026-02-08 11:54: `GameDtoMapper.fromDomainGame` resolve `creatorUsername/creatorName` via `creatorId` meme si le flag `isCreator` est absent.
 - Avancement 2026-02-08 11:54: `GameApiMapper` mappe `creatorId` et ajoute un fallback `participants[creatorId]` avant `createur inconnu`.
 - Avancement 2026-02-08 11:54: tests verts backend (`GameEntityMapperTest`, `GameDtoMapperTest`) et frontend (`game-api.mapper.spec.ts`).
+- Avancement 2026-02-08 12:06: `GameDetailPermissionsService` aligne la detection host sur `userId` d'abord, puis fallback `username` (cas legacy), pour stabiliser `canDeleteGame` et `canRegenerateCode`.
+- Avancement 2026-02-08 12:06: specs permissions mises a jour avec cas de priorite `userId` et fallback `username` + validation complete `features/game/**/*.spec.ts` verte (324/324).
 
 CRITERES_D_ACCEPTATION:
 - [ ] Aucune game active n'affiche `createur inconnu` sans raison explicite.
@@ -205,9 +207,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Les games orphelines ont un comportement documente et teste.
 
 NEXT:
-- (1) Reproduire avec IDs reels + capturer payload `/api/games` apres patch pour confirmer disparition des cas `createur inconnu`
-- (2) Corriger/valider `canDeleteGame` et `canRegenerateCode` sur games legacy (host vs non-host)
-- (3) Validation manuelle Thibaut/Teddy sur game legacy + game neuve puis cloture ticket
+- (1) Capturer payload reel `/api/games` et `/api/games/{id}` sur une game legacy pour verifier `creatorId/creatorName`
+- (2) Validation manuelle Thibaut/Teddy: visibilite `supprimer/regenerer` sur game legacy + game neuve
+- (3) Si OK, cloturer `JIRA-FIX-007` puis debloquer `JIRA-FIX-004`, `JIRA-FIX-008`, `JIRA-FIX-009`
 
 
 ID: JIRA-FIX-008

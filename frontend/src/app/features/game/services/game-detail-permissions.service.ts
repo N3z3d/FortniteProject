@@ -33,7 +33,7 @@ export class GameDetailPermissionsService {
     const currentUser = this.userContextService.getCurrentUser();
     if (!currentUser) return false;
 
-    return this.gameService.isGameHost(game, currentUser.username);
+    return this.isHost(game, currentUser.id, currentUser.username);
   }
 
   /**
@@ -45,7 +45,7 @@ export class GameDetailPermissionsService {
     if (!currentUser) return false;
 
     // Peut quitter si participant mais pas host
-    const isHost = this.gameService.isGameHost(game, currentUser.username);
+    const isHost = this.isHost(game, currentUser.id, currentUser.username);
     const isParticipant = game.participants?.some(p => p.username === currentUser.username) || false;
 
     return isParticipant && !isHost;
@@ -61,7 +61,7 @@ export class GameDetailPermissionsService {
     if (!currentUser) return false;
 
     // Peut supprimer uniquement si host ET status CREATING
-    const isHost = this.gameService.isGameHost(game, currentUser.username);
+    const isHost = this.isHost(game, currentUser.id, currentUser.username);
     const isCreatingStatus = game.status === 'CREATING';
 
     return isHost && isCreatingStatus;
@@ -83,8 +83,7 @@ export class GameDetailPermissionsService {
     const currentUser = this.userContextService.getCurrentUser();
     if (!currentUser) return false;
 
-    return this.gameService.isGameHost(game, currentUser.username) &&
-           game.status === 'CREATING';
+    return this.isHost(game, currentUser.id, currentUser.username);
   }
 
   /**
@@ -95,7 +94,19 @@ export class GameDetailPermissionsService {
     const currentUser = this.userContextService.getCurrentUser();
     if (!currentUser) return false;
 
-    return this.gameService.isGameHost(game, currentUser.username) &&
+    return this.isHost(game, currentUser.id, currentUser.username) &&
            game.status === 'CREATING';
+  }
+
+  private isHost(game: Game, userId: string | undefined, username: string): boolean {
+    if (userId && this.gameService.isGameHost(game, userId)) {
+      return true;
+    }
+
+    if (username && this.gameService.isGameHost(game, username)) {
+      return true;
+    }
+
+    return false;
   }
 }

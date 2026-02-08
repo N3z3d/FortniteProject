@@ -84,7 +84,7 @@ describe('GameDetailPermissionsService', () => {
     it('should return true when user is host', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       expect(service.canArchiveGame(mockGame)).toBeTrue();
-      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(mockGame, 'testuser');
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(mockGame, 'user1');
     });
 
     it('should return false when user is not host', () => {
@@ -114,6 +114,7 @@ describe('GameDetailPermissionsService', () => {
       };
 
       expect(service.canLeaveGame(game)).toBeTrue();
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
       expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'testuser');
     });
 
@@ -162,7 +163,7 @@ describe('GameDetailPermissionsService', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       const game = { ...mockGame, status: 'CREATING' as const };
       expect(service.canDeleteGame(game)).toBeTrue();
-      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'testuser');
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
     });
 
     it('should return false when user is not host', () => {
@@ -224,7 +225,7 @@ describe('GameDetailPermissionsService', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       const game = { ...mockGame, status: 'CREATING' as const };
       expect(service.canRegenerateCode(game)).toBeTrue();
-      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'testuser');
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
     });
 
     it('should return false when user is not host', () => {
@@ -233,10 +234,10 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canRegenerateCode(game)).toBeFalse();
     });
 
-    it('should return false when status is not CREATING', () => {
+    it('should return true when status is not CREATING but user is host', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       const game = { ...mockGame, status: 'DRAFTING' as const };
-      expect(service.canRegenerateCode(game)).toBeFalse();
+      expect(service.canRegenerateCode(game)).toBeTrue();
     });
 
     it('should return false when no current user', () => {
@@ -254,7 +255,7 @@ describe('GameDetailPermissionsService', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       const game = { ...mockGame, status: 'CREATING' as const };
       expect(service.canRenameGame(game)).toBeTrue();
-      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'testuser');
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
     });
 
     it('should return false when user is not host', () => {
@@ -333,6 +334,27 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canRegenerateCode(game)).toBeFalse();
       expect(service.canRenameGame(game)).toBeFalse();
       expect(service.canLeaveGame(game)).toBeTrue(); // Can leave as non-host participant
+    });
+
+    it('should use user id check before username fallback', () => {
+      gameServiceSpy.isGameHost.and.callFake((_game, identifier) => identifier === 'user1');
+      const game = { ...mockGame, creatorId: 'user1', status: 'DRAFTING' as const };
+
+      expect(service.canRegenerateCode(game)).toBeTrue();
+      expect(gameServiceSpy.isGameHost.calls.allArgs()).toEqual([[game, 'user1']]);
+    });
+
+    it('should fallback to username when user id is missing', () => {
+      userContextServiceSpy.getCurrentUser.and.returnValue({
+        id: undefined as unknown as string,
+        username: 'testuser',
+        email: 'test@example.com'
+      });
+      gameServiceSpy.isGameHost.and.callFake((_game, identifier) => identifier === 'testuser');
+      const game = { ...mockGame, status: 'DRAFTING' as const };
+
+      expect(service.canRegenerateCode(game)).toBeTrue();
+      expect(gameServiceSpy.isGameHost.calls.allArgs()).toEqual([[game, 'testuser']]);
     });
   });
 });
