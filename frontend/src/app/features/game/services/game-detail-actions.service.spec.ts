@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 
 import { GameDetailActionsService } from './game-detail-actions.service';
@@ -13,6 +14,7 @@ describe('GameDetailActionsService', () => {
   let gameServiceSpy: jasmine.SpyObj<GameService>;
   let routerSpy: jasmine.SpyObj<Router>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let dialogSpy: jasmine.SpyObj<MatDialog>;
   let userGamesStoreSpy: jasmine.SpyObj<UserGamesStore>;
 
   const mockGame: Game = {
@@ -42,7 +44,10 @@ describe('GameDetailActionsService', () => {
     ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
-    userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame']);
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame', 'refreshGames']);
+    userGamesStoreSpy.refreshGames.and.returnValue(of([]));
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(undefined) } as any);
 
     TestBed.configureTestingModule({
       providers: [
@@ -50,6 +55,7 @@ describe('GameDetailActionsService', () => {
         { provide: GameService, useValue: gameServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: MatDialog, useValue: dialogSpy },
         { provide: UserGamesStore, useValue: userGamesStoreSpy }
       ]
     });
@@ -83,9 +89,9 @@ describe('GameDetailActionsService', () => {
       service.startDraft('game1');
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        'Impossible de démarrer le draft',
+        'Impossible de demarrer le draft. Verifiez que vous etes le createur et qu il y a au moins 2 participants.',
         'Fermer',
-        { duration: 3000 }
+        { duration: 5000 }
       );
     });
 
@@ -95,26 +101,27 @@ describe('GameDetailActionsService', () => {
       service.startDraft('game1');
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        'Erreur lors du démarrage du draft',
+        'Test error',
         'Fermer',
-        { duration: 3000 }
+        { duration: 5000 }
       );
     });
   });
 
   describe('archiveGame', () => {
-    it('should archive game successfully and navigate', () => {
+    it('should archive game successfully, remove from store, and navigate home', () => {
       gameServiceSpy.archiveGame.and.returnValue(of(true));
 
       service.archiveGame('game1');
 
       expect(gameServiceSpy.archiveGame).toHaveBeenCalledWith('game1');
+      expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('game1');
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         'Game archivée avec succès!',
         'Fermer',
         { duration: 3000 }
       );
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
     });
 
     it('should show error message when archive fails', () => {
@@ -144,18 +151,19 @@ describe('GameDetailActionsService', () => {
   });
 
   describe('leaveGame', () => {
-    it('should leave game successfully and navigate', () => {
+    it('should leave game successfully, remove from store, and navigate home', () => {
       gameServiceSpy.leaveGame.and.returnValue(of(true));
 
       service.leaveGame('game1');
 
       expect(gameServiceSpy.leaveGame).toHaveBeenCalledWith('game1');
+      expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('game1');
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         'Vous avez quitté la game',
         'Fermer',
         { duration: 3000 }
       );
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
     });
 
     it('should show error message when leave fails', () => {
@@ -212,13 +220,14 @@ describe('GameDetailActionsService', () => {
   });
 
   describe('joinGame', () => {
-    it('should join game successfully and call onSuccess', () => {
+    it('should join game successfully, refresh store, and call onSuccess', () => {
       const onSuccess = jasmine.createSpy('onSuccess');
       gameServiceSpy.joinGame.and.returnValue(of(true));
 
       service.joinGame('game1', onSuccess);
 
       expect(gameServiceSpy.joinGame).toHaveBeenCalledWith('game1');
+      expect(userGamesStoreSpy.refreshGames).toHaveBeenCalled();
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         jasmine.stringMatching(/rejoint/i),
         'Fermer',
@@ -253,86 +262,86 @@ describe('GameDetailActionsService', () => {
   });
 
   describe('confirmArchive', () => {
-    it('should show confirm dialog and archive if confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+    it('should open dialog and archive if confirmed', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
       gameServiceSpy.archiveGame.and.returnValue(of(true));
 
       service.confirmArchive('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.archiveGame).toHaveBeenCalledWith('game1');
     });
 
-    it('should not archive if user cancels', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+    it('should not archive if user cancels dialog', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
 
       service.confirmArchive('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.archiveGame).not.toHaveBeenCalled();
     });
   });
 
   describe('confirmLeave', () => {
-    it('should show confirm dialog and leave if confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+    it('should open dialog and leave if confirmed', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
       gameServiceSpy.leaveGame.and.returnValue(of(true));
 
       service.confirmLeave('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.leaveGame).toHaveBeenCalledWith('game1');
     });
 
-    it('should not leave if user cancels', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+    it('should not leave if user cancels dialog', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
 
       service.confirmLeave('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.leaveGame).not.toHaveBeenCalled();
     });
   });
 
   describe('confirmDelete', () => {
-    it('should show confirm dialog and delete if confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
+    it('should open dialog and delete if confirmed', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
       gameServiceSpy.deleteGame.and.returnValue(of(true));
 
       service.confirmDelete('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.deleteGame).toHaveBeenCalledWith('game1');
     });
 
-    it('should not delete if user cancels', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+    it('should not delete if user cancels dialog', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
 
       service.confirmDelete('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.deleteGame).not.toHaveBeenCalled();
     });
   });
 
   describe('confirmStartDraft', () => {
-    it('should show confirm dialog and start draft if confirmed', () => {
+    it('should open dialog and start draft if confirmed', () => {
       const onSuccess = jasmine.createSpy('onSuccess');
-      spyOn(window, 'confirm').and.returnValue(true);
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
       gameServiceSpy.startDraft.and.returnValue(of(true));
 
       service.confirmStartDraft('game1', onSuccess);
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.startDraft).toHaveBeenCalledWith('game1');
     });
 
-    it('should not start draft if user cancels', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
+    it('should not start draft if user cancels dialog', () => {
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
 
       service.confirmStartDraft('game1');
 
-      expect(window.confirm).toHaveBeenCalled();
+      expect(dialogSpy.open).toHaveBeenCalled();
       expect(gameServiceSpy.startDraft).not.toHaveBeenCalled();
     });
   });
@@ -367,7 +376,11 @@ describe('GameDetailActionsService', () => {
 
       expect(gameServiceSpy.regenerateInvitationCode).toHaveBeenCalledWith('game1', 'permanent');
       expect(onSuccess).toHaveBeenCalledWith(mockGame);
-      expect(snackBarSpy.open).not.toHaveBeenCalled();
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Code d'invitation regenere: ABC123",
+        'Fermer',
+        { duration: 3500 }
+      );
     });
 
     it('should handle error when regenerating code', () => {
@@ -377,7 +390,63 @@ describe('GameDetailActionsService', () => {
       service.regenerateInvitationCode('game1', '24h');
 
       expect(consoleSpy).toHaveBeenCalled();
-      expect(snackBarSpy.open).not.toHaveBeenCalled();
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        'Test error',
+        'Fermer',
+        { duration: 5000 }
+      );
+    });
+  });
+
+  describe('renameGame', () => {
+    it('should rename game successfully and show confirmation', () => {
+      const onSuccess = jasmine.createSpy('onSuccess');
+      const renamedGame = { ...mockGame, name: 'New Name' };
+      gameServiceSpy.renameGame.and.returnValue(of(renamedGame));
+
+      service.renameGame('game1', 'New Name', onSuccess);
+
+      expect(gameServiceSpy.renameGame).toHaveBeenCalledWith('game1', 'New Name');
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        'Partie renommée avec succès!',
+        'Fermer',
+        { duration: 3000 }
+      );
+      expect(onSuccess).toHaveBeenCalledWith(renamedGame);
+    });
+
+    it('should show error message when rename fails', () => {
+      gameServiceSpy.renameGame.and.returnValue(throwError(() => new Error('Forbidden')));
+
+      service.renameGame('game1', 'New Name');
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        'Forbidden',
+        'Fermer',
+        { duration: 5000 }
+      );
+    });
+  });
+
+  describe('promptRegenerateCode', () => {
+    it('should open dialog and regenerate when duration is selected', () => {
+      const regenerateSpy = spyOn(service, 'regenerateInvitationCode');
+      dialogSpy.open.and.returnValue({ afterClosed: () => of('7d') } as any);
+
+      service.promptRegenerateCode('game1');
+
+      expect(dialogSpy.open).toHaveBeenCalled();
+      expect(regenerateSpy).toHaveBeenCalledWith('game1', '7d', undefined);
+    });
+
+    it('should not regenerate when dialog is closed without selection', () => {
+      const regenerateSpy = spyOn(service, 'regenerateInvitationCode');
+      dialogSpy.open.and.returnValue({ afterClosed: () => of(undefined) } as any);
+
+      service.promptRegenerateCode('game1');
+
+      expect(dialogSpy.open).toHaveBeenCalled();
+      expect(regenerateSpy).not.toHaveBeenCalled();
     });
   });
 });

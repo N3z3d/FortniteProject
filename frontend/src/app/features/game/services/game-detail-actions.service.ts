@@ -1,12 +1,21 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 import { GameService } from './game.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { Game } from '../models/game.interface';
+import {
+  InvitationCodeDuration,
+  InvitationCodeDurationDialogComponent
+} from '../components/invitation-code-duration-dialog/invitation-code-duration-dialog.component';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData
+} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 /**
  * Service responsable des actions sur les détails d'une game
@@ -20,8 +29,9 @@ export class GameDetailActionsService {
     private readonly gameService: GameService,
     private readonly router: Router,
     private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
     private readonly userGamesStore: UserGamesStore
-  ) {}
+  ) { }
 
   /**
    * Démarre le draft d'une game
@@ -33,11 +43,19 @@ export class GameDetailActionsService {
           this.snackBar.open('Draft démarré avec succès!', 'Fermer', { duration: 3000 });
           if (onSuccess) onSuccess();
         } else {
-          this.snackBar.open('Impossible de démarrer le draft', 'Fermer', { duration: 3000 });
+          this.snackBar.open(
+            'Impossible de demarrer le draft. Verifiez que vous etes le createur et qu il y a au moins 2 participants.',
+            'Fermer',
+            { duration: 5000 }
+          );
         }
       },
       error: (error) => {
-        this.snackBar.open('Erreur lors du démarrage du draft', 'Fermer', { duration: 3000 });
+        this.snackBar.open(
+          this.extractErrorMessage(error, 'Erreur lors du demarrage du draft'),
+          'Fermer',
+          { duration: 5000 }
+        );
         console.error('Error starting draft:', error);
       }
     });
@@ -50,8 +68,9 @@ export class GameDetailActionsService {
     this.gameService.archiveGame(gameId).subscribe({
       next: (success) => {
         if (success) {
+          this.userGamesStore.removeGame(gameId);
           this.snackBar.open('Game archivée avec succès!', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/games']);
+          this.router.navigate(['/']);
         } else {
           this.snackBar.open('Impossible d\'archiver la game', 'Fermer', { duration: 3000 });
         }
@@ -70,8 +89,9 @@ export class GameDetailActionsService {
     this.gameService.leaveGame(gameId).subscribe({
       next: (success) => {
         if (success) {
+          this.userGamesStore.removeGame(gameId);
           this.snackBar.open('Vous avez quitté la game', 'Fermer', { duration: 3000 });
-          this.router.navigate(['/games']);
+          this.router.navigate(['/']);
         } else {
           this.snackBar.open('Impossible de quitter la game', 'Fermer', { duration: 3000 });
         }
@@ -109,6 +129,7 @@ export class GameDetailActionsService {
     this.gameService.joinGame(gameId).subscribe({
       next: (success) => {
         if (success) {
+          this.userGamesStore.refreshGames().subscribe({ error: () => undefined });
           this.snackBar.open('Game rejoint avec succès!', 'Fermer', { duration: 3000 });
           if (onSuccess) onSuccess();
         } else {
@@ -147,9 +168,17 @@ export class GameDetailActionsService {
   ): void {
     this.gameService.regenerateInvitationCode(gameId, duration).subscribe({
       next: (updatedGame) => {
+        const generatedCode = updatedGame?.invitationCode;
+        const message = generatedCode
+          ? `Code d'invitation regenere: ${generatedCode}`
+          : 'Code d\'invitation regenere avec succes';
+        this.snackBar.open(message, 'Fermer', { duration: 3500 });
         if (onSuccess) onSuccess(updatedGame);
       },
       error: (error) => {
+        this.snackBar.open(this.extractErrorMessage(error, 'Impossible de regenerer le code'), 'Fermer', {
+          duration: 5000
+        });
         console.error('Error regenerating invitation code:', error);
       }
     });
@@ -161,9 +190,15 @@ export class GameDetailActionsService {
   renameGame(gameId: string, newName: string, onSuccess?: (game: Game) => void): void {
     this.gameService.renameGame(gameId, newName).subscribe({
       next: (updatedGame) => {
+        this.snackBar.open('Partie renommée avec succès!', 'Fermer', { duration: 3000 });
         if (onSuccess) onSuccess(updatedGame);
       },
       error: (error) => {
+        this.snackBar.open(
+          this.extractErrorMessage(error, 'Erreur lors du renommage de la partie'),
+          'Fermer',
+          { duration: 5000 }
+        );
         console.error('Error renaming game:', error);
       }
     });
@@ -173,66 +208,87 @@ export class GameDetailActionsService {
    * Confirme l'archivage de la game
    */
   confirmArchive(gameId: string): void {
-    const confirmed = confirm(
-      'Êtes-vous sûr de vouloir archiver cette game ? Elle ne sera plus visible dans votre liste.'
+    this.openConfirmationDialog(
+      {
+        title: 'Archiver cette game ?',
+        message: 'La game sera retiree de la liste active, mais conservee en base.',
+        confirmText: 'Archiver',
+        cancelText: 'Annuler',
+        confirmColor: 'warn'
+      },
+      () => this.archiveGame(gameId)
     );
-
-    if (confirmed) {
-      this.archiveGame(gameId);
-    }
   }
 
   /**
    * Confirme la sortie de la game
    */
   confirmLeave(gameId: string): void {
-    const confirmed = confirm(
-      'Êtes-vous sûr de vouloir quitter cette game ?'
+    this.openConfirmationDialog(
+      {
+        title: 'Quitter cette game ?',
+        message: 'Vous quitterez la game et devrez utiliser un code pour revenir.',
+        confirmText: 'Quitter',
+        cancelText: 'Annuler',
+        confirmColor: 'primary'
+      },
+      () => this.leaveGame(gameId)
     );
-
-    if (confirmed) {
-      this.leaveGame(gameId);
-    }
   }
 
   /**
    * Confirme la suppression de la game
    */
   confirmDelete(gameId: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette game ? Cette action est irréversible.')) {
-      this.permanentlyDeleteGame(gameId);
-    }
+    this.openConfirmationDialog(
+      {
+        title: 'Supprimer cette game ?',
+        message: 'Cette action est irreversible (soft delete).',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        confirmColor: 'warn'
+      },
+      () => this.permanentlyDeleteGame(gameId)
+    );
   }
 
   /**
    * Confirme le démarrage du draft
    */
   confirmStartDraft(gameId: string, onSuccess?: () => void): void {
-    if (confirm('Êtes-vous sûr de vouloir démarrer le draft ? Cette action ne peut pas être annulée.')) {
-      this.startDraft(gameId, onSuccess);
-    }
+    this.openConfirmationDialog(
+      {
+        title: 'Demarrer le draft ?',
+        message: 'Cette action ne peut pas etre annulee.',
+        confirmText: 'Demarrer',
+        cancelText: 'Annuler',
+        confirmColor: 'primary'
+      },
+      () => this.startDraft(gameId, onSuccess)
+    );
   }
 
   /**
    * Affiche le prompt pour choisir la durée et régénère le code
    */
   promptRegenerateCode(gameId: string, onSuccess?: (game: Game) => void): void {
-    const choice = prompt(
-      'Choisissez la durée du code d\'invitation:\n1 = 24 heures\n2 = 48 heures\n3 = 7 jours\n4 = Permanent',
-      '4'
-    );
+    this.dialog
+      .open(InvitationCodeDurationDialogComponent, {
+        width: '520px',
+        maxWidth: '95vw',
+        panelClass: 'nexus-dialog-panel',
+        autoFocus: false,
+        restoreFocus: true,
+        data: { defaultDuration: 'permanent' as InvitationCodeDuration }
+      })
+      .afterClosed()
+      .subscribe((duration: InvitationCodeDuration | undefined) => {
+        if (!duration) {
+          return;
+        }
 
-    if (!choice) return;
-
-    const durationMap: { [key: string]: '24h' | '48h' | '7d' | 'permanent' } = {
-      '1': '24h',
-      '2': '48h',
-      '3': '7d',
-      '4': 'permanent'
-    };
-
-    const duration = durationMap[choice] || 'permanent';
-    this.regenerateInvitationCode(gameId, duration, onSuccess);
+        this.regenerateInvitationCode(gameId, duration, onSuccess);
+      });
   }
 
   /**
@@ -246,4 +302,38 @@ export class GameDetailActionsService {
 
     this.renameGame(gameId, newName.trim(), onSuccess);
   }
+
+  private openConfirmationDialog(data: ConfirmDialogData, onConfirm: () => void): void {
+    this.dialog
+      .open(ConfirmDialogComponent, {
+        width: '460px',
+        maxWidth: '95vw',
+        autoFocus: false,
+        restoreFocus: true,
+        data
+      })
+      .afterClosed()
+      .subscribe((confirmed: boolean | undefined) => {
+        if (confirmed) {
+          onConfirm();
+        }
+      });
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const errorObject = error as { error?: { message?: string } };
+      if (errorObject.error?.message) {
+        return errorObject.error.message;
+      }
+    }
+
+    return fallback;
+  }
 }
+
+

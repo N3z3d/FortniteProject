@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { GameService } from '../services/game.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
 
 @Component({
   selector: 'app-join-game',
@@ -38,23 +39,27 @@ export class JoinGameComponent {
   constructor(
     private readonly gameService: GameService,
     public readonly router: Router,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    private readonly userGamesStore: UserGamesStore
   ) {}
 
   joinWithCode(): void {
     if (!this.invitationCode.trim()) {
-      this.snackBar.open(this.t.t('games.join.enterCodeError'), this.t.t('games.join.close'), {
+      this.snackBar.open(this.t.t('games.joinDialog.enterCodeError'), this.t.t('games.joinDialog.close'), {
         duration: 3000
       });
       return;
     }
 
+    const normalizedCode = this.invitationCode.trim().toUpperCase();
     this.joiningGame = true;
-    this.gameService.joinGameWithCode(this.invitationCode.trim()).subscribe({
+    this.gameService.joinGameWithCode(normalizedCode).subscribe({
       next: (game) => {
+        this.joiningGame = false;
+        this.userGamesStore.refreshGames().subscribe({ error: () => undefined });
         this.snackBar.open(
-          this.t.t('games.join.successJoined').replace('{name}', game.name),
-          this.t.t('games.join.view'),
+          this.t.t('games.joinDialog.successJoined').replace('{name}', game.name),
+          this.t.t('games.joinDialog.view'),
           { duration: 5000 }
         ).onAction().subscribe(() => {
           this.router.navigate(['/games', game.id, 'dashboard']);
@@ -66,9 +71,10 @@ export class JoinGameComponent {
         }, 1000);
       },
       error: (error) => {
+        const message = this.extractErrorMessage(error, this.t.t('games.joinDialog.invalidCode'));
         this.snackBar.open(
-          error.error?.message || this.t.t('games.join.invalidCode'),
-          this.t.t('games.join.close'),
+          message,
+          this.t.t('games.joinDialog.close'),
           { duration: 5000 }
         );
         this.joiningGame = false;
@@ -78,5 +84,20 @@ export class JoinGameComponent {
 
   cancel(): void {
     this.router.navigate(['/games']);
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const errorObject = error as { error?: { message?: string } };
+      if (errorObject.error?.message) {
+        return errorObject.error.message;
+      }
+    }
+
+    return fallback;
   }
 }

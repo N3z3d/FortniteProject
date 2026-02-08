@@ -127,7 +127,7 @@ describe('GameCommandService', () => {
       expect(game).toEqual(mockGame);
     });
 
-    service.joinGameWithCode('INVITE').subscribe(game => {
+    service.joinGameWithCode(' invite ').subscribe(game => {
       expect(game).toEqual(mockGame);
     });
 
@@ -158,7 +158,7 @@ describe('GameCommandService', () => {
     expectPost(`${apiBaseUrl}/games`, createRequest, mockGame);
     expectPost(`${apiBaseUrl}/games/join-with-code`, { code: 'INVITE' }, mockGame);
     expectPost(`${apiBaseUrl}/games/game-1/invitation-code`, {}, invitationCode);
-    expectPost(`${apiBaseUrl}/games/game-1/draft/start`, {}, successResponse);
+    expectPost(`${apiBaseUrl}/games/game-1/start-draft`, {}, successResponse);
     expectPost(`${apiBaseUrl}/games/game-1/leave`, {}, successResponse);
     expectPost(`${apiBaseUrl}/games/game-1/draft/initialize`, {}, draftState);
     expectPost(`${apiBaseUrl}/games/game-1/draft/select`, { gameId: 'game-1', playerId: 'player-1' }, successResponse);
@@ -196,8 +196,8 @@ describe('GameCommandService', () => {
     service.regenerateInvitationCode('game-1', '24h').subscribe();
     service.renameGame('game-1', 'Renamed').subscribe();
 
-    expectPost(`${apiBaseUrl}/games/game-1/regenerate-code`, { duration: '24h' }, mockGame);
-    expectPatch(`${apiBaseUrl}/games/game-1/rename`, { name: 'Renamed' }, mockGame);
+    expectPost(`${apiBaseUrl}/games/game-1/regenerate-code?duration=24h`, {}, mockGame);
+    expectPost(`${apiBaseUrl}/games/game-1/rename`, { name: 'Renamed' }, mockGame);
 
     expect(announcerSpy.announce).toHaveBeenCalledWith(jasmine.stringMatching(/invitation/), 'polite');
     expect(announcerSpy.announce).toHaveBeenCalledWith(jasmine.stringMatching(/Renamed/), 'polite');
@@ -212,7 +212,7 @@ describe('GameCommandService', () => {
       }
     });
 
-    const req = httpMock.expectOne(`${apiBaseUrl}/games/game-1/regenerate-code`);
+    const req = httpMock.expectOne(`${apiBaseUrl}/games/game-1/regenerate-code?duration=24h`);
     req.flush('Error', { status: 500, statusText: 'Internal Server Error' });
   });
 
@@ -305,5 +305,44 @@ describe('GameCommandService', () => {
 
     const req = httpMock.expectOne(`${apiBaseUrl}/games`);
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+  });
+
+  it('surfaces backend business message on HTTP 500', (done) => {
+    const createRequest: CreateGameRequest = {
+      name: 'Error Game',
+      maxParticipants: 8
+    };
+
+    service.createGame(createRequest).subscribe({
+      next: () => fail('expected createGame to fail'),
+      error: (error) => {
+        expect(error.message).toContain('more than 5 active games');
+        expect(loggerSpy.error).toHaveBeenCalled();
+        done();
+      }
+    });
+
+    const req = httpMock.expectOne(`${apiBaseUrl}/games`);
+    req.flush(
+      { message: 'User cannot have more than 5 active games. Current: 5' },
+      { status: 500, statusText: 'Internal Server Error' }
+    );
+  });
+
+  it('surfaces backend error field on HTTP 403 for start draft', (done) => {
+    service.startDraft('game-1').subscribe({
+      next: () => fail('expected startDraft to fail'),
+      error: (error) => {
+        expect(error.message).toContain('Seul le createur peut demarrer la draft');
+        expect(loggerSpy.error).toHaveBeenCalled();
+        done();
+      }
+    });
+
+    const req = httpMock.expectOne(`${apiBaseUrl}/games/game-1/start-draft`);
+    req.flush(
+      { error: 'Seul le createur peut demarrer la draft' },
+      { status: 403, statusText: 'Forbidden' }
+    );
   });
 });

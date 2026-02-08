@@ -22,7 +22,11 @@ export class GameDetailPermissionsService {
    */
   canStartDraft(game: Game | null): boolean {
     if (!game) return false;
-    return game.status === 'CREATING' && game.participantCount >= 2;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    const isHost = this.isHost(game, currentUser.id, currentUser.username);
+    return isHost && game.status === 'CREATING' && game.participantCount >= 2;
   }
 
   /**
@@ -46,9 +50,7 @@ export class GameDetailPermissionsService {
 
     // Peut quitter si participant mais pas host
     const isHost = this.isHost(game, currentUser.id, currentUser.username);
-    const isParticipant = game.participants?.some(p => p.username === currentUser.username) || false;
-
-    return isParticipant && !isHost;
+    return this.isParticipant(game, currentUser.id, currentUser.username) && !isHost;
   }
 
   /**
@@ -68,11 +70,45 @@ export class GameDetailPermissionsService {
   }
 
   /**
+   * VÃ©rifie si l'action de suppression doit Ãªtre visible.
+   * On affiche l'action uniquement pour le host.
+   */
+  canSeeDeleteGameAction(game: Game | null): boolean {
+    if (!game) return false;
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    return this.isHost(game, currentUser.id, currentUser.username);
+  }
+
+  /**
+   * Retourne la clÃ© i18n expliquant pourquoi la suppression est indisponible.
+   * null signifie qu'aucune restriction n'est Ã  afficher.
+   */
+  getDeleteRestrictionReasonKey(game: Game | null): string | null {
+    if (!game) return null;
+    if (!this.canSeeDeleteGameAction(game)) {
+      return 'games.detail.deleteDisabledNotHost';
+    }
+    if (game.status !== 'CREATING') {
+      return 'games.detail.deleteDisabledStatus';
+    }
+    return null;
+  }
+
+  /**
    * Vérifie si l'utilisateur peut rejoindre la game
    */
   canJoinGame(game: Game | null): boolean {
     if (!game) return false;
-    return game.canJoin && game.participantCount < game.maxParticipants;
+    if (!game.canJoin || game.participantCount >= game.maxParticipants) return false;
+
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) return false;
+
+    if (this.isHost(game, currentUser.id, currentUser.username)) return false;
+
+    return !this.isParticipant(game, currentUser.id, currentUser.username);
   }
 
   /**
@@ -94,8 +130,7 @@ export class GameDetailPermissionsService {
     const currentUser = this.userContextService.getCurrentUser();
     if (!currentUser) return false;
 
-    return this.isHost(game, currentUser.id, currentUser.username) &&
-           game.status === 'CREATING';
+    return this.isHost(game, currentUser.id, currentUser.username);
   }
 
   private isHost(game: Game, userId: string | undefined, username: string): boolean {
@@ -108,5 +143,15 @@ export class GameDetailPermissionsService {
     }
 
     return false;
+  }
+
+  private isParticipant(game: Game, userId: string | undefined, username: string): boolean {
+    if (!game.participants) return false;
+    const normalizedUsername = (username || '').trim().toLowerCase();
+    return game.participants.some(
+      p =>
+        (userId && p.id === userId) ||
+        (p.username || '').trim().toLowerCase() === normalizedUsername
+    );
   }
 }

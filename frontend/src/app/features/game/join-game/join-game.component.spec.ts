@@ -5,6 +5,7 @@ import { of, throwError } from 'rxjs';
 import { JoinGameComponent } from './join-game.component';
 import { GameService } from '../services/game.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
 import { Game } from '../models/game.interface';
 
 describe('JoinGameComponent', () => {
@@ -14,6 +15,7 @@ describe('JoinGameComponent', () => {
   let router: jasmine.SpyObj<Router>;
   let snackBar: jasmine.SpyObj<MatSnackBar>;
   let translationService: jasmine.SpyObj<TranslationService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
 
   const mockGame: Game = {
     id: 'game1',
@@ -36,6 +38,8 @@ describe('JoinGameComponent', () => {
     snackBar.open.and.returnValue(snackBarRef);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
     translationService.t.and.callFake((key: string) => key);
+    userGamesStore = jasmine.createSpyObj('UserGamesStore', ['refreshGames']);
+    userGamesStore.refreshGames.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [JoinGameComponent]
@@ -46,7 +50,8 @@ describe('JoinGameComponent', () => {
           { provide: GameService, useValue: gameService },
           { provide: Router, useValue: router },
           { provide: MatSnackBar, useValue: snackBar },
-          { provide: TranslationService, useValue: translationService }
+          { provide: TranslationService, useValue: translationService },
+          { provide: UserGamesStore, useValue: userGamesStore }
         ]
       }
     });
@@ -61,13 +66,20 @@ describe('JoinGameComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should render join dialog translations namespace', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.textContent).toContain('games.joinDialog.title');
+    expect(compiled.textContent).toContain('games.joinDialog.subtitle');
+  });
+
   it('should show error when code is empty', () => {
     component.invitationCode = '';
     component.joinWithCode();
 
     expect(snackBar.open).toHaveBeenCalledWith(
-      'games.join.enterCodeError',
-      'games.join.close',
+      'games.joinDialog.enterCodeError',
+      'games.joinDialog.close',
       { duration: 3000 }
     );
     expect(gameService.joinGameWithCode).not.toHaveBeenCalled();
@@ -87,7 +99,7 @@ describe('JoinGameComponent', () => {
 
     component.joinWithCode();
 
-    expect(component.joiningGame).toBeTrue();
+    expect(component.joiningGame).toBeFalse();
     expect(gameService.joinGameWithCode).toHaveBeenCalledWith('VALID123');
     expect(snackBar.open).toHaveBeenCalled();
 
@@ -104,6 +116,24 @@ describe('JoinGameComponent', () => {
     expect(gameService.joinGameWithCode).toHaveBeenCalledWith('CODE123');
   });
 
+  it('should normalize invitation code to uppercase before joining', () => {
+    component.invitationCode = 'ab12cd';
+    gameService.joinGameWithCode.and.returnValue(of(mockGame));
+
+    component.joinWithCode();
+
+    expect(gameService.joinGameWithCode).toHaveBeenCalledWith('AB12CD');
+  });
+
+  it('should refresh sidebar games after successful join', () => {
+    component.invitationCode = 'VALID123';
+    gameService.joinGameWithCode.and.returnValue(of(mockGame));
+
+    component.joinWithCode();
+
+    expect(userGamesStore.refreshGames).toHaveBeenCalled();
+  });
+
   it('should handle join error', () => {
     component.invitationCode = 'INVALID';
     gameService.joinGameWithCode.and.returnValue(
@@ -115,7 +145,7 @@ describe('JoinGameComponent', () => {
     expect(component.joiningGame).toBeFalse();
     expect(snackBar.open).toHaveBeenCalledWith(
       'Code expired',
-      'games.join.close',
+      'games.joinDialog.close',
       { duration: 5000 }
     );
   });
@@ -127,8 +157,21 @@ describe('JoinGameComponent', () => {
     component.joinWithCode();
 
     expect(snackBar.open).toHaveBeenCalledWith(
-      'games.join.invalidCode',
-      'games.join.close',
+      'games.joinDialog.invalidCode',
+      'games.joinDialog.close',
+      { duration: 5000 }
+    );
+  });
+
+  it('should display error message from Error instance', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(throwError(() => new Error('Game is full')));
+
+    component.joinWithCode();
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Game is full',
+      'games.joinDialog.close',
       { duration: 5000 }
     );
   });

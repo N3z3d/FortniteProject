@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-08 12:06
+Last Updated: 2026-02-08 19:30
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -17,237 +17,81 @@ RULES
 TICKETS
 ================================================================================
 
-ID: JIRA-FIX-002
-TITRE: Audit complet traductions non cablees (toutes langues)
-TYPE: Task
+
+ID: JIRA-FIX-016
+TITRE: Game supprimee reste visible pour les autres participants (sync temps reel)
+TYPE: Bug
 PRIORITE: P2
 STATUT: TODO
-ESTIMATE: 1-2j
+ESTIMATE: 4-8h
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
+DERNIERE_MAJ: 2026-02-08 19:30
 
 DEPENDENCIES: none
 
 OBJECTIF:
-- Identifier et corriger toutes les cles i18n brutes restantes dans l'application.
-- Harmoniser les traductions `en/fr/es/pt` au-dela du seul ecran rejoindre.
+- Quand le createur supprime/archive une game, les autres participants doivent voir la mise a jour sans F5.
 
 CONTEXTE:
-- Le flow rejoindre est traite par `JIRA-FIX-001`, mais d'autres ecrans peuvent afficher des placeholders non traduits.
-- Besoin d'un audit systematique sur l'ensemble des templates.
+- Retour utilisateur: apres suppression par le createur, le participant (ex: Teddy) voit toujours la game dans sa sidebar.
+- Le store local `UserGamesStore` est mis a jour cote createur mais pas cote autres participants.
+- Pas de mecanisme temps reel (WebSocket/SSE) actuellement -> le store des autres clients reste stale.
 
 DESCRIPTION:
-- Scanner tous les templates front pour detecter les textes `xxx.yyy.zzz` visibles et cles absentes des fichiers i18n.
-- Completer les fichiers i18n `en/fr/es/pt` pour les ecrans critiques (navigation, games, profil, trades).
-- Ajouter/mettre a jour des specs de non-regression i18n sur les zones corrigees.
+- Option A (leger): ajouter un polling periodique du store (ex: toutes les 60s) pour detecter les games supprimees.
+- Option B (robuste): implementer un canal WebSocket/SSE pour notifier les participants des changements de game.
+- Option C (minimum): au chargement du detail game, si 404 -> retirer du store + message explicite.
+- Evaluer le rapport cout/benefice et choisir l'approche.
 
 CRITERES_D_ACCEPTATION:
-- [ ] Aucune cle i18n brute visible sur les parcours principaux.
-- [ ] Parite des cles corrigees entre `en/fr/es/pt`.
-- [ ] Tests frontend cibles i18n verts.
+- [ ] Un participant voit la game disparaitre de sa sidebar dans un delai raisonnable apres suppression.
+- [ ] Un message explicite est affiche si le participant tente d'acceder a une game supprimee.
+- [ ] Tests cibles verts.
 
 NEXT:
-- (1) Generer l'inventaire des cles manquantes/hors-cablage sur ecrans principaux
-- (2) Corriger les fichiers i18n et les bindings templates correspondants
-- (3) Executer specs i18n cibles + smoke frontend
+- (1) Evaluer les 3 options (polling, WebSocket, 404 guard)
+- (2) Implementer l'option choisie
+- (3) Tester avec 2 comptes simultanes
 
 
-ID: JIRA-FIX-003
-TITRE: Endpoint mismatch join-with-code (404 ou erreur)
+
+ID: JIRA-FIX-018
+TITRE: Message erreur generique quand on rejoint une game deja rejointe (double-join)
 TYPE: Bug
-PRIORITE: P1
-STATUT: IN_PROGRESS
-ESTIMATE: 2-4h
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 1-2h
 
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-07 21:40
-DERNIERE_MAJ: 2026-02-08 11:40
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 19:30
 
 DEPENDENCIES: none
 
 OBJECTIF:
-- Corriger le mismatch entre l'URL appelee par le frontend pour rejoindre une partie avec code et l'endpoint backend correspondant.
+- Afficher un message explicite "Vous etes deja dans cette partie" au lieu d'une erreur generique quand un joueur tente de rejoindre une game ou il est deja participant.
 
 CONTEXTE:
-- Le flow "rejoindre une partie avec un code d'invitation" echoue (404 ou erreur inattendue).
-- Cause probable: le frontend appelle un chemin different de celui expose par le controller backend.
-- Le flow Thibaut -> Teddy (invitation) est bloque a cette etape.
+- Retour utilisateur: utiliser le meme code d'invitation deux fois affiche une erreur technique au lieu d'un message comprehensible.
+- Le backend renvoie probablement une erreur 4xx avec un message specifique, mais le frontend affiche un message generique.
 
 DESCRIPTION:
-- Tracer l'URL appelee par le service Angular (game.service.ts ou equivalent) lors du join-with-code.
-- Comparer avec l'endpoint expose dans le GameController backend.
-- Aligner le path frontend sur le path backend (ou inversement, selon la convention du projet).
-- Tester le flow complet join-with-code de bout en bout.
-- Avancement 2026-02-07 21:40: ajout endpoint backend `POST /api/games/join-with-code` compatible payload frontend `{ code: ... }`.
-- Avancement 2026-02-07 21:40: endpoint normalise le code, valide l'utilisateur, execute `joinGame` et renvoie `GameDto`.
-- Avancement 2026-02-07 21:40: tests verts backend (`GameControllerSimpleTest`) + frontend cible (`game-command.service.spec.ts`).
-- Avancement 2026-02-07 22:52: frontend `joinGameWithCode` force `trim().toUpperCase()` avant envoi pour eviter les rejets de code.
-- Avancement 2026-02-07 22:52: `join-game.component` affiche maintenant le message d'erreur backend detaille (au lieu d'un message generique).
-- Avancement 2026-02-07 22:52: suites vertes `frontend game specs (317/317)` + backend `GameControllerSimpleTest,CreateGameUseCaseTest,JoinGameUseCaseTest`.
-- Avancement 2026-02-07 23:31: backend relance localement et creation game revalidee via API (`POST /api/games`) avec code d'invitation retourne.
-- Avancement 2026-02-07 23:31: feedback utilisateur conserve les messages backend detailles cote frontend (`game-command.service`).
-- Avancement 2026-02-08 11:40: retour utilisateur confirme que le join-with-code fonctionne depuis le panneau lateral gauche.
-- Avancement 2026-02-08 11:40: nouveau ecart detecte, le CTA "rejoindre avec un code" depuis la page Mes parties ne declenche pas le meme flow.
+- Verifier le message d'erreur retourne par le backend en cas de double-join.
+- Adapter le handler d'erreur frontend pour detecter ce cas et afficher un message clair.
+- Si le backend ne distingue pas ce cas, ajouter la detection cote backend.
+- Ajouter tests unitaires frontend pour ce scenario.
 
 CRITERES_D_ACCEPTATION:
-- [ ] Le frontend appelle le bon endpoint backend pour join-with-code.
-- [ ] Le flow rejoindre avec code fonctionne de bout en bout.
+- [ ] Le message "Vous etes deja dans cette partie" (ou equivalent explicite) est affiche en cas de double-join.
+- [ ] Pas de trace d'erreur technique visible pour l'utilisateur.
 - [ ] Tests frontend/backend cibles verts.
 
 NEXT:
-- (1) Tracer le clic "rejoindre avec un code" depuis la page Mes parties et comparer avec le flow sidebar
-- (2) Aligner les deux points d'entree sur la meme methode `joinGameWithCode` + meme gestion d'erreurs
-- (3) Revalider en manuel Thibaut -> Teddy depuis les deux emplacements UI
-
-
-ID: JIRA-FIX-004
-TITRE: Code invitation visible et partageable pour le createur
-TYPE: Bug
-PRIORITE: P1
-STATUT: BLOCKED
-ESTIMATE: 4-8h
-
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-07 21:12
-DERNIERE_MAJ: 2026-02-08 11:54
-
-DEPENDENCIES: JIRA-FIX-007
-
-OBJECTIF:
-- Garantir que le createur d'une partie peut voir et partager le code d'invitation.
-- Rendre deterministe le cycle creation -> stockage -> lecture -> affichage du code.
-
-CONTEXTE:
-- Incoherence constatee: certaines parties ont un code visible, d'autres non.
-- Le flow d'invitation est bloque si le createur ne peut pas transmettre le code.
-- Le code doit etre visible dans le detail de la partie et copiable.
-
-DESCRIPTION:
-- Auditer les chemins `createGame`, `regenerateInvitationCode`, query game et mappings DTO.
-- Uniformiser la regle: code genere et persiste systematiquement a la creation.
-- Verifier la visibilite du code dans la reponse API et dans le composant frontend (detail partie).
-- Ajouter un bouton copier/partager si absent.
-- Ajouter/mettre a jour les tests backend et frontend.
-- Avancement 2026-02-07 21:17: `CreateGameUseCase` corrige pour generer/persister `invitationCode` via `InvitationCodeService`.
-- Avancement 2026-02-07 21:17: tests backend verts (`CreateGameUseCaseTest`, `GameDetailControllerTest`).
-- Avancement 2026-02-07 21:47: feedback UI creation ajuste pour afficher immediatement le code d'invitation dans la snackbar si disponible.
-- Avancement 2026-02-07 21:47: test frontend vert `create-game.component.spec.ts` (cas avec code d'invitation).
-- Avancement 2026-02-07 22:11: `game-detail.component.html` corrige pour afficher le bloc invitation meme sans code si le createur peut en generer un (`*ngIf=\"game.invitationCode || canRegenerateCode()\"`).
-- Avancement 2026-02-07 22:11: ajout fallback UI "pas de code" + bouton `generate-code-btn` qui declenche `promptRegenerateCode()`.
-- Avancement 2026-02-07 22:11: tests frontend verts (`game-detail.component.spec.ts`, `join-game.component.spec.ts`, `game-detail.component.tdd.spec.ts`).
-- Avancement 2026-02-07 22:52: `regenerateInvitationCode` frontend aligne sur backend (`duration` en query param) pour corriger les regenerations qui echouaient.
-- Avancement 2026-02-07 22:52: `canRegenerateCode` autorise le createur meme hors `CREATING` pour coherence anciennes/nouvelles parties.
-- Avancement 2026-02-07 22:52: UI invitation durcie (wrapper flex-wrap + libelle court `regenerateCode`) pour limiter les debordements.
-- Avancement 2026-02-07 22:52: creation game affiche la cause d'erreur backend cote utilisateur (message explicite).
-- Avancement 2026-02-07 23:31: quota creation actif corrige pour ignorer les games soft-deleted (`countByCreatorAndStatusInAndDeletedAtIsNull`).
-- Avancement 2026-02-07 23:31: ajout handler `InvalidGameRequestException` dans `GlobalExceptionHandler` + test dedie (`GlobalExceptionHandlerTest`).
-- Avancement 2026-02-07 23:31: tests backend verts `GameRepositoryAdapterTest,CreateGameUseCaseTest,GlobalExceptionHandlerTest` + test frontend vert `game-command.service.spec.ts`.
-- Avancement 2026-02-07 23:37: remplacement du prompt texte de regeneration par une modale UX dediee (choix 24h/48h/7d/permanent) dans `game-detail`.
-- Avancement 2026-02-07 23:37: nouvelles traductions ajoutees `fr/en/es/pt` pour la modale de duree.
-- Avancement 2026-02-07 23:37: tests frontend game verts (322/322) + build frontend vert.
-- Avancement 2026-02-08 11:32: harmonisation des actions `archive/quitter/supprimer/demarrer draft` vers la meme modale UX (`ConfirmDialogComponent`) dans `GameDetailActionsService`.
-- Avancement 2026-02-08 11:32: specs converties de `window.confirm` vers `MatDialog.afterClosed()` dans `game-detail-actions.service.spec.ts`.
-- Avancement 2026-02-08 11:32: validations vertes `game-detail-actions.service.spec.ts`, `features/game/**/*.spec.ts` (322/322), `npm run build`.
-- Avancement 2026-02-08 11:40: retour utilisateur confirme que join-with-code fonctionne au moins depuis un point d'entree et que les traductions de l'ecran sont OK.
-- Avancement 2026-02-08 11:40: regressions fonctionnelles remontees sur certaines games (code non regenerable, bouton supprimer absent), tickets dedies ouverts.
-- Avancement 2026-02-08 11:54: ticket passe BLOCKED en attente de la correction owner/permissions `JIRA-FIX-007` pour valider la regeneration et les droits host sur toutes les games.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Toute partie nouvellement creee dispose d'un code d'invitation.
-- [ ] Le code est visible dans le detail de la partie pour le createur.
-- [ ] Le code est copiable/partageable depuis l'interface.
-- [ ] Tests cibles creation/query/affichage code sont verts.
-
-NEXT:
-- (1) Debloquer `JIRA-FIX-007` (creatorId/creatorName + permissions host coherentes)
-- (2) Revalider create -> detail -> generer/copier code -> join with code sur games neuves et legacy
-- (3) Clore le ticket puis le supprimer du backlog si tous les AC sont verifies
-
-
-ID: JIRA-FIX-007
-TITRE: Games "createur inconnu" et droits host incoherents
-TYPE: Bug
-PRIORITE: P1
-STATUT: IN_PROGRESS
-ESTIMATE: 4-8h
-
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-08 11:54
-DERNIERE_MAJ: 2026-02-08 12:06
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Identifier pourquoi certaines games apparaissent avec `createur inconnu`.
-- Retablir des droits host coherents (supprimer/regenerer code) pour les games valides.
-
-CONTEXTE:
-- Retour utilisateur: des games visibles sur le profil Thibaut affichent `createur inconnu`.
-- Sur ces games, les actions host disparaissent et seul "rejoindre" reste disponible.
-- Suspicions: donnees legacy/orphelines, mapping incomplet `creatorId/creatorName`, ou regle permissions trop stricte.
-
-DESCRIPTION:
-- Tracer les payloads API (`creatorId`, `creatorName`, `status`, flags permissions) pour les games problematiques.
-- Verifier en base les enregistrements orphelins (creator absent/null) et leur traitement applicatif.
-- Definir une regle explicite pour games orphelines: correction data, fallback lisible, et blocage propre des actions host.
-- Corriger la logique backend/frontend pour ne plus avoir de faux etats "joinable only" pour le createur legitime.
-- Ajouter des tests backend + frontend sur cas nominal, cas legacy/orphelin, et permissions.
-- Avancement 2026-02-08 11:54: `GameEntityMapper.toDomain` complete maintenant les games legacy sans participant createur en injectant un participant createur synthetique (id+username).
-- Avancement 2026-02-08 11:54: `GameDtoMapper.fromDomainGame` resolve `creatorUsername/creatorName` via `creatorId` meme si le flag `isCreator` est absent.
-- Avancement 2026-02-08 11:54: `GameApiMapper` mappe `creatorId` et ajoute un fallback `participants[creatorId]` avant `createur inconnu`.
-- Avancement 2026-02-08 11:54: tests verts backend (`GameEntityMapperTest`, `GameDtoMapperTest`) et frontend (`game-api.mapper.spec.ts`).
-- Avancement 2026-02-08 12:06: `GameDetailPermissionsService` aligne la detection host sur `userId` d'abord, puis fallback `username` (cas legacy), pour stabiliser `canDeleteGame` et `canRegenerateCode`.
-- Avancement 2026-02-08 12:06: specs permissions mises a jour avec cas de priorite `userId` et fallback `username` + validation complete `features/game/**/*.spec.ts` verte (324/324).
-
-CRITERES_D_ACCEPTATION:
-- [ ] Aucune game active n'affiche `createur inconnu` sans raison explicite.
-- [ ] Les droits host (supprimer/regenerer) sont coherents avec `creatorId`.
-- [ ] Les games orphelines ont un comportement documente et teste.
-
-NEXT:
-- (1) Capturer payload reel `/api/games` et `/api/games/{id}` sur une game legacy pour verifier `creatorId/creatorName`
-- (2) Validation manuelle Thibaut/Teddy: visibilite `supprimer/regenerer` sur game legacy + game neuve
-- (3) Si OK, cloturer `JIRA-FIX-007` puis debloquer `JIRA-FIX-004`, `JIRA-FIX-008`, `JIRA-FIX-009`
-
-
-ID: JIRA-FIX-008
-TITRE: Bouton supprimer game absent ou incoherent selon le contexte
-TYPE: Bug
-PRIORITE: P1
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: JIRA-FIX-007
-
-OBJECTIF:
-- Restaurer la visibilite et le comportement du bouton supprimer pour le createur quand l'action est autorisee.
-
-CONTEXTE:
-- Retour utilisateur: le bouton supprimer etait visible puis a disparu sur plusieurs games.
-- L'incoherence apparait selon la game et le contexte d'affichage.
-- Le bouton est critique pour nettoyer les games de test.
-
-DESCRIPTION:
-- Auditer `GameDetailPermissionsService` et `game-detail.component` pour les conditions `canDeleteGame`.
-- S'assurer que la regle d'affichage est stable et alignee avec le backend (creator + statut + soft delete).
-- En cas d'interdiction, afficher un etat explicite (disabled + raison) plutot qu'une disparition silencieuse.
-- Ajouter des tests de non-regression (host autorise, host non autorise, non-host).
-
-CRITERES_D_ACCEPTATION:
-- [ ] Le createur voit toujours l'action supprimer quand les preconditions sont remplies.
-- [ ] Les non-createurs ne voient pas l'action supprimer.
-- [ ] Les cas non supprimables sont expliques de facon explicite dans l'UI.
-
-NEXT:
-- (1) Cartographier les conditions actuelles `canDeleteGame` front + backend
-- (2) Corriger regle d'affichage et fallback UX
-- (3) Valider manuellement + specs game-detail/permissions
+- (1) Reproduire le double-join et capturer la reponse backend exacte
+- (2) Adapter le handler d'erreur frontend (et backend si necessaire)
+- (3) Tester le scenario double-join depuis les deux flux (sidebar + page)
 
 
 ID: JIRA-FIX-009
@@ -261,7 +105,7 @@ ASSIGNE: ->
 ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
-DEPENDENCIES: JIRA-FIX-007
+DEPENDENCIES: none
 
 OBJECTIF:
 - Garantir que le createur peut regenerer un code invitation de facon fiable sur toutes les games eligibles.
@@ -286,6 +130,171 @@ NEXT:
 - (1) Reproduire sur les games qui ne proposent pas la regeneration
 - (2) Aligner les regles front/back de disponibilite du bouton et de l'endpoint
 - (3) Revalider createur Thibaut sur plusieurs games
+
+
+ID: JIRA-FIX-010
+TITRE: Demarrage draft incoherent (non-createur autorise en UI + endpoint/message erreur)
+TYPE: Bug
+PRIORITE: P1
+STATUT: BLOCKED
+ESTIMATE: 2-4h
+
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-02-08 13:02
+DERNIERE_MAJ: 2026-02-08 15:56
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Garantir que seul le createur puisse demarrer le draft cote UI.
+- Corriger le demarrage draft cote frontend pour appeler le bon endpoint backend.
+- Afficher une erreur explicite utilisateur en cas d'echec du demarrage.
+
+CONTEXTE:
+- Retour utilisateur: un non-createur voit/lance le draft.
+- Retour utilisateur: erreur "Erreur lors du demarrage du draft" sans explication.
+- Verification code: endpoint frontend appelle `/draft/start` alors que le backend expose `/start-draft`.
+
+DESCRIPTION:
+- Durcir `canStartDraft` dans `GameDetailPermissionsService` avec condition host.
+- Aligner `GameCommandService.startDraft` sur `/api/games/{id}/start-draft`.
+- Faire remonter le message backend dans `GameDetailActionsService.startDraft` au lieu du message generique.
+- Ajouter tests unitaires frontend: permissions, command service, actions service.
+- Revalider les specs game ciblees + build frontend.
+- Avancement 2026-02-08 13:05: `canStartDraft` verifie maintenant host + status + participants (non-host ne peut plus lancer).
+- Avancement 2026-02-08 13:05: endpoint frontend corrige vers `/api/games/{id}/start-draft`.
+- Avancement 2026-02-08 13:05: message d'erreur draft affiche maintenant le detail backend (`Error.message`) au lieu d'un libelle generique.
+- Avancement 2026-02-08 13:05: tests verts cibles `game-detail-permissions.service.spec.ts` (52), `game-command.service.spec.ts` (14), `game-detail-actions.service.spec.ts` (29).
+- Avancement 2026-02-08 13:08: revalidation etendue frontend verte sur 4 specs cibles (`game-detail-permissions`, `game-command`, `game-detail-actions`, `game-detail.component`) -> `132 SUCCESS`.
+- Avancement 2026-02-08 13:09: backend `GameControllerSimpleTest` relance -> `4 SUCCESS`, confirmation du chemin API `/api/games/{id}/start-draft`.
+- Avancement 2026-02-08 15:10: validation utilisateur confirme que le non-createur ne peut plus demarrer le draft (regle d'autorisation UI OK).
+- Avancement 2026-02-08 15:10: retour utilisateur signale que le bouton demarrer draft reste non fiable selon contexte + rendu visuel non conforme (ticket de suivi dedie cree).
+- Avancement 2026-02-08 15:56: ticket mis en pause (BLOCKED) pour traiter priorite immediate `JIRA-FIX-011` sans depasser WIP.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Le bouton "Demarrer draft" est visible uniquement pour le createur.
+- [ ] Le demarrage draft appelle bien `/start-draft`.
+- [ ] En cas d'echec draft, un message explicite est affiche a l'utilisateur.
+- [ ] Tests frontend cibles verts.
+
+NEXT:
+- (1) Valider manuellement non-createur: bouton "Demarrer draft" absent sur game non creee par lui
+- (2) Capturer le cas KO createur (message exact + statut game + participantCount) pour isoler la cause backend/front
+- (3) Cloturer le ticket si le flux createur est stable, sinon basculer le reliquat UX/fiabilite vers `JIRA-FIX-015`
+
+
+ID: JIRA-FIX-013
+TITRE: Politique code invitation - generation manuelle (pas auto a la creation)
+TYPE: Story
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 1-2j
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 15:10
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Faire en sorte qu'une nouvelle partie n'ait pas de code d'invitation par defaut, avec generation explicite par action utilisateur.
+
+CONTEXTE:
+- Retour utilisateur: le code est genere automatiquement a la creation alors que le besoin attendu est "generer quand on en a besoin".
+- Le comportement actuel cree de l'incoherence produit sur creation/rejoin.
+
+DESCRIPTION:
+- Changer la regle metier: creation game sans code initial.
+- Conserver un bouton "Generer un code d'invitation" sur le detail game pour le createur.
+- Verifier que join-with-code continue de fonctionner des qu'un code est genere.
+- Mettre a jour tests backend/frontend impacts (creation, detail, join).
+
+CRITERES_D_ACCEPTATION:
+- [ ] Une nouvelle partie est creee sans code d'invitation.
+- [ ] Le createur peut generer un code via bouton dedie.
+- [ ] Le flow join-with-code fonctionne apres generation.
+- [ ] Tests cibles creation/join/detail verts.
+
+NEXT:
+- (1) Valider et documenter la regle produit "manual code generation only"
+- (2) Implementer backend + front + migration comportement legacy
+- (3) Revalider flux complet create -> generate -> copy -> join
+
+
+ID: JIRA-UX-001
+TITRE: Refonte visuelle de la modale generation code invitation
+TYPE: Task
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 15:10
+
+DEPENDENCIES: JIRA-FIX-013
+
+OBJECTIF:
+- Harmoniser la modale de generation de code avec le design system de l'app (couleurs, typo, spacing, responsive).
+
+CONTEXTE:
+- Retour utilisateur: la pop-up actuelle est jugee "moche" et hors charte visuelle.
+- Le parcours "rejoindre avec un code" a une meilleure direction visuelle a reutiliser.
+
+DESCRIPTION:
+- Reprendre les tokens/design du flow join-with-code.
+- Corriger debordements texte et responsive mobile.
+- Uniformiser etats hover/focus/disabled et accessibilite clavier.
+- Ajouter tests composants (render + interactions de base).
+
+CRITERES_D_ACCEPTATION:
+- [ ] La modale respecte la charte UI du produit.
+- [ ] Aucun debordement texte desktop/mobile.
+- [ ] Navigation clavier et focus accessibles.
+- [ ] Tests frontend composants verts.
+
+NEXT:
+- (1) Cadrer references visuelles (join-with-code) et tokens a reutiliser
+- (2) Refaire styles/markup de la modale + etats interactifs
+- (3) Revalider manuellement desktop/mobile + specs
+
+
+ID: JIRA-FIX-015
+TITRE: Fiabilite + UX du bouton Demarrer draft (suivi post-correction endpoint)
+TYPE: Bug
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 15:10
+
+DEPENDENCIES: JIRA-FIX-010
+
+OBJECTIF:
+- Finaliser la fiabilite du demarrage draft cote createur et harmoniser le rendu visuel du CTA.
+
+CONTEXTE:
+- Retour utilisateur: regle createur/non-createur validee, mais le bouton est percu comme peu fiable et visuellement non coherent.
+- Les details exacts du KO fonctionnel createur doivent encore etre captures.
+
+DESCRIPTION:
+- Capturer un scenario KO complet (status game, participants, payload, message backend/frontend).
+- Corriger la cause racine residuelle si presente.
+- Harmoniser style du bouton avec la charte visuelle (couleurs/etats/contraste).
+- Ajouter tests non-regression sur affichage + action.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Le createur demarre le draft de facon fiable sur partie eligible.
+- [ ] Le non-createur ne voit pas l'action.
+- [ ] Le CTA respecte la charte UI.
+- [ ] Tests frontend/backend cibles verts.
+
+NEXT:
+- (1) Capturer le cas KO exact remonte en validation manuelle
+- (2) Corriger cause racine puis verifier API/UI
+- (3) Ajuster le style du CTA et revalider
 
 
 ID: JIRA-FIX-006
@@ -450,3 +459,79 @@ NEXT:
 - (1) Migrer interface `TradeQueryUseCase` et `TradeQueryService` vers retour domain
 - (2) Adapter `TradeController` + mapping `TradeResponseDto`
 - (3) Executer `mvn "-Dtest=TradeControllerTest,TradeQueryServiceTddTest,HexagonalArchitectureTest" test`
+
+ID: JIRA-FEAT-002
+TITRE: Selecteur de langue sur la page d'accueil (drapeaux)
+TYPE: Feature
+PRIORITE: P3
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 19:45
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- Ajouter un selecteur de langue visible et accessible depuis la page d'accueil.
+- Utiliser des drapeaux pour representer les langues disponibles.
+
+CONTEXTE:
+- Retour utilisateur: besoin de changer la langue facilement des l'arrivee sur le site.
+- Actuellement, le changement de langue n'est peut-etre pas assez visible ou accessible.
+- Langues cibles initiales: Francais (par defaut) / Anglais.
+
+DESCRIPTION:
+- Ajouter un composant UI avec des drapeaux (FR, EN, PT, etc.) sur la Home Page (header ou coin dedie).
+- Au clic sur un drapeau, changer la langue de l'interface immediatement.
+- Persister le choix (localStorage ou cookie) pour le navigateur courant en attendant le login.
+
+CRITERES_D_ACCEPTATION:
+- [ ] Des icones drapeaux sont visibles sur la page d'accueil.
+- [ ] Cliquer sur un drapeau change la langue de toute l'application.
+- [ ] Le choix est conserve au rechargement de la page.
+- [ ] Tests UI cibles verts.
+
+NEXT:
+- (1) Integration maquette/positionnement des drapeaux
+- (2) implementation du switch language via TranslationService
+- (3) Validation visuelle
+
+
+ID: JIRA-FIX-019
+TITRE: Isolation de la langue par profil utilisateur (bug settings globaux)
+TYPE: Bug
+PRIORITE: P2
+STATUT: TODO
+ESTIMATE: 2-4h
+
+ASSIGNE: ->
+ASSIGNE_LE: ->
+DERNIERE_MAJ: 2026-02-08 19:45
+
+DEPENDENCIES: none
+
+OBJECTIF:
+- La langue doit etre une preference propre a chaque profil utilisateur, pas une globale navigateur.
+
+CONTEXTE:
+- Retour utilisateur: changer la langue sur un profil (ex: Teddy en PT) change la langue pour tous les autres profils (Thibaut, Marcel...).
+- Actuellement, la langue est probablement stockee dans le localStorage global ou un state global partag�.
+- Comportement attendu: Chaque utilisateur retrouve sa langue choisie a sa connexion.
+
+DESCRIPTION:
+- Deplacer la persistence de la langue du localStorage global vers les preferences utilisateur (User Settings).
+- A la connexion (Login/Switch Profile), charger la langue specifique du profil.
+- Si pas de preference profil, utiliser la langue par defaut ou celle du navigateur.
+- Sauvegarder le changement de langue dans le profil utilisateur (API call si necessaire ou store local par user ID).
+
+CRITERES_D_ACCEPTATION:
+- [ ] Changer la langue sur le profil A ne modifie pas la langue du profil B.
+- [ ] Se reconnecter sur le profil A recharge bien sa langue specifique.
+- [ ] Tests de scenario multi-comptes verts.
+
+NEXT:
+- (1) Verifier ou est stockee la langue actuellement (TranslationService)
+- (2) Modifier le stockage pour inclure userId ou deplacer dans UserPreferences
+- (3) Tester le switch de profil

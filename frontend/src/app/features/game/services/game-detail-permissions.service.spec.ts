@@ -58,6 +58,7 @@ describe('GameDetailPermissionsService', () => {
     it('should return true when game is CREATING with >=2 participants', () => {
       const game = { ...mockGame, status: 'CREATING' as const, participantCount: 2 };
       expect(service.canStartDraft(game)).toBeTrue();
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalled();
     });
 
     it('should return true when game has more than 2 participants', () => {
@@ -75,8 +76,22 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canStartDraft(game)).toBeFalse();
     });
 
+    it('should return false when current user is not host', () => {
+      gameServiceSpy.isGameHost.and.returnValue(false);
+      const game = { ...mockGame, status: 'CREATING' as const, participantCount: 5 };
+
+      expect(service.canStartDraft(game)).toBeFalse();
+    });
+
     it('should return false when game is null', () => {
       expect(service.canStartDraft(null)).toBeFalse();
+    });
+
+    it('should return false when no current user', () => {
+      userContextServiceSpy.getCurrentUser.and.returnValue(null);
+      const game = { ...mockGame, status: 'CREATING' as const, participantCount: 5 };
+
+      expect(service.canStartDraft(game)).toBeFalse();
     });
   });
 
@@ -116,6 +131,19 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canLeaveGame(game)).toBeTrue();
       expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
       expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'testuser');
+    });
+
+    it('should return true when user id matches participant id even if username differs', () => {
+      gameServiceSpy.isGameHost.and.returnValue(false);
+      const game = {
+        ...mockGame,
+        participants: [
+          { id: 'host-id', username: 'host', joinedAt: '', isCreator: true },
+          { id: 'user1', username: 'different-name', joinedAt: '', isCreator: false }
+        ]
+      };
+
+      expect(service.canLeaveGame(game)).toBeTrue();
     });
 
     it('should return false when user is host', () => {
@@ -194,19 +222,75 @@ describe('GameDetailPermissionsService', () => {
     });
   });
 
+  describe('canSeeDeleteGameAction', () => {
+    it('should return true when user is host', () => {
+      gameServiceSpy.isGameHost.and.returnValue(true);
+      expect(service.canSeeDeleteGameAction(mockGame)).toBeTrue();
+    });
+
+    it('should return false when user is not host', () => {
+      gameServiceSpy.isGameHost.and.returnValue(false);
+      expect(service.canSeeDeleteGameAction(mockGame)).toBeFalse();
+    });
+
+    it('should return false when there is no current user', () => {
+      userContextServiceSpy.getCurrentUser.and.returnValue(null);
+      expect(service.canSeeDeleteGameAction(mockGame)).toBeFalse();
+    });
+  });
+
+  describe('getDeleteRestrictionReasonKey', () => {
+    it('should return null when game can be deleted', () => {
+      const game = { ...mockGame, status: 'CREATING' as const };
+      gameServiceSpy.isGameHost.and.returnValue(true);
+
+      expect(service.getDeleteRestrictionReasonKey(game)).toBeNull();
+    });
+
+    it('should return status reason for host when status is not CREATING', () => {
+      const game = { ...mockGame, status: 'ACTIVE' as const };
+      gameServiceSpy.isGameHost.and.returnValue(true);
+
+      expect(service.getDeleteRestrictionReasonKey(game)).toBe('games.detail.deleteDisabledStatus');
+    });
+
+    it('should return not host reason when current user is not host', () => {
+      gameServiceSpy.isGameHost.and.returnValue(false);
+
+      expect(service.getDeleteRestrictionReasonKey(mockGame)).toBe('games.detail.deleteDisabledNotHost');
+    });
+
+    it('should return null when game is null', () => {
+      expect(service.getDeleteRestrictionReasonKey(null)).toBeNull();
+    });
+  });
+
   describe('canJoinGame', () => {
-    it('should return true when game allows joining and has slots', () => {
-      const game = { ...mockGame, canJoin: true, participantCount: 5, maxParticipants: 10 };
-      expect(service.canJoinGame(game)).toBeTrue();
+    const nonParticipantGame = {
+      ...mockGame,
+      canJoin: true,
+      participantCount: 5,
+      maxParticipants: 10,
+      participants: [
+        { id: 'other1', username: 'otherplayer', joinedAt: '', isCreator: true }
+      ]
+    };
+
+    beforeEach(() => {
+      gameServiceSpy.isGameHost.and.returnValue(false);
+    });
+
+    it('should return true when user is not a participant and game has slots', () => {
+      expect(service.canJoinGame(nonParticipantGame)).toBeTrue();
     });
 
     it('should return false when game is full', () => {
-      const game = { ...mockGame, canJoin: true, participantCount: 10, maxParticipants: 10 };
+      const game = { ...nonParticipantGame, participantCount: 10, maxParticipants: 10 };
       expect(service.canJoinGame(game)).toBeFalse();
     });
 
     it('should return false when canJoin is false', () => {
-      const game = { ...mockGame, canJoin: false, participantCount: 5, maxParticipants: 10 };
+      const game = { ...nonParticipantGame, canJoin: false };
       expect(service.canJoinGame(game)).toBeFalse();
     });
 
@@ -214,8 +298,31 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canJoinGame(null)).toBeFalse();
     });
 
+    it('should return false when user is already a participant', () => {
+      const game = {
+        ...mockGame,
+        canJoin: true,
+        participantCount: 5,
+        maxParticipants: 10,
+        participants: [
+          { id: 'u1', username: 'testuser', joinedAt: '', isCreator: false }
+        ]
+      };
+      expect(service.canJoinGame(game)).toBeFalse();
+    });
+
+    it('should return false when user is the host', () => {
+      gameServiceSpy.isGameHost.and.returnValue(true);
+      expect(service.canJoinGame(nonParticipantGame)).toBeFalse();
+    });
+
+    it('should return false when no current user', () => {
+      userContextServiceSpy.getCurrentUser.and.returnValue(null);
+      expect(service.canJoinGame(nonParticipantGame)).toBeFalse();
+    });
+
     it('should return true when game has exactly one slot left', () => {
-      const game = { ...mockGame, canJoin: true, participantCount: 9, maxParticipants: 10 };
+      const game = { ...nonParticipantGame, participantCount: 9 };
       expect(service.canJoinGame(game)).toBeTrue();
     });
   });
@@ -251,22 +358,22 @@ describe('GameDetailPermissionsService', () => {
   });
 
   describe('canRenameGame', () => {
-    it('should return true when user is host and status is CREATING', () => {
+    it('should return true when user is host regardless of status', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
-      const game = { ...mockGame, status: 'CREATING' as const };
-      expect(service.canRenameGame(game)).toBeTrue();
-      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(game, 'user1');
+      const creatingGame = { ...mockGame, status: 'CREATING' as const };
+      expect(service.canRenameGame(creatingGame)).toBeTrue();
+      expect(gameServiceSpy.isGameHost).toHaveBeenCalledWith(creatingGame, 'user1');
+
+      const draftingGame = { ...mockGame, status: 'DRAFTING' as const };
+      expect(service.canRenameGame(draftingGame)).toBeTrue();
+
+      const activeGame = { ...mockGame, status: 'ACTIVE' as const };
+      expect(service.canRenameGame(activeGame)).toBeTrue();
     });
 
     it('should return false when user is not host', () => {
       gameServiceSpy.isGameHost.and.returnValue(false);
       const game = { ...mockGame, status: 'CREATING' as const };
-      expect(service.canRenameGame(game)).toBeFalse();
-    });
-
-    it('should return false when status is not CREATING', () => {
-      gameServiceSpy.isGameHost.and.returnValue(true);
-      const game = { ...mockGame, status: 'DRAFTING' as const };
       expect(service.canRenameGame(game)).toBeFalse();
     });
 
@@ -333,6 +440,7 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canDeleteGame(game)).toBeFalse();
       expect(service.canRegenerateCode(game)).toBeFalse();
       expect(service.canRenameGame(game)).toBeFalse();
+      expect(service.canStartDraft(game)).toBeFalse();
       expect(service.canLeaveGame(game)).toBeTrue(); // Can leave as non-host participant
     });
 

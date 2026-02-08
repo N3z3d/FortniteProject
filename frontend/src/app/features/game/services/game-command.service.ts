@@ -68,9 +68,10 @@ export class GameCommandService {
   }
 
   joinGameWithCode(invitationCode: string): Observable<Game> {
+    const normalizedCode = invitationCode.trim().toUpperCase();
     return this.http.post<Game>(
       `${this.apiUrl}/games/join-with-code`,
-      { code: invitationCode }
+      { code: normalizedCode }
     ).pipe(
       catchError(this.handleError.bind(this))
     );
@@ -86,7 +87,8 @@ export class GameCommandService {
   regenerateInvitationCode(gameId: string, duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): Observable<Game> {
     return this.http.post<Game>(
       `${this.apiUrl}/games/${gameId}/regenerate-code`,
-      { duration }
+      {},
+      { params: { duration } }
     ).pipe(
       tap(game => {
         this.announcer.announce('Code d\'invitation régénéré avec succès', 'polite');
@@ -99,7 +101,7 @@ export class GameCommandService {
   }
 
   renameGame(gameId: string, newName: string): Observable<Game> {
-    return this.http.patch<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName })
+    return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName })
       .pipe(
         tap(game => {
           this.announcer.announce(`Partie renommée en ${newName}`, 'polite');
@@ -130,7 +132,7 @@ export class GameCommandService {
   }
 
   startDraft(gameId: string): Observable<boolean> {
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/start`, {})
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/start-draft`, {})
       .pipe(
         map(response => response.success),
         catchError(this.handleError.bind(this))
@@ -258,39 +260,76 @@ export class GameCommandService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'Une erreur est survenue';
+    const backendMessage = this.extractBackendMessage(error);
 
-  if (error.error instanceof ErrorEvent) {
+    if (error.error instanceof ErrorEvent) {
       errorMessage = `Erreur: ${error.error.message}`;
     } else {
       switch (error.status) {
         case 400:
-          errorMessage = error.error?.message || 'Requête invalide';
+          errorMessage = backendMessage || 'Requete invalide';
           break;
         case 401:
-          errorMessage = 'Non autorisé';
+          errorMessage = 'Non autorise';
           break;
         case 403:
-          errorMessage = 'Accès refusé';
+          errorMessage = backendMessage || 'Acces refuse';
           break;
         case 404:
-          errorMessage = 'Ressource non trouvée';
+          errorMessage = backendMessage || 'Ressource non trouvee';
           break;
         case 409:
-          errorMessage = error.error?.message || 'Conflit';
+          errorMessage = backendMessage || 'Conflit';
           break;
         case 422:
-          errorMessage = error.error?.message || 'Données invalides';
+          errorMessage = backendMessage || 'Donnees invalides';
           break;
         case 500:
-          errorMessage = 'Erreur serveur';
+          errorMessage = backendMessage || 'Erreur serveur';
           break;
         default:
-          errorMessage = `Erreur ${error.status}: ${error.error?.message || 'Erreur inconnue'}`;
+          errorMessage = backendMessage || `Erreur ${error.status}: Erreur inconnue`;
       }
     }
 
     this.logger.error('GameCommandService error', error);
     return throwError(() => new Error(errorMessage));
   }
-}
 
+  private extractBackendMessage(error: HttpErrorResponse): string | null {
+    const payload = error.error;
+
+    if (!payload) {
+      return null;
+    }
+
+    if (typeof payload === 'string') {
+      const trimmedPayload = payload.trim();
+      if (!trimmedPayload) {
+        return null;
+      }
+
+      try {
+        const parsedPayload = JSON.parse(trimmedPayload) as { message?: string };
+        return parsedPayload.message || trimmedPayload;
+      } catch {
+        return trimmedPayload;
+      }
+    }
+
+    if (typeof payload === 'object') {
+      const payloadObject = payload as { message?: string; error?: { message?: string } | string };
+      if (payloadObject.message) {
+        return payloadObject.message;
+      }
+      if (typeof payloadObject.error === 'string') {
+        return payloadObject.error;
+      }
+      if (payloadObject.error?.message) {
+        return payloadObject.error.message;
+      }
+    }
+
+    return null;
+  }
+}
