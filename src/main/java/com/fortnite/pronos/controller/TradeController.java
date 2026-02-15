@@ -13,12 +13,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.application.usecase.TradeQueryUseCase;
+import com.fortnite.pronos.domain.trade.model.Trade;
+import com.fortnite.pronos.domain.trade.model.TradeStatus;
 import com.fortnite.pronos.dto.CounterTradeRequestDto;
 import com.fortnite.pronos.dto.TradeRequestDto;
 import com.fortnite.pronos.dto.TradeResponseDto;
-import com.fortnite.pronos.model.Trade;
 import com.fortnite.pronos.service.TradingService;
 import com.fortnite.pronos.service.UserContextService;
+import com.fortnite.pronos.service.trade.TradeResponseMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/trades")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "${cors.allowed-origins:http://localhost:4200}")
 public class TradeController {
 
   private final TradingService tradingService;
   private final TradeQueryUseCase tradeQueryUseCase;
   private final UserContextService userContextService;
+  private final TradeResponseMapper tradeResponseMapper;
 
   /** Propose un nouveau trade */
   @PostMapping
@@ -46,10 +48,9 @@ public class TradeController {
         request.getFromTeamId(),
         request.getToTeamId());
 
-    // Vérifier que l'utilisateur possède l'équipe source
     UUID userId = userContextService.getUserIdFromUsername(userDetails.getUsername());
 
-    Trade trade =
+    com.fortnite.pronos.model.Trade trade =
         tradingService.proposeTradeWithPlayerIds(
             request.getFromTeamId(),
             request.getToTeamId(),
@@ -67,7 +68,7 @@ public class TradeController {
     log.info("User {} accepting trade {}", userDetails.getUsername(), tradeId);
 
     UUID userId = userContextService.getUserIdFromUsername(userDetails.getUsername());
-    Trade trade = tradingService.acceptTrade(tradeId, userId);
+    com.fortnite.pronos.model.Trade trade = tradingService.acceptTrade(tradeId, userId);
 
     return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
   }
@@ -80,7 +81,7 @@ public class TradeController {
     log.info("User {} rejecting trade {}", userDetails.getUsername(), tradeId);
 
     UUID userId = userContextService.getUserIdFromUsername(userDetails.getUsername());
-    Trade trade = tradingService.rejectTrade(tradeId, userId);
+    com.fortnite.pronos.model.Trade trade = tradingService.rejectTrade(tradeId, userId);
 
     return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
   }
@@ -93,7 +94,7 @@ public class TradeController {
     log.info("User {} cancelling trade {}", userDetails.getUsername(), tradeId);
 
     UUID userId = userContextService.getUserIdFromUsername(userDetails.getUsername());
-    Trade trade = tradingService.cancelTrade(tradeId, userId);
+    com.fortnite.pronos.model.Trade trade = tradingService.cancelTrade(tradeId, userId);
 
     return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
   }
@@ -108,14 +109,14 @@ public class TradeController {
     log.info("User {} making counter-offer for trade {}", userDetails.getUsername(), tradeId);
 
     UUID userId = userContextService.getUserIdFromUsername(userDetails.getUsername());
-    Trade trade =
+    com.fortnite.pronos.model.Trade trade =
         tradingService.counterTradeWithPlayerIds(
             tradeId, userId, request.getOfferedPlayerIds(), request.getRequestedPlayerIds());
 
     return ResponseEntity.status(HttpStatus.CREATED).body(TradeResponseDto.fromTrade(trade));
   }
 
-  /** Obtenir l'historique des trades d'une équipe */
+  /** Obtenir l'historique des trades d'une equipe */
   @GetMapping("/team/{teamId}/history")
   public ResponseEntity<List<TradeResponseDto>> getTeamTradeHistory(
       @PathVariable UUID teamId, @AuthenticationPrincipal UserDetails userDetails) {
@@ -124,12 +125,11 @@ public class TradeController {
     log.info("User {} requesting trade history for team {}", username, teamId);
 
     List<Trade> trades = tradeQueryUseCase.getTeamTradeHistory(teamId);
-    List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(tradeResponseMapper.toDtos(trades));
   }
 
-  /** Obtenir les trades en attente pour une équipe */
+  /** Obtenir les trades en attente pour une equipe */
   @GetMapping("/team/{teamId}/pending")
   public ResponseEntity<List<TradeResponseDto>> getPendingTradesForTeam(
       @PathVariable UUID teamId, @AuthenticationPrincipal UserDetails userDetails) {
@@ -138,9 +138,8 @@ public class TradeController {
     log.info("User {} requesting pending trades for team {}", username, teamId);
 
     List<Trade> trades = tradeQueryUseCase.getPendingTradesForTeam(teamId);
-    List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
 
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(tradeResponseMapper.toDtos(trades));
   }
 
   /** Obtenir les statistiques de trade d'une game */
@@ -156,7 +155,7 @@ public class TradeController {
     return ResponseEntity.ok(stats);
   }
 
-  /** Obtenir les détails d'un trade spécifique */
+  /** Obtenir les details d'un trade specifique */
   @GetMapping("/{tradeId}")
   public ResponseEntity<TradeResponseDto> getTrade(
       @PathVariable UUID tradeId, @AuthenticationPrincipal UserDetails userDetails) {
@@ -166,14 +165,14 @@ public class TradeController {
 
     Trade trade = tradeQueryUseCase.getTrade(tradeId);
 
-    return ResponseEntity.ok(TradeResponseDto.fromTrade(trade));
+    return ResponseEntity.ok(tradeResponseMapper.toDto(trade));
   }
 
   /** Obtenir tous les trades d'une game */
   @GetMapping("/game/{gameId}")
   public ResponseEntity<List<TradeResponseDto>> getGameTrades(
       @PathVariable UUID gameId,
-      @RequestParam(required = false) Trade.Status status,
+      @RequestParam(required = false) TradeStatus status,
       @AuthenticationPrincipal UserDetails userDetails) {
 
     String username = userDetails != null ? userDetails.getUsername() : "anonymous";
@@ -186,8 +185,6 @@ public class TradeController {
       trades = tradeQueryUseCase.getAllGameTrades(gameId);
     }
 
-    List<TradeResponseDto> response = trades.stream().map(TradeResponseDto::fromTrade).toList();
-
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(tradeResponseMapper.toDtos(trades));
   }
 }

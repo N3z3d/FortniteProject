@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fortnite.pronos.model.Trade;
+import com.fortnite.pronos.domain.trade.model.Trade;
+import com.fortnite.pronos.domain.trade.model.TradeStatus;
 
 /** Application use case for Trade query operations. Defines the public API for querying trades. */
 public interface TradeQueryUseCase {
@@ -15,7 +16,7 @@ public interface TradeQueryUseCase {
 
   List<Trade> getPendingTradesForTeam(UUID teamId);
 
-  List<Trade> getGameTradesByStatus(UUID gameId, Trade.Status status);
+  List<Trade> getGameTradesByStatus(UUID gameId, TradeStatus status);
 
   List<Trade> getAllGameTrades(UUID gameId);
 

@@ -27,14 +27,16 @@ import com.fortnite.pronos.model.User;
 public interface GameRepository
     extends JpaRepository<Game, UUID>, GameRepositoryPort, InvitationCodeRepositoryPort {
 
-  /** Trouver les games par créateur */
-  List<Game> findByCreator(User creator);
+  /** Trouver les games par créateur (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.creator = :creator AND g.deletedAt IS NULL")
+  List<Game> findByCreator(@Param("creator") User creator);
 
-  /** Trouver les games par statut */
-  List<Game> findByStatus(GameStatus status);
+  /** Trouver les games par statut (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.status = :status AND g.deletedAt IS NULL")
+  List<Game> findByStatus(@Param("status") GameStatus status);
 
-  /** Trouver les games actives */
-  @Query("SELECT g FROM Game g WHERE g.status IN ('DRAFTING', 'ACTIVE')")
+  /** Trouver les games actives (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.status IN ('DRAFTING', 'ACTIVE') AND g.deletedAt IS NULL")
   List<Game> findActiveGames();
 
   /** Compter les games par statut */
@@ -43,63 +45,77 @@ public interface GameRepository
   /** Vérifier si une game existe avec un nom spécifique pour un créateur */
   boolean existsByNameAndCreator(String name, User creator);
 
-  /** Trouver les games créées après une date */
-  List<Game> findByCreatedAtAfter(LocalDateTime date);
+  /** Trouver les games créées après une date (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.createdAt > :date AND g.deletedAt IS NULL")
+  List<Game> findByCreatedAtAfter(@Param("date") LocalDateTime date);
 
   /** Trouver les games avec des places disponibles (exclut soft deleted) */
   @Query(
       "SELECT g FROM Game g WHERE SIZE(g.participants) < g.maxParticipants AND g.deletedAt IS NULL")
   List<Game> findGamesWithAvailableSlots();
 
-  /** Trouver une game par son code d'invitation */
-  Optional<Game> findByInvitationCode(String invitationCode);
+  /** Trouver une game par son code d'invitation (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.invitationCode = :code AND g.deletedAt IS NULL")
+  Optional<Game> findByInvitationCode(@Param("code") String code);
 
-  /** Vérifier si un code d'invitation existe */
+  /** Vérifier si un code d'invitation existe (inclut soft deleted pour unicité) */
   boolean existsByInvitationCode(String invitationCode);
 
-  /** Trouver les games d'une saison spécifique (par date) */
-  @Query("SELECT g FROM Game g WHERE g.createdAt >= :seasonStart " + "AND g.createdAt < :seasonEnd")
+  /** Trouver les games d'une saison spécifique (par date, exclut soft deleted) */
+  @Query(
+      "SELECT g FROM Game g WHERE g.createdAt >= :seasonStart "
+          + "AND g.createdAt < :seasonEnd AND g.deletedAt IS NULL")
   List<Game> findGamesBySeason(
       @Param("seasonStart") LocalDateTime seasonStart, @Param("seasonEnd") LocalDateTime seasonEnd);
 
-  /** Trouver les games par saison (par champ currentSeason) */
-  List<Game> findByCurrentSeason(Integer season);
+  /** Trouver les games par saison (par champ currentSeason, exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.currentSeason = :season AND g.deletedAt IS NULL")
+  List<Game> findByCurrentSeason(@Param("season") Integer season);
 
-  /** Trouver les games par saison avec fetch join pour éviter N+1 */
+  /** Trouver les games par saison avec fetch join pour éviter N+1 (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.creator "
           + "WHERE g.currentSeason = :season "
+          + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findByCurrentSeasonWithFetch(@Param("season") Integer season);
 
-  /** Trouver les games avec un nom contenant une chaîne */
-  List<Game> findByNameContainingIgnoreCase(String namePattern);
+  /** Trouver les games avec un nom contenant une chaîne (exclut soft deleted) */
+  @Query(
+      "SELECT g FROM Game g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :pattern, '%')) "
+          + "AND g.deletedAt IS NULL")
+  List<Game> findByNameContainingIgnoreCase(@Param("pattern") String namePattern);
 
-  /** Trouver les games créées entre deux dates */
-  List<Game> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+  /** Trouver les games créées entre deux dates (exclut soft deleted) */
+  @Query(
+      "SELECT g FROM Game g WHERE g.createdAt BETWEEN :start AND :end " + "AND g.deletedAt IS NULL")
+  List<Game> findByCreatedAtBetween(
+      @Param("start") LocalDateTime startDate, @Param("end") LocalDateTime endDate);
 
   // ============== MÉTHODES OPTIMISÉES POUR ÉVITER N+1 QUERIES ==============
 
-  /** OPTIMISÉ: Récupère toutes les games avec FETCH JOIN pour éviter N+1 */
+  /** OPTIMISÉ: Récupère toutes les games avec FETCH JOIN pour éviter N+1 (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.creator "
           + "LEFT JOIN FETCH g.regionRules "
+          + "WHERE g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findAllWithFetch();
 
-  /** OPTIMISÉ: Récupère les games d'un créateur avec FETCH JOIN */
+  /** OPTIMISÉ: Récupère les games d'un créateur avec FETCH JOIN (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.regionRules "
           + "WHERE g.creator = :creator "
+          + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findByCreatorWithFetch(@Param("creator") User creator);
 
@@ -124,37 +140,41 @@ public interface GameRepository
           + "ORDER BY g.createdAt DESC")
   List<Game> findGamesByUserId(@Param("userId") UUID userId);
 
-  /** OPTIMISÉ: Trouve les games par statut avec fetch */
+  /** OPTIMISÉ: Trouve les games par statut avec fetch (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.creator "
           + "WHERE g.status = :status "
+          + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findByStatusWithFetch(@Param("status") GameStatus status);
 
-  /** OPTIMISÉ: Trouve les games par créateur ID */
+  /** OPTIMISÉ: Trouve les games par créateur ID (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.regionRules "
           + "WHERE g.creator.id = :creatorId "
+          + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findByCreatorId(@Param("creatorId") UUID creatorId);
 
-  /** Trouve les games qui ne sont pas dans un statut donné */
-  List<Game> findByStatusNot(GameStatus status);
+  /** Trouve les games qui ne sont pas dans un statut donné (exclut soft deleted) */
+  @Query("SELECT g FROM Game g WHERE g.status <> :status AND g.deletedAt IS NULL")
+  List<Game> findByStatusNot(@Param("status") GameStatus status);
 
-  /** Trouve une game par code d'invitation avec relations */
+  /** Trouve une game par code d'invitation avec relations (exclut soft deleted) */
   @Query(
       "SELECT DISTINCT g FROM Game g "
           + "LEFT JOIN FETCH g.participants p "
           + "LEFT JOIN FETCH p.user "
           + "LEFT JOIN FETCH g.creator "
           + "LEFT JOIN FETCH g.regionRules "
-          + "WHERE g.invitationCode = :invitationCode")
+          + "WHERE g.invitationCode = :invitationCode "
+          + "AND g.deletedAt IS NULL")
   Optional<Game> findByInvitationCodeWithFetch(@Param("invitationCode") String invitationCode);
 
   /** PERFORMANCE: Compte rapide des participants d'une game */
@@ -168,7 +188,7 @@ public interface GameRepository
 
   // ============== MÉTHODES PAGINÉES POUR GRANDES DATASETS ==============
 
-  /** PAGINATION: Récupère toutes les games avec pagination et fetch joins */
+  /** PAGINATION: Récupère toutes les games avec pagination et fetch joins (exclut soft deleted) */
   @Query(
       value =
           "SELECT DISTINCT g FROM Game g "
@@ -176,12 +196,14 @@ public interface GameRepository
               + "LEFT JOIN FETCH p.user "
               + "LEFT JOIN FETCH g.creator "
               + "LEFT JOIN FETCH g.regionRules "
+              + "WHERE g.deletedAt IS NULL "
               + "ORDER BY g.createdAt DESC",
-      countQuery = "SELECT COUNT(DISTINCT g) FROM Game g")
+      countQuery = "SELECT COUNT(DISTINCT g) FROM Game g WHERE g.deletedAt IS NULL")
   Page<Game> findAllWithFetchPaginated(Pageable pageable);
 
-  // PHASE 1B: CRITICAL N+1 OPTIMIZATION - EntityGraph methods for performance
+  // PHASE 1B: CRITICAL N+1 OPTIMIZATION - EntityGraph methods for performance (exclut soft deleted)
   @EntityGraph("Game.withBasicDetails")
+  @Query("SELECT g FROM Game g WHERE g.deletedAt IS NULL ORDER BY g.createdAt DESC")
   List<Game> findAllByOrderByCreatedAtDesc();
 
   @EntityGraph("Game.withFullDetails")
@@ -190,7 +212,11 @@ public interface GameRepository
   // PHASE 2A: CLEAN ARCHITECTURE - Repository methods for use cases
   long countByCreatorAndStatusIn(User creator, java.util.List<GameStatus> statuses);
 
-  /** PAGINATION: Récupère les games par statut avec pagination */
+  // Excludes soft-deleted games from "active games" quota checks.
+  long countByCreatorAndStatusInAndDeletedAtIsNull(
+      User creator, java.util.List<GameStatus> statuses);
+
+  /** PAGINATION: Récupère les games par statut avec pagination (exclut soft deleted) */
   @Query(
       value =
           "SELECT DISTINCT g FROM Game g "
@@ -198,26 +224,31 @@ public interface GameRepository
               + "LEFT JOIN FETCH p.user "
               + "LEFT JOIN FETCH g.creator "
               + "WHERE g.status = :status "
+              + "AND g.deletedAt IS NULL "
               + "ORDER BY g.createdAt DESC",
-      countQuery = "SELECT COUNT(DISTINCT g) FROM Game g WHERE g.status = :status")
+      countQuery =
+          "SELECT COUNT(DISTINCT g) FROM Game g "
+              + "WHERE g.status = :status AND g.deletedAt IS NULL")
   Page<Game> findByStatusWithFetchPaginated(@Param("status") GameStatus status, Pageable pageable);
 
-  /** PAGINATION: Récupère les games d'un utilisateur avec pagination */
+  /** PAGINATION: Récupère les games d'un utilisateur avec pagination (exclut soft deleted) */
   @Query(
       value =
           "SELECT DISTINCT g FROM Game g "
               + "LEFT JOIN FETCH g.participants p "
               + "LEFT JOIN FETCH p.user "
               + "LEFT JOIN FETCH g.creator "
-              + "WHERE g.creator.id = :userId OR p.user.id = :userId "
+              + "WHERE (g.creator.id = :userId OR p.user.id = :userId) "
+              + "AND g.deletedAt IS NULL "
               + "ORDER BY g.createdAt DESC",
       countQuery =
           "SELECT COUNT(DISTINCT g) FROM Game g "
               + "LEFT JOIN g.participants p "
-              + "WHERE g.creator.id = :userId OR p.user.id = :userId")
+              + "WHERE (g.creator.id = :userId OR p.user.id = :userId) "
+              + "AND g.deletedAt IS NULL")
   Page<Game> findGamesByUserIdPaginated(@Param("userId") UUID userId, Pageable pageable);
 
-  /** PAGINATION: Recherche games par nom avec pagination */
+  /** PAGINATION: Recherche games par nom avec pagination (exclut soft deleted) */
   @Query(
       value =
           "SELECT DISTINCT g FROM Game g "
@@ -225,14 +256,19 @@ public interface GameRepository
               + "LEFT JOIN FETCH p.user "
               + "LEFT JOIN FETCH g.creator "
               + "WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :namePattern, '%')) "
+              + "AND g.deletedAt IS NULL "
               + "ORDER BY g.createdAt DESC",
       countQuery =
           "SELECT COUNT(DISTINCT g) FROM Game g "
-              + "WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :namePattern, '%'))")
+              + "WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :namePattern, '%')) "
+              + "AND g.deletedAt IS NULL")
   Page<Game> findByNameContainingIgnoreCasePaginated(
       @Param("namePattern") String namePattern, Pageable pageable);
 
-  /** Port implementation: findAllGames - Maps domain Pagination to Spring Pageable */
+  /**
+   * Port implementation: findAllGames - Maps domain Pagination to Spring Pageable (exclut soft
+   * deleted)
+   */
   default List<Game> findAllGames(Pagination pagination) {
     Pageable pageable =
         PageRequest.of(
@@ -240,6 +276,6 @@ public interface GameRepository
             pagination.getSize(),
             Sort.by(
                 Sort.Direction.fromString(pagination.getSortDirection()), pagination.getSortBy()));
-    return findAll(pageable).getContent();
+    return findAllWithFetchPaginated(pageable).getContent();
   }
 }

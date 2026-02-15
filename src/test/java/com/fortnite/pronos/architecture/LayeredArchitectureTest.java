@@ -33,6 +33,8 @@ public class LayeredArchitectureTest {
         .definedBy("..domain..")
         .optionalLayer("Application")
         .definedBy("..application..")
+        .optionalLayer("Adapters")
+        .definedBy("..adapter..")
         .layer("Services")
         .definedBy("..service..")
         .layer("Repositories")
@@ -45,20 +47,31 @@ public class LayeredArchitectureTest {
         .definedBy("..config..")
         .whereLayer("Controllers")
         .mayNotBeAccessedByAnyLayer()
+        .whereLayer("Adapters")
+        .mayNotBeAccessedByAnyLayer()
         .whereLayer("UseCases")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config")
         .whereLayer("Exceptions")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Exceptions")
         .whereLayer("Domain")
         .mayOnlyBeAccessedByLayers(
-            "Application", "Services", "UseCases", "Domain", "Config", "Repositories")
+            "Controllers",
+            "Application",
+            "Services",
+            "UseCases",
+            "Domain",
+            "Config",
+            "Repositories",
+            "Adapters",
+            "DTOs")
         .whereLayer("Application")
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Application", "Config")
         .whereLayer("Services")
         .mayOnlyBeAccessedByLayers(
             "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions")
         .whereLayer("Repositories")
-        .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Config", "Domain")
+        .mayOnlyBeAccessedByLayers(
+            "Controllers", "Services", "UseCases", "Config", "Domain", "Adapters")
         .whereLayer("Models")
         .mayOnlyBeAccessedByLayers(
             "Controllers",
@@ -69,7 +82,8 @@ public class LayeredArchitectureTest {
             "Exceptions",
             "Config",
             "Domain",
-            "Application")
+            "Application",
+            "Adapters")
         .whereLayer("DTOs")
         .mayOnlyBeAccessedByLayers(
             "Controllers", "Services", "UseCases", "Exceptions", "Config", "Application", "Domain")
@@ -92,6 +106,7 @@ public class LayeredArchitectureTest {
                 "..model..",
                 "..repository..",
                 "..core..",
+                "..domain..", // Allow domain models for DTO mapping in controllers
                 "..application..", // Allow use cases from application layer
                 "..controller..", // autoriser les DTO internes des contrôleurs
                 "java..",
