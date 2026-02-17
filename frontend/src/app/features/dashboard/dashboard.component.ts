@@ -224,7 +224,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  async loadDashboardData(showLoading = true) {
+  loadDashboardData(showLoading = true): void {
     if (!this.selectedGame?.id) {
       this.error = this.t.t('dashboard.live.noGameSelected');
       this.updateLiveRegion(this.t.t('dashboard.live.noGameSelected'), 'assertive');
@@ -237,86 +237,81 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.error = null;
 
-    try {
-      // NEW: Using DashboardFacade with automatic DB/Mock fallback
-      this.dashboardFacade.getDashboardData(this.selectedGame.id).subscribe({
-        next: (data: any) => {
-          this.logger.debug('📊 Dashboard data received:', data);
+    this.dashboardFacade.getDashboardData(this.selectedGame.id).subscribe({
+      next: (data: any) => this.applyDashboardData(data, showLoading),
+      error: (error) => this.handleDashboardError(error, showLoading)
+    });
+  }
 
-          // Update leaderboard
-          if (data.leaderboard && Array.isArray(data.leaderboard)) {
-            this.logger.debug('📈 Leaderboard data', { entriesCount: data.leaderboard.length });
-            this.leaderboardEntries = data.leaderboard;
-            // Populate dashboardLeaderboard for the preview section (top 5)
-            this.dashboardLeaderboard = data.leaderboard.slice(0, 5).map((entry: LeaderboardEntryDTO) => ({
-              rank: entry.rank,
-              name: entry.teamName || entry.ownerName || `Equipe ${entry.rank}`,
-              points: entry.totalPoints
-            }));
-            this.updateStatsFromLeaderboard(data.leaderboard);
-          }
+  private applyDashboardData(data: any, showLoading: boolean): void {
+    this.applyLeaderboardData(data);
+    this.applyStatisticsData(data);
+    this.applyRegionData(data);
+    this.updateProPlayersCount();
 
-          // Update statistics
-          if (data.statistics) {
-            this.logger.debug('📊 Statistics data:', data.statistics);
-            this.updateCompetitionStats(data.statistics);
-          }
+    this.finalizeDashboardLoading(showLoading);
+    this.announceDataUpdate();
+    this.cdr.markForCheck();
+    this.scheduleChartRefresh();
+  }
 
-          // Update region distribution
-          if (data.regionDistribution) {
-            this.logger.debug('🌍 Region distribution:', data.regionDistribution);
-            this.stats.teamComposition = this.stats.teamComposition || { regions: {}, tranches: {} };
-            this.stats.teamComposition.regions = data.regionDistribution;
-          }
+  private applyLeaderboardData(data: any): void {
+    if (!data.leaderboard || !Array.isArray(data.leaderboard)) return;
 
-          // Update proPlayersCount - only show drafted players for active games
-          // For games in CREATING/DRAFTING status, no players are drafted yet → show 0
-          const isGameActive = this.selectedGame?.status === 'ACTIVE' || this.selectedGame?.status === 'FINISHED';
-          this.stats.proPlayersCount = isGameActive ? (this.stats.totalPlayers || 0) : 0;
+    this.leaderboardEntries = data.leaderboard;
+    this.dashboardLeaderboard = data.leaderboard.slice(0, 5).map((entry: LeaderboardEntryDTO) => ({
+      rank: entry.rank,
+      name: entry.teamName || entry.ownerName || `Equipe ${entry.rank}`,
+      points: entry.totalPoints
+    }));
+    this.updateStatsFromLeaderboard(data.leaderboard);
+  }
 
-          if (showLoading) this.isLoading = false;
+  private applyStatisticsData(data: any): void {
+    if (!data.statistics) return;
+    this.updateCompetitionStats(data.statistics);
+  }
 
-          this.logger.debug('📊 Final stats after update:', this.stats);
+  private applyRegionData(data: any): void {
+    if (!data.regionDistribution) return;
+    this.stats.teamComposition = this.stats.teamComposition || { regions: {}, tranches: {} };
+    this.stats.teamComposition.regions = data.regionDistribution;
+  }
 
-          // Announce successful data load
-          this.accessibilityService.announceLoading(false, this.t.t('navigation.dashboard'));
+  private updateProPlayersCount(): void {
+    const isGameActive = this.selectedGame?.status === 'ACTIVE' || this.selectedGame?.status === 'FINISHED';
+    this.stats.proPlayersCount = isGameActive ? (this.stats.totalPlayers || 0) : 0;
+  }
 
-          const formattedTeams = this.formatter.formatNumber(this.stats.totalTeams);
-          const formattedPlayers = this.formatter.formatNumber(this.stats.totalPlayers);
-          this.updateLiveRegion(
-            `${this.t.t('dashboard.live.updatedPrefix')} ${formattedTeams} ${this.t.t('dashboard.live.teams')} ${this.t.t('common.and')} ${formattedPlayers} ${this.t.t('dashboard.live.players')}`,
-            'polite'
-          );
+  private announceDataUpdate(): void {
+    const formattedTeams = this.formatter.formatNumber(this.stats.totalTeams);
+    const formattedPlayers = this.formatter.formatNumber(this.stats.totalPlayers);
+    this.updateLiveRegion(
+      `${this.t.t('dashboard.live.updatedPrefix')} ${formattedTeams} ${this.t.t('dashboard.live.teams')} ${this.t.t('common.and')} ${formattedPlayers} ${this.t.t('dashboard.live.players')}`,
+      'polite'
+    );
+  }
 
-          // Trigger change detection
-          this.cdr.markForCheck();
+  private handleDashboardError(error: any, showLoading: boolean): void {
+    this.logger.warn('Dashboard: backend offline, switching to mock data', error);
+    this.setupMockData();
+    this.error = null;
+    this.finalizeDashboardLoading(showLoading);
+    this.cdr.markForCheck();
+    this.scheduleChartRefresh();
+    this.uiFeedback.showInfoFromKey('dashboard.messages.demoMode', 3000);
+  }
 
-          // Update charts
-          setTimeout(() => this.refreshCharts(), 100);
-        },
-        error: (error) => {
-          this.logger.warn('Dashboard: backend offline, switching to mock data', error);
-
-          // Fallback to mock data on error so UI is visible
-          this.setupMockData();
-
-          this.error = null; // Clear error to show content
-
-          if (showLoading) {
-            this.isLoading = false;
-          }
-
-          // Trigger change detection and charts
-          this.cdr.markForCheck();
-          setTimeout(() => this.refreshCharts(), 100);
-
-          this.uiFeedback.showInfoFromKey('dashboard.messages.demoMode', 3000);
-        }
-      });
-    } catch (error) {
-      this.logger.error('Dashboard: unexpected error', error);
-      this.isLoading = false;
+  private finalizeDashboardLoading(showLoading: boolean): void {
+    if (!showLoading) {
+      return;
     }
+    this.isLoading = false;
+    this.accessibilityService.announceLoading(false, this.t.t('navigation.dashboard'));
+  }
+
+  private scheduleChartRefresh(): void {
+    setTimeout(() => this.refreshCharts(), 100);
   }
 
   private setupMockData() {

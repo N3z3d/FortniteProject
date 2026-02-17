@@ -1,4 +1,4 @@
-import { Injectable, Optional, inject } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
@@ -27,9 +27,8 @@ export class TranslationService {
   };
   private translationsLoaded$ = new BehaviorSubject<boolean>(false);
   private currentUserId: string | null = null;
-  private readonly logger = inject(LoggerService);
 
-  constructor(@Optional() private readonly http?: HttpClient) {
+  constructor(@Optional() private readonly http?: HttpClient, @Optional() private readonly logger?: LoggerService) {
     this.loadTranslations();
     this.restoreLanguagePreference();
   }
@@ -118,7 +117,7 @@ export class TranslationService {
     const requests = languages.map(lang =>
       http.get<Translations>(`assets/i18n/${lang}.json`).pipe(
         catchError(error => {
-          this.logger.error('TranslationService: failed to load language file', { lang, error });
+          this.logger?.error('TranslationService: failed to load language file', { lang, error });
           return of({});
         })
       )

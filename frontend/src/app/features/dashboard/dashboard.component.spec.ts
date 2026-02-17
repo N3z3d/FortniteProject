@@ -501,6 +501,19 @@ describe('DashboardComponent (i18n)', () => {
       expect(uiFeedbackSpy.showInfoFromKey).toHaveBeenCalledWith('dashboard.messages.demoMode', 3000);
     });
 
+    it('announces loading end when facade request fails', async () => {
+      const facadeSpy = TestBed.inject(DashboardFacade) as jasmine.SpyObj<DashboardFacade>;
+      const accessibilitySpy = TestBed.inject(AccessibilityAnnouncerService) as jasmine.SpyObj<AccessibilityAnnouncerService>;
+      facadeSpy.getDashboardData.and.returnValue(throwError(() => new Error('Backend offline')));
+
+      await component.loadDashboardData(true);
+
+      expect(accessibilitySpy.announceLoading).toHaveBeenCalledWith(
+        false,
+        translationService.t('navigation.dashboard')
+      );
+    });
+
     it('does not show loading spinner when showLoading is false', async () => {
       const facadeSpy = TestBed.inject(DashboardFacade) as jasmine.SpyObj<DashboardFacade>;
       facadeSpy.getDashboardData.and.returnValue(of({
