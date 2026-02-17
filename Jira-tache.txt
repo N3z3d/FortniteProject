@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-17 22:23
+Last Updated: 2026-02-17 22:30
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -267,40 +267,6 @@ NEXT:
 
 
 
-ID: JIRA-AUDIT-018
-TITRE: Refactor dashboard.component loadDashboardData (94 lignes, complexite 21)
-TYPE: Task
-PRIORITE: P3
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-17 22:03
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Simplifier `loadDashboardData` pour ameliorer maintenabilite et lisibilite frontend.
-
-CONTEXTE:
-- `docs/audit/COMPLEXITY_AUDIT.md` remonte `loadDashboardData` comme hotspot TS principal (94 lignes, complexite 21).
-- Les branches d'etats et de gestion d'erreurs rendent le flux fragile.
-
-DESCRIPTION:
-- Decouper le flux en fonctions prives courtes (fetch, map view-model, handling erreur, finalize loading).
-- Conserver UX et messages actuels.
-- Renforcer tests composants/services associes sur les transitions d'etat.
-
-CRITERES_D_ACCEPTATION:
-- [ ] `loadDashboardData` <= 50 lignes.
-- [ ] Complexite methode < 12 cible.
-- [ ] Tests dashboard verts (nominal + erreurs + edge cases).
-
-NEXT:
-- (1) Ajouter tests rouges sur etats loading/success/error
-- (2) Extraire le pipeline en sous-methodes et services si necessaire
-- (3) Revalider tests frontend cibles + build
 
 ID: JIRA-FEAT-003
 TITRE: Recherche API Fortnite officielle - rapport complet avec tests reels
@@ -426,7 +392,7 @@ ESTIMATE: multi-session (3-5 semaines)
 ASSIGNE: Claude
 ASSIGNE_LE: 2026-02-09
 DERNIERE_MAJ: 2026-02-09 18:25
-NOTE: Increment 1 DONE - socle backend (4 DTOs + service + controller + 25 tests) + frontend (guard + service + dashboard + 24 tests) + i18n 4 langues. Backend 1670 tests OK, Frontend 1676 tests OK.
+NOTE: Increment 1 DONE - socle backend (4 DTOs + service + controller + 25 tests) + frontend (guard + service + dashboard + 24 tests) + i18n 4 langues. Increment 2 DONE (FEAT-005e) - error journal: ErrorEntry + ErrorJournalService + ErrorJournalController + DomainExceptionHandler/GlobalExceptionHandler integration + frontend ErrorJournalComponent + ErrorDetailDialog + 55 tests. Backend 1780 tests OK, Frontend 1805 tests OK.
 
 DEPENDENCIES: none
 
