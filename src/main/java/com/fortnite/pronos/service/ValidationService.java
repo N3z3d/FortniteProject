@@ -148,62 +148,82 @@ public class ValidationService {
       return;
     }
 
-    // Count active players by region using TeamPlayer mapping
-    Map<Player.Region, Long> playersByRegion = new java.util.HashMap<>();
+    Map<Player.Region, Long> playersByRegion = countActivePlayersByRegion(team);
 
+    for (Object ruleObj : regionRules) {
+      RegionLimit regionLimit = toRegionLimit(ruleObj);
+      long currentCount = playersByRegion.getOrDefault(regionLimit.region(), 0L);
+      validateRegionCount(team.getName(), regionLimit, currentCount);
+    }
+
+    log.info("Team composition validation successful for team: {}", team.getName());
+  }
+
+  private Map<Player.Region, Long> countActivePlayersByRegion(Team team) {
+    Map<Player.Region, Long> playersByRegion = new java.util.HashMap<>();
     List<TeamPlayer> teamPlayers =
         team.getPlayers() != null ? team.getPlayers() : Collections.emptyList();
 
     teamPlayers.stream()
         .filter(tp -> tp != null && tp.getUntil() == null)
         .map(TeamPlayer::getPlayer)
-        .filter(p -> p != null && p.getRegion() != null)
-        .forEach(regionPlayer -> playersByRegion.merge(regionPlayer.getRegion(), 1L, Long::sum));
+        .filter(player -> player != null && player.getRegion() != null)
+        .forEach(player -> playersByRegion.merge(player.getRegion(), 1L, Long::sum));
+    return playersByRegion;
+  }
 
-    // Check against region rules
-    for (Object ruleObj : regionRules) {
-      Player.Region region = null;
-      Integer maxPlayers = null;
-
-      if (ruleObj == null) {
-        throw new BusinessException("Region rule cannot be null");
-      }
-
-      if (ruleObj instanceof GameRegionRule grr) {
-        region = grr.getRegion();
-        maxPlayers = grr.getMaxPlayers();
-      } else if (ruleObj instanceof RegionRule rr) {
-        if (rr.getRegion() == null || rr.getRegion().trim().isEmpty()) {
-          throw new BusinessException("Region rule requires a region");
-        }
-        try {
-          region = Player.Region.valueOf(rr.getRegion().trim());
-        } catch (IllegalArgumentException ex) {
-          throw new BusinessException("Unknown region in rule: " + rr.getRegion());
-        }
-        maxPlayers = rr.getMaxPlayers();
-      } else {
-        throw new BusinessException("Unsupported region rule type: " + ruleObj);
-      }
-
-      if (region == null) {
-        throw new BusinessException("Region rule requires a region");
-      }
-
-      if (maxPlayers == null || maxPlayers <= 0) {
-        throw new BusinessException("Region rule maxPlayers must be positive");
-      }
-
-      Long currentCount = playersByRegion.getOrDefault(region, 0L);
-
-      if (currentCount > maxPlayers) {
-        throw new BusinessException(
-            String.format(
-                "Team %s exceeds regional limit for %s: %d > %d",
-                team.getName(), region, currentCount, maxPlayers));
-      }
+  private RegionLimit toRegionLimit(Object ruleObj) {
+    if (ruleObj == null) {
+      throw new BusinessException("Region rule cannot be null");
     }
 
-    log.info("Team composition validation successful for team: {}", team.getName());
+    if (ruleObj instanceof GameRegionRule gameRule) {
+      return fromGameRegionRule(gameRule);
+    }
+    if (ruleObj instanceof RegionRule regionRule) {
+      return fromRegionRule(regionRule);
+    }
+    throw new BusinessException("Unsupported region rule type: " + ruleObj);
   }
+
+  private RegionLimit fromGameRegionRule(GameRegionRule gameRule) {
+    validateRuleBounds(gameRule.getRegion(), gameRule.getMaxPlayers());
+    return new RegionLimit(gameRule.getRegion(), gameRule.getMaxPlayers());
+  }
+
+  private RegionLimit fromRegionRule(RegionRule regionRule) {
+    if (regionRule.getRegion() == null || regionRule.getRegion().trim().isEmpty()) {
+      throw new BusinessException("Region rule requires a region");
+    }
+
+    Player.Region region;
+    try {
+      region = Player.Region.valueOf(regionRule.getRegion().trim());
+    } catch (IllegalArgumentException ex) {
+      throw new BusinessException("Unknown region in rule: " + regionRule.getRegion());
+    }
+
+    validateRuleBounds(region, regionRule.getMaxPlayers());
+    return new RegionLimit(region, regionRule.getMaxPlayers());
+  }
+
+  private void validateRuleBounds(Player.Region region, Integer maxPlayers) {
+    if (region == null) {
+      throw new BusinessException("Region rule requires a region");
+    }
+    if (maxPlayers == null || maxPlayers <= 0) {
+      throw new BusinessException("Region rule maxPlayers must be positive");
+    }
+  }
+
+  private void validateRegionCount(String teamName, RegionLimit regionLimit, long currentCount) {
+    if (currentCount > regionLimit.maxPlayers()) {
+      throw new BusinessException(
+          String.format(
+              "Team %s exceeds regional limit for %s: %d > %d",
+              teamName, regionLimit.region(), currentCount, regionLimit.maxPlayers()));
+    }
+  }
+
+  private record RegionLimit(Player.Region region, Integer maxPlayers) {}
 }

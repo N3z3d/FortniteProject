@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.DraftUseCase;
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DraftService implements DraftUseCase {
 
   private final DraftRepository draftRepository;
+  private final DraftDomainRepositoryPort draftDomainRepository;
   private final GameRepositoryPort gameRepository;
   private final GameParticipantRepository gameParticipantRepository;
   private final PlayerRepository playerRepository;
@@ -56,7 +58,7 @@ public class DraftService implements DraftUseCase {
     draft.setCurrentPick(1);
     draft.setTotalRounds(calculateTotalRounds(game));
 
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Calcule le nombre total de rounds basÃƒÆ’Ã‚Â© sur les rÃƒÆ’Ã‚Â¨gles rÃƒÆ’Ã‚Â©gionales */
@@ -68,15 +70,6 @@ public class DraftService implements DraftUseCase {
 
     // Somme des joueurs max par rÃƒÆ’Ã‚Â©gion
     return game.getRegionRules().stream().mapToInt(rule -> rule.getMaxPlayers()).sum();
-  }
-
-  /** Met ÃƒÆ’Ã‚Â  jour l'ordre de draft */
-  public void updateDraftOrder(Draft draft, List<GameParticipant> orderedParticipants) {
-    log.debug("Mise ÃƒÆ’Ã‚Â  jour de l'ordre de draft");
-
-    for (int i = 0; i < orderedParticipants.size(); i++) {
-      orderedParticipants.get(i).setDraftOrder(i + 1);
-    }
   }
 
   /** Passe au pick suivant */
@@ -95,7 +88,7 @@ public class DraftService implements DraftUseCase {
       }
     }
 
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Obtient le participant actuel qui doit picker */
@@ -128,6 +121,12 @@ public class DraftService implements DraftUseCase {
   }
 
   /** DÃƒÆ’Ã‚Â©marre un draft pour une game */
+  /** Starts a draft for a game identified by its ID */
+  public Draft startDraftForGame(UUID gameId) {
+    Game game = findGameById(gameId);
+    return startDraft(game);
+  }
+
   public Draft startDraft(Game game) {
     log.debug("DÃƒÆ’Ã‚Â©marrage du draft pour la game {}", game.getName());
 
@@ -135,7 +134,7 @@ public class DraftService implements DraftUseCase {
     draft.setStatus(Draft.Status.ACTIVE);
     draft.setStartedAt(LocalDateTime.now());
 
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Met en pause un draft */
@@ -143,7 +142,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Mise en pause du draft {}", draft.getId());
     draft.setStatus(Draft.Status.PAUSED);
     draft.setUpdatedAt(LocalDateTime.now());
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Reprend un draft en pause */
@@ -151,7 +150,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Reprise du draft {}", draft.getId());
     draft.setStatus(Draft.Status.ACTIVE);
     draft.setUpdatedAt(LocalDateTime.now());
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Termine un draft */
@@ -159,34 +158,7 @@ public class DraftService implements DraftUseCase {
     log.debug("Fin du draft {}", draft.getId());
     draft.setStatus(Draft.Status.FINISHED);
     draft.setFinishedAt(LocalDateTime.now());
-    return ((DraftRepositoryPort) draftRepository).save(draft);
-  }
-
-  /** SÃƒÆ’Ã‚Â©lectionne un joueur dans le draft */
-  public void selectPlayer(Draft draft, UUID userId, com.fortnite.pronos.model.Player player) {
-    log.debug(
-        "SÃƒÆ’Ã‚Â©lection du joueur {} par l'utilisateur {} dans le draft {}",
-        player.getName(),
-        userId,
-        draft.getId());
-
-    // CrÃƒÆ’Ã‚Â©er le pick
-    com.fortnite.pronos.model.DraftPick pick = new com.fortnite.pronos.model.DraftPick();
-    pick.setDraft(draft);
-    pick.setRound(draft.getCurrentRound());
-    pick.setPickNumber(calculatePickOrder(draft));
-    pick.setPlayer(player);
-    pick.setSelectionTime(LocalDateTime.now());
-
-    // La logique de sauvegarde du pick sera gÃƒÆ’Ã‚Â©rÃƒÆ’Ã‚Â©e par le service appelant
-
-    // Passer au pick suivant
-    nextPick(draft, draft.getGame().getMaxParticipants());
-  }
-
-  private int calculatePickOrder(Draft draft) {
-    return (draft.getCurrentRound() - 1) * draft.getGame().getMaxParticipants()
-        + draft.getCurrentPick();
+    return persistDraftEntity(draft);
   }
 
   /** VÃƒÆ’Ã‚Â©rifie si le draft est terminÃƒÆ’Ã‚Â© */
@@ -245,6 +217,16 @@ public class DraftService implements DraftUseCase {
   /** Trouve le draft associÃƒÆ’Ã‚Â© ÃƒÆ’Ã‚Â  une game */
   @Transactional(readOnly = true)
   public Optional<Draft> findDraftByGame(Game game) {
+    if (game == null || game.getId() == null) {
+      return Optional.empty();
+    }
+
+    Optional<com.fortnite.pronos.domain.draft.model.Draft> domainDraft =
+        Optional.ofNullable(draftDomainRepository.findByGameId(game.getId()))
+            .orElse(Optional.empty());
+    if (domainDraft.isPresent() && domainDraft.orElseThrow().getId() != null) {
+      return ((DraftRepositoryPort) draftRepository).findById(domainDraft.orElseThrow().getId());
+    }
     return draftRepository.findByGame(game);
   }
 
@@ -401,7 +383,7 @@ public class DraftService implements DraftUseCase {
 
   /** Sauvegarde un draft */
   public Draft saveDraft(Draft draft) {
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** RÃƒÆ’Ã‚Â©cupÃƒÆ’Ã‚Â¨re les joueurs disponibles par rÃƒÆ’Ã‚Â©gion */
@@ -419,12 +401,50 @@ public class DraftService implements DraftUseCase {
   /** Avance le draft au pick suivant et retourne le draft sauvegarde */
   public Draft advanceToNextPick(Draft draft) {
     draft.nextPick();
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
   }
 
   /** Avance le draft au pick suivant avec un nombre de participants explicite */
   public Draft advanceToNextPick(Draft draft, int participantCount) {
     draft.nextPick(participantCount);
-    return ((DraftRepositoryPort) draftRepository).save(draft);
+    return persistDraftEntity(draft);
+  }
+
+  private Draft persistDraftEntity(Draft draft) {
+    Draft persistedDraft = ((DraftRepositoryPort) draftRepository).save(draft);
+    syncDomainDraft(persistedDraft);
+    return persistedDraft;
+  }
+
+  private void syncDomainDraft(Draft draft) {
+    if (draft == null || draft.getGame() == null || draft.getGame().getId() == null) {
+      return;
+    }
+    draftDomainRepository.save(toDomainDraft(draft));
+  }
+
+  private com.fortnite.pronos.domain.draft.model.Draft toDomainDraft(Draft draft) {
+    return com.fortnite.pronos.domain.draft.model.Draft.restore(
+        draft.getId(),
+        draft.getGame().getId(),
+        toDomainStatus(draft.getStatus()),
+        safeInt(draft.getCurrentRound()),
+        safeInt(draft.getCurrentPick()),
+        safeInt(draft.getTotalRounds()),
+        draft.getCreatedAt(),
+        draft.getUpdatedAt(),
+        draft.getStartedAt(),
+        draft.getFinishedAt());
+  }
+
+  private com.fortnite.pronos.domain.draft.model.DraftStatus toDomainStatus(Draft.Status status) {
+    if (status == null) {
+      return com.fortnite.pronos.domain.draft.model.DraftStatus.PENDING;
+    }
+    return com.fortnite.pronos.domain.draft.model.DraftStatus.valueOf(status.name());
+  }
+
+  private int safeInt(Integer value) {
+    return value != null && value > 0 ? value : 1;
   }
 }

@@ -2,7 +2,7 @@
 
 **Status:** Accepted (Final)
 **Date:** 2025-08-03
-**Updated:** 2026-01-25
+**Updated:** 2026-02-05
 **Deciders:** Development Team
 **Strategic Decision:** JIRA-ARCH-009 (Pure hexagonal with incremental migration strategy)
 
@@ -17,9 +17,8 @@ The Fortnite Pronos application requires a scalable, maintainable architecture t
 
 ## Decision
 
-We adopt a hybrid layered and hexagonal architecture using Spring Boot. The layered structure
-remains the primary organization, while use cases depend on ports and adapters implement those
-ports. This supports incremental migration without a big-bang rewrite.
+We adopt **pure hexagonal architecture (Ports & Adapters)** with **incremental migration**.
+Legacy layered structure remains only during transition and will be removed as domains migrate.
 
 ## Decision Update (2026-01-25): Pure Hexagonal Architecture with Incremental Migration
 
@@ -28,37 +27,27 @@ After strategic review (JIRA-ARCH-009), we **adopt pure hexagonal architecture (
 ### Architecture Target: Monolith + Pure Hexagonal
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Monolithic Application                    │
-│                    (Spring Boot Container)                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌───────────────┐         ┌─────────────────┐            │
-│  │  Adapter IN   │────────>│   Application   │            │
-│  │  (Web/REST)   │         │   (Use Cases)   │            │
-│  └───────────────┘         └────────┬────────┘            │
-│         │                           │                       │
-│         │                           v                       │
-│         │                  ┌─────────────────┐            │
-│         └─────────────────>│  Domain Ports   │            │
-│                            │   (Interfaces)  │            │
-│                            └────────┬────────┘            │
-│                                     │                       │
-│                                     v                       │
-│                            ┌─────────────────┐            │
-│                            │  Domain Models  │            │
-│                            │ (Pure Entities) │            │
-│                            └─────────────────┘            │
-│                                     ^                       │
-│                                     │                       │
-│                            ┌────────┴────────┐            │
-│                            │  Adapter OUT    │            │
-│                            │ (Persistence)   │            │
-│                            │  JPA Entities   │            │
-│                            │    + Mappers    │            │
-│                            └─────────────────┘            │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
++------------------------------------------------------------------+
+|                        Monolithic Application                     |
+|                        (Spring Boot Container)                    |
+|                                                                  |
+|  +------------+      +---------------+      +--------------+     |
+|  | Adapter IN | ---> | Application   | ---> | Domain Ports |     |
+|  | (Web/REST) |      | (Use Cases)   |      | (Interfaces) |     |
+|  +------------+      +---------------+      +--------------+     |
+|                                   |                              |
+|                                   v                              |
+|                           +---------------+                      |
+|                           | Domain Models |                      |
+|                           | (Pure Entity) |                      |
+|                           +---------------+                      |
+|                                   ^                              |
+|                                   |                              |
+|                           +---------------+                      |
+|                           | Adapter OUT   |                      |
+|                           | (Persistence) |                      |
+|                           +---------------+                      |
++------------------------------------------------------------------+
 ```
 
 ### Why Pure Hexagonal (No Hybrid)
@@ -71,15 +60,15 @@ After strategic review (JIRA-ARCH-009), we **adopt pure hexagonal architecture (
 
 ### Critical Success Factor: INCREMENTAL MIGRATION
 
-⚠️ **WARNING**: Big-bang migration WILL break things (tests, mappers, integrations)
+WARNING: Big-bang migration WILL break things (tests, mappers, integrations)
 
 **Incremental Strategy** (one domain at a time):
-1. **Migrate Domain** (e.g., Game) → Create domain.game.model + adapter.out.persistence.game
-2. **Run ALL Tests** → Verify 1275/1275 passing (zero regression)
-3. **Validate Application** → Manual smoke tests, verify endpoints work
-4. **IF Tests Pass** → Proceed to next domain (Player)
-5. **IF Tests Fail** → Fix issues before moving forward
-6. **Repeat** for each domain: Player → Team → Draft → Trade
+1. **Migrate Domain** (e.g., Game) -> Create domain.game.model + adapter.out.persistence.game
+2. **Run ALL Tests** -> Verify 1275/1275 passing (zero regression)
+3. **Validate Application** -> Manual smoke tests, verify endpoints work
+4. **IF Tests Pass** -> Proceed to next domain (Player)
+5. **IF Tests Fail** -> Fix issues before moving forward
+6. **Repeat** for each domain: Player -> Team -> Draft -> Trade
 
 **Migration Order** (impact-based):
 1. Game (highest complexity, most dependencies)
@@ -90,20 +79,50 @@ After strategic review (JIRA-ARCH-009), we **adopt pure hexagonal architecture (
 
 ### Current Migration Status (Transition Phase)
 
-**Phase 1 - Ports & Use Cases** ✅ DONE:
+**Phase 1 - Ports & Use Cases** DONE:
 - 12 Repository Ports (domain.port.out)
 - 12 Use Case interfaces (application.usecase)
 - 8/14 controllers using DIP pattern
 
-**Phase 2 - Domain Models Migration** 🔄 IN PROGRESS:
+**Phase 2 - Domain Models Migration** IN PROGRESS:
 - [ ] Game domain (JIRA-ARCH-011)
 - [ ] Player domain (JIRA-ARCH-012)
 - [ ] Team domain (JIRA-ARCH-013)
 - [ ] Draft domain (JIRA-ARCH-014)
 - [ ] Trade domain (JIRA-ARCH-015)
 
-**Phase 3 - Remaining Controllers** ⏳ PENDING:
+**Phase 3 - Remaining Controllers** PENDING:
 - Migrate 6 remaining controllers to use cases after domain models complete
+
+### Decision Table (Validated 2026-02-05)
+
+| Subject | Option | Decision | Rationale | Impact | Owner | Date |
+| --- | --- | --- | --- | --- | --- | --- |
+| Domain/Application/Adapter boundaries | Strict separation | Domain pure + Application orchestration + Adapters for I/O | Align hexagonal | Packages + dependencies | @Codex | 2026-02-05 |
+| Port naming | `<UseCase>Port` / `<UseCase>UseCase` | Use suffix "Port" for in/out interfaces | Clear boundaries | Package conventions | @Codex | 2026-02-05 |
+| Mapper location | adapters/out/persistence/mapper | Mappers only in adapter layer | Avoid domain deps | Adapter repository | @Codex | 2026-02-05 |
+| DTO boundaries | DTOs in adapters + mappers | Domain has no DTO | Keep domain pure | Controllers/adapters | @Codex | 2026-02-05 |
+| Error strategy | Domain errors mapped in adapters | Domain errors framework-free + mapping in adapters | DIP compliance | Error mapping | @Codex | 2026-02-05 |
+
+
+### Migration Checklist
+
+- Create pure domain models (no framework dependencies)
+- Define ports in domain.port.in/out
+- Implement adapters in adapter.in/out + mappers
+- Update use cases/controllers to depend on ports only
+- Replace entity usage with domain models in application
+- Run unit tests + architecture tests + smoke tests
+- Update ADR status and migration tracking
+
+### Migration Template (Per Domain)
+
+**Scope:** <DomainName>
+**Ports:** <List in/out ports>
+**Adapters:** <List in/out adapters + mappers>
+**Use cases updated:** <List>
+**Tests:** <List unit/integration/architecture>
+**Exit criteria:** All tests pass, no framework deps in domain
 
 ### Architecture Fitness Functions (Pure Hexagonal Rules)
 
@@ -113,63 +132,44 @@ Enforced via `HexagonalArchitectureTest.java`:
 2. **Dependency direction**: Adapters depend on domain, NEVER reverse
 3. **Port contracts**: All persistence through domain.port.out interfaces
 4. **Use case orchestration**: Controllers call application.usecase only
-5. **Mapper isolation**: Domain ↔ Entity mapping ONLY in adapter.out
-6. **Class size**: ≤ 500 lines (CLAUDE.md constraint)
+5. **Mapper isolation**: Domain <-> Entity mapping ONLY in adapter.out
+6. **Class size**: <= 500 lines (CLAUDE.md constraint)
 
 Once migration complete, `shouldFollowOnionArchitecture()` will be enabled and enforced.
 
-```
-┌─────────────────────────────────────────┐
-│             Presentation Layer           │
-│        (Controllers, DTOs, Web)         │
-├─────────────────────────────────────────┤
-│              Service Layer               │
-│       (Business Logic, Validation)      │
-├─────────────────────────────────────────┤
-│             Repository Layer             │
-│         (Data Access, JPA)              │
-├─────────────────────────────────────────┤
-│              Database Layer              │
-│           (PostgreSQL, H2)              │
-└─────────────────────────────────────────┘
-```
 
-### Layer Responsibilities
+### Hexagonal Responsibilities
 
-**Presentation Layer:**
-- REST API controllers
-- Input validation via Bean Validation
-- DTO mapping and serialization
-- HTTP status code management
-- OpenAPI documentation
+**Domain (core/domain):**
+- Pure business rules and value objects
+- No framework dependencies (Spring/JPA/HTTP)
+- Emits domain errors (framework-free)
 
-**Service Layer:**
-- Business logic implementation
-- Transaction management
-- Domain rule enforcement
-- Cross-cutting concerns (caching, security)
-- Integration with external services
+**Application (core/usecase + application):**
+- Orchestrates use cases
+- Defines input/output ports (interfaces)
+- Transactions and policies at the use-case boundary
 
-**Repository Layer:**
-- Data persistence operations
-- Query optimization
-- Database abstraction
-- Entity relationship management
+**Adapters In (controller, messaging, UI boundary):**
+- Input validation and mapping to use-case commands/queries
+- HTTP/status/serialization concerns only
+- Map domain errors to API responses
 
-### Hexagonal Additions (Hybrid)
-- Use cases live in `core/usecase` and depend on ports in `domain/port/*`.
-- Ports define persistence contracts; repositories implement those ports.
-- Controllers call use cases (or services) and do not depend on repositories directly.
+**Adapters Out (persistence, external services):**
+- Implement ports for DB/external systems
+- Map domain <-> entities/DTOs
+- Own framework-specific dependencies
 
 ## Alternatives Considered
 
 ### 1. Hybrid Architecture (Layered + Partial Hexagonal) - REJECTED (2026-01-25)
 - **Pros:** Lower migration effort, familiar patterns, incremental DIP adoption
-- **Cons:**
-  - Inconsistent architecture (some controllers use cases, others services)
-  - Domain models coupled to JPA (framework dependency)
-  - Cannot enable `shouldFollowOnionArchitecture()` test (violations)
-  - Long-term technical debt (architectural inconsistency)
+
+**Cons:**
+- Inconsistent architecture (some controllers use cases, others services)
+- Domain models coupled to JPA (framework dependency)
+- Cannot enable `shouldFollowOnionArchitecture()` test (violations)
+- Long-term technical debt (architectural inconsistency)
 - **Decision:** **REJECTED** after JIRA-ARCH-009 strategic review
 - **Rationale:** While hybrid reduces short-term effort, it creates permanent architectural inconsistency. Pure hexagonal with **incremental migration** achieves clean architecture with controlled risk.
 
@@ -186,71 +186,60 @@ Once migration complete, `shouldFollowOnionArchitecture()` will be enabled and e
 ## Consequences
 
 ### Positive
-- **Clear Separation:** Each layer has well-defined responsibilities
-- **Testability:** Easy to unit test services independently
-- **Maintainability:** Changes in one layer don't affect others
-- **Spring Integration:** Leverages Spring Boot's dependency injection
-- **Team Productivity:** Familiar pattern for most developers
+- Clear boundaries between domain, application, and adapters
+- Domain logic testable without frameworks or database
+- Infrastructure can be swapped without touching domain
+- Incremental migration reduces risk
 
 ### Negative
-- **Potential Over-Engineering:** Some simple operations may be verbose
-- **Performance:** Additional abstraction layers may introduce latency
-- **Coupling:** Services may become tightly coupled to entities
+- More mapping/boilerplate in adapters
+- Requires discipline in package boundaries
+- Temporary complexity during migration
 
 ### Mitigation Strategies
-- Use DTOs to decouple API contracts from entities
-- Implement caching at service layer for performance
-- Regular architecture reviews to prevent layer violations
+- Keep mappers inside adapters only
+- Keep use cases small and focused
+- Enforce boundaries with architecture tests and reviews
 
 ## Implementation Guidelines
 
-### Controller Layer
+### Use Case Interface
+```java
+public interface CreateGameUseCase {
+    GameId handle(CreateGameCommand command);
+}
+```
+
+### Adapter In (Controller)
 ```java
 @RestController
 @RequestMapping("/api/games")
-@RequiredArgsConstructor
 public class GameController {
-    private final GameService gameService;
-    
+    private final CreateGameUseCase createGameUseCase;
+
     @PostMapping
-    public ResponseEntity<ApiResponse<GameDto>> createGame(
-        @Valid @RequestBody CreateGameRequest request) {
-        // Handle HTTP concerns only
+    public ResponseEntity<GameDto> create(@RequestBody CreateGameRequest request) {
+        var id = createGameUseCase.handle(CreateGameCommand.from(request));
+        return ResponseEntity.ok(new GameDto(id));
     }
 }
 ```
 
-### Service Layer
-```java
-@Service
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class GameService {
-    private final GameRepository gameRepository;
-    
-    @Transactional
-    public GameDto createGame(UUID userId, CreateGameRequest request) {
-        // Business logic and validation
-    }
-}
-```
-
-### Repository Layer
+### Adapter Out (Persistence)
 ```java
 @Repository
-public interface GameRepository extends JpaRepository<Game, UUID> {
-    @Query("SELECT g FROM Game g WHERE g.status = :status")
-    List<Game> findByStatus(@Param("status") GameStatus status);
+public class GameRepositoryAdapter implements GameRepositoryPort {
+    // map Domain <-> Entity here only
 }
 ```
 
 ## Compliance
 
 This ADR is enforced through:
-- Package structure conventions
-- Code review checklist
-- Architecture fitness functions (hybrid rules)
-- Dependency direction rules (no upward dependencies)
+- Architecture tests (HexagonalArchitectureTest)
+- Dependency direction rules (adapters depend on domain only)
+- Port naming + mapper isolation conventions
+- Code review checklist and clean code limits
 
 ## Related ADRs
 - ADR-002: Database Technology Selection

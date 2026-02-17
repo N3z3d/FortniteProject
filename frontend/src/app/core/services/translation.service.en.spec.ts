@@ -18,6 +18,11 @@ describe('TranslationService (en)', () => {
     games: {
       myGames: 'My games',
       joinGame: 'Join a game',
+      home: {
+        myGames: 'My games',
+        joinWithCode: 'Join with code',
+        statusCreating: 'Creating'
+      },
       status: {
         completed: 'Completed'
       }
@@ -57,7 +62,7 @@ describe('TranslationService (en)', () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     // Mock HTTP requests for all languages
-    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    const requests = httpMock.match(req => req.url.includes('assets/i18n/'));
     requests.forEach(req => {
       const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
       req.flush(lang === 'en' ? mockTranslationsEn : mockTranslationsOther);
@@ -83,6 +88,14 @@ describe('TranslationService (en)', () => {
     expect(service.translate('games.myGames')).toBe('My games');
     expect(service.translate('games.joinGame')).toBe('Join a game');
     expect(service.translate('games.status.completed')).toBe('Completed');
+  });
+
+  it('returns English games home translations when available', () => {
+    service.setLanguage('en');
+
+    expect(service.translate('games.home.myGames')).toBe('My games');
+    expect(service.translate('games.home.joinWithCode')).toBe('Join with code');
+    expect(service.translate('games.home.statusCreating')).toBe('Creating');
   });
 
   it('returns English dashboard translations when available', () => {

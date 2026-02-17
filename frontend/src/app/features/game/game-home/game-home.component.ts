@@ -170,6 +170,15 @@ export class GameHomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  onGameCardKeyDown(event: KeyboardEvent, game: Game): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    this.selectGame(game);
+  }
+
   getTotalFortnitePlayers(game: Game): number {
     // Use API value if available, fallback to 147 (7 regions x 21 players)
     return game.fortnitePlayerCount || 147;

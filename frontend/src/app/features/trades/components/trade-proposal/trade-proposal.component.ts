@@ -3,16 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
 import { takeUntil, map, startWith, debounceTime, switchMap, tap } from 'rxjs/operators';
 import { trigger, transition, style, animate, query, stagger, keyframes } from '@angular/animations';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
+import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../../core/services/logger.service';
 import { TradingService, TradeOffer, Player, Team } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
 import { TradeValidators } from '../../utils/trade-validators';
@@ -57,8 +57,8 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly notificationService = inject(NotificationService);
+  private readonly uiFeedback = inject(UiErrorFeedbackService);
+  private readonly logger = inject(LoggerService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
   public readonly t = inject(TranslationService);
@@ -177,7 +177,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private loadInitialData(): void {
     // Load teams for the current game
     if (!this.gameId) {
-      console.warn('TradeProposal: No gameId available, cannot load teams');
+      this.logger.warn('TradeProposalComponent: missing gameId, cannot load teams');
       return;
     }
 
@@ -427,21 +427,11 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, this.t.t('common.close'), {
-      duration: 4000,
-      panelClass: ['success-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.uiFeedback.showSuccessMessage(message, 4000);
   }
 
   private showErrorMessage(message: string): void {
-    this.snackBar.open(message, this.t.t('common.close'), {
-      duration: 4000,
-      panelClass: ['error-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.uiFeedback.showError({ message }, 'errors.generic', { duration: 4000 });
   }
 
   private triggerSuccessAnimation(): void {

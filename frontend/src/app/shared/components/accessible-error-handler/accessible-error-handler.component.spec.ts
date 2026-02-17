@@ -3,6 +3,7 @@ import { AccessibleErrorHandlerComponent, AccessibleErrorInfo } from './accessib
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
 import { BrowserNavigationService } from '../../services/browser-navigation.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 describe('AccessibleErrorHandlerComponent', () => {
@@ -11,6 +12,7 @@ describe('AccessibleErrorHandlerComponent', () => {
   let mockAccessibilityAnnouncer: jasmine.SpyObj<AccessibilityAnnouncerService>;
   let mockFocusManagement: jasmine.SpyObj<FocusManagementService>;
   let mockNavigation: jasmine.SpyObj<BrowserNavigationService>;
+  let mockTranslationService: jasmine.SpyObj<TranslationService>;
 
   beforeEach(async () => {
     mockAccessibilityAnnouncer = jasmine.createSpyObj('AccessibilityAnnouncerService', [
@@ -27,13 +29,16 @@ describe('AccessibleErrorHandlerComponent', () => {
       'reload',
       'navigateHome'
     ]);
+    mockTranslationService = jasmine.createSpyObj('TranslationService', ['t']);
+    mockTranslationService.t.and.callFake((key: string) => key);
 
     await TestBed.configureTestingModule({
       imports: [AccessibleErrorHandlerComponent],
       providers: [
         { provide: AccessibilityAnnouncerService, useValue: mockAccessibilityAnnouncer },
         { provide: FocusManagementService, useValue: mockFocusManagement },
-        { provide: BrowserNavigationService, useValue: mockNavigation }
+        { provide: BrowserNavigationService, useValue: mockNavigation },
+        { provide: TranslationService, useValue: mockTranslationService }
       ]
     }).compileComponents();
 
@@ -59,7 +64,7 @@ describe('AccessibleErrorHandlerComponent', () => {
 
       expect(component.currentError).toBe(error);
       expect(mockAccessibilityAnnouncer.announceTechnicalError).toHaveBeenCalledWith(
-        'Test message. Dialogue d\'erreur ouvert avec actions de récupération'
+        'Test message. errors.handler.errorDialogOpened'
       );
 
       tick(150);
@@ -70,51 +75,51 @@ describe('AccessibleErrorHandlerComponent', () => {
   describe('fromHttpError', () => {
     it('should create error from HttpErrorResponse with status 0', () => {
       const httpError = new HttpErrorResponse({ status: 0 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Problème de connexion');
-      expect(result.message).toBe('Impossible de contacter le serveur. Vérifiez votre connexion internet.');
+      expect(result.title).toBe('errors.handler.connectionProblem');
+      expect(result.message).toBe('errors.handler.connectionMessage');
       expect(result.status).toBe(0);
     });
 
     it('should create error from HttpErrorResponse with status 400', () => {
       const httpError = new HttpErrorResponse({ status: 400 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Demande invalide');
+      expect(result.title).toBe('errors.handler.invalidRequest');
       expect(result.status).toBe(400);
     });
 
     it('should create error from HttpErrorResponse with status 401', () => {
       const httpError = new HttpErrorResponse({ status: 401 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Authentification requise');
-      expect(result.message).toBe('Vous devez vous authentifier pour accéder à cette ressource.');
+      expect(result.title).toBe('errors.handler.authRequired');
+      expect(result.message).toBe('errors.handler.authMessage');
     });
 
     it('should create error from HttpErrorResponse with status 403', () => {
       const httpError = new HttpErrorResponse({ status: 403 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Accès refusé');
-      expect(result.message).toBe('Vous n\'avez pas les droits pour effectuer cette action.');
+      expect(result.title).toBe('errors.handler.forbidden');
+      expect(result.message).toBe('errors.handler.forbiddenMessage');
     });
 
     it('should create error from HttpErrorResponse with status 404', () => {
       const httpError = new HttpErrorResponse({ status: 404 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Ressource introuvable');
-      expect(result.message).toBe('La ressource demandée n\'existe pas ou n\'est plus disponible.');
+      expect(result.title).toBe('errors.handler.notFound');
+      expect(result.message).toBe('errors.handler.notFoundMessage');
     });
 
     it('should create error from HttpErrorResponse with status 500', () => {
       const httpError = new HttpErrorResponse({ status: 500 });
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
-      expect(result.title).toBe('Erreur interne du serveur');
-      expect(result.message).toBe('Une erreur technique est survenue. L\'équipe technique a été notifiée.');
+      expect(result.title).toBe('errors.handler.serverError');
+      expect(result.message).toBe('errors.handler.serverErrorMessage');
     });
 
     it('should extract error details from backend response', () => {
@@ -129,13 +134,21 @@ describe('AccessibleErrorHandlerComponent', () => {
         }
       });
 
-      const result = AccessibleErrorHandlerComponent.fromHttpError(httpError);
+      const result = component.fromHttpError(httpError);
 
       expect(result.message).toBe('Custom error message');
       expect(result.code).toBe('ERR_400');
       expect(result.path).toBe('/api/test');
       expect(result.requestId).toBe('req-123');
       expect(result.validationErrors).toEqual({ field1: 'Invalid value' });
+    });
+
+    it('should use default title and message for unknown status', () => {
+      const httpError = new HttpErrorResponse({ status: 418 });
+      const result = component.fromHttpError(httpError);
+
+      expect(result.title).toBe('errors.handler.serverCommError');
+      expect(result.message).toBe('errors.handler.serverCommMessage');
     });
   });
 
@@ -153,7 +166,7 @@ describe('AccessibleErrorHandlerComponent', () => {
       expect(component.currentError).toBeNull();
       expect(component.detailsExpanded).toBe(false);
       expect(mockAccessibilityAnnouncer.announceErrorRecovery).toHaveBeenCalledWith(
-        'Dialogue d\'erreur fermé'
+        'errors.handler.errorDialogClosed'
       );
       expect(mockFocusManagement.restoreFocus).toHaveBeenCalled();
     });
@@ -274,16 +287,16 @@ describe('AccessibleErrorHandlerComponent', () => {
   });
 
   describe('getDefaultRecoveryActions', () => {
-    it('should return 3 default actions', () => {
+    it('should return 3 default actions with translated labels', () => {
       const actions = component.getDefaultRecoveryActions();
 
       expect(actions.length).toBe(3);
-      expect(actions[0].label).toBe('Réessayer');
+      expect(actions[0].label).toBe('errors.handler.retry');
       expect(actions[0].keyboardShortcut).toBe('R');
-      expect(actions[1].label).toBe('Retour à l\'accueil');
+      expect(actions[1].label).toBe('errors.handler.goHome');
       expect(actions[1].keyboardShortcut).toBe('H');
-      expect(actions[2].label).toBe('Fermer');
-      expect(actions[2].keyboardShortcut).toBe('Échap');
+      expect(actions[2].label).toBe('errors.handler.close');
+      expect(actions[2].keyboardShortcut).toBe('errors.handler.escapeKey');
     });
 
     it('should have working action callbacks', () => {
@@ -313,7 +326,7 @@ describe('AccessibleErrorHandlerComponent', () => {
       component.executeRecoveryAction(mockAction);
 
       expect(mockAccessibilityAnnouncer.announcePolite).toHaveBeenCalledWith(
-        'Exécution de l\'action : Test Action'
+        'errors.handler.executingActionTest Action'
       );
       expect(mockAction.action).toHaveBeenCalled();
     });
@@ -382,12 +395,3 @@ describe('AccessibleErrorHandlerComponent', () => {
     });
   });
 });
-
-
-
-
-
-
-
-
-

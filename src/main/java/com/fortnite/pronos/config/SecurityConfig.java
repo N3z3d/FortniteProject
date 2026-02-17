@@ -62,6 +62,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/actuator/health")
                     .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .hasRole("ADMIN")
                     .requestMatchers("/h2-console/**")
                     .permitAll() // Pour H2 en dev
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")

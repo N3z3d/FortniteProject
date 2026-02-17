@@ -91,7 +91,7 @@ export class GameDetailUIService {
    */
   getTimeAgo(date: string | Date | null | undefined): string {
     if (!date) {
-      return 'Date invalide';
+      return this.t.t('common.invalidDate');
     }
 
     const dateString = typeof date === 'string' ? date : date.toISOString();
@@ -103,10 +103,10 @@ export class GameDetailUIService {
    */
   getInvitationCodeExpiry(game: Game | null): string {
     if (!game?.invitationCodeExpiresAt) {
-      return 'Permanent';
+      return this.t.t('games.detail.permanent');
     }
     if (game.isInvitationCodeExpired) {
-      return 'Expiré';
+      return this.t.t('games.detail.expired');
     }
     return this.getTimeAgo(game.invitationCodeExpiresAt);
   }
@@ -145,7 +145,9 @@ export class GameDetailUIService {
    * Retourne le label du statut du participant
    */
   getParticipantStatusLabel(participant: GameParticipant): string {
-    if (participant.isCreator) return 'Créateur';
-    return 'Participant';
+    if (participant.isCreator) {
+      return this.t.t('games.detail.creator');
+    }
+    return this.t.t('games.detail.participant');
   }
 }

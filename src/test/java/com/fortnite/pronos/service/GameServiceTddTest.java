@@ -17,11 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
-import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.service.game.GameCreationService;
 import com.fortnite.pronos.service.game.GameDraftService;
 import com.fortnite.pronos.service.game.GameParticipantService;
@@ -69,7 +69,7 @@ class GameServiceTddTest {
         GameDto.builder()
             .id(gameId)
             .name("Test Fantasy League")
-            .status(GameStatus.CREATING)
+            .status(com.fortnite.pronos.model.GameStatus.CREATING)
             .maxParticipants(10)
             .build();
 

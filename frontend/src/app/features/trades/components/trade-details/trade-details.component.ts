@@ -2,15 +2,14 @@ import { Component, Inject, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDe
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { takeUntil, map } from 'rxjs/operators';
 import { trigger, transition, style, animate, keyframes, query, stagger } from '@angular/animations';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
+import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
 import { TradingService, TradeOffer, Player } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
@@ -96,8 +95,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     private dialogRef: MatDialogRef<TradeDetailsComponent>,
     private tradingService: TradingService,
     public userContextService: UserContextService,
-    private snackBar: MatSnackBar,
-    private notificationService: NotificationService,
+    private uiFeedback: UiErrorFeedbackService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private logger: LoggerService
@@ -199,11 +197,11 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
   // Template helper totals (avoid complex reducers inline in template)
   getOfferedTotal(): number {
-    return this.trade.offeredPlayers.reduce((sum, p) => sum + (p.marketValue || 0), 0);
+    return this.tradeBusinessService.calculateTotalValue(this.trade.offeredPlayers);
   }
 
   getRequestedTotal(): number {
-    return this.trade.requestedPlayers.reduce((sum, p) => sum + (p.marketValue || 0), 0);
+    return this.tradeBusinessService.calculateTotalValue(this.trade.requestedPlayers);
   }
 
   // Action handlers
@@ -407,21 +405,11 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
   // Utility methods
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, this.t.t('common.close'), {
-      duration: 4000,
-      panelClass: ['success-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.uiFeedback.showSuccessMessage(message, 4000);
   }
 
   private showErrorMessage(message: string): void {
-    this.snackBar.open(message, this.t.t('common.close'), {
-      duration: 4000,
-      panelClass: ['error-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.uiFeedback.showError({ message }, 'errors.generic', { duration: 4000 });
   }
 
   private triggerConfetti(): void {

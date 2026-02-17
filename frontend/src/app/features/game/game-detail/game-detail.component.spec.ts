@@ -8,6 +8,9 @@ import { GameDetailPermissionsService } from '../services/game-detail-permission
 import { GameDetailUIService } from '../services/game-detail-ui.service';
 import { Game, GameParticipant } from '../models/game.interface';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { UserGamesStore } from '../../../core/services/user-games.store';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 const mockGame: Game = {
   id: '1',
@@ -34,6 +37,9 @@ describe('GameDetailComponent', () => {
   let gameDetailPermissionsSpy: jasmine.SpyObj<GameDetailPermissionsService>;
   let gameDetailUISpy: jasmine.SpyObj<GameDetailUIService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let userGamesStoreSpy: jasmine.SpyObj<UserGamesStore>;
+  let uiFeedbackSpy: jasmine.SpyObj<UiErrorFeedbackService>;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
   let activatedRouteStub: any;
 
   beforeEach(async () => {
@@ -63,6 +69,8 @@ describe('GameDetailComponent', () => {
       'canArchiveGame',
       'canLeaveGame',
       'canDeleteGame',
+      'canSeeDeleteGameAction',
+      'getDeleteRestrictionReasonKey',
       'canJoinGame',
       'canRegenerateCode',
       'canRenameGame'
@@ -93,6 +101,10 @@ describe('GameDetailComponent', () => {
     gameDetailUISpy.getParticipantStatusLabel.and.returnValue('Participant');
     gameDetailUISpy.getInvitationCodeExpiry.and.returnValue('');
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame', 'refreshGames']);
+    userGamesStoreSpy.refreshGames.and.returnValue(of([mockGame]));
+    uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', ['showError']);
+    loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
     activatedRouteStub = { params: of({ id: '1' }) };
 
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
@@ -108,6 +120,8 @@ describe('GameDetailComponent', () => {
     gameDetailPermissionsSpy.canArchiveGame.and.returnValue(false);
     gameDetailPermissionsSpy.canLeaveGame.and.returnValue(false);
     gameDetailPermissionsSpy.canDeleteGame.and.returnValue(false);
+    gameDetailPermissionsSpy.canSeeDeleteGameAction.and.returnValue(false);
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue(null);
     gameDetailPermissionsSpy.canJoinGame.and.returnValue(false);
     gameDetailPermissionsSpy.canRegenerateCode.and.returnValue(false);
     gameDetailPermissionsSpy.canRenameGame.and.returnValue(false);
@@ -119,6 +133,9 @@ describe('GameDetailComponent', () => {
         { provide: GameDetailActionsService, useValue: gameDetailActionsSpy },
         { provide: GameDetailPermissionsService, useValue: gameDetailPermissionsSpy },
         { provide: GameDetailUIService, useValue: gameDetailUISpy },
+        { provide: UserGamesStore, useValue: userGamesStoreSpy },
+        { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
+        { provide: LoggerService, useValue: loggerSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRouteStub }
       ],
@@ -148,6 +165,17 @@ describe('GameDetailComponent', () => {
     expect(gameDataServiceSpy.getGameParticipants).toHaveBeenCalledWith('1');
   }));
 
+  it('should redirect when game is not present in refreshed user games', fakeAsync(() => {
+    userGamesStoreSpy.refreshGames.and.returnValue(of([]));
+
+    fixture.detectChanges();
+    tick();
+
+    expect(gameDataServiceSpy.getGameById).not.toHaveBeenCalled();
+    expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('1');
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
+  }));
+
   it('should handle error when loading game details', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(throwError(() => new Error('Erreur')));
     gameDataServiceSpy.getGameParticipants.and.returnValue(throwError(() => new Error('Erreur')));
@@ -158,6 +186,19 @@ describe('GameDetailComponent', () => {
     expect(component.loading).toBe(false);
   }));
 
+  it('should remove game from store and redirect when game detail returns 404', fakeAsync(() => {
+    const notFoundError = Object.assign(new Error('Ressource non trouvée'), { status: 404 });
+    gameDataServiceSpy.getGameById.and.returnValue(throwError(() => notFoundError));
+
+    fixture.detectChanges();
+    tick();
+
+    expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('1');
+    expect(uiFeedbackSpy.showError).toHaveBeenCalledWith(null, 'games.detail.gameUnavailable', { duration: 5000 });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
+    expect(component.error).toBeNull();
+  }));
+
   it('should not load participants when loading game details fails', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(throwError(() => new Error('Erreur')));
 
@@ -165,6 +206,21 @@ describe('GameDetailComponent', () => {
     tick();
 
     expect(gameDataServiceSpy.getGameParticipants).not.toHaveBeenCalled();
+  }));
+
+  it('should log warning when game data validation fails', fakeAsync(() => {
+    gameDataServiceSpy.validateGameData.and.returnValue({ isValid: false, errors: ['invalid'] });
+
+    fixture.detectChanges();
+    tick();
+
+    expect(loggerSpy.warn).toHaveBeenCalledWith(
+      'GameDetailComponent: game data validation failed',
+      jasmine.objectContaining({
+        gameId: '1',
+        errors: ['invalid']
+      })
+    );
   }));
 
   it('should allow joining a game', fakeAsync(() => {
@@ -202,7 +258,11 @@ describe('GameDetailComponent', () => {
     fixture.detectChanges();
     tick();
     component.startDraft();
-    expect(gameDetailActionsSpy.startDraft).toHaveBeenCalledWith('1', jasmine.any(Function));
+    expect(gameDetailActionsSpy.startDraft).toHaveBeenCalledWith(
+      '1',
+      jasmine.any(Function),
+      jasmine.any(Function)
+    );
   }));
 
   it('should display participants with correct status', fakeAsync(() => {
@@ -280,6 +340,12 @@ describe('GameDetailComponent', () => {
 
     expect(component.game).toEqual(mockGame);
     expect(component.error).toBeNull();
+    expect(loggerSpy.error).toHaveBeenCalledWith(
+      'GameDetailComponent: failed to load participants',
+      jasmine.objectContaining({
+        gameId: '1'
+      })
+    );
   }));
 
   it('should retry loading details and participants when retryLoad is called', fakeAsync(() => {
@@ -313,7 +379,33 @@ describe('GameDetailComponent', () => {
   it('should call confirmStartDraft action', () => {
     component.gameId = '1';
     component.confirmStartDraft();
-    expect(gameDetailActionsSpy.confirmStartDraft).toHaveBeenCalledWith('1', jasmine.any(Function));
+    expect(gameDetailActionsSpy.confirmStartDraft).toHaveBeenCalledWith(
+      '1',
+      jasmine.any(Function),
+      jasmine.any(Function)
+    );
+  });
+
+  it('should set draft pending flag and reset it when settled callback is called', () => {
+    component.gameId = '1';
+    component.isStartingDraft = false;
+    gameDetailActionsSpy.confirmStartDraft.and.callFake(
+      (_gameId: string, _onSuccess?: () => void, onSettled?: () => void) => {
+        expect(component.isStartingDraft).toBeTrue();
+        onSettled?.();
+      }
+    );
+
+    component.confirmStartDraft();
+
+    expect(component.isStartingDraft).toBeFalse();
+  });
+
+  it('should disable start draft action while request is pending', () => {
+    component.loading = false;
+    component.isStartingDraft = true;
+
+    expect(component.isStartDraftActionDisabled()).toBeTrue();
   });
 
   it('should delegate participant status icon to UI service', () => {
@@ -351,12 +443,129 @@ describe('GameDetailComponent', () => {
     expect(gameDetailPermissionsSpy.canDeleteGame).toHaveBeenCalledWith(component.game);
   });
 
+  it('should delegate canShowDeleteGameAction to permissions service', () => {
+    component.game = { ...mockGame };
+    gameDetailPermissionsSpy.canSeeDeleteGameAction.and.returnValue(true);
+
+    expect(component.canShowDeleteGameAction()).toBeTrue();
+    expect(gameDetailPermissionsSpy.canSeeDeleteGameAction).toHaveBeenCalledWith(component.game);
+  });
+
+  it('should delegate getDeleteRestrictionReasonKey to permissions service', () => {
+    component.game = { ...mockGame, status: 'ACTIVE' };
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue('games.detail.deleteDisabledStatus');
+
+    expect(component.getDeleteRestrictionReasonKey()).toBe('games.detail.deleteDisabledStatus');
+    expect(gameDetailPermissionsSpy.getDeleteRestrictionReasonKey).toHaveBeenCalledWith(component.game);
+  });
+
+  it('should return default tooltip key when no restriction exists', () => {
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue(null);
+
+    expect(component.getDeleteTooltipKey()).toBe('games.detail.deleteTooltip');
+  });
+
+  it('should return restriction tooltip key when delete is restricted', () => {
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue('games.detail.deleteDisabledStatus');
+
+    expect(component.getDeleteTooltipKey()).toBe('games.detail.deleteDisabledStatus');
+  });
+
   it('should delegate canJoinGame to permissions service', () => {
     component.game = { ...mockGame };
     gameDetailPermissionsSpy.canJoinGame.and.returnValue(true);
     expect(component.canJoinGame()).toBeTrue();
     expect(gameDetailPermissionsSpy.canJoinGame).toHaveBeenCalledWith(component.game);
   });
-}); 
+
+  it('should delegate copy invitation code to actions service when code exists', () => {
+    component.game = { ...mockGame, invitationCode: 'INVITE123' };
+
+    component.copyInvitationCode();
+
+    expect(gameDetailActionsSpy.copyInvitationCode).toHaveBeenCalledWith('INVITE123');
+  });
+
+  it('should not call copy invitation code action when code is missing', () => {
+    component.game = { ...mockGame, invitationCode: undefined };
+
+    component.copyInvitationCode();
+
+    expect(gameDetailActionsSpy.copyInvitationCode).not.toHaveBeenCalled();
+  });
+
+  it('should show generate invitation code button when code is missing and user can regenerate', fakeAsync(() => {
+    const gameWithoutCode: Game = { ...mockGame, invitationCode: undefined };
+    gameDataServiceSpy.getGameById.and.returnValue(of(gameWithoutCode));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDetailPermissionsSpy.canRegenerateCode.and.returnValue(true);
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const generateButton = compiled.querySelector('.generate-code-btn');
+    expect(generateButton).toBeTruthy();
+    expect(generateButton?.textContent).toContain('games.detail.generateCode');
+  }));
+
+  it('should render disabled delete button with explicit reason for host when status blocks delete', fakeAsync(() => {
+    const nonDeletableHostGame: Game = { ...mockGame, status: 'ACTIVE' };
+    gameDataServiceSpy.getGameById.and.returnValue(of(nonDeletableHostGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDetailPermissionsSpy.canSeeDeleteGameAction.and.returnValue(true);
+    gameDetailPermissionsSpy.canDeleteGame.and.returnValue(false);
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue('games.detail.deleteDisabledStatus');
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const deleteButton = compiled.querySelector('.delete-game-btn') as HTMLButtonElement | null;
+    const reason = compiled.querySelector('.delete-disabled-reason');
+
+    expect(deleteButton).toBeTruthy();
+    expect(deleteButton?.disabled).toBeTrue();
+    expect(reason?.textContent).toContain('games.detail.deleteDisabledStatus');
+  }));
+
+  it('should hide delete action for non host users', fakeAsync(() => {
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDetailPermissionsSpy.canSeeDeleteGameAction.and.returnValue(false);
+    gameDetailPermissionsSpy.canDeleteGame.and.returnValue(false);
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue('games.detail.deleteDisabledNotHost');
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.delete-game-btn')).toBeNull();
+    expect(compiled.querySelector('.delete-disabled-reason')).toBeNull();
+  }));
+
+  it('should render enabled delete button for host when delete is allowed', fakeAsync(() => {
+    const deletableHostGame: Game = { ...mockGame, status: 'CREATING' };
+    gameDataServiceSpy.getGameById.and.returnValue(of(deletableHostGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDetailPermissionsSpy.canSeeDeleteGameAction.and.returnValue(true);
+    gameDetailPermissionsSpy.canDeleteGame.and.returnValue(true);
+    gameDetailPermissionsSpy.getDeleteRestrictionReasonKey.and.returnValue(null);
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const deleteButton = compiled.querySelector('.delete-game-btn') as HTMLButtonElement | null;
+
+    expect(deleteButton).toBeTruthy();
+    expect(deleteButton?.disabled).toBeFalse();
+    expect(compiled.querySelector('.delete-disabled-reason')).toBeNull();
+  }));
+});
 
 

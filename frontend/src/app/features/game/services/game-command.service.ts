@@ -2,19 +2,25 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
+
 import { environment } from '../../../../environments/environment';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import {
-  Game,
+  extractBackendErrorDetails,
+  toSafeUserMessage
+} from '../../../core/utils/user-facing-error-message.util';
+import {
   CreateGameRequest,
-  JoinGameRequest,
-  GameResponse,
-  DraftState,
-  DraftSelectionRequest,
   DraftActionRequest,
-  InvitationCode
+  DraftSelectionRequest,
+  DraftState,
+  Game,
+  GameResponse,
+  InvitationCode,
+  JoinGameRequest
 } from '../models/game.interface';
 
 @Injectable({
@@ -26,15 +32,15 @@ export class GameCommandService {
   constructor(
     private readonly http: HttpClient,
     private readonly logger: LoggerService,
-    private readonly snackBar: MatSnackBar,
-    private readonly announcer: LiveAnnouncer
+    private readonly uiFeedback: UiErrorFeedbackService,
+    private readonly announcer: LiveAnnouncer,
+    private readonly t: TranslationService
   ) { }
 
   createGame(request: CreateGameRequest): Observable<Game> {
-    return this.http.post<Game>(`${this.apiUrl}/games`, request)
-      .pipe(
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<Game>(`${this.apiUrl}/games`, request).pipe(
+      catchError(this.handleError.bind(this))
+    );
   }
 
   joinGame(gameId: string): Observable<boolean> {
@@ -43,55 +49,51 @@ export class GameCommandService {
       userId: 'current-user-id'
     };
 
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/join`, joinRequest)
-      .pipe(
-        tap(response => {
-          if (response.success) {
-            this.snackBar.open('Vous avez rejoint la partie avec succès', 'OK', {
-              duration: 3000,
-              horizontalPosition: 'center',
-              verticalPosition: 'top'
-            });
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/join`, joinRequest).pipe(
+      tap(response => {
+        if (!response.success) {
+          return;
+        }
 
-            this.announcer.announce('Vous avez rejoint la partie avec succès', 'polite');
-          }
-        }),
-        map(response => response.success),
-        catchError(error => {
-          this.snackBar.open('Erreur lors de la tentative de rejoindre la partie', 'Fermer', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-          return throwError(() => error);
-        })
-      );
+        const successMessage = this.t.t('games.detail.actions.joinSuccess');
+        this.uiFeedback.showSuccessMessage(successMessage, 3000);
+        this.announcer.announce(successMessage, 'polite');
+      }),
+      map(response => response.success),
+      catchError((error: HttpErrorResponse) => {
+        this.uiFeedback.showError(error, 'games.detail.actions.joinError', { duration: 5000 });
+        return throwError(() => error);
+      })
+    );
   }
 
   joinGameWithCode(invitationCode: string): Observable<Game> {
     const normalizedCode = invitationCode.trim().toUpperCase();
-    return this.http.post<Game>(
-      `${this.apiUrl}/games/join-with-code`,
-      { code: normalizedCode }
-    ).pipe(
+    return this.http.post<Game>(`${this.apiUrl}/games/join-with-code`, { code: normalizedCode }).pipe(
       catchError(this.handleError.bind(this))
     );
   }
 
   generateInvitationCode(gameId: string): Observable<InvitationCode> {
-    return this.http.post<InvitationCode>(`${this.apiUrl}/games/${gameId}/invitation-code`, {})
-      .pipe(
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<InvitationCode>(`${this.apiUrl}/games/${gameId}/invitation-code`, {}).pipe(
+      catchError(this.handleError.bind(this))
+    );
   }
 
-  regenerateInvitationCode(gameId: string, duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): Observable<Game> {
+  regenerateInvitationCode(
+    gameId: string,
+    duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'
+  ): Observable<Game> {
     return this.http.post<Game>(
       `${this.apiUrl}/games/${gameId}/regenerate-code`,
       {},
       { params: { duration } }
     ).pipe(
-      tap(game => {
-        this.announcer.announce('Code d\'invitation régénéré avec succès', 'polite');
+      tap(() => {
+        this.announcer.announce(
+          this.t.t('games.detail.actions.invitationCodeRegeneratedAnnounce'),
+          'polite'
+        );
       }),
       catchError(error => {
         this.logger.error('GameCommandService: failed to regenerate invitation code', error);
@@ -101,55 +103,49 @@ export class GameCommandService {
   }
 
   renameGame(gameId: string, newName: string): Observable<Game> {
-    return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName })
-      .pipe(
-        tap(game => {
-          this.announcer.announce(`Partie renommée en ${newName}`, 'polite');
-        }),
-        catchError(error => {
-          this.logger.error('GameCommandService: failed to rename game', error);
-          return throwError(() => error);
-        })
-      );
+    return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName }).pipe(
+      tap(() => {
+        const announceMessage = this.t
+          .t('games.detail.actions.renameAnnounce')
+          .replace('{name}', newName);
+        this.announcer.announce(announceMessage, 'polite');
+      }),
+      catchError(error => {
+        this.logger.error('GameCommandService: failed to rename game', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   deleteGame(gameId: string): Observable<boolean> {
-    return this.http.delete<GameResponse>(`${this.apiUrl}/games/${gameId}`)
-      .pipe(
-        map(response => response.success),
-        tap(() => {
-          this.announcer.announce('Partie supprimée avec succès', 'polite');
-        }),
-        catchError(error => {
-          this.logger.error('GameCommandService: failed to delete game', error);
-          this.snackBar.open('Erreur lors de la suppression de la partie', 'Fermer', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-          return throwError(() => error);
-        })
-      );
+    return this.http.delete<GameResponse>(`${this.apiUrl}/games/${gameId}`).pipe(
+      map(response => response.success),
+      tap(() => {
+        this.announcer.announce(this.t.t('games.detail.actions.deleteSuccessAnnounce'), 'polite');
+      }),
+      catchError(error => {
+        this.logger.error('GameCommandService: failed to delete game', error);
+        this.uiFeedback.showError(error, 'games.detail.actions.deleteError', { duration: 5000 });
+        return throwError(() => error);
+      })
+    );
   }
 
   startDraft(gameId: string): Observable<boolean> {
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/start-draft`, {})
-      .pipe(
-        map(response => response.success),
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/start-draft`, {}).pipe(
+      map(response => response.success),
+      catchError(this.handleError.bind(this))
+    );
   }
 
   finishDraft(gameId: string): Observable<Game> {
     return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/draft/finish`, {}).pipe(
-      tap(game => {
-        this.announcer.announce('Draft terminé avec succès', 'polite');
+      tap(() => {
+        this.announcer.announce(this.t.t('games.detail.actions.draftFinishedAnnounce'), 'polite');
       }),
       catchError(error => {
         this.logger.error('GameCommandService: failed to finish draft', error);
-        this.snackBar.open('Erreur lors de la finalisation du draft', 'Fermer', {
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        });
+        this.uiFeedback.showError(error, 'games.detail.actions.draftFinishError', { duration: 5000 });
         return throwError(() => error);
       })
     );
@@ -159,35 +155,28 @@ export class GameCommandService {
     const archivedGames = localStorage.getItem('archived_games');
     const archived: string[] = archivedGames ? JSON.parse(archivedGames) : [];
 
-  if (!archived.includes(gameId)) {
+    if (!archived.includes(gameId)) {
       archived.push(gameId);
       localStorage.setItem('archived_games', JSON.stringify(archived));
     }
 
-    return this.http.post<GameResponse>(
-      `${this.apiUrl}/games/${gameId}/archive`,
-      {}
-    ).pipe(
-        map(response => response.success),
-        catchError(() => {
-          return throwError(() => new Error('Échec de l\'archivage de la partie'));
-        })
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/archive`, {}).pipe(
+      map(response => response.success),
+      catchError(() => throwError(() => new Error(this.t.t('games.detail.actions.archiveError'))))
+    );
   }
 
   leaveGame(gameId: string): Observable<boolean> {
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/leave`, {})
-      .pipe(
-        map(response => response.success),
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/leave`, {}).pipe(
+      map(response => response.success),
+      catchError(this.handleError.bind(this))
+    );
   }
 
   initializeDraft(gameId: string): Observable<DraftState> {
-    return this.http.post<DraftState>(`${this.apiUrl}/games/${gameId}/draft/initialize`, {})
-      .pipe(
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<DraftState>(`${this.apiUrl}/games/${gameId}/draft/initialize`, {}).pipe(
+      catchError(this.handleError.bind(this))
+    );
   }
 
   makePlayerSelection(gameId: string, playerId: string): Observable<boolean> {
@@ -196,11 +185,10 @@ export class GameCommandService {
       playerId
     };
 
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/select`, request)
-      .pipe(
-        map(response => response.success),
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/select`, request).pipe(
+      map(response => response.success),
+      catchError(this.handleError.bind(this))
+    );
   }
 
   pauseDraft(gameId: string): Observable<boolean> {
@@ -209,19 +197,18 @@ export class GameCommandService {
       action: 'pause'
     };
 
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/pause`, request)
-      .pipe(
-        tap(response => {
-          if (response.success) {
-            this.announcer.announce('Draft mis en pause', 'polite');
-          }
-        }),
-        map(response => response.success),
-        catchError(error => {
-          this.logger.error('GameCommandService: failed to pause draft', error);
-          return throwError(() => error);
-        })
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/pause`, request).pipe(
+      tap(response => {
+        if (response.success) {
+          this.announcer.announce(this.t.t('games.detail.actions.draftPausedAnnounce'), 'polite');
+        }
+      }),
+      map(response => response.success),
+      catchError(error => {
+        this.logger.error('GameCommandService: failed to pause draft', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   resumeDraft(gameId: string): Observable<boolean> {
@@ -230,19 +217,18 @@ export class GameCommandService {
       action: 'resume'
     };
 
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/resume`, request)
-      .pipe(
-        tap(response => {
-          if (response.success) {
-            this.announcer.announce('Draft repris', 'polite');
-          }
-        }),
-        map(response => response.success),
-        catchError(error => {
-          this.logger.error('GameCommandService: failed to resume draft', error);
-          return throwError(() => error);
-        })
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/resume`, request).pipe(
+      tap(response => {
+        if (response.success) {
+          this.announcer.announce(this.t.t('games.detail.actions.draftResumedAnnounce'), 'polite');
+        }
+      }),
+      map(response => response.success),
+      catchError(error => {
+        this.logger.error('GameCommandService: failed to resume draft', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   cancelDraft(gameId: string): Observable<boolean> {
@@ -251,85 +237,43 @@ export class GameCommandService {
       action: 'cancel'
     };
 
-    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/cancel`, request)
-      .pipe(
-        map(response => response.success),
-        catchError(this.handleError.bind(this))
-      );
+    return this.http.post<GameResponse>(`${this.apiUrl}/games/${gameId}/draft/cancel`, request).pipe(
+      map(response => response.success),
+      catchError(this.handleError.bind(this))
+    );
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'Une erreur est survenue';
-    const backendMessage = this.extractBackendMessage(error);
-
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Erreur: ${error.error.message}`;
-    } else {
-      switch (error.status) {
-        case 400:
-          errorMessage = backendMessage || 'Requete invalide';
-          break;
-        case 401:
-          errorMessage = 'Non autorise';
-          break;
-        case 403:
-          errorMessage = backendMessage || 'Acces refuse';
-          break;
-        case 404:
-          errorMessage = backendMessage || 'Ressource non trouvee';
-          break;
-        case 409:
-          errorMessage = backendMessage || 'Conflit';
-          break;
-        case 422:
-          errorMessage = backendMessage || 'Donnees invalides';
-          break;
-        case 500:
-          errorMessage = backendMessage || 'Erreur serveur';
-          break;
-        default:
-          errorMessage = backendMessage || `Erreur ${error.status}: Erreur inconnue`;
-      }
-    }
+    const safeBackendMessage = toSafeUserMessage(extractBackendErrorDetails(error).message);
+    const errorMessage = this.resolveErrorMessage(error, safeBackendMessage);
 
     this.logger.error('GameCommandService error', error);
     return throwError(() => new Error(errorMessage));
   }
 
-  private extractBackendMessage(error: HttpErrorResponse): string | null {
-    const payload = error.error;
-
-    if (!payload) {
-      return null;
+  private resolveErrorMessage(error: HttpErrorResponse, backendMessage: string | null): string {
+    if (error.error instanceof ErrorEvent) {
+      return `${this.t.t('common.error')}: ${error.error.message}`;
     }
 
-    if (typeof payload === 'string') {
-      const trimmedPayload = payload.trim();
-      if (!trimmedPayload) {
-        return null;
-      }
-
-      try {
-        const parsedPayload = JSON.parse(trimmedPayload) as { message?: string };
-        return parsedPayload.message || trimmedPayload;
-      } catch {
-        return trimmedPayload;
-      }
+    switch (error.status) {
+      case 400:
+        return backendMessage || this.t.t('errors.validation');
+      case 401:
+        return this.t.t('errors.unauthorized');
+      case 403:
+        return backendMessage || this.t.t('errors.handler.forbiddenMessage');
+      case 404:
+        return backendMessage || this.t.t('errors.notFound');
+      case 409:
+        return backendMessage || this.t.t('errors.validation');
+      case 422:
+        return backendMessage || this.t.t('errors.validation');
+      case 500:
+        return this.t.t('errors.handler.serverErrorMessage');
+      default:
+        return backendMessage || this.t.t('errors.generic');
     }
-
-    if (typeof payload === 'object') {
-      const payloadObject = payload as { message?: string; error?: { message?: string } | string };
-      if (payloadObject.message) {
-        return payloadObject.message;
-      }
-      if (typeof payloadObject.error === 'string') {
-        return payloadObject.error;
-      }
-      if (payloadObject.error?.message) {
-        return payloadObject.error.message;
-      }
-    }
-
-    return null;
   }
+
 }

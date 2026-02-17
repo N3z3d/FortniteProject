@@ -1,17 +1,17 @@
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 
 import { TranslationService } from '../../core/services/translation.service';
 import { UserContextService } from '../../core/services/user-context.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 import { SettingsComponent } from './settings.component';
 
 describe('SettingsComponent', () => {
   let component: SettingsComponent;
   let userContextService: jasmine.SpyObj<UserContextService>;
   let router: jasmine.SpyObj<Router>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let loggerService: jasmine.SpyObj<LoggerService>;
   let translationService: jasmine.SpyObj<TranslationService>;
   let themeService: jasmine.SpyObj<ThemeService>;
@@ -21,7 +21,7 @@ describe('SettingsComponent', () => {
 
     userContextService = jasmine.createSpyObj<UserContextService>('UserContextService', ['logout']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
-    snackBar = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+    uiFeedback = jasmine.createSpyObj<UiErrorFeedbackService>('UiErrorFeedbackService', ['showSuccessFromKey', 'showError']);
     loggerService = jasmine.createSpyObj<LoggerService>('LoggerService', ['info', 'error', 'debug']);
     translationService = jasmine.createSpyObj<TranslationService>(
       'TranslationService',
@@ -39,7 +39,7 @@ describe('SettingsComponent', () => {
     component = new SettingsComponent(
       userContextService,
       router,
-      snackBar,
+      uiFeedback,
       loggerService,
       translationService,
       themeService
@@ -173,14 +173,10 @@ describe('SettingsComponent', () => {
       expect(saved.showOnlineStatus).toBe(false);
     });
 
-    it('should show snackbar confirmation', () => {
+    it('should show success confirmation', () => {
       component.saveSettings();
 
-      expect(snackBar.open).toHaveBeenCalledWith(
-        'settings.settingsSaved',
-        'common.close',
-        { duration: 3000 }
-      );
+      expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('settings.settingsSaved', 3000);
     });
   });
 
@@ -210,17 +206,13 @@ describe('SettingsComponent', () => {
 
       expect(component.language).toBe('fr');
       expect(translationService.setLanguage).toHaveBeenCalledWith('fr');
-      expect(snackBar.open).toHaveBeenCalled();
+      expect(uiFeedback.showSuccessFromKey).toHaveBeenCalled();
     });
 
-    it('should show snackbar confirmation', () => {
+    it('should show success confirmation', () => {
       component.resetSettings();
 
-      expect(snackBar.open).toHaveBeenCalledWith(
-        'settings.settingsReset',
-        'common.close',
-        { duration: 3000 }
-      );
+      expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('settings.settingsReset', 3000);
     });
   });
 
@@ -249,14 +241,10 @@ describe('SettingsComponent', () => {
       expect(loggerService.info).toHaveBeenCalledWith('Settings: export data requested');
     });
 
-    it('should show snackbar notification', () => {
+    it('should show export notification', () => {
       component.exportData();
 
-      expect(snackBar.open).toHaveBeenCalledWith(
-        'Data export started. You will receive an email when ready.',
-        'Close',
-        { duration: 5000 }
-      );
+      expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('settings.exportStarted', 5000);
     });
   });
 });

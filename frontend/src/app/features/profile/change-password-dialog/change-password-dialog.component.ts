@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 @Component({
   selector: 'app-change-password-dialog',
@@ -19,8 +19,7 @@ import { TranslationService } from '../../../core/services/translation.service';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule,
-    MatSnackBarModule
+    MatIconModule
   ],
   templateUrl: './change-password-dialog.component.html',
   styleUrls: ['./change-password-dialog.component.scss']
@@ -35,7 +34,7 @@ export class ChangePasswordDialogComponent {
   constructor(
     private readonly dialogRef: MatDialogRef<ChangePasswordDialogComponent>,
     private readonly fb: FormBuilder,
-    private readonly snackBar: MatSnackBar,
+    private readonly uiFeedback: UiErrorFeedbackService,
     public readonly t: TranslationService
   ) {
     this.passwordForm = this.fb.group({
@@ -69,9 +68,7 @@ export class ChangePasswordDialogComponent {
 
   onSave(): void {
     if (this.passwordForm.invalid) {
-      this.snackBar.open(this.t.t('profile.changePasswordDialog.errors.formInvalid'), this.t.t('common.close'), {
-        duration: 3000
-      });
+      this.uiFeedback.showError(null, 'profile.changePasswordDialog.errors.formInvalid', { duration: 3000 });
       return;
     }
 
@@ -79,9 +76,7 @@ export class ChangePasswordDialogComponent {
 
     // Simuler un appel API
     setTimeout(() => {
-      this.snackBar.open(this.t.t('profile.changePasswordDialog.success'), this.t.t('common.close'), {
-        duration: 3000
-      });
+      this.uiFeedback.showSuccessFromKey('profile.changePasswordDialog.success', 3000);
       this.saving = false;
       this.dialogRef.close(true);
     }, 1500);

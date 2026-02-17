@@ -23,7 +23,9 @@
     "details": "Details",
     "players": "Players",
     "player": "Player",
-    "retry": "Retry"
+    "invalidDate": "Invalid date",
+    "retry": "Retry",
+    "generateConfirm": "Generate code"
   },
   "layout": {
     "welcome": "Welcome",
@@ -171,7 +173,8 @@
     "deleteAccount": "Delete Account",
     "resetDefaults": "Reset to Defaults",
     "settingsSaved": "Settings saved successfully!",
-    "settingsReset": "Settings reset to defaults"
+    "settingsReset": "Settings reset to defaults",
+    "exportStarted": "Data export started. You will receive an email when it is ready."
   },
   "navigation": {
     "home": "Home",
@@ -224,7 +227,9 @@
     },
     "noGame": {
       "title": "Get Started",
-      "subtitle": "You don't have an active game yet"
+      "subtitle": "You don't have an active game yet",
+      "generateTitle": "Generate invitation code",
+      "generateSubtitle": "Choose how long the code should remain valid."
     },
     "charts": {
       "regionTitle": "Distribution by Region",
@@ -288,6 +293,10 @@
       "players": "players",
       "errorLoading": "Error loading dashboard data. Please try again.",
       "navigatingTo": "Navigating to"
+    },
+    "fallback": {
+      "noTeam": "No team",
+      "unknownTeam": "Unknown team"
     }
   },
   "games": {
@@ -367,14 +376,14 @@
       "participantsRecommendation": "Recommended: 5-8 players for optimal experience",
       "draftConfig": "Draft configuration",
       "timePerPick": "Time per pick",
-      "oneMinute": "1 minute ⚡",
+      "oneMinute": "1 minute âš¡",
       "twoMinutes": "2 minutes",
       "threeMinutesRec": "3 minutes (recommended)",
       "fiveMinutes": "5 minutes",
       "tenMinutes": "10 minutes",
       "fifteenMinutes": "15 minutes",
       "autoPickDelay": "Auto-pick delay",
-      "fiveMinutesFast": "5 minutes ⚡",
+      "fiveMinutesFast": "5 minutes âš¡",
       "thirtyMinutes": "30 minutes",
       "oneHourRec": "1 hour (recommended)",
       "twoHours": "2 hours",
@@ -420,9 +429,9 @@
         "customDesc": "Create your own configuration"
       },
       "smartDesc": {
-        "quickPlay": "Quick game created on {date} at {time}. May the best win! 🚀",
-        "championship": "Official tournament - {date}. Prepare for competition! 🏆",
-        "casual": "Relaxed game with friends - {date}. Fun guaranteed! 🎮",
+        "quickPlay": "Quick game created on {date} at {time}. May the best win!",
+        "championship": "Official tournament - {date}. Prepare for competition!",
+        "casual": "Relaxed game with friends - {date}. Fun guaranteed!",
         "custom": "Custom game created on {date} at {time}"
       }
     },
@@ -477,6 +486,7 @@
       "participantsTitle": "Participants",
       "participantsSubtitle": "List of players participating in this game",
       "creator": "Creator",
+      "participant": "Participant",
       "noParticipants": "No participants",
       "beFirst": "Be the first to join this game!",
       "gameInfo": "Game Information",
@@ -485,6 +495,7 @@
       "createdOn": "Created on",
       "status": "Status",
       "invitationCode": "Invitation code",
+      "permanent": "Permanent",
       "expired": "Expired",
       "expiresOn": "Expires:",
       "copyCode": "Copy code",
@@ -492,7 +503,97 @@
       "draftPhase": "Draft Phase",
       "draftSubtitle": "Participants are selecting their players",
       "draftInProgress": "The draft is in progress. Participants can now select their players.",
-      "viewDraft": "View Draft"
+      "viewDraft": "View Draft",
+      "deleteDisabledStatus": "Deletion is available only while the game is in creation.",
+      "deleteDisabledNotHost": "Only the game creator can delete this game.",
+      "generateCode": "Generate code",
+      "regenerateDialog": {
+        "title": "Regenerate invitation code",
+        "subtitle": "Choose how long the new code should remain valid.",
+        "generateTitle": "Generate invitation code",
+        "generateSubtitle": "Choose how long the code should remain valid.",
+        "option24hTitle": "24 hours",
+        "option24hDescription": "Automatically expires in 24 hours.",
+        "option48hTitle": "48 hours",
+        "option48hDescription": "Automatically expires in 48 hours.",
+        "option7dTitle": "7 days",
+        "option7dDescription": "Automatically expires in 7 days.",
+        "optionPermanentTitle": "Permanent",
+        "optionPermanentDescription": "Code stays valid until the next regeneration.",
+        "cancel": "Cancel",
+        "confirm": "Generate code",
+        "generateConfirm": "Generate code"
+      },
+      "gameUnavailable": "This game is no longer available or you no longer have access.",
+      "actions": {
+        "draftStarted": "Draft started successfully.",
+        "draftStartBlocked": "Cannot start draft. Ensure you are the creator and at least two participants joined.",
+        "draftStartError": "Error while starting draft.",
+        "draftCreatorMissing": "The game creator is missing for this game. Please contact an administrator.",
+        "archiveSuccess": "Game archived successfully.",
+        "archiveFailed": "Unable to archive the game.",
+        "archiveError": "Error while archiving the game.",
+        "leaveSuccess": "You left the game.",
+        "leaveFailed": "Unable to leave the game.",
+        "leaveError": "Error while leaving the game.",
+        "joinSuccess": "You joined the game successfully.",
+        "joinFailed": "Unable to join the game.",
+        "joinError": "Error while joining the game.",
+        "codeCopied": "Invitation code copied to clipboard.",
+        "codeCopyFailed": "Unable to copy invitation code.",
+        "invitationCodeGenerateVerb": "Invitation code generated",
+        "invitationCodeRegenerateVerb": "Invitation code regenerated",
+        "invitationCodeWithValue": "{verb}: {code}",
+        "invitationCodeWithoutValue": "{verb}.",
+        "invitationCodeGenerationFailed": "Unable to generate invitation code.",
+        "invitationCodeRegeneratedAnnounce": "Invitation code regenerated successfully.",
+        "renameSuccess": "Game renamed successfully.",
+        "renameError": "Error while renaming game.",
+        "renamePromptTitle": "Enter a new game name",
+        "renameAnnounce": "Game renamed to {name}",
+        "deleteSuccessAnnounce": "Game deleted successfully.",
+        "deleteError": "Error while deleting game.",
+        "draftFinishedAnnounce": "Draft finished successfully.",
+        "draftFinishError": "Error while finishing draft.",
+        "draftPausedAnnounce": "Draft paused.",
+        "draftResumedAnnounce": "Draft resumed."
+      },
+      "renameDialog": {
+        "title": "Rename game",
+        "subtitle": "Choose a clear name for your game.",
+        "label": "New name",
+        "confirm": "Save",
+        "validationRequired": "Game name is required.",
+        "validationMin": "Name must contain at least 3 characters.",
+        "validationMax": "Name must contain at most 50 characters.",
+        "validationUnchanged": "Please choose a different name."
+      },
+      "confirmDialogs": {
+        "archive": {
+          "title": "Archive game",
+          "message": "This game will be archived and removed from your active list. Continue?",
+          "confirm": "Archive",
+          "cancel": "Cancel"
+        },
+        "leave": {
+          "title": "Leave game",
+          "message": "Do you really want to leave this game?",
+          "confirm": "Leave",
+          "cancel": "Cancel"
+        },
+        "delete": {
+          "title": "Delete game",
+          "message": "This action is permanent. Do you really want to delete this game?",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        },
+        "startDraft": {
+          "title": "Start draft",
+          "message": "Do you want to start the draft now?",
+          "confirm": "Start draft",
+          "cancel": "Cancel"
+        }
+      }
     },
     "joinDialog": {
       "title": "Join a game",
@@ -511,7 +612,20 @@
       "close": "Close",
       "successJoined": "Successfully joined {name}!",
       "view": "View",
-      "invalidCode": "Invalid invitation code"
+      "invalidCode": "Invalid invitation code",
+      "invalidCodeFormat": "Invalid code format. Use only letters, numbers, and hyphens.",
+      "invalidOrUnavailableCode": "Invalid code or unavailable game. Check the code or ask the creator for a new one.",
+      "tooManyAttempts": "Too many join-code attempts. Please try again in one minute.",
+      "alreadyInGame": "You are already in this game"
+    },
+    "validation": {
+      "idMissing": "Game identifier is missing",
+      "nameRequired": "Game name is required",
+      "creatorMissing": "Creator name is missing",
+      "maxParticipantsInvalid": "Max participants must be greater than zero",
+      "participantCountNegative": "Participant count cannot be negative",
+      "participantCountExceeded": "Participant count exceeds maximum",
+      "selectGameRequired": "Please select a game first"
     }
   },
   "trades": {
@@ -756,6 +870,7 @@
     },
     "messages": {
       "refreshed": "Data refreshed successfully",
+      "newOffers": "You have {count} new trade offer(s)",
       "tradeAccepted": "Trade accepted successfully!",
       "tradeRejected": "Trade rejected",
       "tradeWithdrawn": "Trade withdrawn",
@@ -809,6 +924,9 @@
         "offerSent": "Trade offer sent successfully!",
         "offerSendFailed": "Failed to send trade offer"
       }
+    },
+    "dashboard": {
+      "filterAriaLabel": "Trade filters"
     }
   },
   "leaderboard": {
@@ -887,7 +1005,43 @@
     "network": "Server connection error",
     "unauthorized": "Unauthorized",
     "notFound": "Not found",
-    "validation": "Validation error"
+    "validation": "Validation error",
+    "handler": {
+      "skipToRecovery": "Go to recovery actions",
+      "skipToRecoveryFor": "Go to recovery actions for:",
+      "technicalInfo": "Technical information",
+      "statusCode": "Status code:",
+      "errorCode": "Error code:",
+      "path": "Path:",
+      "requestId": "Request ID:",
+      "timestamp": "Timestamp:",
+      "validationErrors": "Validation errors:",
+      "availableActions": "Available actions:",
+      "keyboardShortcut": "Keyboard shortcut",
+      "navigationInstructions": "Navigation instructions",
+      "instructionsPrefix": "Instructions:",
+      "navigationHelp": "Use Tab and Shift+Tab to navigate, Enter or Space to activate buttons. Escape to close this error if possible.",
+      "serverCommError": "Server communication error",
+      "serverCommMessage": "An error occurred while communicating with the server.",
+      "connectionProblem": "Connection problem",
+      "connectionMessage": "Unable to reach the server. Check your internet connection.",
+      "invalidRequest": "Invalid request",
+      "authRequired": "Authentication required",
+      "authMessage": "You must be authenticated to access this resource.",
+      "forbidden": "Access denied",
+      "forbiddenMessage": "You do not have permission to perform this action.",
+      "notFound": "Resource not found",
+      "notFoundMessage": "The requested resource does not exist or is no longer available.",
+      "serverError": "Internal server error",
+      "serverErrorMessage": "A technical error occurred. Please try again in a few moments.",
+      "errorDialogOpened": "Error dialog opened with recovery actions",
+      "errorDialogClosed": "Error dialog closed",
+      "executingAction": "Executing action:",
+      "retry": "Retry",
+      "goHome": "Back to home",
+      "close": "Close",
+      "escapeKey": "Escape"
+    }
   },
   "notifications": {
     "close": "Close",
@@ -911,7 +1065,7 @@
     "team": {
       "playerAdded": "{player} added to your team",
       "playerRemoved": "{player} removed from your team",
-      "tradeCompleted": "Trade completed: {out} ↔ {in}"
+      "tradeCompleted": "Trade completed: {out} â†” {in}"
     },
     "auth": {
       "loginSuccess": "Successfully logged in as {username}",
@@ -1313,6 +1467,98 @@
         "name": "Asia",
         "description": "The region of technological innovation. Precision and excellence."
       }
+    }
+  },
+  "loginPage": {
+    "heroSubtitle": "Build your dream team and dominate the competition",
+    "chooseProfile": "Choose your profile",
+    "switchUser": "Switch user",
+    "selectUserSubtitle": "Select your user to get started",
+    "switchUserSubtitle": "Select another user",
+    "connecting": "Connecting...",
+    "emailOrUsername": "Email or username",
+    "enterIdentifier": "Enter your identifier",
+    "identifierRequired": "An identifier is required",
+    "quickLogin": "Quick login",
+    "otherAccount": "Other account?",
+    "hide": "Hide",
+    "activePlayers": "Active players",
+    "ongoingGames": "Ongoing games",
+    "free": "Free",
+    "selectLanguage": "Select language"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "summary": "Overview",
+      "health": "System Health",
+      "recentActivity": "Recent Activity",
+      "metrics": "System Metrics",
+      "refresh": "Refresh",
+      "loadError": "Failed to load dashboard data."
+    },
+    "kpi": {
+      "totalUsers": "Total Users",
+      "totalGames": "Total Games",
+      "totalTrades": "Total Trades",
+      "gamesByStatus": "Games by Status"
+    },
+    "health": {
+      "uptime": "Uptime",
+      "dbPool": "DB Pool (active/max)",
+      "disk": "Disk Usage"
+    },
+    "activity": {
+      "recentGames": "Recent Games",
+      "recentTrades": "Recent Trades",
+      "totalUsers": "Total Users",
+      "latestGames": "Latest Games"
+    },
+    "metrics": {
+      "heapUsed": "Heap Used",
+      "heapMax": "Heap Max",
+      "threads": "Threads",
+      "totalRequests": "Total Requests",
+      "errorRate": "Error Rate"
+    },
+    "errors": {
+      "title": "Error Journal",
+      "loadError": "Failed to load error journal data.",
+      "empty": "No errors recorded. Everything is running smoothly!",
+      "stats": {
+        "totalErrors": "Total Errors (24h)",
+        "uniqueTypes": "Unique Types",
+        "serverErrors": "Server Errors (5xx)",
+        "notFound": "Not Found (404)"
+      },
+      "filter": {
+        "status": "Status Code",
+        "type": "Exception Type",
+        "clear": "Clear Filters"
+      },
+      "table": {
+        "timestamp": "Timestamp",
+        "type": "Type",
+        "status": "Status",
+        "message": "Message",
+        "path": "Path",
+        "viewDetail": "View Details"
+      },
+      "detail": {
+        "title": "Error Details",
+        "errorCode": "Error Code",
+        "stackTrace": "Stack Trace",
+        "close": "Close"
+      }
+    }
+  },
+  "authSwitch": {
+    "messages": {
+      "switchSuccess": "Switched to {username} successfully",
+      "notifySwitchSaved": "Switch notification {fromUser} -> {toUser} saved",
+      "notifyFallback": "Notification failed but switch completed",
+      "switchErrorLocalFallback": "Error switching to {username}. Local mode enabled.",
+      "unknownError": "Unknown error"
     }
   }
 }

@@ -1,0 +1,58 @@
+<div class="invitation-dialog">
+  <div class="dialog-header">
+    <mat-icon class="header-icon" aria-hidden="true">vpn_key</mat-icon>
+    <div class="header-text">
+      <h2 class="dialog-title" id="invitation-dialog-title">{{ getTitleText() }}</h2>
+      <p class="dialog-subtitle">{{ getSubtitleText() }}</p>
+    </div>
+  </div>
+
+  <mat-dialog-content class="dialog-body">
+    <div
+      class="duration-grid"
+      role="radiogroup"
+      [attr.aria-labelledby]="'invitation-dialog-title'"
+    >
+      <button
+        *ngFor="let option of durationOptions; let i = index"
+        type="button"
+        class="duration-card"
+        role="radio"
+        [attr.aria-checked]="selectedDuration === option.value"
+        [class.selected]="selectedDuration === option.value"
+        (click)="selectDuration(option.value)"
+        (keydown.enter)="selectDuration(option.value)"
+        (keydown.space)="selectDuration(option.value); $event.preventDefault()"
+      >
+        <div class="card-content">
+          <div class="radio-indicator" aria-hidden="true">
+            <div class="radio-inner" *ngIf="selectedDuration === option.value"></div>
+          </div>
+
+          <div class="text-content">
+            <span class="option-title">{{ t.t(option.titleKey) }}</span>
+            <span class="option-description">{{ t.t(option.descriptionKey) }}</span>
+          </div>
+        </div>
+
+        <div class="glow-bg" aria-hidden="true"></div>
+      </button>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button class="cancel-btn" type="button" (click)="onCancel()">
+      {{ t.t('games.detail.regenerateDialog.cancel') }}
+    </button>
+    <button
+      mat-raised-button
+      class="confirm-btn"
+      type="button"
+      cdkFocusInitial
+      (click)="onConfirm()"
+    >
+      <mat-icon aria-hidden="true">check</mat-icon>
+      {{ getConfirmText() }}
+    </button>
+  </mat-dialog-actions>
+</div>

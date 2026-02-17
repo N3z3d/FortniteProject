@@ -16,10 +16,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatBadgeModule } from '@angular/material/badge';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Subject } from 'rxjs';
+import { Subject, fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { GameService } from '../../../features/game/services/game.service';
@@ -28,10 +27,16 @@ import { GameSelectionService } from '../../../core/services/game-selection.serv
 import { LoggerService } from '../../../core/services/logger.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { Game, GameStatus } from '../../../features/game/models/game.interface';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
 import { DataSourceIndicator } from '../data-source-indicator/data-source-indicator';
+import {
+  extractJoinErrorDetails,
+  isInvitationCodeFormatValid,
+  resolveJoinErrorTranslationKey
+} from '../../../features/game/services/join-error-message.resolver';
 
 @Component({
   selector: 'app-main-layout',
@@ -54,7 +59,6 @@ import { DataSourceIndicator } from '../data-source-indicator/data-source-indica
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSnackBarModule,
     MatBadgeModule,
     DataSourceIndicator
   ],
@@ -71,6 +75,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   showJoinCodeInput = false;
   invitationCode = '';
   joiningGame = false;
+  joinFeedbackMessage: string | null = null;
 
   // Méthode pour vérifier si une route est active
   isRouteActive(routes: string[]): boolean {
@@ -96,7 +101,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     private readonly breakpointObserver: BreakpointObserver,
     private readonly accessibilityService: AccessibilityAnnouncerService,
     private readonly focusManagementService: FocusManagementService,
-    private readonly snackBar: MatSnackBar,
+    private readonly uiFeedback: UiErrorFeedbackService,
     contexts: ChildrenOutletContexts
   ) {
     this.contexts = contexts;
@@ -117,12 +122,15 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.setupResponsive();
     this.subscribeToGameSelection();
     this.subscribeToRouteChanges();
+    this.setupVisibilityRefreshTriggers();
 
     this.subscribeToUserGamesState();
+    this.userGamesStore.startAutoRefresh(15000);
     this.userGamesStore.loadGames().subscribe({ error: () => undefined });
   }
 
   ngOnDestroy(): void {
+    this.userGamesStore.stopAutoRefresh();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -139,33 +147,39 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   openJoinDialog(): void {
     this.showJoinCodeInput = true;
+    this.clearJoinFeedback();
   }
 
   joinWithCode(): void {
     if (!this.invitationCode.trim()) {
-      this.snackBar.open('Please enter an invitation code', 'Close', { duration: 3000 });
+      this.showJoinError(this.t.t('games.joinDialog.enterCodeError'));
       return;
     }
 
+    const normalizedCode = this.invitationCode.trim().toUpperCase();
+    if (!isInvitationCodeFormatValid(normalizedCode)) {
+      this.showJoinError(this.t.t('games.joinDialog.invalidCodeFormat'));
+      return;
+    }
+
+    this.clearJoinFeedback();
     this.joiningGame = true;
-    this.gameService.joinGameWithCode(this.invitationCode.trim()).subscribe({
+    this.gameService.joinGameWithCode(normalizedCode).subscribe({
       next: (game) => {
-        this.snackBar.open(`Successfully joined ${game.name}!`, 'View', {
-          duration: 5000
-        }).onAction().subscribe(() => {
-          this.router.navigate(['/games', game.id]);
-        });
+        this.uiFeedback.showSuccessWithAction(
+          this.t.t('games.joinDialog.successJoined').replace('{name}', game.name),
+          'games.joinDialog.view',
+          () => this.router.navigate(['/games', game.id]),
+          5000
+        );
         this.invitationCode = '';
         this.showJoinCodeInput = false;
         this.joiningGame = false;
+        this.clearJoinFeedback();
         this.reloadUserGames(); // Refresh the games list
       },
       error: (error) => {
-        this.snackBar.open(
-          error.error?.message || 'Invalid invitation code',
-          'Close',
-          { duration: 5000 }
-        );
+        this.showJoinError(this.extractJoinErrorMessage(error));
         this.joiningGame = false;
       }
     });
@@ -174,6 +188,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   cancelJoin(): void {
     this.showJoinCodeInput = false;
     this.invitationCode = '';
+    this.clearJoinFeedback();
   }
 
   goToHome(): void {
@@ -213,6 +228,15 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     } else {
       this.router.navigate(['/games', game.id]);
     }
+  }
+
+  onGameItemKeyDown(event: KeyboardEvent, game: Game): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    this.selectGame(game);
   }
 
   // Responsive & UI controls
@@ -365,6 +389,20 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       });
   }
 
+  private setupVisibilityRefreshTriggers(): void {
+    fromEvent(window, 'focus')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.reloadUserGames());
+
+    fromEvent(document, 'visibilitychange')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (document.visibilityState === 'visible') {
+          this.reloadUserGames();
+        }
+      });
+  }
+
   /**
    * Restaure la game selectionnee depuis l'URL
    * Permet d'afficher la navigation meme apres un refresh de page
@@ -396,6 +434,24 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.currentUser = this.userContextService.getCurrentUser();
   }
 
+  private extractJoinErrorMessage(error: unknown): string {
+    const details = extractJoinErrorDetails(error);
+    const translationKey = resolveJoinErrorTranslationKey(details);
+    if (translationKey) {
+      return this.t.t(translationKey);
+    }
+
+    return this.t.t('games.joinDialog.invalidCode');
+  }
+
+  private showJoinError(message: string): void {
+    this.joinFeedbackMessage = message;
+  }
+
+  private clearJoinFeedback(): void {
+    this.joinFeedbackMessage = null;
+  }
+
   private subscribeToUserGamesState(): void {
     this.userGamesStore.state$
       .pipe(takeUntil(this.destroy$))
@@ -425,3 +481,4 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 }
+

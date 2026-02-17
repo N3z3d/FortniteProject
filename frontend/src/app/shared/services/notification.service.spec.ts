@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 import { NotificationService } from './notification.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 
 describe('NotificationService', () => {
   let logger: { info: jasmine.Spy; debug: jasmine.Spy };
@@ -20,8 +21,21 @@ describe('NotificationService', () => {
     return { snackBar, snackBarRef, afterDismissed$, onAction$ };
   };
 
-  const createService = (snackBar?: unknown) =>
-    new NotificationService(logger as never, translationService as never, snackBar as never);
+  const createUiFeedback = () =>
+    jasmine.createSpyObj<UiErrorFeedbackService>('UiErrorFeedbackService', [
+      'showSuccessMessage',
+      'showErrorMessage',
+      'showWarningMessage',
+      'showInfoMessage'
+    ]);
+
+  const createService = (snackBar?: unknown, uiFeedback?: unknown) =>
+    new NotificationService(
+      logger as never,
+      translationService as never,
+      uiFeedback as never,
+      snackBar as never
+    );
 
   beforeEach(() => {
     logger = {
@@ -52,6 +66,39 @@ describe('NotificationService', () => {
     expect(action).toBe('Close');
     expect(config.duration).toBe(4000);
     expect(config.panelClass).toEqual(jasmine.arrayContaining(['notification-success', 'custom-snackbar']));
+  });
+
+  it('showSuccess uses UiErrorFeedbackService bridge when no action or persistent', () => {
+    const { snackBar } = createSnackBar();
+    const uiFeedback = createUiFeedback();
+    const service = createService(snackBar, uiFeedback);
+
+    service.showSuccess('Bridge me');
+
+    expect(uiFeedback.showSuccessMessage).toHaveBeenCalledWith('Bridge me', 4000);
+    expect(snackBar.open).not.toHaveBeenCalled();
+  });
+
+  it('showSuccess keeps legacy snackbar path when action is provided', () => {
+    const { snackBar } = createSnackBar();
+    const uiFeedback = createUiFeedback();
+    const service = createService(snackBar, uiFeedback);
+
+    service.showSuccess('Actionable', 'View');
+
+    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showSuccessMessage).not.toHaveBeenCalled();
+  });
+
+  it('showPersistent keeps legacy snackbar path even with UiErrorFeedbackService', () => {
+    const { snackBar } = createSnackBar();
+    const uiFeedback = createUiFeedback();
+    const service = createService(snackBar, uiFeedback);
+
+    service.showPersistent('Hold', 'warning', 'Acknowledge');
+
+    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showWarningMessage).not.toHaveBeenCalled();
   });
 
   it('showPersistent logs when snackBar is not available', () => {

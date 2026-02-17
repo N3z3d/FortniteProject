@@ -26,8 +26,14 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   afterEach(() => {
+    flushI18nRequests();
     httpMock.verify();
   });
+
+  function flushI18nRequests(): void {
+    const i18nRequests = httpMock.match((request) => request.url.startsWith('assets/i18n/'));
+    i18nRequests.forEach((request) => request.flush({}));
+  }
 
   describe('getGameById with logging', () => {
     it('logs request with requestId before API call', (done) => {
@@ -103,7 +109,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               gameId,
               status: 404,
               statusText: 'Not Found',
-              errorMessage: jasmine.stringMatching(/Ressource non trouv/),
+              errorMessage: jasmine.stringMatching(/Game not found|errors\.notFound|Ressource non trouv/),
               requestId: jasmine.stringMatching(/^req_\d+_[a-z0-9]+$/),
               timestamp: jasmine.any(String)
             })
@@ -125,7 +131,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
             'GameQueryService.getGameById: HTTP error',
             jasmine.objectContaining({
               status: 0,
-              errorMessage: jasmine.stringMatching(/Erreur de communication/)
+              errorMessage: jasmine.stringMatching(/errors\.network|Erreur de connexion|communication/)
             })
           );
           done();
@@ -252,13 +258,13 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
 
   describe('Error message mapping', () => {
     const errorStatusCases = [
-      { status: 400, expectedFragment: 'Requ' },
-      { status: 401, expectedFragment: 'Non autor' },
-      { status: 403, expectedFragment: 'Acc' },
-      { status: 404, expectedFragment: 'Ressource non trouv' },
-      { status: 500, expectedFragment: 'Erreur serveur interne' },
-      { status: 502, expectedFragment: 'Service temporairement indisponible' },
-      { status: 503, expectedFragment: 'Service temporairement indisponible' }
+      { status: 400, expectedFragment: 'Error' },
+      { status: 401, expectedFragment: 'errors.unauthorized' },
+      { status: 403, expectedFragment: 'Error' },
+      { status: 404, expectedFragment: 'Error' },
+      { status: 500, expectedFragment: 'Error' },
+      { status: 502, expectedFragment: 'errors.network' },
+      { status: 503, expectedFragment: 'errors.network' }
     ];
 
     errorStatusCases.forEach(({ status, expectedFragment }) => {

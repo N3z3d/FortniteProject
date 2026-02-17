@@ -7,8 +7,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.application.facade.GameDomainFacade;
-import com.fortnite.pronos.domain.ParticipantRules;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameParticipant;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
@@ -19,8 +20,6 @@ import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.exception.UserAlreadyInGameException;
 import com.fortnite.pronos.exception.UserNotFoundException;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
@@ -36,10 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class GameParticipantService {
 
-  private final GameRepositoryPort gameRepository;
+  private final GameDomainRepositoryPort gameRepository;
+  private final GameRepositoryPort legacyGameRepository;
   private final GameParticipantRepositoryPort gameParticipantRepository;
   private final UserRepositoryPort userRepository;
-  private final GameDomainFacade gameDomainFacade;
 
   /** Adds a user to a game */
   public boolean joinGame(UUID userId, JoinGameRequest request) {
@@ -70,7 +69,7 @@ public class GameParticipantService {
 
   /** Gets all participants for a game */
   @Transactional(readOnly = true)
-  public List<GameParticipant> getGameParticipants(UUID gameId) {
+  public List<com.fortnite.pronos.model.GameParticipant> getGameParticipants(UUID gameId) {
     return gameParticipantRepository.findByGameIdOrderByJoinedAt(gameId);
   }
 
@@ -113,29 +112,15 @@ public class GameParticipantService {
   }
 
   private void validateUserCanJoinGame(User user, Game game) {
-    ensureCreatorParticipant(game);
-
-    ParticipantRules.ValidationResult result = gameDomainFacade.canAddParticipant(game, user);
-
-    if (!result.valid()) {
-      throwAppropriateException(result.errorMessage());
-    }
-  }
-
-  private void throwAppropriateException(String errorMessage) {
-    if (errorMessage == null) {
-      throw new InvalidGameStateException("Cannot add participant");
-    }
-    if (errorMessage.contains("already a participant") || errorMessage.contains("Creator")) {
+    if (game.getCreatorId().equals(user.getId()) || game.isParticipant(user.getId())) {
       throw new UserAlreadyInGameException("User is already in this game");
     }
-    if (errorMessage.contains("full")) {
+    if (game.isFull()) {
       throw new GameFullException("Game is full");
     }
-    if (errorMessage.contains("started")) {
+    if (!game.canAddParticipants()) {
       throw new InvalidGameStateException("Game is not accepting new participants");
     }
-    throw new InvalidGameStateException(errorMessage);
   }
 
   private void validateUserCanLeaveGame(User user, Game game) {
@@ -149,53 +134,73 @@ public class GameParticipantService {
   }
 
   private boolean isUserAlreadyInGame(User user, Game game) {
-    return gameParticipantRepository.existsByUserIdAndGameId(user.getId(), game.getId());
+    return game.isParticipant(user.getId());
   }
 
   private boolean isGameCreator(User user, Game game) {
-    return game.getCreator().getId().equals(user.getId());
+    return game.getCreatorId().equals(user.getId());
   }
 
   private void addUserToGame(User user, Game game) {
     GameParticipant participant =
-        GameParticipant.builder()
-            .id(UUID.randomUUID())
-            .game(game)
-            .user(user)
-            .joinedAt(LocalDateTime.now())
-            .creator(false)
-            .build();
-
-    // Save directly - callers should reload game from DB to see updated participants
-    gameParticipantRepository.save(participant);
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            user.getId(),
+            user.getUsername(),
+            null,
+            LocalDateTime.now(),
+            null,
+            false,
+            List.of());
+    if (!game.addParticipant(participant)) {
+      throw new InvalidGameStateException("Game is not accepting new participants");
+    }
+    gameRepository.save(game);
+    ensureCreatorParticipantPersisted(game);
   }
 
   private void removeUserFromGame(User user, Game game) {
     GameParticipant participant =
-        gameParticipantRepository
-            .findByUserIdAndGameId(user.getId(), game.getId())
+        game.getParticipants().stream()
+            .filter(p -> p.getUserId().equals(user.getId()))
+            .findFirst()
             .orElseThrow(() -> new IllegalStateException("Participant not found"));
-
-    gameParticipantRepository.delete(participant);
+    game.removeParticipant(participant);
+    gameRepository.save(game);
   }
 
-  private void ensureCreatorParticipant(Game game) {
-    if (game.getCreator() == null || game.getCreator().getId() == null) {
+  /**
+   * Compatibility layer during migration: some legacy flows create games without persisting the
+   * creator in game_participants. Keep creator row present for existing integrations relying on it.
+   */
+  private void ensureCreatorParticipantPersisted(Game domainGame) {
+    UUID creatorId = domainGame.getCreatorId();
+    UUID gameId = domainGame.getId();
+    if (creatorId == null || gameId == null) {
       return;
     }
-    boolean creatorPresent =
-        gameParticipantRepository.existsByUserIdAndGameId(game.getCreator().getId(), game.getId());
-    if (!creatorPresent) {
-      GameParticipant creatorParticipant =
-          GameParticipant.builder()
-              .id(UUID.randomUUID())
-              .game(game)
-              .user(game.getCreator())
-              .creator(true)
-              .joinedAt(LocalDateTime.now())
-              .build();
-      // Save directly - callers should reload game from DB to see updated participants
-      gameParticipantRepository.save(creatorParticipant);
+    if (gameParticipantRepository.existsByUserIdAndGameId(creatorId, gameId)) {
+      return;
     }
+
+    java.util.Optional<User> creatorOptional = userRepository.findById(creatorId);
+    if (creatorOptional == null || creatorOptional.isEmpty()) {
+      return;
+    }
+    java.util.Optional<com.fortnite.pronos.model.Game> legacyGameOptional =
+        legacyGameRepository.findById(gameId);
+    if (legacyGameOptional == null || legacyGameOptional.isEmpty()) {
+      return;
+    }
+
+    com.fortnite.pronos.model.GameParticipant creatorParticipant =
+        com.fortnite.pronos.model.GameParticipant.builder()
+            .id(UUID.randomUUID())
+            .game(legacyGameOptional.orElseThrow())
+            .user(creatorOptional.orElseThrow())
+            .creator(true)
+            .joinedAt(LocalDateTime.now())
+            .build();
+    gameParticipantRepository.save(creatorParticipant);
   }
 }

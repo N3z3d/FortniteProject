@@ -13,7 +13,6 @@ export class LeaderboardApiMapper {
    */
   static mapApiResponseToLeaderboardEntries(apiResponse: any): LeaderboardEntryDTO[] {
     if (!apiResponse) {
-      console.warn('LeaderboardApiMapper: API response is null or undefined');
       return [];
     }
 
@@ -21,7 +20,6 @@ export class LeaderboardApiMapper {
     const entries = apiResponse.entries || apiResponse.leaderboard || apiResponse.data || apiResponse;
 
     if (!Array.isArray(entries)) {
-      console.warn('LeaderboardApiMapper: API response is not an array');
       return [];
     }
 

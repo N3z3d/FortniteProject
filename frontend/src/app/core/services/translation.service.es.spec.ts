@@ -162,7 +162,7 @@ describe('TranslationService (es)', () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     // Mock HTTP requests for all languages
-    const requests = httpMock.match(req => req.url.includes('/assets/i18n/'));
+    const requests = httpMock.match(req => req.url.includes('assets/i18n/'));
     requests.forEach(req => {
       const lang = req.request.url.split('/').pop()?.replace('.json', '') || 'en';
       req.flush(lang === 'es' ? mockTranslationsEs : mockTranslationsOther);

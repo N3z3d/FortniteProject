@@ -2,21 +2,28 @@ import { fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthSwitchResponse, AuthSwitchService } from './auth-switch.service';
 import { LoggerService } from './logger.service';
+import { TranslationService } from './translation.service';
 import { environment } from '../../../environments/environment';
 
 describe('AuthSwitchService', () => {
   let service: AuthSwitchService;
   let httpMock: HttpTestingController;
   let logger: jasmine.SpyObj<LoggerService>;
+  let translationService: jasmine.SpyObj<TranslationService>;
   let originalProduction: boolean;
 
   beforeEach(() => {
     originalProduction = environment.production;
     logger = jasmine.createSpyObj('LoggerService', ['info', 'warn', 'error', 'debug']);
+    translationService = jasmine.createSpyObj('TranslationService', ['t']);
+    translationService.t.and.callFake((_key: string, fallback?: string) => fallback || '');
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [{ provide: LoggerService, useValue: logger }]
+      providers: [
+        { provide: LoggerService, useValue: logger },
+        { provide: TranslationService, useValue: translationService }
+      ]
     });
 
     service = TestBed.inject(AuthSwitchService);
@@ -36,7 +43,11 @@ describe('AuthSwitchService', () => {
 
     expect(response?.success).toBeTrue();
     expect(response?.username).toBe('Thibaut');
-    expect(response?.message).toContain('Changement');
+    expect(response?.message).toContain('Thibaut');
+    expect(translationService.t).toHaveBeenCalledWith(
+      'authSwitch.messages.switchSuccess',
+      'Switched to {username} successfully'
+    );
     expect(logger.info).toHaveBeenCalled();
   }));
 

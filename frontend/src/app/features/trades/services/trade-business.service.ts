@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { TradingService, Player } from './trading.service';
+import { Player } from './trading.service';
+import { TradeCalculationService } from './trade-calculation.service';
+import { TradeFormattingService } from './trade-formatting.service';
+import { TradeValidationService } from './trade-validation.service';
 
 /**
  * TradeBusinessService
@@ -11,7 +14,9 @@ import { TradingService, Player } from './trading.service';
   providedIn: 'root'
 })
 export class TradeBusinessService {
-  private readonly tradingService = inject(TradingService);
+  private readonly tradeValidationService = inject(TradeValidationService);
+  private readonly tradeCalculationService = inject(TradeCalculationService);
+  private readonly tradeFormattingService = inject(TradeFormattingService);
 
   /**
    * Validates if a trade proposal meets all requirements
@@ -22,10 +27,10 @@ export class TradeBusinessService {
     requestedPlayers: Player[],
     isFormValid: boolean
   ): boolean {
-    return (
-      selectedTeam !== null &&
-      offeredPlayers.length > 0 &&
-      requestedPlayers.length > 0 &&
+    return this.tradeValidationService.validateTradeProposal(
+      selectedTeam,
+      offeredPlayers,
+      requestedPlayers,
       isFormValid
     );
   }
@@ -34,36 +39,28 @@ export class TradeBusinessService {
    * Calculates trade balance percentage
    */
   calculateBalancePercentage(offered: Player[], requested: Player[]): number {
-    if (offered.length === 0 && requested.length === 0) return 0;
-
-    const offeredValue = this.calculateTotalValue(offered);
-    const requestedValue = this.calculateTotalValue(requested);
-    const totalValue = offeredValue + requestedValue;
-
-    if (totalValue === 0) return 0;
-
-    return Math.abs(offeredValue - requestedValue) / totalValue * 100;
+    return this.tradeCalculationService.calculateBalancePercentage(offered, requested);
   }
 
   /**
    * Calculates total market value of players
    */
   calculateTotalValue(players: Player[]): number {
-    return players.reduce((sum, p) => sum + (p.marketValue || 0), 0);
+    return this.tradeCalculationService.calculateTotalValue(players);
   }
 
   /**
    * Calculates trade balance using TradingService
    */
   calculateTradeBalance(offeredPlayers: Player[], requestedPlayers: Player[]): number {
-    return this.tradingService.calculateTradeBalance(offeredPlayers, requestedPlayers);
+    return this.tradeCalculationService.calculateTradeBalance(offeredPlayers, requestedPlayers);
   }
 
   /**
    * Checks if trade is balanced according to trading service rules
    */
   isTradeBalanced(offeredPlayers: Player[], requestedPlayers: Player[]): boolean {
-    return this.tradingService.isTradeBalanced(offeredPlayers, requestedPlayers);
+    return this.tradeCalculationService.isTradeBalanced(offeredPlayers, requestedPlayers);
   }
 
   /**
@@ -80,55 +77,26 @@ export class TradeBusinessService {
       TARGET_LIST: string;
     }
   ): boolean {
-    // Can't move to the same type of list
-    if (
-      (fromList === listTypes.AVAILABLE_LIST || fromList === listTypes.OFFERED_LIST) &&
-      (toList === listTypes.AVAILABLE_LIST || toList === listTypes.OFFERED_LIST)
-    ) {
-      return fromList !== toList;
-    }
-
-    if (
-      (fromList === listTypes.TARGET_LIST || fromList === listTypes.REQUESTED_LIST) &&
-      (toList === listTypes.TARGET_LIST || toList === listTypes.REQUESTED_LIST)
-    ) {
-      return fromList !== toList;
-    }
-
-    // Can't move between different team pools
-    if (
-      (fromList === listTypes.AVAILABLE_LIST || fromList === listTypes.OFFERED_LIST) &&
-      (toList === listTypes.TARGET_LIST || toList === listTypes.REQUESTED_LIST)
-    ) {
-      return false;
-    }
-
-    if (
-      (fromList === listTypes.TARGET_LIST || fromList === listTypes.REQUESTED_LIST) &&
-      (toList === listTypes.AVAILABLE_LIST || toList === listTypes.OFFERED_LIST)
-    ) {
-      return false;
-    }
-
-    return true;
+    return this.tradeValidationService.canMovePlayer(
+      player,
+      fromList,
+      toList,
+      listTypes
+    );
   }
 
   /**
    * Determines balance display class for UI
    */
   getBalanceDisplayClass(balance: number): string {
-    if (balance > 0) return 'positive';
-    if (balance < 0) return 'negative';
-    return 'neutral';
+    return this.tradeFormattingService.getBalanceDisplayClass(balance);
   }
 
   /**
    * Determines balance icon for UI
    */
   getBalanceIcon(balance: number): string {
-    if (balance > 0) return 'trending_up';
-    if (balance < 0) return 'trending_down';
-    return 'compare_arrows';
+    return this.tradeFormattingService.getBalanceIcon(balance);
   }
 
   /**
@@ -137,45 +105,20 @@ export class TradeBusinessService {
   calculateFairnessRating(
     balancePercentage: number
   ): 'excellent' | 'good' | 'fair' | 'poor' {
-    if (balancePercentage <= 5) return 'excellent';
-    if (balancePercentage <= 15) return 'good';
-    if (balancePercentage <= 25) return 'fair';
-    return 'poor';
+    return this.tradeCalculationService.calculateFairnessRating(balancePercentage);
   }
 
   /**
    * Calculates comprehensive trade statistics
    */
   calculateTradeStats(offeredPlayers: Player[], requestedPlayers: Player[]) {
-    const totalPlayers = offeredPlayers.length + requestedPlayers.length;
-    const offeredValue = this.calculateTotalValue(offeredPlayers);
-    const requestedValue = this.calculateTotalValue(requestedPlayers);
-    const totalValue = offeredValue + requestedValue;
-    const avgPlayerValue = totalPlayers > 0 ? totalValue / totalPlayers : 0;
-    const balancePercentage =
-      totalValue > 0 ? (Math.abs(offeredValue - requestedValue) / totalValue) * 100 : 0;
-    const fairnessRating = this.calculateFairnessRating(balancePercentage);
-
-    return {
-      totalPlayers,
-      totalValue,
-      offeredValue,
-      requestedValue,
-      avgPlayerValue,
-      balancePercentage,
-      fairnessRating
-    };
+    return this.tradeCalculationService.calculateTradeStats(offeredPlayers, requestedPlayers);
   }
 
   /**
    * Formats currency for display
    */
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    return this.tradeFormattingService.formatCurrency(value);
   }
 }

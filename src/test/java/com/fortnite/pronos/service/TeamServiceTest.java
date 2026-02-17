@@ -2,10 +2,14 @@ package com.fortnite.pronos.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -17,75 +21,64 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
+import com.fortnite.pronos.domain.player.model.Player;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
+import com.fortnite.pronos.domain.team.model.Team;
+import com.fortnite.pronos.domain.team.model.TeamMember;
 import com.fortnite.pronos.dto.team.TeamDto;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 
-/**
- * Tests TDD pour TeamService (commandes uniquement).
- *
- * <p>Note: Les tests pour les methodes de lecture (queries) ont ete deplaces vers
- * TeamQueryServiceTddTest suite a l'extraction de TeamQueryService.
- */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests TDD - TeamService (Commands)")
+@DisplayName("TeamService - Domain Port Migration Tests")
 class TeamServiceTest {
 
+  @Mock private TeamDomainRepositoryPort teamDomainRepository;
+  @Mock private PlayerDomainRepositoryPort playerDomainRepository;
   @Mock private TeamRepository teamRepository;
-
-  @Mock private PlayerRepository playerRepository;
-
   @Mock private UserRepositoryPort userRepository;
-
   @Mock private TeamPlayerRepository teamPlayerRepository;
 
   @InjectMocks private TeamService teamService;
 
-  private User testUser;
-  private Player testPlayer;
-  private Player testPlayer2;
-  private Team testTeam;
+  private com.fortnite.pronos.model.User testUser;
+  private com.fortnite.pronos.model.Player testPlayer;
+  private com.fortnite.pronos.model.Player testPlayer2;
+  private com.fortnite.pronos.model.Team testTeam;
   private TeamDto testTeamDto;
 
   @BeforeEach
   void setUp() {
-    // Creer un utilisateur de test
-    testUser = new User();
+    testUser = new com.fortnite.pronos.model.User();
     testUser.setId(UUID.randomUUID());
     testUser.setUsername("testuser");
     testUser.setEmail("test@example.com");
     testUser.setPassword("password123");
     testUser.setCurrentSeason(2025);
 
-    // Creer des joueurs de test
-    testPlayer = new Player();
+    testPlayer = new com.fortnite.pronos.model.Player();
     testPlayer.setId(UUID.randomUUID());
     testPlayer.setUsername("TestPlayer1");
     testPlayer.setNickname("TP1");
-    testPlayer.setRegion(Player.Region.EU);
+    testPlayer.setRegion(com.fortnite.pronos.model.Player.Region.EU);
     testPlayer.setTranche("S");
 
-    testPlayer2 = new Player();
+    testPlayer2 = new com.fortnite.pronos.model.Player();
     testPlayer2.setId(UUID.randomUUID());
     testPlayer2.setUsername("TestPlayer2");
     testPlayer2.setNickname("TP2");
-    testPlayer2.setRegion(Player.Region.NAW);
+    testPlayer2.setRegion(com.fortnite.pronos.model.Player.Region.NAW);
     testPlayer2.setTranche("A");
 
-    // Creer une equipe de test
-    testTeam = new Team();
+    testTeam = new com.fortnite.pronos.model.Team();
     testTeam.setId(UUID.randomUUID());
     testTeam.setName("Test Team");
     testTeam.setOwner(testUser);
     testTeam.setSeason(2025);
 
-    // Creer un DTO de test
     testTeamDto = new TeamDto();
     testTeamDto.setId(testTeam.getId());
     testTeamDto.setName(testTeam.getName());
@@ -94,71 +87,57 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait creer une nouvelle equipe pour un utilisateur")
   void shouldCreateTeamForUser() {
-    // Given
-    String teamName = "New Team";
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.empty());
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
+        .thenReturn(Optional.empty());
+    when(teamDomainRepository.save(any(Team.class))).thenReturn(toDomainTeam(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
-    // When
-    TeamDto result = teamService.createTeam(testUser.getId(), teamName, 2025);
+    TeamDto result = teamService.createTeam(testUser.getId(), "New Team", 2025);
 
-    // Then
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-    verify(teamRepository).save(any(Team.class));
+    verify(teamDomainRepository).findByOwnerIdAndSeason(testUser.getId(), 2025);
+    verify(teamDomainRepository).save(any(Team.class));
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'utilisateur a deja une equipe")
   void shouldThrowExceptionWhenUserAlreadyHasTeam() {
-    // Given
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
+        .thenReturn(Optional.of(toDomainTeam(testTeam)));
 
-    // When & Then
     assertThatThrownBy(() -> teamService.createTeam(testUser.getId(), "New Team", 2025))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("L'utilisateur a deja une equipe pour cette saison");
   }
 
   @Test
-  @DisplayName("Devrait ajouter un joueur a une equipe")
   void shouldAddPlayerToTeam() {
-    // Given
-    int position = 1;
+    Team domainTeam = toDomainTeam(testTeam);
+
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
-        .thenReturn(Optional.of(testPlayer));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
+    when(playerDomainRepository.findById(testPlayer.getId()))
+        .thenReturn(Optional.of(toDomainPlayer(testPlayer)));
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
+        .thenReturn(Optional.of(domainTeam));
+    when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
-    // When
-    TeamDto result =
-        teamService.addPlayerToTeam(testUser.getId(), testPlayer.getId(), position, 2025);
+    TeamDto result = teamService.addPlayerToTeam(testUser.getId(), testPlayer.getId(), 1, 2025);
 
-    // Then
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-    verify(teamRepository).save(testTeam);
+    verify(playerDomainRepository).findById(testPlayer.getId());
+    verify(teamDomainRepository).save(any(Team.class));
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand le joueur n'existe pas")
   void shouldThrowExceptionWhenPlayerNotFound() {
-    // Given
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(((PlayerRepositoryPort) playerRepository).findById(any(UUID.class)))
-        .thenReturn(Optional.empty());
+    when(playerDomainRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-    // When & Then
     assertThatThrownBy(
             () -> teamService.addPlayerToTeam(testUser.getId(), UUID.randomUUID(), 1, 2025))
         .isInstanceOf(EntityNotFoundException.class)
@@ -166,137 +145,127 @@ class TeamServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait retirer un joueur d'une equipe")
   void shouldRemovePlayerFromTeam() {
-    // Given
     testTeam.addPlayer(testPlayer, 1);
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
-        .thenReturn(Optional.of(testPlayer));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
+    Team domainTeam = toDomainTeam(testTeam);
 
-    // When
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+    when(playerDomainRepository.findById(testPlayer.getId()))
+        .thenReturn(Optional.of(toDomainPlayer(testPlayer)));
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
+        .thenReturn(Optional.of(domainTeam));
+    when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
+
     TeamDto result = teamService.removePlayerFromTeam(testUser.getId(), testPlayer.getId(), 2025);
 
-    // Then
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(((PlayerRepositoryPort) playerRepository)).findById(testPlayer.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-    verify(teamRepository).save(testTeam);
+    verify(teamDomainRepository).save(any(Team.class));
   }
 
   @Test
-  @DisplayName("Devrait effectuer des changements de joueurs en lot")
   void shouldMakePlayerChanges() {
-    // Given
     testTeam.addPlayer(testPlayer, 1);
-    Map<UUID, UUID> playerChanges = new HashMap<>();
-    playerChanges.put(testPlayer.getId(), testPlayer2.getId());
+    Team domainTeam = toDomainTeam(testTeam);
+    Map<UUID, UUID> playerChanges = Map.of(testPlayer.getId(), testPlayer2.getId());
 
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer.getId()))
-        .thenReturn(Optional.of(testPlayer));
-    when(((PlayerRepositoryPort) playerRepository).findById(testPlayer2.getId()))
-        .thenReturn(Optional.of(testPlayer2));
-    when(teamRepository.findByOwnerAndSeason(testUser, 2025)).thenReturn(Optional.of(testTeam));
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
+        .thenReturn(Optional.of(domainTeam));
+    when(playerDomainRepository.findById(testPlayer.getId()))
+        .thenReturn(Optional.of(toDomainPlayer(testPlayer)));
+    when(playerDomainRepository.findById(testPlayer2.getId()))
+        .thenReturn(Optional.of(toDomainPlayer(testPlayer2)));
+    when(teamDomainRepository.findTeamByPlayerAndSeason(testPlayer2.getId(), 2025))
+        .thenReturn(Optional.empty());
+    when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
-    // When
     TeamDto result = teamService.makePlayerChanges(testUser.getId(), playerChanges, 2025);
 
-    // Then
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(teamRepository).findByOwnerAndSeason(testUser, 2025);
-    verify(teamRepository).save(testTeam);
+    verify(teamDomainRepository).save(any(Team.class));
   }
 
   @Test
-  @DisplayName("Devrait creer une equipe avec TeamDto")
-  void shouldCreateTeamWithTeamDto() {
-    // Given
-    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
-
-    // When
-    TeamDto result = teamService.createTeam(testTeamDto);
-
-    // Then
-    assertThat(result).isNotNull();
-    assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(userRepository).findById(testUser.getId());
-    verify(teamRepository).save(any(Team.class));
-  }
-
-  @Test
-  @DisplayName(
-      "Devrait lever une exception quand l'utilisateur n'existe pas pour createTeam avec TeamDto")
-  void shouldThrowExceptionWhenUserNotFoundForCreateTeamWithTeamDto() {
-    // Given
-    when(userRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
-
-    // When & Then
-    assertThatThrownBy(() -> teamService.createTeam(testTeamDto))
-        .isInstanceOf(EntityNotFoundException.class)
-        .hasMessage("Utilisateur non trouve");
-  }
-
-  @Test
-  @DisplayName("Devrait mettre a jour une equipe")
   void shouldUpdateTeam() {
-    // Given
-    when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
-    when(teamRepository.save(any(Team.class))).thenReturn(testTeam);
+    when(teamDomainRepository.findById(testTeam.getId()))
+        .thenReturn(Optional.of(toDomainTeam(testTeam)));
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+    when(teamDomainRepository.save(any(Team.class))).thenReturn(toDomainTeam(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
-    // When
     TeamDto result = teamService.updateTeam(testTeam.getId(), testTeamDto);
 
-    // Then
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(teamRepository).findById(testTeam.getId());
-    verify(teamRepository).save(testTeam);
+    verify(teamDomainRepository).findById(testTeam.getId());
+    verify(teamDomainRepository).save(any(Team.class));
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'equipe n'existe pas pour updateTeam")
   void shouldThrowExceptionWhenTeamNotFoundForUpdateTeam() {
-    // Given
-    when(teamRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
+    when(teamDomainRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-    // When & Then
     assertThatThrownBy(() -> teamService.updateTeam(UUID.randomUUID(), testTeamDto))
         .isInstanceOf(EntityNotFoundException.class)
         .hasMessage("Equipe non trouvee");
   }
 
   @Test
-  @DisplayName("Devrait supprimer une equipe")
   void shouldDeleteTeam() {
-    // Given
-    when(teamRepository.existsById(testTeam.getId())).thenReturn(true);
+    when(teamDomainRepository.findById(testTeam.getId()))
+        .thenReturn(Optional.of(toDomainTeam(testTeam)));
 
-    // When
     teamService.deleteTeam(testTeam.getId());
 
-    // Then
-    verify(teamRepository).existsById(testTeam.getId());
     verify(teamRepository).deleteById(testTeam.getId());
   }
 
   @Test
-  @DisplayName("Devrait lever une exception quand l'equipe n'existe pas pour deleteTeam")
   void shouldThrowExceptionWhenTeamNotFoundForDeleteTeam() {
-    // Given
-    when(teamRepository.existsById(any(UUID.class))).thenReturn(false);
+    when(teamDomainRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
-    // When & Then
     assertThatThrownBy(() -> teamService.deleteTeam(UUID.randomUUID()))
         .isInstanceOf(EntityNotFoundException.class)
         .hasMessage("Equipe non trouvee");
+  }
+
+  private Team toDomainTeam(com.fortnite.pronos.model.Team team) {
+    List<TeamMember> members =
+        team.getPlayers() == null
+            ? List.of()
+            : team.getPlayers().stream()
+                .filter(tp -> tp.getPlayer() != null)
+                .map(
+                    tp ->
+                        TeamMember.restore(
+                            tp.getPlayer().getId(),
+                            tp.getPosition() == null ? 1 : tp.getPosition(),
+                            tp.getUntil()))
+                .toList();
+
+    return Team.restore(
+        team.getId(),
+        team.getName(),
+        team.getOwner().getId(),
+        team.getSeason(),
+        team.getGame() != null ? team.getGame().getId() : null,
+        team.getCompletedTradesCount() == null ? 0 : team.getCompletedTradesCount(),
+        members);
+  }
+
+  private Player toDomainPlayer(com.fortnite.pronos.model.Player player) {
+    return Player.restore(
+        player.getId(),
+        player.getFortniteId(),
+        player.getUsername(),
+        player.getNickname(),
+        player.getRegion() == null ? null : PlayerRegion.valueOf(player.getRegion().name()),
+        player.getTranche(),
+        player.getCurrentSeason() == null ? 2025 : player.getCurrentSeason(),
+        player.isLocked());
   }
 }

@@ -1,6 +1,7 @@
 <!-- Bouton de notifications -->
 <button class="notification-button" (click)="toggleNotificationCenter()" [matBadge]="unreadCount" 
-        [matBadgeHidden]="unreadCount === 0" matBadgeColor="warn">
+        [matBadgeHidden]="unreadCount === 0" matBadgeColor="warn"
+        [attr.aria-label]="t.t('notificationCenter.title')">
   <mat-icon>notifications</mat-icon>
 </button>
 
@@ -10,10 +11,12 @@
     <h3>{{ t.t('notificationCenter.title') }}</h3>
     <div class="header-actions">
       <button mat-icon-button (click)="markAllAsRead()"
-              *ngIf="unreadCount > 0" [matTooltip]="t.t('notificationCenter.markAllAsRead')">
+              *ngIf="unreadCount > 0" [matTooltip]="t.t('notificationCenter.markAllAsRead')"
+              [attr.aria-label]="t.t('notificationCenter.markAllAsRead')">
         <mat-icon>done_all</mat-icon>
       </button>
-      <button mat-icon-button (click)="closeNotificationCenter()" [matTooltip]="t.t('notifications.close')">
+      <button mat-icon-button (click)="closeNotificationCenter()" [matTooltip]="t.t('notifications.close')"
+              [attr.aria-label]="t.t('notifications.close')">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -37,6 +40,10 @@
          [class.unread]="true"
          [ngClass]="getNotificationClass(notification.type)"
          (click)="markAsRead(notification)"
+         (keydown)="onNotificationKeydown($event, notification)"
+         role="button"
+         tabindex="0"
+         [attr.aria-label]="t.t('notificationCenter.notification') + ': ' + notification.message"
          @fadeIn>
 
       <div class="notification-icon">
@@ -50,7 +57,8 @@
       </div>
 
       <button mat-icon-button (click)="deleteNotification(notification, $event)"
-              class="delete-button" [matTooltip]="t.t('common.delete')">
+              class="delete-button" [matTooltip]="t.t('common.delete')"
+              [attr.aria-label]="t.t('common.delete')">
         <mat-icon>delete</mat-icon>
       </button>
     </div>

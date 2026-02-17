@@ -311,6 +311,19 @@ describe('GameDetailPermissionsService', () => {
       expect(service.canJoinGame(game)).toBeFalse();
     });
 
+    it('should return false when user id matches a participant id', () => {
+      const game = {
+        ...mockGame,
+        canJoin: true,
+        participantCount: 5,
+        maxParticipants: 10,
+        participants: [
+          { id: 'user1', username: 'different-username', joinedAt: '', isCreator: false }
+        ]
+      };
+      expect(service.canJoinGame(game)).toBeFalse();
+    });
+
     it('should return false when user is the host', () => {
       gameServiceSpy.isGameHost.and.returnValue(true);
       expect(service.canJoinGame(nonParticipantGame)).toBeFalse();

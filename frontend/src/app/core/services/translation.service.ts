@@ -1,7 +1,8 @@
-import { Injectable, Optional } from '@angular/core';
+import { Injectable, Optional, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, forkJoin } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { LoggerService } from './logger.service';
 
 export type SupportedLanguage = 'fr' | 'en' | 'es' | 'pt';
 
@@ -13,6 +14,10 @@ export interface Translations {
   providedIn: 'root'
 })
 export class TranslationService {
+  private static readonly LANG_KEY_PREFIX = 'app_language_';
+  private static readonly LANG_KEY_GLOBAL = 'app_language';
+  private static readonly SUPPORTED: SupportedLanguage[] = ['fr', 'en', 'es', 'pt'];
+
   private currentLang$ = new BehaviorSubject<SupportedLanguage>('fr');
   private translations: Record<SupportedLanguage, Translations> = {
     fr: {},
@@ -21,6 +26,8 @@ export class TranslationService {
     pt: {}
   };
   private translationsLoaded$ = new BehaviorSubject<boolean>(false);
+  private currentUserId: string | null = null;
+  private readonly logger = inject(LoggerService);
 
   constructor(@Optional() private readonly http?: HttpClient) {
     this.loadTranslations();
@@ -41,7 +48,20 @@ export class TranslationService {
 
   setLanguage(lang: SupportedLanguage): void {
     this.currentLang$.next(lang);
-    localStorage.setItem('app_language', lang);
+    if (this.currentUserId) {
+      localStorage.setItem(this.getUserLangKey(this.currentUserId), lang);
+    }
+    localStorage.setItem(TranslationService.LANG_KEY_GLOBAL, lang);
+  }
+
+  setCurrentUserId(userId: string | null): void {
+    this.currentUserId = userId;
+    if (userId) {
+      const userLang = localStorage.getItem(this.getUserLangKey(userId)) as SupportedLanguage;
+      if (userLang && TranslationService.SUPPORTED.includes(userLang)) {
+        this.currentLang$.next(userLang);
+      }
+    }
   }
 
   translate(key: string, fallback?: string): string {
@@ -78,10 +98,14 @@ export class TranslationService {
   }
 
   private restoreLanguagePreference(): void {
-    const savedLang = localStorage.getItem('app_language') as SupportedLanguage;
-    if (savedLang && ['fr', 'en', 'es', 'pt'].includes(savedLang)) {
+    const savedLang = localStorage.getItem(TranslationService.LANG_KEY_GLOBAL) as SupportedLanguage;
+    if (savedLang && TranslationService.SUPPORTED.includes(savedLang)) {
       this.currentLang$.next(savedLang);
     }
+  }
+
+  private getUserLangKey(userId: string): string {
+    return TranslationService.LANG_KEY_PREFIX + userId;
   }
 
   private loadTranslations(): void {
@@ -90,23 +114,30 @@ export class TranslationService {
       this.translationsLoaded$.next(false);
       return;
     }
-    const languages: SupportedLanguage[] = ['fr', 'en', 'es', 'pt'];
+    const languages = TranslationService.SUPPORTED;
     const requests = languages.map(lang =>
-      http.get<Translations>(`/assets/i18n/${lang}.json`)
+      http.get<Translations>(`assets/i18n/${lang}.json`).pipe(
+        catchError(error => {
+          this.logger.error('TranslationService: failed to load language file', { lang, error });
+          return of({});
+        })
+      )
     );
 
-    forkJoin(requests).pipe(
-      tap(results => {
-        languages.forEach((lang, index) => {
-          this.translations[lang] = results[index];
-        });
-        this.translationsLoaded$.next(true);
-      })
-    ).subscribe({
-      error: (error) => {
-        console.error('Failed to load translations:', error);
-        this.translationsLoaded$.next(false);
-      }
-    });
+    forkJoin(requests)
+      .pipe(
+        tap(results => {
+          let hasTranslations = false;
+          languages.forEach((lang, index) => {
+            const loaded = results[index] || {};
+            this.translations[lang] = loaded;
+            if (Object.keys(loaded).length > 0) {
+              hasTranslations = true;
+            }
+          });
+          this.translationsLoaded$.next(hasTranslations);
+        })
+      )
+      .subscribe();
   }
 }

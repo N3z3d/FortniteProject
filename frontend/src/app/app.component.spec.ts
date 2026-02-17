@@ -1,21 +1,30 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Subject } from 'rxjs';
 import { AppComponent } from './app.component';
-import { UserContextService } from './core/services/user-context.service';
+import { UserContextService, UserProfile } from './core/services/user-context.service';
+import { TranslationService } from './core/services/translation.service';
 import { environment } from '../environments/environment';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
   let userContextService: jasmine.SpyObj<UserContextService>;
+  let translationService: jasmine.SpyObj<TranslationService>;
+  let userChangedSubject: Subject<UserProfile | null>;
 
   beforeEach(async () => {
-    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'login', 'logout']);
+    userChangedSubject = new Subject<UserProfile | null>();
+    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'login', 'logout'], {
+      userChanged$: userChangedSubject.asObservable()
+    });
+    translationService = jasmine.createSpyObj('TranslationService', ['setCurrentUserId']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterTestingModule],
       providers: [
-        { provide: UserContextService, useValue: userContextService }
+        { provide: UserContextService, useValue: userContextService },
+        { provide: TranslationService, useValue: translationService }
       ]
     }).compileComponents();
 
@@ -79,5 +88,25 @@ describe('AppComponent', () => {
 
     expect(result).toBeTrue();
     environment.production = originalProduction;
+  });
+
+  it('should call setCurrentUserId when user changes', () => {
+    userChangedSubject.next({ id: '1', username: 'Thibaut', email: 'thibaut@test.com' });
+
+    expect(translationService.setCurrentUserId).toHaveBeenCalledWith('1');
+  });
+
+  it('should call setCurrentUserId with null on logout', () => {
+    userChangedSubject.next(null);
+
+    expect(translationService.setCurrentUserId).toHaveBeenCalledWith(null);
+  });
+
+  it('should unsubscribe on destroy', () => {
+    component.ngOnDestroy();
+
+    userChangedSubject.next({ id: '2', username: 'Marcel', email: 'marcel@test.com' });
+
+    expect(translationService.setCurrentUserId).not.toHaveBeenCalledWith('2');
   });
 });

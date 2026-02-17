@@ -7,12 +7,12 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
-import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.game.GameCreationService;
 import com.fortnite.pronos.service.game.GameDraftService;

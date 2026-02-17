@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { DraftService } from './draft.service';
+import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { environment } from '../../../../environments/environment';
 import {
   Draft,
@@ -23,6 +25,8 @@ import {
 describe('DraftService', () => {
   let service: DraftService;
   let httpMock: HttpTestingController;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
+  let translationSpy: jasmine.SpyObj<TranslationService>;
   let apiUrl: string;
 
   const mockDraft: Draft = {
@@ -107,9 +111,29 @@ describe('DraftService', () => {
   };
 
   beforeEach(() => {
+    loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    translationSpy = jasmine.createSpyObj('TranslationService', ['t']);
+    translationSpy.t.and.callFake((key: string) => {
+      const translations: Record<string, string> = {
+        'draft.errors.connectionError': 'Draft connection error',
+        'draft.errors.invalidSelection': 'Invalid selection',
+        'draft.errors.unauthorized': 'Draft unauthorized',
+        'draft.errors.gameNotFound': 'Draft game not found',
+        'draft.errors.serverError': 'Draft server error',
+        'errors.unauthorized': 'Unauthorized',
+        'errors.generic': 'Unexpected error',
+        'common.error': 'Error'
+      };
+      return translations[key] || key;
+    });
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [DraftService]
+      providers: [
+        DraftService,
+        { provide: LoggerService, useValue: loggerSpy },
+        { provide: TranslationService, useValue: translationSpy }
+      ]
     });
 
     service = TestBed.inject(DraftService);
@@ -150,6 +174,12 @@ describe('DraftService', () => {
         next: () => fail('should have failed'),
         error: (error) => {
           expect(error.message).toBeTruthy();
+          expect(loggerSpy.error).toHaveBeenCalledWith(
+            'DraftService: request failed',
+            jasmine.objectContaining({
+              status: 404
+            })
+          );
         }
       });
 
@@ -527,5 +557,19 @@ describe('resumeDraft', () => {
       const req = httpMock.expectOne(`${apiUrl}/drafts/${gameId}/board-state`);
       req.flush({ error: 'Internal server error' }, { status: 500, statusText: 'Internal Server Error' });
     });
+
+    it('should map 404 to translated not found message when backend has no message', () => {
+      const gameId = 'missing';
+
+      service.getDraftBoardState(gameId).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          expect(error.message).toBe('Draft game not found');
+        }
+      });
+
+      const req = httpMock.expectOne(`${apiUrl}/drafts/${gameId}/board-state`);
+      req.flush(null, { status: 404, statusText: 'Not Found' });
+    });
   });
-}); 
+});

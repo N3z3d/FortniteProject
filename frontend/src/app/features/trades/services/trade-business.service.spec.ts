@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { TradeBusinessService } from './trade-business.service';
+import { TradeCalculationService } from './trade-calculation.service';
+import { TradeFormattingService } from './trade-formatting.service';
+import { TradeValidationService } from './trade-validation.service';
 import { Player, TradingService } from './trading.service';
 
 describe('TradeBusinessService', () => {
@@ -33,6 +36,9 @@ describe('TradeBusinessService', () => {
     TestBed.configureTestingModule({
       providers: [
         TradeBusinessService,
+        TradeCalculationService,
+        TradeFormattingService,
+        TradeValidationService,
         { provide: TradingService, useValue: tradingService }
       ]
     });

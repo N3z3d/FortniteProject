@@ -85,6 +85,36 @@
   gap: var(--space-lg);
 }
 
+.join-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: 8px;
+  margin-bottom: var(--space-lg);
+  border: 1px solid transparent;
+
+  mat-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  span {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+}
+
+.join-feedback--error {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+
+  mat-icon {
+    color: #fca5a5;
+  }
+}
+
 .code-input {
   width: 100%;
 

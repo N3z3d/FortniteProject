@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import { StatsApiMapper } from '../mappers/stats-api.mapper';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 /**
  * Enhanced Dashboard Data Service with Premium Fallback
@@ -24,7 +25,8 @@ export class DashboardDataService {
   constructor(
     private http: HttpClient,
     private logger: LoggerService,
-    private mockDataService: MockDataService
+    private mockDataService: MockDataService,
+    private translationService: TranslationService
   ) { 
     this.logger.debug('🎮 Enhanced DashboardDataService with Premium Fallback initialized');
   }
@@ -340,13 +342,19 @@ export class DashboardDataService {
    * @returns Nom de l'équipe la plus active
    */
   private findMostActiveTeam(teams: any[]): string {
-    if (teams.length === 0) return 'Aucune équipe';
+    if (teams.length === 0) {
+      return this.translateMessage('dashboard.fallback.noTeam', 'No team');
+    }
 
     const mostActive = teams.reduce((prev, current) => {
       return (current.totalPoints || 0) > (prev.totalPoints || 0) ? current : prev;
     });
 
-    return mostActive.name || mostActive.ownerName || 'Équipe inconnue';
+    return (
+      mostActive.name ||
+      mostActive.ownerName ||
+      this.translateMessage('dashboard.fallback.unknownTeam', 'Unknown team')
+    );
   }
 
   /**
@@ -374,9 +382,13 @@ export class DashboardDataService {
       totalPlayers: 0,
       totalPoints: 0,
       averagePointsPerTeam: 0,
-      mostActiveTeam: 'Aucune équipe',
+      mostActiveTeam: this.translateMessage('dashboard.fallback.noTeam', 'No team'),
       seasonProgress: this.calculateSeasonProgress()
     };
+  }
+
+  private translateMessage(key: string, fallback: string): string {
+    return this.translationService.t(key, fallback);
   }
 
   /**

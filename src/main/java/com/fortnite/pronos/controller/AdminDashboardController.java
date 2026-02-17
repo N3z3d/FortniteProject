@@ -1,0 +1,84 @@
+package com.fortnite.pronos.controller;
+
+import java.util.List;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
+import com.fortnite.pronos.dto.admin.RecentActivityDto;
+import com.fortnite.pronos.dto.admin.SystemHealthDto;
+import com.fortnite.pronos.dto.admin.SystemMetricsDto;
+import com.fortnite.pronos.dto.common.ApiResponse;
+import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.service.admin.AdminDashboardService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RestController
+@Validated
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class AdminDashboardController {
+
+  private static final int MIN_RECENT_ACTIVITY_HOURS = 1;
+  private static final int MAX_RECENT_ACTIVITY_HOURS = 168;
+
+  private final AdminDashboardService adminDashboardService;
+
+  @GetMapping("/dashboard/summary")
+  public ResponseEntity<ApiResponse<DashboardSummaryDto>> getDashboardSummary() {
+    log.info("Admin: fetching dashboard summary");
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getDashboardSummary()));
+  }
+
+  @GetMapping("/dashboard/health")
+  public ResponseEntity<ApiResponse<SystemHealthDto>> getSystemHealth() {
+    log.info("Admin: fetching system health");
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getSystemHealth()));
+  }
+
+  @GetMapping("/dashboard/recent-activity")
+  public ResponseEntity<ApiResponse<RecentActivityDto>> getRecentActivity(
+      @RequestParam(defaultValue = "24")
+          @Min(value = MIN_RECENT_ACTIVITY_HOURS, message = "hours doit etre >= 1")
+          @Max(value = MAX_RECENT_ACTIVITY_HOURS, message = "hours doit etre <= 168")
+          int hours) {
+    if (hours < MIN_RECENT_ACTIVITY_HOURS || hours > MAX_RECENT_ACTIVITY_HOURS) {
+      return ResponseEntity.badRequest()
+          .body(
+              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+    }
+    log.info("Admin: fetching recent activity for last {} hours", hours);
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getRecentActivity(hours)));
+  }
+
+  @GetMapping("/users")
+  public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
+    log.info("Admin: fetching all users");
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getAllUsers()));
+  }
+
+  @GetMapping("/games")
+  public ResponseEntity<ApiResponse<List<Game>>> getAllGames(
+      @RequestParam(required = false) String status) {
+    log.info("Admin: fetching all games (filter: {})", status);
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getAllGames(status)));
+  }
+
+  @GetMapping("/system/metrics")
+  public ResponseEntity<ApiResponse<SystemMetricsDto>> getSystemMetrics() {
+    log.info("Admin: fetching system metrics");
+    return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getSystemMetrics()));
+  }
+}

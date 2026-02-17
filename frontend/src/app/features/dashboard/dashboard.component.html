@@ -206,7 +206,11 @@
         <p>{{ t.t('dashboard.headings.navigationHint') }}</p>
       </div>
       <div class="navigation-grid">
-        <div class="nav-card games-card premium-nav-card" (click)="navigateTo('/games')"
+        <div class="nav-card games-card premium-nav-card"
+          role="button"
+          tabindex="0"
+          (click)="navigateTo('/games')"
+          (keydown)="onNavigationCardKeydown($event, '/games')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>sports_esports</mat-icon></div>
           <div class="nav-card-content">
@@ -214,7 +218,11 @@
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.gamesDesc') }}</p>
           </div>
         </div>
-        <div class="nav-card leaderboard-card premium-nav-card" (click)="navigateTo('/leaderboard')"
+        <div class="nav-card leaderboard-card premium-nav-card"
+          role="button"
+          tabindex="0"
+          (click)="navigateTo('/leaderboard')"
+          (keydown)="onNavigationCardKeydown($event, '/leaderboard')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>emoji_events</mat-icon></div>
           <div class="nav-card-content">
@@ -222,7 +230,11 @@
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.leaderboardDesc') }}</p>
           </div>
         </div>
-        <div class="nav-card teams-card premium-nav-card" (click)="navigateTo('/games/' + selectedGame?.id + '/teams')"
+        <div class="nav-card teams-card premium-nav-card"
+          role="button"
+          tabindex="0"
+          (click)="navigateTo('/games/' + selectedGame?.id + '/teams')"
+          (keydown)="onNavigationCardKeydown($event, '/games/' + selectedGame?.id + '/teams')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>groups</mat-icon></div>
           <div class="nav-card-content">
@@ -230,7 +242,11 @@
             <p class="nav-card-desc">{{ t.t('dashboard.navCards.teamsDesc') }}</p>
           </div>
         </div>
-        <div class="nav-card trades-card premium-nav-card" (click)="navigateTo('/games/' + selectedGame?.id + '/trades')"
+        <div class="nav-card trades-card premium-nav-card"
+          role="button"
+          tabindex="0"
+          (click)="navigateTo('/games/' + selectedGame?.id + '/trades')"
+          (keydown)="onNavigationCardKeydown($event, '/games/' + selectedGame?.id + '/trades')"
           appPremiumInteractions="magnetic">
           <div class="nav-card-icon"><mat-icon>swap_horiz</mat-icon></div>
           <div class="nav-card-content">

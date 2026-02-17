@@ -1,13 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError } from 'rxjs';
 
 import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
 import { GameDataService } from '../services/game-data.service';
+import { UserContextService } from '../../../core/services/user-context.service';
 import { Game, GameParticipant, GameStatus } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
+import { UserGamesStore } from '../../../core/services/user-games.store';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 describe('GameDetailComponent - TDD Tests', () => {
   let component: GameDetailComponent;
@@ -15,7 +17,7 @@ describe('GameDetailComponent - TDD Tests', () => {
   let mockGameService: jasmine.SpyObj<GameService>;
   let mockGameDataService: jasmine.SpyObj<GameDataService>;
   let mockRouter: jasmine.SpyObj<Router>;
-  let mockSnackBar: jasmine.SpyObj<MatSnackBar>;
+  let mockUserGamesStore: jasmine.SpyObj<UserGamesStore>;
   let mockActivatedRoute: any;
 
   const mockGameFromApi = {
@@ -54,33 +56,52 @@ describe('GameDetailComponent - TDD Tests', () => {
   ];
 
   beforeEach(async () => {
-    const gameServiceSpy = jasmine.createSpyObj('GameService', ['startDraft', 'deleteGame', 'joinGame']);
+    const gameServiceSpy = jasmine.createSpyObj('GameService', ['startDraft', 'deleteGame', 'joinGame', 'isGameHost']);
     const gameDataServiceSpy = jasmine.createSpyObj('GameDataService', [
       'getGameById',
       'getGameParticipants',
       'calculateGameStatistics',
       'validateGameData'
     ]);
+    const uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', ['showError']);
+    const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    const userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame', 'refreshGames']);
+    userGamesStoreSpy.refreshGames.and.returnValue(of([
+      {
+        id: 'test-game-id',
+        name: 'Test Game',
+        creatorName: 'TestCreator',
+        maxParticipants: 10,
+        status: 'ACTIVE',
+        createdAt: '2025-01-15T10:30:00Z',
+        participantCount: 3,
+        canJoin: true,
+        regionRules: {}
+      } as Game
+    ]));
 
     mockActivatedRoute = {
       params: of({ id: 'test-game-id' })
     };
 
     gameDataServiceSpy.validateGameData.and.returnValue({ isValid: true, errors: [] });
+    gameServiceSpy.isGameHost.and.returnValue(true);
+    userContextSpy.getCurrentUser.and.returnValue({ id: 'creator-id', username: 'TestCreator', email: 'test@test.com' });
 
     TestBed.configureTestingModule({
       imports: [GameDetailComponent],
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
         { provide: GameDataService, useValue: gameDataServiceSpy },
+        { provide: UserContextService, useValue: userContextSpy },
+        { provide: UserGamesStore, useValue: userGamesStoreSpy },
+        { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
     });
 
-    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
     await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(GameDetailComponent);
@@ -88,7 +109,7 @@ describe('GameDetailComponent - TDD Tests', () => {
     mockGameService = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
     mockGameDataService = TestBed.inject(GameDataService) as jasmine.SpyObj<GameDataService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    mockSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
+    mockUserGamesStore = TestBed.inject(UserGamesStore) as jasmine.SpyObj<UserGamesStore>;
   });
 
   describe('Data Mapping from API', () => {
@@ -183,9 +204,9 @@ describe('GameDetailComponent - TDD Tests', () => {
     });
 
     it('should handle null or undefined dates gracefully', () => {
-      expect(component.getTimeAgo(null)).toBe('Date invalide');
-      expect(component.getTimeAgo(undefined)).toBe('Date invalide');
-      expect(component.getTimeAgo('')).toBe('Date invalide');
+      expect(component.getTimeAgo(null)).toBe('common.invalidDate');
+      expect(component.getTimeAgo(undefined)).toBe('common.invalidDate');
+      expect(component.getTimeAgo('')).toBe('common.invalidDate');
     });
 
     it('should handle invalid date strings gracefully', () => {
@@ -229,8 +250,8 @@ describe('GameDetailComponent - TDD Tests', () => {
       expect(canStart).toBe(false);
     });
 
-    it('should determine if user can join game correctly', () => {
-      // Arrange
+    it('should prevent host from joining their own game', () => {
+      // Arrange - user is the host (isGameHost returns true)
       component.game!.canJoin = true;
       component.game!.participantCount = 3;
       component.game!.maxParticipants = 10;
@@ -238,13 +259,13 @@ describe('GameDetailComponent - TDD Tests', () => {
       // Act
       const canJoin = component.canJoinGame();
 
-      // Assert
-      expect(canJoin).toBe(true);
+      // Assert - host should not see join button
+      expect(canJoin).toBe(false);
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle game loading errors gracefully', () => {
+    it('should redirect gracefully when game loading returns not-found', () => {
       // Arrange
       const errorMessage = 'Game not found';
       mockGameDataService.getGameById.and.returnValue(throwError(() => new Error(errorMessage)));
@@ -254,8 +275,10 @@ describe('GameDetailComponent - TDD Tests', () => {
       component.ngOnInit();
 
       // Assert
-      expect(component.error).toBe(errorMessage);
+      expect(component.error).toBeNull();
       expect(component.loading).toBe(false);
+      expect(mockUserGamesStore.removeGame).toHaveBeenCalledWith('test-game-id');
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/games']);
     });
 
     it('should handle participants loading errors gracefully', () => {

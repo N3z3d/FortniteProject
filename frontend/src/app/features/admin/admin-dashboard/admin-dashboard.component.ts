@@ -1,0 +1,103 @@
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { AdminService } from '../services/admin.service';
+import { TranslationService } from '../../../core/services/translation.service';
+import { DashboardSummary, RecentActivity, SystemHealth, SystemMetrics } from '../models/admin.models';
+
+@Component({
+  selector: 'app-admin-dashboard',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatProgressBarModule,
+    MatButtonModule,
+    MatTooltipModule
+  ],
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.scss']
+})
+export class AdminDashboardComponent implements OnInit, OnDestroy {
+  public readonly t = inject(TranslationService);
+  private readonly adminService = inject(AdminService);
+  private readonly destroy$ = new Subject<void>();
+
+  loading = true;
+  error = false;
+
+  summary: DashboardSummary | null = null;
+  health: SystemHealth | null = null;
+  activity: RecentActivity | null = null;
+  metrics: SystemMetrics | null = null;
+
+  ngOnInit(): void {
+    this.loadDashboard();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadDashboard(): void {
+    this.loading = true;
+    this.error = false;
+
+    forkJoin({
+      summary: this.adminService.getDashboardSummary(),
+      health: this.adminService.getSystemHealth(),
+      activity: this.adminService.getRecentActivity(),
+      metrics: this.adminService.getSystemMetrics()
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.summary = data.summary;
+          this.health = data.health;
+          this.activity = data.activity;
+          this.metrics = data.metrics;
+          this.loading = false;
+        },
+        error: () => {
+          this.error = true;
+          this.loading = false;
+        }
+      });
+  }
+
+  formatUptime(millis: number): string {
+    const hours = Math.floor(millis / 3600000);
+    const minutes = Math.floor((millis % 3600000) / 60000);
+    return `${hours}h ${minutes}m`;
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'UP': return 'status-up';
+      case 'DOWN': return 'status-down';
+      default: return 'status-unknown';
+    }
+  }
+
+  getGameStatusEntries(): { key: string; value: number }[] {
+    if (!this.summary?.gamesByStatus) return [];
+    return Object.entries(this.summary.gamesByStatus).map(([key, value]) => ({ key, value }));
+  }
+}

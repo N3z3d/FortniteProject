@@ -1,0 +1,70 @@
+@import '../../../../shared/styles/mixins';
+
+:host {
+  display: block;
+}
+
+.team-preview {
+  @include glass-card-dark();
+  @include fade-in-up(0.4s);
+  border-radius: var(--radius-large);
+  padding: var(--space-lg);
+  text-align: left;
+  border: 1px solid rgba(var(--gaming-primary-rgb), 0.3);
+}
+
+.team-preview h3 {
+  @include gaming-title;
+  @include gaming-text-gradient();
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-md) 0;
+  @include neon-glow(var(--gaming-primary), 0.2);
+}
+
+.current-team {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.team-player {
+  @include glass-card-dark(0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  border-radius: var(--radius-medium);
+  border: 1px solid rgba(var(--gaming-primary-rgb), 0.2);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    border-color: rgba(var(--gaming-primary-rgb), 0.5);
+    transform: translateX(4px);
+  }
+}
+
+.team-player span {
+  @include gaming-font;
+  font-weight: 500;
+  color: var(--gaming-light);
+  @include gaming-text-gradient();
+}
+
+.team-slots {
+  @include glass-card-dark(0.4);
+  padding: var(--space-md);
+  background: var(--gradient-gaming);
+  border-radius: var(--radius-medium);
+  text-align: center;
+  @include pulse-glow(var(--gaming-primary), 3s);
+}
+
+.slots-remaining {
+  @include gaming-font;
+  color: white;
+  font-weight: 700;
+  @include neon-glow(white, 0.4);
+}
+
+@include reduced-motion;

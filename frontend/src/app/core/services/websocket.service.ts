@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserContextService } from './user-context.service';
+import { LoggerService } from './logger.service';
 
 export interface TradeNotification {
   type: 'TRADE_PROPOSED' | 'TRADE_ACCEPTED' | 'TRADE_REJECTED' | 'TRADE_CANCELLED' | 'TRADE_COUNTERED';
@@ -40,6 +41,7 @@ export class WebSocketService implements OnDestroy {
   private readonly reconnectDelay = 3000;
 
   private readonly userContextService = inject(UserContextService);
+  private readonly logger = inject(LoggerService);
 
   get isConnected$(): Observable<boolean> {
     return this.connectionStatus$.asObservable();
@@ -66,7 +68,7 @@ export class WebSocketService implements OnDestroy {
       connectHeaders,
       debug: (str) => {
         if (!environment.production) {
-          console.log('[WebSocket]', str);
+          this.logger.debug('WebSocketService: stomp debug', { message: str });
         }
       },
       reconnectDelay: this.reconnectDelay,
@@ -81,11 +83,13 @@ export class WebSocketService implements OnDestroy {
         this.connectionStatus$.next(false);
       },
       onStompError: (frame) => {
-        console.error('[WebSocket] STOMP error:', frame.headers['message']);
+        this.logger.error('WebSocketService: stomp error', {
+          message: frame.headers['message']
+        });
         this.handleReconnect();
       },
       onWebSocketError: (event) => {
-        console.error('[WebSocket] Connection error:', event);
+        this.logger.error('WebSocketService: connection error', { event });
         this.handleReconnect();
       }
     });
@@ -103,7 +107,7 @@ export class WebSocketService implements OnDestroy {
 
   subscribeToGameTrades(gameId: string): void {
     if (!this.client?.active) {
-      console.warn('[WebSocket] Not connected, cannot subscribe to game trades');
+      this.logger.warn('WebSocketService: cannot subscribe to game trades while disconnected', { gameId });
       return;
     }
 
@@ -121,7 +125,7 @@ export class WebSocketService implements OnDestroy {
    */
   subscribeToGameEvents(gameId: string): void {
     if (!this.client?.active) {
-      console.warn('[WebSocket] Not connected, cannot subscribe to game events');
+      this.logger.warn('WebSocketService: cannot subscribe to game events while disconnected', { gameId });
       return;
     }
 
@@ -150,7 +154,7 @@ export class WebSocketService implements OnDestroy {
       const notification: TradeNotification = JSON.parse(message.body);
       this.tradeNotifications$.next(notification);
     } catch (error) {
-      console.error('[WebSocket] Failed to parse trade notification:', error);
+      this.logger.error('WebSocketService: failed to parse trade notification', { error, body: message.body });
     }
   }
 
@@ -159,16 +163,19 @@ export class WebSocketService implements OnDestroy {
       const notification: GameNotification = JSON.parse(message.body);
       this.gameNotifications$.next(notification);
     } catch (error) {
-      console.error('[WebSocket] Failed to parse game notification:', error);
+      this.logger.error('WebSocketService: failed to parse game notification', { error, body: message.body });
     }
   }
 
   private handleReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`[WebSocket] Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+      this.logger.warn('WebSocketService: reconnect attempt', {
+        attempt: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      });
     } else {
-      console.error('[WebSocket] Max reconnect attempts reached');
+      this.logger.error('WebSocketService: max reconnect attempts reached');
       this.disconnect();
     }
   }

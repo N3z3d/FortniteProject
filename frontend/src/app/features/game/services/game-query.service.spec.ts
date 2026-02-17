@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { GameQueryService } from './game-query.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { environment } from '../../../../environments/environment';
 import { MOCK_GAMES } from '../../../core/data/mock-game-data';
 import {
@@ -15,6 +16,7 @@ describe('GameQueryService', () => {
   let service: GameQueryService;
   let httpMock: HttpTestingController;
   let loggerSpy: jasmine.SpyObj<LoggerService>;
+  let translationSpy: jasmine.SpyObj<TranslationService>;
   let originalFallback: boolean;
 
   const apiBaseUrl = `${environment.apiUrl}/api`;
@@ -88,12 +90,27 @@ describe('GameQueryService', () => {
   beforeEach(() => {
     originalFallback = environment.enableFallbackData;
     loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    translationSpy = jasmine.createSpyObj('TranslationService', ['t']);
+    translationSpy.t.and.callFake((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.network': 'Network unavailable',
+        'errors.notFound': 'Game not found',
+        'errors.validation': 'Validation failed',
+        'errors.unauthorized': 'Unauthorized',
+        'errors.handler.forbiddenMessage': 'Forbidden',
+        'errors.handler.serverErrorMessage': 'Server error',
+        'errors.generic': 'Unexpected error',
+        'common.error': 'Error'
+      };
+      return translations[key] || key;
+    });
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [
         GameQueryService,
-        { provide: LoggerService, useValue: loggerSpy }
+        { provide: LoggerService, useValue: loggerSpy },
+        { provide: TranslationService, useValue: translationSpy }
       ]
     });
 
@@ -168,6 +185,32 @@ describe('GameQueryService', () => {
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
   });
 
+  it('maps status 0 to translated network message for contextual calls', (done) => {
+    service.getGameById('game-404').subscribe({
+      next: () => fail('expected getGameById to error'),
+      error: (error) => {
+        expect(error.message).toBe('Network unavailable');
+        done();
+      }
+    });
+
+    const req = httpMock.expectOne(`${apiBaseUrl}/games/game-404`);
+    req.flush(null, { status: 0, statusText: 'Unknown Error' });
+  });
+
+  it('maps 404 without backend payload to translated notFound message', (done) => {
+    service.getGameById('missing').subscribe({
+      next: () => fail('expected getGameById to error'),
+      error: (error) => {
+        expect(error.message).toBe('Game not found');
+        done();
+      }
+    });
+
+    const req = httpMock.expectOne(`${apiBaseUrl}/games/missing`);
+    req.flush(null, { status: 404, statusText: 'Not Found' });
+  });
+
   it('fetches draft state, history, and statistics', () => {
     service.getDraftState('game-1').subscribe(state => {
       expect(state).toEqual(draftState);
@@ -208,5 +251,44 @@ describe('GameQueryService', () => {
 
     expect(service.isGameHost(gameWithCreator, 'user-1')).toBe(true);
     expect(service.isGameHost(gameWithCreator, 'user-2')).toBe(false);
+  });
+
+  it('evaluates host ownership by creatorName when creatorId does not match', () => {
+    const gameWithCreatorNameOnly = { ...mockGame, creatorId: 'uuid-creator', creatorName: 'Tester' } as Game;
+
+    expect(service.isGameHost(gameWithCreatorNameOnly, 'Tester')).toBe(true);
+    expect(service.isGameHost(gameWithCreatorNameOnly, 'tester')).toBe(true);
+    expect(service.isGameHost(gameWithCreatorNameOnly, 'OtherUser')).toBe(false);
+  });
+
+  it('evaluates host ownership by creatorId case-insensitively', () => {
+    const game = { ...mockGame, creatorId: 'ABC-123-DEF' } as Game & { creatorId: string };
+
+    expect(service.isGameHost(game, 'abc-123-def')).toBe(true);
+    expect(service.isGameHost(game, 'ABC-123-DEF')).toBe(true);
+    expect(service.isGameHost(game, ' ABC-123-DEF ')).toBe(true);
+  });
+
+  it('evaluates host ownership via isCreator participant fallback', () => {
+    const gameWithUnknownCreator = {
+      ...mockGame,
+      creatorId: 'unknown-uuid',
+      creatorName: 'Créateur inconnu',
+      participants: [
+        { id: 'p1', username: 'Thibaut', joinedAt: '', isCreator: true },
+        { id: 'p2', username: 'Marcel', joinedAt: '', isCreator: false }
+      ]
+    } as Game;
+
+    expect(service.isGameHost(gameWithUnknownCreator, 'Thibaut')).toBe(true);
+    expect(service.isGameHost(gameWithUnknownCreator, 'thibaut')).toBe(true);
+    expect(service.isGameHost(gameWithUnknownCreator, 'Marcel')).toBe(false);
+    expect(service.isGameHost(gameWithUnknownCreator, 'p1')).toBe(true);
+  });
+
+  it('returns false for null/empty inputs', () => {
+    expect(service.isGameHost(null as any, 'user')).toBe(false);
+    expect(service.isGameHost(mockGame, '')).toBe(false);
+    expect(service.isGameHost(mockGame, null as any)).toBe(false);
   });
 });

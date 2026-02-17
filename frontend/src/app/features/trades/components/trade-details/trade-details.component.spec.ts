@@ -1,15 +1,14 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, BehaviorSubject } from 'rxjs';
 import { TradeDetailsComponent } from './trade-details.component';
 import { TradingService, TradeOffer, Player } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { LoggerService } from '../../../../core/services/logger.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
 import { TradeTimelineService } from '../../services/trade-timeline.service';
 
@@ -18,12 +17,11 @@ describe('TradeDetailsComponent', () => {
     let fixture: ComponentFixture<TradeDetailsComponent>;
     let tradingService: jasmine.SpyObj<TradingService>;
     let userContextService: jasmine.SpyObj<UserContextService>;
-    let notificationService: jasmine.SpyObj<NotificationService>;
     let translationService: jasmine.SpyObj<TranslationService>;
     let tradeBusinessService: jasmine.SpyObj<TradeBusinessService>;
     let tradeTimelineService: jasmine.SpyObj<TradeTimelineService>;
     let loggerService: jasmine.SpyObj<LoggerService>;
-    let snackBar: jasmine.SpyObj<MatSnackBar>;
+    let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
     let dialogRef: jasmine.SpyObj<MatDialogRef<TradeDetailsComponent>>;
 
     const mockPlayers: Player[] = [
@@ -67,13 +65,11 @@ describe('TradeDetailsComponent', () => {
         userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
         userContextService.getCurrentUser.and.returnValue({ id: 'user2', username: 'TestUser', email: 'test@example.com' });
 
-        notificationService = jasmine.createSpyObj('NotificationService', ['showError', 'showInfo', 'showSuccess']);
-
         translationService = jasmine.createSpyObj('TranslationService', ['t']);
         translationService.t.and.callFake((key: string, fallback?: string) => fallback || key);
 
         tradeBusinessService = jasmine.createSpyObj('TradeBusinessService', [
-            'calculateTradeStats', 'getBalanceDisplayClass', 'formatCurrency'
+            'calculateTradeStats', 'calculateTotalValue', 'getBalanceDisplayClass', 'formatCurrency'
         ]);
         tradeBusinessService.calculateTradeStats.and.returnValue({
             totalPlayers: 2,
@@ -84,6 +80,9 @@ describe('TradeDetailsComponent', () => {
             balancePercentage: 83,
             fairnessRating: 'good'
         });
+        tradeBusinessService.calculateTotalValue.and.callFake(
+            (players: Player[]) => players.reduce((sum, p) => sum + (p.marketValue || 0), 0)
+        );
         tradeBusinessService.getBalanceDisplayClass.and.returnValue('balance-positive');
         tradeBusinessService.formatCurrency.and.callFake((val: number) => `$${val}`);
 
@@ -94,7 +93,7 @@ describe('TradeDetailsComponent', () => {
 
         loggerService = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
 
-        snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+        uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessMessage', 'showError']);
         dialogRef = jasmine.createSpyObj('MatDialogRef', ['close']);
 
         await TestBed.configureTestingModule({
@@ -108,12 +107,11 @@ describe('TradeDetailsComponent', () => {
                 { provide: MatDialogRef, useValue: dialogRef },
                 { provide: TradingService, useValue: tradingService },
                 { provide: UserContextService, useValue: userContextService },
-                { provide: NotificationService, useValue: notificationService },
                 { provide: TranslationService, useValue: translationService },
                 { provide: TradeBusinessService, useValue: tradeBusinessService },
                 { provide: TradeTimelineService, useValue: tradeTimelineService },
                 { provide: LoggerService, useValue: loggerService },
-                { provide: MatSnackBar, useValue: snackBar }
+                { provide: UiErrorFeedbackService, useValue: uiFeedback }
             ]
         }).compileComponents();
 
@@ -149,14 +147,24 @@ describe('TradeDetailsComponent', () => {
     });
 
     describe('getOfferedTotal', () => {
-        it('should calculate total of offered players', () => {
-            expect(component.getOfferedTotal()).toBe(100);
+        it('should delegate offered total to trade business service', () => {
+            const total = component.getOfferedTotal();
+
+            expect(tradeBusinessService.calculateTotalValue).toHaveBeenCalledWith(
+                mockTrade.offeredPlayers
+            );
+            expect(total).toBe(100);
         });
     });
 
     describe('getRequestedTotal', () => {
-        it('should calculate total of requested players', () => {
-            expect(component.getRequestedTotal()).toBe(120);
+        it('should delegate requested total to trade business service', () => {
+            const total = component.getRequestedTotal();
+
+            expect(tradeBusinessService.calculateTotalValue).toHaveBeenCalledWith(
+                mockTrade.requestedPlayers
+            );
+            expect(total).toBe(120);
         });
     });
 

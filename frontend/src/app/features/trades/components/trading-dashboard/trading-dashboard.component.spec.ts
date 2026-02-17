@@ -2,25 +2,23 @@ import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { of, BehaviorSubject, Subject } from 'rxjs';
+import { of, BehaviorSubject, throwError } from 'rxjs';
 import { TradingDashboardComponent } from './trading-dashboard.component';
 import { TradingService, TradeOffer, TradeStats } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../../core/services/logger.service';
 
 describe('TradingDashboardComponent', () => {
     let component: TradingDashboardComponent;
     let fixture: ComponentFixture<TradingDashboardComponent>;
     let tradingService: jasmine.SpyObj<TradingService>;
     let userContextService: jasmine.SpyObj<UserContextService>;
-    let notificationService: jasmine.SpyObj<NotificationService>;
     let translationService: jasmine.SpyObj<TranslationService>;
     let router: Router;
-    let snackBar: jasmine.SpyObj<MatSnackBar>;
-    let dialog: jasmine.SpyObj<MatDialog>;
+    let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
+    let logger: jasmine.SpyObj<LoggerService>;
 
     const mockTrades: TradeOffer[] = [
         {
@@ -93,13 +91,16 @@ describe('TradingDashboardComponent', () => {
         userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
         userContextService.getCurrentUser.and.returnValue({ id: 'user1', username: 'TestUser', email: 'test@example.com' });
 
-        notificationService = jasmine.createSpyObj('NotificationService', ['showError', 'showInfo', 'showSuccess']);
-
         translationService = jasmine.createSpyObj('TranslationService', ['t']);
         translationService.t.and.callFake((key: string, fallback?: string) => fallback || key);
 
-        snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
-        dialog = jasmine.createSpyObj('MatDialog', ['open']);
+        uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', [
+            'showSuccessMessage',
+            'showError',
+            'showErrorFromKey',
+            'showInfoMessage'
+        ]);
+        logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
 
         await TestBed.configureTestingModule({
             imports: [
@@ -110,10 +111,9 @@ describe('TradingDashboardComponent', () => {
             providers: [
                 { provide: TradingService, useValue: tradingService },
                 { provide: UserContextService, useValue: userContextService },
-                { provide: NotificationService, useValue: notificationService },
                 { provide: TranslationService, useValue: translationService },
-                { provide: MatSnackBar, useValue: snackBar },
-                { provide: MatDialog, useValue: dialog },
+                { provide: UiErrorFeedbackService, useValue: uiFeedback },
+                { provide: LoggerService, useValue: logger },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -153,6 +153,17 @@ describe('TradingDashboardComponent', () => {
         it('should load initial data on init', () => {
             expect(tradingService.getTrades).toHaveBeenCalledWith('game123');
             expect(tradingService.getTradingStats).toHaveBeenCalledWith('game123');
+        });
+
+        it('should log warning and skip loading when gameId is missing', () => {
+            (component as any).gameId = null;
+
+            (component as any).loadInitialData();
+
+            expect(logger.warn).toHaveBeenCalledWith(
+                'TradingDashboardComponent: missing gameId, skip initial load'
+            );
+            expect(tradingService.getTrades).not.toHaveBeenCalledWith(null as any);
         });
     });
 
@@ -219,10 +230,40 @@ describe('TradingDashboardComponent', () => {
         });
     });
 
+    describe('accessibility', () => {
+        it('should open trade details on Enter key', () => {
+            const viewDetailsSpy = spyOn(component, 'onViewTradeDetails');
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+
+            component.onTradeCardKeydown(event, mockTrades[0]);
+
+            expect(viewDetailsSpy).toHaveBeenCalledWith(mockTrades[0]);
+        });
+
+        it('should ignore unrelated keys for trade card keyboard handler', () => {
+            const viewDetailsSpy = spyOn(component, 'onViewTradeDetails');
+            const event = new KeyboardEvent('keydown', { key: 'Escape' });
+
+            component.onTradeCardKeydown(event, mockTrades[0]);
+
+            expect(viewDetailsSpy).not.toHaveBeenCalled();
+        });
+    });
+
     describe('onAcceptTrade', () => {
         it('should call trading service to accept trade', () => {
             component.onAcceptTrade(mockTrades[0]);
             expect(tradingService.acceptTradeOffer).toHaveBeenCalledWith('1');
+        });
+
+        it('should show translated error feedback when accept fails', () => {
+            tradingService.acceptTradeOffer.and.returnValue(
+                throwError(() => new Error('accept failed'))
+            );
+
+            component.onAcceptTrade(mockTrades[0]);
+
+            expect(uiFeedback.showErrorFromKey).toHaveBeenCalledWith('trades.errors.acceptOffer');
         });
     });
 
@@ -231,12 +272,32 @@ describe('TradingDashboardComponent', () => {
             component.onRejectTrade(mockTrades[0]);
             expect(tradingService.rejectTradeOffer).toHaveBeenCalledWith('1');
         });
+
+        it('should show translated error feedback when reject fails', () => {
+            tradingService.rejectTradeOffer.and.returnValue(
+                throwError(() => new Error('reject failed'))
+            );
+
+            component.onRejectTrade(mockTrades[0]);
+
+            expect(uiFeedback.showErrorFromKey).toHaveBeenCalledWith('trades.errors.rejectOffer');
+        });
     });
 
     describe('onWithdrawTrade', () => {
         it('should call trading service to withdraw trade', () => {
             component.onWithdrawTrade(mockTrades[0]);
             expect(tradingService.withdrawTradeOffer).toHaveBeenCalledWith('1');
+        });
+
+        it('should show translated error feedback when withdraw fails', () => {
+            tradingService.withdrawTradeOffer.and.returnValue(
+                throwError(() => new Error('withdraw failed'))
+            );
+
+            component.onWithdrawTrade(mockTrades[0]);
+
+            expect(uiFeedback.showErrorFromKey).toHaveBeenCalledWith('trades.errors.withdrawOffer');
         });
     });
 
@@ -246,6 +307,41 @@ describe('TradingDashboardComponent', () => {
             component.refreshData(true);
             expect(tradingService.clearAllCaches).toHaveBeenCalled();
             expect(tradingService.getTrades).toHaveBeenCalledWith('game123');
+        });
+
+        it('should show translated error feedback when refresh fails', () => {
+            (component as any).gameId = 'game123';
+            tradingService.getTrades.and.returnValue(throwError(() => new Error('refresh failed')));
+
+            component.refreshData(true);
+
+            expect(uiFeedback.showErrorFromKey).toHaveBeenCalledWith('trades.errors.refreshFailed');
+        });
+    });
+
+    describe('notifications', () => {
+        it('should display user-facing error feedback when error stream emits', () => {
+            errorSubject.next('backend error');
+
+            expect(uiFeedback.showError).toHaveBeenCalledWith(
+                { message: 'backend error' },
+                'trades.errors.loadTrades'
+            );
+        });
+
+        it('should display info feedback when user has pending received trades', () => {
+            tradesSubject.next([
+                {
+                    ...mockTrades[0],
+                    toUserId: 'user1',
+                    status: 'pending'
+                }
+            ]);
+
+            expect(uiFeedback.showInfoMessage).toHaveBeenCalledWith(
+                jasmine.stringMatching(/^You have 1 new trade offer/),
+                5000
+            );
         });
     });
 

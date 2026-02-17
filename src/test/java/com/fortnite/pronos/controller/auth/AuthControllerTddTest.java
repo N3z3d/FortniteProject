@@ -57,7 +57,9 @@ class AuthControllerTddTest {
   void setUp() {
     mockMvc =
         MockMvcBuilders.standaloneSetup(authController)
-            .setControllerAdvice(new com.fortnite.pronos.config.GlobalExceptionHandler())
+            .setControllerAdvice(
+                new com.fortnite.pronos.config.GlobalExceptionHandler(
+                    new com.fortnite.pronos.service.admin.ErrorJournalService()))
             .build();
     objectMapper = new ObjectMapper();
 

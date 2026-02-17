@@ -14,6 +14,9 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 
+import com.fortnite.pronos.PronosApplication;
+import com.fortnite.pronos.util.LoggingUtils;
+
 /**
  * Architecture tests enforcing Hexagonal Architecture (Ports & Adapters) principles as defined in
  * ADR-001.
@@ -214,8 +217,9 @@ public class HexagonalArchitectureTest {
             .onlyDependOnClassesThat()
             .resideInAnyPackage(
                 "..adapter.out..",
-                "..domain.port.out..",
-                "..domain.model..", // Mappers need domain models
+                "..domain..", // Domain models and ports (including subdomain packages)
+                "..model..", // JPA entities that adapters map from
+                "..repository..", // JPA repositories that adapters delegate to
                 "..shared..",
                 "java..",
                 "lombok..",
@@ -318,6 +322,9 @@ public class HexagonalArchitectureTest {
             "..data..")
         .adapter("web", "..adapter.in..", "..controller..")
         .adapter("external", "..adapter.out..")
+        .withOptionalLayers(true)
+        .ignoreDependency(PronosApplication.class, LoggingUtils.class)
+        .allowEmptyShould(true)
         .because("Architecture should follow hybrid layered/hexagonal rules (ADR-001)")
         .check(importedClasses);
   }

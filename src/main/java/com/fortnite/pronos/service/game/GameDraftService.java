@@ -6,7 +6,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
@@ -19,14 +25,8 @@ import com.fortnite.pronos.exception.PlayerAlreadySelectedException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.DraftPick;
-import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.repository.DraftPickRepository;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.service.draft.DraftService;
 
 import lombok.RequiredArgsConstructor;
@@ -39,25 +39,30 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class GameDraftService {
 
-  private final GameRepositoryPort gameRepository;
-  private final DraftRepository draftRepository;
-  private final DraftPickRepository draftPickRepository;
-  private final PlayerRepository playerRepository;
-  private final GameParticipantRepository gameParticipantRepository;
+  private final GameDomainRepositoryPort gameDomainRepository;
+  private final DraftDomainRepositoryPort draftDomainRepository;
+  private final DraftRepositoryPort draftRepository;
+  private final DraftPickRepositoryPort draftPickRepository;
+  private final PlayerRepositoryPort playerRepository;
+  private final GameParticipantRepositoryPort gameParticipantRepository;
   private final DraftService draftService;
 
   /** Starts draft for a game */
   public DraftDto startDraft(UUID gameId, UUID creatorId) {
     log.debug("Starting draft for game {} by user {}", gameId, creatorId);
 
-    Game game = findGameOrThrow(gameId);
-    validateUserCanStartDraft(game, creatorId);
-    validateGameCanStartDraft(game);
+    Game domainGame = findDomainGameOrThrow(gameId);
+    validateUserCanStartDraft(domainGame, creatorId);
+    validateGameCanStartDraft(domainGame);
 
-    updateGameStatus(game, GameStatus.DRAFTING);
-    Draft draft = draftService.startDraft(game);
+    if (!domainGame.startDraft()) {
+      throw new InvalidGameStateException("Game must be ready for draft (CREATING)");
+    }
+    gameDomainRepository.save(domainGame);
 
-    log.info("Draft started for game {}", game.getName());
+    Draft draft = draftService.startDraftForGame(gameId);
+
+    log.info("Draft started for game {}", domainGame.getName());
     return DraftDto.fromDraft(draft);
   }
 
@@ -65,13 +70,13 @@ public class GameDraftService {
   public DraftDto pauseDraft(UUID gameId, UUID userId) {
     log.debug("Pausing draft for game {} by user {}", gameId, userId);
 
-    Game game = findGameOrThrow(gameId);
-    validateUserCanManageDraft(game, userId);
+    Game domainGame = findDomainGameOrThrow(gameId);
+    validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraft(game);
+    Draft draft = findActiveDraftEntity(gameId);
     draftService.pauseDraft(draft);
 
-    log.info("Draft paused for game {}", game.getName());
+    log.info("Draft paused for game {}", domainGame.getName());
 
     // Return updated draft state
     return DraftDto.fromDraft(draft);
@@ -81,13 +86,13 @@ public class GameDraftService {
   public DraftDto resumeDraft(UUID gameId, UUID userId) {
     log.debug("Resuming draft for game {} by user {}", gameId, userId);
 
-    Game game = findGameOrThrow(gameId);
-    validateUserCanManageDraft(game, userId);
+    Game domainGame = findDomainGameOrThrow(gameId);
+    validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraft(game);
+    Draft draft = findActiveDraftEntity(gameId);
     draftService.resumeDraft(draft);
 
-    log.info("Draft resumed for game {}", game.getName());
+    log.info("Draft resumed for game {}", domainGame.getName());
 
     // Return updated draft state
     return DraftDto.fromDraft(draft);
@@ -97,16 +102,19 @@ public class GameDraftService {
   public DraftDto finishDraft(UUID gameId, UUID userId) {
     log.debug("Finishing draft for game {} by user {}", gameId, userId);
 
-    Game game = findGameOrThrow(gameId);
-    validateUserCanManageDraft(game, userId);
+    Game domainGame = findDomainGameOrThrow(gameId);
+    validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraft(game);
+    Draft draft = findActiveDraftEntity(gameId);
     validateDraftCanBeFinished(draft);
 
     draftService.finishDraft(draft);
-    updateGameStatus(game, GameStatus.ACTIVE);
+    if (!domainGame.completeDraft()) {
+      throw new InvalidGameStateException("Game must be in drafting status");
+    }
+    gameDomainRepository.save(domainGame);
 
-    log.info("Draft finished for game {}", game.getName());
+    log.info("Draft finished for game {}", domainGame.getName());
 
     // Return updated draft state
     return DraftDto.fromDraft(draft);
@@ -116,8 +124,8 @@ public class GameDraftService {
   public DraftPickDto selectPlayer(UUID gameId, UUID userId, UUID playerId) {
     log.debug("User {} selecting player {} in game {}", userId, playerId, gameId);
 
-    Game game = findGameOrThrow(gameId);
-    Draft draft = findActiveDraft(game);
+    Game domainGame = findDomainGameOrThrow(gameId);
+    Draft draft = findActiveDraftEntity(gameId);
     Player player = findPlayerOrThrow(playerId);
 
     validatePlayerSelection(draft, userId, player);
@@ -134,25 +142,24 @@ public class GameDraftService {
     DraftPick savedPick = draftPickRepository.save(newPick);
 
     // Avancer le draft (pas de parallélisme, avance séquentielle)
-    draftService.nextPick(draft, game.getMaxParticipants());
+    draftService.nextPick(draft, domainGame.getMaxParticipants());
 
-    log.info("Player {} selected by user {} in game {}", player.getName(), userId, game.getName());
+    log.info(
+        "Player {} selected by user {} in game {}", player.getName(), userId, domainGame.getName());
     return DraftPickDto.fromDraftPick(savedPick);
   }
 
   /** Gets draft for a game */
   @Transactional(readOnly = true)
   public DraftDto getDraftByGame(UUID gameId) {
-    Game game = findGameOrThrow(gameId);
-    Draft draft = findActiveDraft(game);
+    Draft draft = findActiveDraftEntity(gameId);
     return DraftDto.fromDraft(draft);
   }
 
   /** Gets draft picks for a game */
   @Transactional(readOnly = true)
   public List<DraftPickDto> getDraftPicks(UUID gameId) {
-    Game game = findGameOrThrow(gameId);
-    Draft draft = findActiveDraft(game);
+    Draft draft = findActiveDraftEntity(gameId);
 
     return draftPickRepository.findByDraftOrderByPickNumber(draft).stream()
         .map(DraftPickDto::fromDraftPick)
@@ -161,32 +168,43 @@ public class GameDraftService {
 
   // Private helper methods
 
-  private Game findGameOrThrow(UUID gameId) {
-    return gameRepository
+  private Game findDomainGameOrThrow(UUID gameId) {
+    return gameDomainRepository
         .findById(gameId)
         .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
   }
 
   private Player findPlayerOrThrow(UUID playerId) {
-    return ((PlayerRepositoryPort) playerRepository)
+    return playerRepository
         .findById(playerId)
         .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
   }
 
-  private Draft findActiveDraft(Game game) {
+  private Draft findActiveDraftEntity(UUID gameId) {
+    com.fortnite.pronos.domain.draft.model.Draft domainDraft =
+        draftDomainRepository
+            .findActiveByGameId(gameId)
+            .orElseThrow(() -> new InvalidDraftStateException("No active draft found for game"));
+
     return draftRepository
-        .findByGame(game)
+        .findById(domainDraft.getId())
         .orElseThrow(() -> new InvalidDraftStateException("No active draft found for game"));
   }
 
   private void validateUserCanStartDraft(Game game, UUID userId) {
-    if (!game.getCreator().getId().equals(userId)) {
+    if (game.getCreatorId() == null) {
+      throw new InvalidGameStateException("Game creator is missing");
+    }
+    if (!game.getCreatorId().equals(userId)) {
       throw new UnauthorizedAccessException("Only game creator can start draft");
     }
   }
 
   private void validateUserCanManageDraft(Game game, UUID userId) {
-    if (!game.getCreator().getId().equals(userId)) {
+    if (game.getCreatorId() == null) {
+      throw new InvalidGameStateException("Game creator is missing");
+    }
+    if (!game.getCreatorId().equals(userId)) {
       throw new UnauthorizedAccessException("Only game creator can manage draft");
     }
   }
@@ -231,10 +249,5 @@ public class GameDraftService {
     // Implementation depends on your business rules
     log.debug(
         "Validating region limits for player {} selection by user {}", player.getId(), userId);
-  }
-
-  private void updateGameStatus(Game game, GameStatus status) {
-    game.setStatus(status);
-    gameRepository.save(game);
   }
 }

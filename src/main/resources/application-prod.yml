@@ -9,8 +9,8 @@ spring:
     active: prod
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fortnite_pronos}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       minimum-idle: 10
@@ -95,7 +95,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,datasource
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always

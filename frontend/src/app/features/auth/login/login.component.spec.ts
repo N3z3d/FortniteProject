@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { LoginComponent } from './login.component';
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
+import { TranslationService } from '../../../core/services/translation.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { AccessibilityAnnouncerService } from '../../../shared/services/accessibility-announcer.service';
 
@@ -12,6 +13,7 @@ describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let router: jasmine.SpyObj<Router>;
   let userContextService: jasmine.SpyObj<UserContextService>;
+  let translationService: jasmine.SpyObj<TranslationService>;
   let loggerService: jasmine.SpyObj<LoggerService>;
   let accessibilityService: jasmine.SpyObj<AccessibilityAnnouncerService>;
   let activatedRoute: any;
@@ -29,6 +31,10 @@ describe('LoginComponent', () => {
       'login',
       'getAvailableProfiles'
     ]);
+    translationService = jasmine.createSpyObj('TranslationService', ['t', 'setLanguage'], {
+      currentLanguage: 'fr'
+    });
+    translationService.t.and.callFake((key: string) => key);
     loggerService = jasmine.createSpyObj('LoggerService', ['info', 'warn', 'error']);
     accessibilityService = jasmine.createSpyObj('AccessibilityAnnouncerService', [
       'announceLoading',
@@ -54,6 +60,7 @@ describe('LoginComponent', () => {
     .overrideProvider(Router, { useValue: router })
     .overrideProvider(ActivatedRoute, { useValue: activatedRoute })
     .overrideProvider(UserContextService, { useValue: userContextService })
+    .overrideProvider(TranslationService, { useValue: translationService })
     .overrideProvider(LoggerService, { useValue: loggerService })
     .overrideProvider(AccessibilityAnnouncerService, { useValue: accessibilityService })
     .compileComponents();
@@ -70,6 +77,33 @@ describe('LoginComponent', () => {
     expect(component.isLoading).toBeFalse();
     expect(component.showAlternative).toBeFalse();
     expect(component.isSwitchingUser).toBeFalse();
+  });
+
+  it('should render a compact language combobox on login page', () => {
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('mat-select');
+    const languageButtons = fixture.nativeElement.querySelectorAll('.lang-btn');
+
+    expect(select).toBeTruthy();
+    expect(languageButtons.length).toBe(0);
+  });
+
+  it('should expose current language option for select trigger', () => {
+    fixture.detectChanges();
+
+    expect(component.currentLanguageOption.code).toBe('fr');
+    expect(component.currentLanguageOption.flagAsset.startsWith('data:image/svg+xml')).toBeTrue();
+  });
+
+  it('should render selected language label in trigger to avoid duplicated FR/EN code', () => {
+    fixture.detectChanges();
+
+    const triggerCode = fixture.nativeElement.querySelector('.lang-trigger .lang-code');
+
+    expect(component.currentLanguageOption.label).toBe('Français');
+    expect(component.currentLanguageOption.flagAsset.startsWith('data:image/svg+xml')).toBeTrue();
+    expect(triggerCode).toBeNull();
   });
 
   it('should load available profiles on init', () => {
@@ -239,5 +273,11 @@ describe('LoginComponent', () => {
     component.selectUser(mockProfiles[0]);
 
     expect(loggerService.info).toHaveBeenCalledWith('Login: user selected', { username: 'Thibaut' });
+  });
+
+  it('should switch language via translation service', () => {
+    component.switchLanguage('en');
+
+    expect(translationService.setLanguage).toHaveBeenCalledWith('en');
   });
 });

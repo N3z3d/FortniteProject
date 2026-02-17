@@ -10,7 +10,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBadgeModule } from '@angular/material/badge';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 // PERFORMANCE: Import only needed Chart.js components instead of everything
 import {
   Chart,
@@ -41,6 +40,7 @@ import { AccessibilityAnnouncerService } from '../../shared/services/accessibili
 import { FocusManagementService } from '../../shared/services/focus-management.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 
 // PERFORMANCE: Register only necessary components (reduces bundle size by ~100KB)
 Chart.register(
@@ -67,7 +67,6 @@ Chart.register(
     MatProgressSpinnerModule,
     MatProgressBarModule,
     MatBadgeModule,
-    MatSnackBarModule,
     PremiumInteractionsDirective,
     TooltipDirective,
     RevealOnScrollDirective
@@ -126,7 +125,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private http: HttpClient,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
+    private uiFeedback: UiErrorFeedbackService,
     private gameSelectionService: GameSelectionService,
     private dashboardFacade: DashboardFacade,
     private chartCoordinator: DashboardChartCoordinatorService,
@@ -311,11 +310,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.cdr.markForCheck();
           setTimeout(() => this.refreshCharts(), 100);
 
-          this.snackBar.open(
-            this.t.t('dashboard.messages.demoMode'),
-            this.t.t('common.close'),
-            { duration: 3000 }
-          );
+          this.uiFeedback.showInfoFromKey('dashboard.messages.demoMode', 3000);
         }
       });
     } catch (error) {
@@ -416,6 +411,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // e.g., '/games/123/trades' -> ['/', 'games', '123', 'trades']
     const segments = route.split('/').filter(segment => segment.length > 0);
     this.router.navigate(['/', ...segments]);
+  }
+
+  onNavigationCardKeydown(event: KeyboardEvent, route: string): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    this.navigateTo(route);
   }
 
   private updateLiveRegion(message: string, priority: 'polite' | 'assertive' = 'polite'): void {

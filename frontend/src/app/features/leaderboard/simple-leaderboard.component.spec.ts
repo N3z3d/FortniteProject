@@ -5,14 +5,17 @@ import { SimpleLeaderboardComponent } from './simple-leaderboard.component';
 import { LeaderboardService, PlayerLeaderboardEntry } from '../../core/services/leaderboard.service';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { GameSelectionService } from '../../core/services/game-selection.service';
+import { LoggerService } from '../../core/services/logger.service';
 
 describe('SimpleLeaderboardComponent', () => {
   let component: SimpleLeaderboardComponent;
   let fixture: ComponentFixture<SimpleLeaderboardComponent>;
   let leaderboardService: jasmine.SpyObj<LeaderboardService>;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
 
   beforeEach(async () => {
     leaderboardService = jasmine.createSpyObj('LeaderboardService', ['getPlayerLeaderboard']);
+    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
     const announcer = jasmine.createSpyObj('AccessibilityAnnouncerService', ['announce']);
     const gameSelectionStub = {
       selectedGame$: of(null),
@@ -24,7 +27,8 @@ describe('SimpleLeaderboardComponent', () => {
       providers: [
         { provide: LeaderboardService, useValue: leaderboardService },
         { provide: AccessibilityAnnouncerService, useValue: announcer },
-        { provide: GameSelectionService, useValue: gameSelectionStub }
+        { provide: GameSelectionService, useValue: gameSelectionStub },
+        { provide: LoggerService, useValue: loggerSpy }
       ]
     }).compileComponents();
 
@@ -80,5 +84,9 @@ describe('SimpleLeaderboardComponent', () => {
     expect(component.error).toBe(expectedError);
     expect(component.allPlayers.length).toBe(0);
     expect(component.loading).toBe(false);
+    expect(loggerSpy.error).toHaveBeenCalledWith('SimpleLeaderboardComponent: failed to load leaderboard', jasmine.objectContaining({
+      selectedGameId: null,
+      error: jasmine.any(Error)
+    }));
   });
 });

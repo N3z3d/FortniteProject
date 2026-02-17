@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccessibilityAnnouncerService } from '../../shared/services/accessibility-announcer.service';
 import { GameSelectionService } from '../../core/services/game-selection.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { LoggerService } from '../../core/services/logger.service';
 import { Subscription } from 'rxjs';
 import { LeaderboardService, PlayerLeaderboardEntry } from '../../core/services/leaderboard.service';
 
@@ -28,6 +29,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
   sortDirection: 'asc' | 'desc' = 'desc';
   private gameSubscription?: Subscription;
   selectedGameId: string | null = null;
+  private readonly logger = inject(LoggerService);
 
   constructor(
     private leaderboardService: LeaderboardService,
@@ -59,7 +61,10 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
         this.filterPlayers();
       },
       error: (err) => {
-        console.error('Erreur lors du chargement du leaderboard:', err);
+        this.logger.error('SimpleLeaderboardComponent: failed to load leaderboard', {
+          selectedGameId: this.selectedGameId,
+          error: err
+        });
         this.error = this.t.t('leaderboard.errors.dataUnavailable');
         this.allPlayers = [];
         this.filteredPlayers = [];

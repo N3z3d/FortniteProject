@@ -2,6 +2,7 @@ import { Injectable, Inject, Optional } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 
 // Interface pour MatSnackBar pour éviter l'import direct
 interface SnackBarLike {
@@ -41,6 +42,7 @@ export class NotificationService {
   constructor(
     private readonly logger: LoggerService,
     private readonly translationService: TranslationService,
+    @Optional() private readonly uiFeedback?: UiErrorFeedbackService,
     @Optional() @Inject('MatSnackBar') private readonly snackBar?: SnackBarLike
   ) {}
 
@@ -124,6 +126,10 @@ export class NotificationService {
     // Add to notifications list
     const currentNotifications = this.notificationsSubject.value;
     this.notificationsSubject.next([...currentNotifications, notification]);
+
+    if (this.tryShowThroughUiFeedback(message, type, action, persistent, duration)) {
+      return id;
+    }
 
     // Show snackbar if available
     if (this.snackBar) {
@@ -368,6 +374,33 @@ export class NotificationService {
     
     // Remove the notification after action
     this.removeNotification(id);
+  }
+
+  private tryShowThroughUiFeedback(
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info',
+    action: string | undefined,
+    persistent: boolean,
+    duration: number
+  ): boolean {
+    if (!this.uiFeedback || action || persistent) {
+      return false;
+    }
+
+    if (type === 'success') {
+      this.uiFeedback.showSuccessMessage(message, duration);
+      return true;
+    }
+    if (type === 'error') {
+      this.uiFeedback.showErrorMessage(message, duration);
+      return true;
+    }
+    if (type === 'warning') {
+      this.uiFeedback.showWarningMessage(message, duration);
+      return true;
+    }
+    this.uiFeedback.showInfoMessage(message, duration);
+    return true;
   }
 
   /**

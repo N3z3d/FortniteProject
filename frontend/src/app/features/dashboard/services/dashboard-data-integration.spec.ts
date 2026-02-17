@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 import { DashboardDataService } from './dashboard-data.service';
 import { environment } from '../../../../environments/environment';
+import { LoggerService } from '../../../core/services/logger.service';
+import { MockDataService } from '../../../core/services/mock-data.service';
+import { TranslationService } from '../../../core/services/translation.service';
 
 /**
  * Tests d'intégration TDD pour DashboardDataService
@@ -10,12 +14,29 @@ import { environment } from '../../../../environments/environment';
 describe('DashboardDataService - Integration TDD', () => {
   let service: DashboardDataService;
   let httpMock: HttpTestingController;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
   const apiUrl = `${environment.apiUrl}/api`;
 
   beforeEach(() => {
+    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
+    const mockDataServiceSpy = jasmine.createSpyObj<MockDataService>('MockDataService', ['getMockDashboardData']);
+    mockDataServiceSpy.getMockDashboardData.and.returnValue(of({
+      statistics: {},
+      leaderboard: [],
+      regionDistribution: {},
+      teams: []
+    }));
+    const translationServiceSpy = jasmine.createSpyObj<TranslationService>('TranslationService', ['t']);
+    translationServiceSpy.t.and.callFake((_key: string, fallback?: string) => fallback || '');
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [DashboardDataService]
+      providers: [
+        DashboardDataService,
+        { provide: LoggerService, useValue: loggerSpy },
+        { provide: MockDataService, useValue: mockDataServiceSpy },
+        { provide: TranslationService, useValue: translationServiceSpy }
+      ]
     });
     
     service = TestBed.inject(DashboardDataService);
@@ -23,8 +44,14 @@ describe('DashboardDataService - Integration TDD', () => {
   });
 
   afterEach(() => {
+    flushI18nRequests();
     httpMock.verify();
   });
+
+  function flushI18nRequests(): void {
+    const i18nRequests = httpMock.match((request) => request.url.startsWith('assets/i18n/'));
+    i18nRequests.forEach((request) => request.flush({}));
+  }
 
   describe('Validation des données réelles', () => {
     it('devrait recevoir 147 joueurs depuis l\'API backend (pas 12)', (done) => {
@@ -56,9 +83,6 @@ describe('DashboardDataService - Integration TDD', () => {
         expect(stats.totalTeams).toBe(3);
         expect(stats.totalPoints).toBeGreaterThan(6604); // Plus de points avec plus de joueurs
         
-        console.log('✅ TEST PASSED: Statistics now show correct player count');
-        console.log(`📊 Total players: ${stats.totalPlayers} (expected: 147)`);
-        console.log(`💰 Total points: ${stats.totalPoints} (should be > 6604)`);
         
         done();
       });
@@ -84,9 +108,6 @@ describe('DashboardDataService - Integration TDD', () => {
         // ASSERT - Ce test détecte une régression
         expect(stats.totalPlayers).toBe(12);
         
-        console.warn('⚠️ REGRESSION DETECTED: Backend still returns 12 players instead of 147');
-        console.warn('🔧 Fix needed in LeaderboardService.getLeaderboardStats()');
-        console.warn('📝 Check that playerRepository.findAll() returns all CSV players');
         
         done();
       });
@@ -120,10 +141,6 @@ describe('DashboardDataService - Integration TDD', () => {
           sum + (team.players?.length || 0), 0);
         expect(totalPlayersInTeams).toBeCloseTo(147, -1); // Tolérance de ±10
         
-        console.log('✅ Integration test passed: All endpoints consistent');
-        console.log(`📊 Stats players: ${data.statistics.totalPlayers}`);
-        console.log(`👥 Leaderboard teams: ${data.leaderboard.length}`);
-        console.log(`🎮 Total players in teams: ${totalPlayersInTeams}`);
         
         done();
       });
@@ -154,15 +171,7 @@ describe('DashboardDataService - Integration TDD', () => {
         expect(duration).toBeLessThan(5000); // Max 5 seconds
         expect(stats.totalPlayers).toBeGreaterThan(12); // Au minimum plus que 12
         
-        console.log(`⏱️ API call duration: ${duration.toFixed(2)}ms`);
-        console.log(`📊 Players retrieved: ${stats.totalPlayers}`);
         
-        if (stats.totalPlayers === 12) {
-          console.error('🚨 CRITICAL: Still getting 12 players - check backend logs');
-          console.error('🔍 Debug endpoints to check:');
-          console.error('   - GET /api/leaderboard/debug/simple');
-          console.error('   - GET /api/leaderboard/debug/stats');
-        }
         
         done();
       });

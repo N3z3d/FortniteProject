@@ -3,21 +3,21 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { TradeFormComponent } from './trade-form.component';
 import { TranslationService } from '../../../core/services/translation.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 describe('TradeFormComponent', () => {
     let component: TradeFormComponent;
     let fixture: ComponentFixture<TradeFormComponent>;
     let router: Router;
-    let snackBar: jasmine.SpyObj<MatSnackBar>;
+    let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
     let translationService: jasmine.SpyObj<TranslationService>;
     let loggerService: jasmine.SpyObj<LoggerService>;
 
     beforeEach(async () => {
-        snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+        uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessMessage', 'showError']);
         translationService = jasmine.createSpyObj('TranslationService', ['t']);
         translationService.t.and.callFake((key: string) => key);
         loggerService = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
@@ -31,7 +31,7 @@ describe('TradeFormComponent', () => {
                 ])
             ],
             providers: [
-                { provide: MatSnackBar, useValue: snackBar },
+                { provide: UiErrorFeedbackService, useValue: uiFeedback },
                 { provide: TranslationService, useValue: translationService },
                 { provide: LoggerService, useValue: loggerService }
             ]

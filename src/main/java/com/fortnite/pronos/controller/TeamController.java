@@ -4,12 +4,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.application.usecase.TeamQueryUseCase;
 import com.fortnite.pronos.dto.team.TeamDto;
+import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.TeamService;
+import com.fortnite.pronos.service.UserResolver;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,9 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Team Management Controller - API-001 COMPLETE DOCUMENTATION
  *
- * <p>Contrôleur REST pour la gestion des équipes fantasy. Permet de créer, modifier, supprimer les
- * équipes et gérer les joueurs. Inclut des endpoints pour les opérations CRUD et la gestion des
- * rosters.
+ * <p>ContrÃ´leur REST pour la gestion des Ã©quipes fantasy. Permet de crÃ©er, modifier, supprimer
+ * les Ã©quipes et gÃ©rer les joueurs. Inclut des endpoints pour les opÃ©rations CRUD et la gestion
+ * des rosters.
  */
 @Tag(
     name = "Team Management",
@@ -42,6 +47,7 @@ public class TeamController {
 
   private final TeamService teamService;
   private final TeamQueryUseCase teamQueryUseCase;
+  private final UserResolver userResolver;
 
   @Operation(
       summary = "Get team by user ID and season",
@@ -85,7 +91,7 @@ public class TeamController {
   public ResponseEntity<List<TeamDto>> getTeamsByGame(
       @Parameter(description = "Game unique identifier", required = true) @PathVariable
           UUID gameId) {
-    log.debug("Récupération des équipes pour la game {}", gameId);
+    log.debug("RÃ©cupÃ©ration des Ã©quipes pour la game {}", gameId);
     return ResponseEntity.ok(teamQueryUseCase.getTeamsByGame(gameId));
   }
 
@@ -133,9 +139,22 @@ public class TeamController {
   @PostMapping
   public ResponseEntity<TeamDto> createTeam(
       @Parameter(description = "Team creation request", required = true) @RequestBody
-          CreateTeamRequest request) {
+          CreateTeamRequest request,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    User currentUser = userResolver.resolve(username, httpRequest);
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    if (request.userId() != null && !request.userId().equals(currentUser.getId())) {
+      log.warn(
+          "Tentative de creation d'equipe avec userId forge: path={}, current={}",
+          request.userId(),
+          currentUser.getId());
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     return ResponseEntity.ok(
-        teamService.createTeam(request.userId(), request.name(), request.season()));
+        teamService.createTeam(currentUser.getId(), request.name(), request.season()));
   }
 
   @Operation(summary = "Update team", description = "Update an existing team's information")
@@ -166,26 +185,59 @@ public class TeamController {
       @Parameter(description = "User ID", required = true) @PathVariable UUID userId,
       @Parameter(description = "Season", required = true) @PathVariable int season,
       @Parameter(description = "Add player request", required = true) @RequestBody
-          AddPlayerRequest request) {
+          AddPlayerRequest request,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    User currentUser = userResolver.resolve(username, httpRequest);
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    if (!userId.equals(currentUser.getId())) {
+      log.warn(
+          "Tentative d'ajout de joueur sur equipe d'un autre utilisateur: path={}, current={}",
+          userId,
+          currentUser.getId());
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     return ResponseEntity.ok(
-        teamService.addPlayerToTeam(userId, request.playerId(), request.position(), season));
+        teamService.addPlayerToTeam(
+            currentUser.getId(), request.playerId(), request.position(), season));
   }
 
   @Operation(summary = "Remove player from team", description = "Remove a player from a team")
-  @ApiResponse(responseCode = "200", description = "Player removed successfully")
+  @ApiResponse(responseCode = "403", description = "Operation forbidden outside trade flow")
   @PostMapping("/user/{userId}/season/{season}/players/remove")
   public ResponseEntity<TeamDto> removePlayerFromTeam(
       @Parameter(description = "User ID", required = true) @PathVariable UUID userId,
       @Parameter(description = "Season", required = true) @PathVariable int season,
       @Parameter(description = "Remove player request", required = true) @RequestBody
-          RemovePlayerRequest request) {
-    return ResponseEntity.ok(teamService.removePlayerFromTeam(userId, request.playerId(), season));
+          RemovePlayerRequest request,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    User currentUser = userResolver.resolve(username, httpRequest);
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    if (!userId.equals(currentUser.getId())) {
+      log.warn(
+          "Tentative de suppression de joueur sur equipe d'un autre utilisateur: path={}, current={}",
+          userId,
+          currentUser.getId());
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    log.warn(
+        "Suppression directe de joueur refusee (hors trade): userId={}, season={}, playerId={}",
+        currentUser.getId(),
+        season,
+        request.playerId());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
   }
 
   @Operation(
       summary = "Make bulk player changes",
       description = "Execute multiple player changes in a single transaction")
-  @ApiResponse(responseCode = "200", description = "Player changes executed successfully")
+  @ApiResponse(responseCode = "403", description = "Operation forbidden outside trade flow")
   @PostMapping("/user/{userId}/season/{season}/players/changes")
   public ResponseEntity<TeamDto> makePlayerChanges(
       @Parameter(description = "User ID", required = true) @PathVariable UUID userId,
@@ -194,8 +246,27 @@ public class TeamController {
               description = "Player changes map (old player ID -> new player ID)",
               required = true)
           @RequestBody
-          Map<UUID, UUID> playerChanges) {
-    return ResponseEntity.ok(teamService.makePlayerChanges(userId, playerChanges, season));
+          Map<UUID, UUID> playerChanges,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    User currentUser = userResolver.resolve(username, httpRequest);
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    if (!userId.equals(currentUser.getId())) {
+      log.warn(
+          "Tentative de changements roster sur equipe d'un autre utilisateur: path={}, current={}",
+          userId,
+          currentUser.getId());
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    log.warn(
+        "Changements roster directs refuses (hors trade): userId={}, season={}, changesCount={}",
+        currentUser.getId(),
+        season,
+        playerChanges == null ? 0 : playerChanges.size());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
   }
 
   // DTOs for requests

@@ -1,20 +1,22 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError } from 'rxjs';
 import { GameCreationWizardComponent } from './game-creation-wizard.component';
 import { GameService } from '../services/game.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { CreateGameRequest, Game } from '../models/game.interface';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 describe('GameCreationWizardComponent', () => {
   let component: GameCreationWizardComponent;
   let fixture: ComponentFixture<GameCreationWizardComponent>;
   let router: jasmine.SpyObj<Router>;
   let gameService: jasmine.SpyObj<GameService>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let translationService: jasmine.SpyObj<TranslationService>;
+  let logger: jasmine.SpyObj<LoggerService>;
 
   const mockGame: Game = {
     id: 'game-123',
@@ -31,8 +33,9 @@ describe('GameCreationWizardComponent', () => {
   beforeEach(async () => {
     router = jasmine.createSpyObj('Router', ['navigate']);
     gameService = jasmine.createSpyObj('GameService', ['createGame']);
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessMessage', 'showErrorMessage']);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
+    logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
 
     translationService.t.and.callFake((key: string) => {
       const translations: Record<string, string> = {
@@ -52,8 +55,9 @@ describe('GameCreationWizardComponent', () => {
     })
     .overrideProvider(Router, { useValue: router })
     .overrideProvider(GameService, { useValue: gameService })
-    .overrideProvider(MatSnackBar, { useValue: snackBar })
+    .overrideProvider(UiErrorFeedbackService, { useValue: uiFeedback })
     .overrideProvider(TranslationService, { useValue: translationService })
+    .overrideProvider(LoggerService, { useValue: logger })
     .compileComponents();
 
     fixture = TestBed.createComponent(GameCreationWizardComponent);
@@ -218,7 +222,7 @@ describe('GameCreationWizardComponent', () => {
 
     expect(gameService.createGame).toHaveBeenCalled();
     expect(component.loading).toBeFalse(); // Loading completed
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showSuccessMessage).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(
       ['/games', 'game-123'],
       { queryParams: { created: 'true', template: 'quick-play' } }
@@ -237,7 +241,14 @@ describe('GameCreationWizardComponent', () => {
 
     expect(component.loading).toBeFalse();
     expect(component.error).toBe('games.wizard.errorCreate');
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      'GameCreationWizardComponent: failed to create game',
+      jasmine.objectContaining({
+        formName: 'Test Game',
+        selectedTemplateId: 'quick-play'
+      })
+    );
+    expect(uiFeedback.showErrorMessage).toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
   }));
 

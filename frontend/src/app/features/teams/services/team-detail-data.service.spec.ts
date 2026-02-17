@@ -3,11 +3,13 @@ import { of, throwError } from 'rxjs';
 
 import { TeamDetailDataService, TeamLoadResult } from './team-detail-data.service';
 import { LeaderboardService } from '../../../core/services/leaderboard.service';
+import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
 
 describe('TeamDetailDataService', () => {
   let service: TeamDetailDataService;
   let leaderboardServiceSpy: jasmine.SpyObj<LeaderboardService>;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
   let translationServiceSpy: jasmine.SpyObj<TranslationService>;
 
   const mockLeaderboardTeam = {
@@ -50,6 +52,7 @@ describe('TeamDetailDataService', () => {
 
   beforeEach(() => {
     leaderboardServiceSpy = jasmine.createSpyObj('LeaderboardService', ['getTeamLeaderboard']);
+    loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
     translationServiceSpy = jasmine.createSpyObj('TranslationService', ['t']);
 
     translationServiceSpy.t.and.callFake((key: string) => key);
@@ -58,6 +61,7 @@ describe('TeamDetailDataService', () => {
       providers: [
         TeamDetailDataService,
         { provide: LeaderboardService, useValue: leaderboardServiceSpy },
+        { provide: LoggerService, useValue: loggerSpy },
         { provide: TranslationService, useValue: translationServiceSpy }
       ]
     });
@@ -117,6 +121,10 @@ describe('TeamDetailDataService', () => {
         expect(result.team).toBeNull();
         expect(result.allTeams).toEqual([]);
         expect(result.error).toBeTruthy();
+        expect(loggerSpy.warn).toHaveBeenCalledWith(
+          'TeamDetailDataService: failed to load teams for user',
+          jasmine.objectContaining({ username: 'testuser' })
+        );
         done();
       });
     });
@@ -156,6 +164,10 @@ describe('TeamDetailDataService', () => {
         expect(result.team).toBeNull();
         expect(result.allTeams).toEqual([]);
         expect(result.error).toBeTruthy();
+        expect(loggerSpy.warn).toHaveBeenCalledWith(
+          'TeamDetailDataService: failed to load team by id',
+          jasmine.objectContaining({ teamId: 'team1' })
+        );
         done();
       });
     });

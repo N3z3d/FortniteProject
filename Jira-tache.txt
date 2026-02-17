@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-14 13:47
+Last Updated: 2026-02-17 22:23
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -17,135 +17,6 @@ RULES
 TICKETS
 ================================================================================
 
-ID: JIRA-FIX-010
-TITRE: Demarrage draft incoherent (non-createur autorise en UI + endpoint/message erreur)
-TYPE: Bug
-PRIORITE: P1
-STATUT: IN_PROGRESS
-ESTIMATE: 2-4h
-
-ASSIGNE: @Codex
-ASSIGNE_LE: 2026-02-08 13:02
-DERNIERE_MAJ: 2026-02-14 13:47
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Garantir que seul le createur puisse demarrer le draft cote UI.
-- Corriger le demarrage draft cote frontend pour appeler le bon endpoint backend.
-- Afficher une erreur explicite utilisateur en cas d'echec du demarrage.
-
-CONTEXTE:
-- Retour utilisateur: un non-createur voit/lance le draft.
-- Retour utilisateur: erreur "Erreur lors du demarrage du draft" sans explication.
-- Verification code: endpoint frontend appelle `/draft/start` alors que le backend expose `/start-draft`.
-
-DESCRIPTION:
-- Durcir `canStartDraft` dans `GameDetailPermissionsService` avec condition host.
-- Aligner `GameCommandService.startDraft` sur `/api/games/{id}/start-draft`.
-- Faire remonter le message backend dans `GameDetailActionsService.startDraft` au lieu du message generique.
-- Ajouter tests unitaires frontend: permissions, command service, actions service.
-- Revalider les specs game ciblees + build frontend.
-- Avancement 2026-02-08 13:05: `canStartDraft` verifie maintenant host + status + participants (non-host ne peut plus lancer).
-- Avancement 2026-02-08 13:05: endpoint frontend corrige vers `/api/games/{id}/start-draft`.
-- Avancement 2026-02-08 13:05: message d'erreur draft affiche maintenant le detail backend (`Error.message`) au lieu d'un libelle generique.
-- Avancement 2026-02-08 13:05: tests verts cibles `game-detail-permissions.service.spec.ts` (52), `game-command.service.spec.ts` (14), `game-detail-actions.service.spec.ts` (29).
-- Avancement 2026-02-08 13:08: revalidation etendue frontend verte sur 4 specs cibles (`game-detail-permissions`, `game-command`, `game-detail-actions`, `game-detail.component`) -> `132 SUCCESS`.
-- Avancement 2026-02-08 13:09: backend `GameControllerSimpleTest` relance -> `4 SUCCESS`, confirmation du chemin API `/api/games/{id}/start-draft`.
-- Avancement 2026-02-08 15:10: validation utilisateur confirme que le non-createur ne peut plus demarrer le draft (regle d'autorisation UI OK).
-- Avancement 2026-02-08 15:10: retour utilisateur signale que le bouton demarrer draft reste non fiable selon contexte + rendu visuel non conforme (ticket de suivi dedie cree).
-- Avancement 2026-02-08 15:56: ticket mis en pause (BLOCKED) pour traiter priorite immediate `JIRA-FIX-011` sans depasser WIP.
-- Avancement 2026-02-14 13:41: ticket repris; revalidation technique frontend ciblee relancee (`game-detail-permissions`, `game-command`, `game-detail-actions`, `game-detail.component`) -> `121 SUCCESS`.
-- Avancement 2026-02-14 13:41: verification route backend confirmee (`POST /api/games/{id}/start-draft`) et tests backend frontieres draft/ownership verts.
-- Avancement 2026-02-14 13:47: hardening backend start-draft pour games legacy sans createur (`creatorId=null`) -> reponse `409` explicite `Createur de la partie introuvable` au lieu d'erreur generique.
-- Avancement 2026-02-14 13:47: garde anti-NPE ajoutee dans `GameDraftService` (`validateUserCanStartDraft`/`validateUserCanManageDraft`) avec `InvalidGameStateException` explicite.
-- Avancement 2026-02-14 13:47: tests rouges->verts ajoutes (`GameControllerSimpleTest`, `GameDraftServiceTddTest`) + revalidation Maven ciblee `21` tests verts.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Le bouton "Demarrer draft" est visible uniquement pour le createur.
-- [ ] Le demarrage draft appelle bien `/start-draft`.
-- [ ] En cas d'echec draft, un message explicite est affiche a l'utilisateur.
-- [ ] Tests frontend cibles verts.
-
-NEXT:
-- (1) Validation manuelle: tester start draft sur une game legacy "createur inconnu" -> message attendu `Createur de la partie introuvable`
-- (2) Validation manuelle: tester start draft sur game normale (createur, >=2 participants, status CREATING) -> demarrage OK
-- (3) Si les 2 checks sont OK, passer `JIRA-FIX-010` en DONE puis supprimer le ticket; sinon isoler reliquat UX dans `JIRA-FIX-015`
-
-ID: JIRA-UX-001
-TITRE: Refonte visuelle de la modale generation code invitation
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 15:10
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Harmoniser la modale de generation de code avec le design system de l'app (couleurs, typo, spacing, responsive).
-
-CONTEXTE:
-- Retour utilisateur: la pop-up actuelle est jugee "moche" et hors charte visuelle.
-- Le parcours "rejoindre avec un code" a une meilleure direction visuelle a reutiliser.
-
-DESCRIPTION:
-- Reprendre les tokens/design du flow join-with-code.
-- Corriger debordements texte et responsive mobile.
-- Uniformiser etats hover/focus/disabled et accessibilite clavier.
-- Ajouter tests composants (render + interactions de base).
-
-CRITERES_D_ACCEPTATION:
-- [ ] La modale respecte la charte UI du produit.
-- [ ] Aucun debordement texte desktop/mobile.
-- [ ] Navigation clavier et focus accessibles.
-- [ ] Tests frontend composants verts.
-
-NEXT:
-- (1) Cadrer references visuelles (join-with-code) et tokens a reutiliser
-- (2) Refaire styles/markup de la modale + etats interactifs
-- (3) Revalider manuellement desktop/mobile + specs
-
-ID: JIRA-FIX-015
-TITRE: Fiabilite + UX du bouton Demarrer draft (suivi post-correction endpoint)
-TYPE: Bug
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 15:10
-
-DEPENDENCIES: JIRA-FIX-010
-
-OBJECTIF:
-- Finaliser la fiabilite du demarrage draft cote createur et harmoniser le rendu visuel du CTA.
-
-CONTEXTE:
-- Retour utilisateur: regle createur/non-createur validee, mais le bouton est percu comme peu fiable et visuellement non coherent.
-- Les details exacts du KO fonctionnel createur doivent encore etre captures.
-
-DESCRIPTION:
-- Capturer un scenario KO complet (status game, participants, payload, message backend/frontend).
-- Corriger la cause racine residuelle si presente.
-- Harmoniser style du bouton avec la charte visuelle (couleurs/etats/contraste).
-- Ajouter tests non-regression sur affichage + action.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Le createur demarre le draft de facon fiable sur partie eligible.
-- [ ] Le non-createur ne voit pas l'action.
-- [ ] Le CTA respecte la charte UI.
-- [ ] Tests frontend/backend cibles verts.
-
-NEXT:
-- (1) Capturer le cas KO exact remonte en validation manuelle
-- (2) Corriger cause racine puis verifier API/UI
-- (3) Ajuster le style du CTA et revalider
-
 ID: JIRA-FIX-016
 TITRE: Game supprimee reste visible pour les autres participants (sync temps reel)
 TYPE: Bug
@@ -157,7 +28,7 @@ ASSIGNE: ->
 ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
-DEPENDENCIES: JIRA-FIX-021
+DEPENDENCIES: JIRA-FIX-020
 
 OBJECTIF:
 - Quand le createur supprime/archive une game, les autres participants doivent voir la mise a jour sans F5.
@@ -193,7 +64,7 @@ ASSIGNE: ->
 ASSIGNE_LE: ->
 DERNIERE_MAJ: ->
 
-DEPENDENCIES: JIRA-FIX-021
+DEPENDENCIES: none
 
 OBJECTIF:
 - Supprimer l'effet de rafraichissement periodique visible et synchroniser les games par evenements.
@@ -203,11 +74,13 @@ CONTEXTE:
 - Retour utilisateur: comportement juge non UX et non "temps reel propre".
 
 DESCRIPTION:
-- Concevoir une sync event-driven sans polling agressif:
-- Option A: listeners frontend (`focus`, `visibilitychange`, actions locales create/join/delete/leave) avec invalidation ciblee.
-- Option B: canal serveur (SSE/WebSocket) si necessaire pour propagation cross-client.
-- Garder la garde 404 detail game et le message explicite utilisateur.
-- Mesurer l'impact UX (plus de clignotement/re-animation periodique).
+- Decision de cadrage finalisee dans `docs/architecture/ADR-006-games-sync-strategy.md` (issue `JIRA-FIX-021`).
+- Strategie retenue: hybride SSE + listeners (focus/visibility + invalidations ciblees) sans polling global permanent.
+- Scope implementation:
+  - endpoint backend SSE des evenements games (`GAME_DELETED`, `GAME_JOINED`, `GAME_LEFT`, `GAME_UPDATED`)
+  - service frontend de souscription/reconnexion + integration `UserGamesStore`
+  - suppression du polling 15s layout, conserver uniquement fallback listeners
+- Conserver la garde 404 detail game et le message explicite utilisateur.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Plus de refresh visuel periodique sur la page games.
@@ -216,47 +89,9 @@ CRITERES_D_ACCEPTATION:
 - [ ] Tests cibles store/layout verts.
 
 NEXT:
-- (1) Instrumenter `UserGamesStore` pour tracer les triggers actuels de refresh
-- (2) Implementer la strategie listeners-only (et fallback cible si indisponible)
-- (3) Valider manuellement sur 2 comptes sans animation parasite
-
-ID: JIRA-FIX-021
-TITRE: Brainstorm technique sync games multi-clients (meilleure approche)
-TYPE: Task
-PRIORITE: P3
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Choisir la meilleure methode de synchronisation cross-client sans effet de refresh visuel parasite.
-
-CONTEXTE:
-- Les listeners seuls peuvent etre une option, mais pas forcement la meilleure selon les contraintes UX, charge serveur et complexite.
-- Le polling periodique actuel est percu comme un faux refresh de page.
-- Besoin d'un cadrage technique compare avant implementation definitive.
-
-DESCRIPTION:
-- Faire un brainstorming structure sur 4 options: polling intelligent, listeners-only, SSE, WebSocket.
-- Comparer chaque option sur: latence percue, cout infra, fiabilite, complexite implementation, maintenabilite, testabilite.
-- Proposer une strategie cible + plan de migration incremental (sans regression UX).
-- Sortie attendue: decision documentee + ticket d'implementation priorise.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Tableau comparatif des options complete et argumente.
-- [ ] Decision technique explicite avec rationale.
-- [ ] Plan de migration en lots actionnables.
-- [ ] Backlog mis a jour avec ticket implementation derive.
-
-NEXT:
-- (1) Definir les criteres de decision (latence, UX, cout, risque)
-- (2) Evaluer polling/listeners/SSE/WebSocket avec exemples concrets du projet
-- (3) Produire une recommandation finale et mettre a jour `JIRA-FIX-020`
+- (1) Implementer endpoint SSE backend securise pour events games par utilisateur
+- (2) Integrer un `GamesRealtimeService` frontend relie a `UserGamesStore` (avec retry/backoff)
+- (3) Supprimer le polling global et valider manuellement sur 2 comptes sans clignotement
 
 ID: JIRA-QUAL-001
 TITRE: Migration consumers vers domain ports (services -> domain models)
@@ -291,6 +126,7 @@ DESCRIPTION:
 - `JIRA-QUAL-006` termine: GameDraftService migre vers DraftRepositoryPort/DraftPickRepositoryPort/PlayerRepositoryPort/GameParticipantRepositoryPort.
 - `JIRA-QUAL-007` termine: TradeQueryService migre vers TradeDomainRepositoryPort avec bridge compat legacy.
 - `JIRA-QUAL-009` termine: TradeQueryUseCase + TradeController + TradeResponseMapper migres full-domain, bridge supprime.
+- `JIRA-QUAL-008` termine: sweep final model.* → 4 services fully migrated, 9 partially migrated, 17+9 runtime restant, 18+2 bootstrap/auth acceptable. Inventaire complet produit.
 
 CRITERES_D_ACCEPTATION:
 - [ ] Au moins 1 service migre vers domain ports par sous-ticket.
@@ -299,44 +135,7 @@ CRITERES_D_ACCEPTATION:
 
 NEXT:
 - (1) Traiter d'abord les tickets JIRA-FIX P1 (bloquants UX)
-- (2) Reprendre JIRA-QUAL-008 (sweep final imports model.*)
-
-ID: JIRA-QUAL-008
-TITRE: Sweep final imports model.* apres migrations runtime
-TYPE: Task
-PRIORITE: P3
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-14
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Finaliser la reduction des usages `com.fortnite.pronos.model.*` dans services/controleurs.
-- Produire la liste finale des ecarts acceptes temporairement vs tickets correctifs restants.
-
-CONTEXTE:
-- Sweep intermediaire deja fait dans `JIRA-QUAL-004`.
-- Il reste des zones runtime et des zones bootstrap/seed/auth a traiter explicitement.
-- JIRA-QUAL-009 (trade full-domain) termine -> ce ticket est desormais debloque.
-
-DESCRIPTION:
-- Re-scanner services et controllers.
-- Classer en 3 groupes: `runtime corrige`, `runtime restant`, `bootstrap/seed/auth`.
-- Ouvrir les derniers tickets READY necessaires avec dependances explicites.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Inventaire final a jour.
-- [ ] Classification priorisee finalisee.
-- [ ] Backlog restant compose uniquement de tickets READY actionnables.
-
-NEXT:
-- (1) Re-executer le scan imports `model.*` sur services/controllers
-- (2) Comparer avec baseline (118 imports) et mesurer delta
-- (3) Creer les tickets correctifs restants ou clore parent si fini
+- (2) Continuer migration incrementale services vers domain ports
 
 ID: JIRA-FEAT-002
 TITRE: Selecteur de langue sur la page d'accueil (drapeaux)
@@ -425,126 +224,6 @@ NEXT:
 AUDIT & QUALITE
 ================================================================================
 
-ID: JIRA-AUDIT-001
-TITRE: Audit fichiers inutiles / non utilises dans le projet
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Parser chaque fichier du projet et determiner s'il est utile/utilise ou s'il peut etre supprime.
-
-CONTEXTE:
-- Le projet a evolue organiquement avec des refactorings successifs.
-- Risque de fichiers orphelins (composants, services, modeles, tests) qui ne sont plus references.
-- Nettoyage necessaire pour reduire le bruit et la dette technique.
-
-DESCRIPTION:
-- Scanner tous les fichiers source (backend Java + frontend Angular).
-- Pour chaque fichier, verifier s'il est importe/reference par un autre fichier.
-- Classer en 3 categories: (A) utilise activement, (B) utilise uniquement par tests, (C) orphelin/non reference.
-- Produire un rapport avec la liste des fichiers orphelins et recommandation (supprimer/conserver).
-- Supprimer les fichiers valides apres validation.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport complet fichier par fichier (categorisation A/B/C).
-- [ ] Fichiers orphelins identifies avec justification.
-- [ ] Fichiers valides supprimes apres approbation.
-- [ ] 0 regression apres nettoyage (tests verts).
-
-NEXT:
-- (1) Scanner imports/references backend (Java)
-- (2) Scanner imports/references frontend (Angular)
-- (3) Produire rapport + supprimer les orphelins valides
-
-ID: JIRA-AUDIT-002
-TITRE: Audit conformite architecture (hexagonal, layered, CQRS)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Parser chaque fichier et chaque recoin du projet pour verifier que l'architecture est conforme aux decisions prises (hexagonal backend, CQRS frontend).
-
-CONTEXTE:
-- Migration hexagonale en cours (domain models, ports, adapters).
-- Des services utilisent encore directement les JPA repositories au lieu des ports.
-- Le frontend suit un pattern CQRS (GameQueryService / GameCommandService) mais pas partout.
-- Les ArchUnit tests existent mais ne couvrent pas tous les cas.
-
-DESCRIPTION:
-- Lister toutes les violations d'architecture detectees :
-  - Services acces direct aux JPA repos sans passer par les ports.
-  - Controllers avec logique metier.
-  - Domain models avec dependances infrastructure.
-  - Frontend: services qui melangent read et write.
-- Classer par severite (bloquant / amelioration / acceptable temporairement).
-- Proposer un plan de correction priorise.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport de conformite architecture complet (backend + frontend).
-- [ ] Chaque violation classee par severite.
-- [ ] Plan de correction priorise avec tickets associes.
-- [ ] ArchUnit tests mis a jour si nouveaux patterns detectes.
-
-NEXT:
-- (1) Scanner backend : domain isolation, port usage, adapter compliance
-- (2) Scanner frontend : CQRS separation, component responsibility
-- (3) Produire rapport + creer tickets correctifs
-
-ID: JIRA-AUDIT-003
-TITRE: Audit conformite regles projet (CLAUDE.md, SOLID, Clean Code)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Verifier que chaque fichier respecte les regles du projet definies dans CLAUDE.md (SOLID, Clean Code, taille max, nommage).
-
-CONTEXTE:
-- CLAUDE.md definit des regles strictes : max 500 lignes/classe, max 50 lignes/methode, SOLID, DRY, nommage explicite.
-- Ces regles ont ete appliquees sur les nouveaux fichiers mais les fichiers legacy n'ont pas tous ete audites.
-
-DESCRIPTION:
-- Scanner chaque fichier pour les metriques :
-  - Nombre de lignes par classe (seuil: 500).
-  - Nombre de lignes par methode (seuil: 50).
-  - Duplication de code (DRY).
-  - Nommage : classes/methodes/variables explicites.
-  - SOLID : SRP (classes avec trop de responsabilites), DIP (dependances concretes vs abstractions).
-- Produire un rapport avec les violations et recommandations.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport complet des violations CLAUDE.md.
-- [ ] Chaque violation avec fichier, ligne, regle enfreinte.
-- [ ] Recommandations de correction priorisees.
-- [ ] Tickets de correction crees si necessaire.
-
-NEXT:
-- (1) Scanner metriques taille (lignes/classe, lignes/methode)
-- (2) Scanner duplication (DRY) et nommage
-- (3) Evaluer SOLID compliance et produire rapport
 
 ID: JIRA-AUDIT-004
 TITRE: Recap complet des technologies et outils du projet
@@ -586,235 +265,10 @@ NEXT:
 - (2) Categoriser et documenter
 - (3) Review et validation
 
-ID: JIRA-AUDIT-005
-TITRE: Detection et suppression du code mort (dead code)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
 
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
 
-DEPENDENCIES: none
-
-OBJECTIF:
-- Identifier et supprimer tout le code mort dans le projet (methodes non appelees, variables non utilisees, imports inutiles, classes orphelines).
-
-CONTEXTE:
-- Les refactorings successifs ont potentiellement laisse du code mort.
-- Le code mort augmente la dette technique et rend la maintenance plus difficile.
-- Complemente JIRA-AUDIT-001 (fichiers inutiles) en se concentrant sur le code a l'interieur des fichiers.
-
-DESCRIPTION:
-- Backend Java :
-  - Methodes privees non appelees.
-  - Variables locales non utilisees.
-  - Imports inutiles.
-  - Classes/interfaces sans implementation ou usage.
-  - Blocs de code commentes.
-- Frontend Angular/TypeScript :
-  - Methodes de composants non referencees dans le template ni le code.
-  - Services injectes mais non utilises.
-  - Imports inutiles.
-  - Styles SCSS non appliques.
-- Produire un rapport et supprimer apres validation.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport code mort complet (backend + frontend).
-- [ ] Code mort supprime apres validation.
-- [ ] 0 regression apres nettoyage (tests verts).
-
-NEXT:
-- (1) Analyser backend (IDE unused warnings + scan manuel)
-- (2) Analyser frontend (ng lint + scan manuel)
-- (3) Supprimer et valider
-
-ID: JIRA-AUDIT-006
-TITRE: Analyse couverture de tests - identifier les chemins critiques non testes
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Identifier les zones critiques du code qui manquent de couverture de tests.
-
-CONTEXTE:
-- Frontend a 80% de couverture globale, backend a un bon niveau de tests.
-- Mais la couverture globale masque les zones critiques non testees (logique metier, edge cases).
-
-DESCRIPTION:
-- Generer les rapports de couverture detailles (lcov frontend, JaCoCo backend).
-- Identifier les fichiers/methodes avec couverture < 60%.
-- Classer par criticite metier (services metier > controllers > utils).
-- Proposer les tests manquants prioritaires.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport de couverture detaille produit.
-- [ ] Zones critiques non testees identifiees et classees.
-- [ ] Tickets de tests manquants crees si necessaire.
-
-NEXT:
-- (1) Generer rapports lcov + JaCoCo
-- (2) Analyser les zones faibles
-- (3) Prioriser les tests manquants
-
-ID: JIRA-AUDIT-007
-TITRE: Audit des dependances (mises a jour, vulnerabilites, obsolescence)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Verifier que toutes les dependances sont a jour et sans vulnerabilites connues.
-
-CONTEXTE:
-- Les dependances evoluent et des CVEs peuvent apparaitre.
-- Utiliser des versions obsoletes augmente le risque securite et la dette technique.
-
-DESCRIPTION:
-- Backend : `mvn versions:display-dependency-updates` + `mvn dependency-check:check`.
-- Frontend : `npm audit` + `npm outdated`.
-- Lister les mises a jour disponibles et les vulnerabilites.
-- Proposer un plan de mise a jour priorise (critical security > major > minor).
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport des dependances obsoletes et vulnerables.
-- [ ] Vulnerabilites critiques identifiees et plan de correction.
-- [ ] Mises a jour appliquees ou planifiees.
-
-NEXT:
-- (1) Scanner backend (Maven) et frontend (npm)
-- (2) Classer par severite
-- (3) Appliquer les mises a jour non-breaking
-
-ID: JIRA-AUDIT-008
-TITRE: Audit des contrats API REST (coherence endpoints/DTOs/erreurs)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Verifier la coherence entre les endpoints backend, les DTOs, les codes d'erreur et les appels frontend.
-
-CONTEXTE:
-- Le bug FEAT-001 (PATCH vs POST) a revele un desalignement endpoint frontend/backend.
-- D'autres desalignements peuvent exister.
-
-DESCRIPTION:
-- Lister tous les endpoints backend (controllers Spring) avec methode HTTP, path, DTOs, codes retour.
-- Lister tous les appels frontend (HttpClient) avec methode HTTP, path, types attendus.
-- Comparer et identifier les desalignements.
-- Produire un document de reference des contrats API.
-- Optionnel: generer une spec OpenAPI/Swagger.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Inventaire complet des endpoints backend.
-- [ ] Inventaire complet des appels frontend.
-- [ ] Desalignements identifies et corriges.
-- [ ] Document de reference API produit.
-
-NEXT:
-- (1) Scanner controllers Spring pour inventaire endpoints
-- (2) Scanner services Angular pour inventaire appels HTTP
-- (3) Comparer et corriger les desalignements
-
-ID: JIRA-AUDIT-009
-TITRE: Audit gestion d'erreurs (coherence messages, codes HTTP, UX)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Garantir une gestion d'erreurs coherente et lisible pour l'utilisateur sur tout le projet.
-
-CONTEXTE:
-- Plusieurs bugs (FIX-018 double-join, FIX-010 erreur draft) montrent des messages d'erreur generiques.
-- Le GlobalExceptionHandler backend et les handlers frontend ne couvrent pas tous les cas.
-
-DESCRIPTION:
-- Backend : inventorier tous les `throw` et verifier que chaque exception a un message explicite et un code HTTP adapte.
-- Frontend : inventorier tous les `catchError` et verifier que chaque erreur affiche un message comprehensible.
-- Classer les erreurs par domaine (game, draft, trade, auth).
-- Harmoniser les messages (i18n) et les codes retour.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Inventaire complet des erreurs backend et frontend.
-- [ ] Chaque erreur a un message explicite et un code adapte.
-- [ ] Messages harmonises via i18n.
-- [ ] Tests d'erreurs cibles verts.
-
-NEXT:
-- (1) Scanner backend exceptions et handlers
-- (2) Scanner frontend catchError et snackbar messages
-- (3) Harmoniser et tester
-
-ID: JIRA-AUDIT-011
-TITRE: Audit performance (requetes lentes, N+1, bundle size, lazy loading)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Identifier et corriger les goulots d'etranglement de performance.
-
-CONTEXTE:
-- Pas de profiling systematique effectue.
-- Risques : requetes N+1 JPA, bundle Angular trop gros, pas de lazy loading, pas de cache.
-
-DESCRIPTION:
-- Backend : activer les logs SQL et identifier les requetes N+1, les requetes lentes, les chargements eager inutiles.
-- Frontend : analyser le bundle size (ng build --stats-json + webpack-bundle-analyzer), verifier le lazy loading des modules.
-- Identifier les optimisations prioritaires (cache, pagination, lazy loading).
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport de performance backend (requetes lentes, N+1).
-- [ ] Rapport de performance frontend (bundle size, lazy loading).
-- [ ] Optimisations prioritaires identifiees.
-
-NEXT:
-- (1) Profiler backend (SQL logs, N+1 detection)
-- (2) Analyser bundle frontend
-- (3) Proposer et appliquer optimisations
-
-ID: JIRA-AUDIT-012
-TITRE: Audit strategie de logging (coherence, niveaux, format)
+ID: JIRA-AUDIT-018
+TITRE: Refactor dashboard.component loadDashboardData (94 lignes, complexite 21)
 TYPE: Task
 PRIORITE: P3
 STATUT: TODO
@@ -822,108 +276,31 @@ ESTIMATE: 2-4h
 
 ASSIGNE: ->
 ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
+DERNIERE_MAJ: 2026-02-17 22:03
 
 DEPENDENCIES: none
 
 OBJECTIF:
-- Harmoniser la strategie de logging sur tout le projet.
+- Simplifier `loadDashboardData` pour ameliorer maintenabilite et lisibilite frontend.
 
 CONTEXTE:
-- Le frontend utilise un LoggerService custom. Le backend utilise SLF4J.
-- Pas de convention claire sur quand utiliser debug/info/warn/error.
-- Certains services loggent beaucoup, d'autres pas du tout.
+- `docs/audit/COMPLEXITY_AUDIT.md` remonte `loadDashboardData` comme hotspot TS principal (94 lignes, complexite 21).
+- Les branches d'etats et de gestion d'erreurs rendent le flux fragile.
 
 DESCRIPTION:
-- Definir une convention de logging (niveaux, format, contexte).
-- Scanner les usages actuels et identifier les incoherences.
-- Harmoniser les logs critiques (erreurs metier, securite, performance).
-- Documenter la convention dans un ADR.
+- Decouper le flux en fonctions prives courtes (fetch, map view-model, handling erreur, finalize loading).
+- Conserver UX et messages actuels.
+- Renforcer tests composants/services associes sur les transitions d'etat.
 
 CRITERES_D_ACCEPTATION:
-- [ ] Convention de logging documentee (ADR).
-- [ ] Incoherences majeures corrigees.
-- [ ] Logs critiques (erreurs, securite) presents et coherents.
+- [ ] `loadDashboardData` <= 50 lignes.
+- [ ] Complexite methode < 12 cible.
+- [ ] Tests dashboard verts (nominal + erreurs + edge cases).
 
 NEXT:
-- (1) Scanner usages logging backend et frontend
-- (2) Definir convention et documenter
-- (3) Harmoniser les cas critiques
-
-ID: JIRA-AUDIT-014
-TITRE: Audit accessibilite (WCAG, navigation clavier, lecteurs d'ecran)
-TYPE: Task
-PRIORITE: P2
-STATUT: TODO
-ESTIMATE: 4-8h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Verifier la conformite WCAG 2.1 AA du frontend.
-
-CONTEXTE:
-- Le projet utilise Angular Material qui fournit une base accessible, mais les composants custom peuvent avoir des lacunes.
-- Le composant AccessibleErrorHandler existe deja, montrant une sensibilite a l'accessibilite.
-
-DESCRIPTION:
-- Scanner les composants pour : aria-labels, roles, focus management, contrast ratios, keyboard navigation.
-- Tester avec un lecteur d'ecran (NVDA/VoiceOver).
-- Identifier les composants non conformes et proposer des corrections.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport WCAG 2.1 AA complet.
-- [ ] Composants critiques conformes (navigation, formulaires, modales).
-- [ ] Navigation clavier fonctionnelle sur tous les parcours.
-
-NEXT:
-- (1) Scanner aria/roles/focus sur composants critiques
-- (2) Tester navigation clavier
-- (3) Corriger les non-conformites
-
-ID: JIRA-AUDIT-015
-TITRE: Metriques de complexite du code (cyclomatique, cognitive, couplage)
-TYPE: Task
-PRIORITE: P3
-STATUT: TODO
-ESTIMATE: 2-4h
-
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: 2026-02-08 22:00
-
-DEPENDENCIES: none
-
-OBJECTIF:
-- Mesurer la complexite du code et identifier les zones a risque.
-
-CONTEXTE:
-- Les seuils CLAUDE.md (500 lignes/classe, 50 lignes/methode) sont un proxy mais ne mesurent pas la complexite reelle.
-- La complexite cyclomatique et cognitive sont de meilleurs indicateurs de maintenabilite.
-
-DESCRIPTION:
-- Backend : utiliser un plugin Maven (ou SonarQube) pour mesurer la complexite cyclomatique.
-- Frontend : utiliser eslint-plugin-complexity ou SonarQube.
-- Identifier les methodes avec complexite > 10 (cyclomatique) ou > 15 (cognitive).
-- Proposer des refactorings pour les zones les plus complexes.
-
-CRITERES_D_ACCEPTATION:
-- [ ] Rapport de complexite complet (backend + frontend).
-- [ ] Methodes > seuil identifiees avec recommandation de refactoring.
-- [ ] Top 10 methodes les plus complexes listees.
-
-NEXT:
-- (1) Mesurer complexite backend et frontend
-- (2) Identifier les hot spots
-- (3) Proposer refactorings pour le top 10
-
-================================================================================
-FEATURES - CATALOGUE JOUEURS & FORTNITE API
-================================================================================
+- (1) Ajouter tests rouges sur etats loading/success/error
+- (2) Extraire le pipeline en sous-methodes et services si necessaire
+- (3) Revalider tests frontend cibles + build
 
 ID: JIRA-FEAT-003
 TITRE: Recherche API Fortnite officielle - rapport complet avec tests reels

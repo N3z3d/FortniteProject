@@ -79,80 +79,17 @@ public class TradingService {
       UUID fromTeamId, UUID toTeamId, List<Player> offeredPlayers, List<Player> requestedPlayers) {
     log.info("Proposing trade from team {} to team {}", fromTeamId, toTeamId);
 
-    // Validate basic requirements
-    Team fromTeam =
-        teamRepository
-            .findById(fromTeamId)
-            .orElseThrow(() -> new BusinessException("From team not found"));
-    Team toTeam =
-        teamRepository
-            .findById(toTeamId)
-            .orElseThrow(() -> new BusinessException("To team not found"));
+    Team fromTeam = findTeamOrThrow(fromTeamId, "From team not found");
+    Team toTeam = findTeamOrThrow(toTeamId, "To team not found");
 
-    // Validate same game
-    if (!fromTeam.getGame().getId().equals(toTeam.getGame().getId())) {
-      throw new BusinessException("Teams must be in the same game");
-    }
+    validateGameTradingRules(fromTeam, toTeam);
+    validatePlayerOwnershipAndLocks(fromTeam, offeredPlayers, "Team does not own offered player: ");
+    validatePlayerOwnershipAndLocks(
+        toTeam, requestedPlayers, "Target team does not own requested player: ");
+    validateTradeSize(offeredPlayers, requestedPlayers);
 
-    Game game = fromTeam.getGame();
-
-    // Validate trading is enabled
-    if (!Boolean.TRUE.equals(game.getTradingEnabled())) {
-      throw new BusinessException("Trading is disabled for this game");
-    }
-
-    // Validate trade deadline
-    if (game.getTradeDeadline() != null && LocalDateTime.now().isAfter(game.getTradeDeadline())) {
-      throw new BusinessException("Trade deadline has passed");
-    }
-
-    // Validate max trades per team
-    if (fromTeam.getCompletedTradesCount() >= game.getMaxTradesPerTeam()) {
-      throw new BusinessException("Team has reached maximum number of trades");
-    }
-    if (toTeam.getCompletedTradesCount() >= game.getMaxTradesPerTeam()) {
-      throw new BusinessException("Target team has reached maximum number of trades");
-    }
-
-    // Validate player ownership
-    for (Player player : offeredPlayers) {
-      if (!teamOwnsPlayer(fromTeam, player)) {
-        throw new BusinessException("Team does not own offered player: " + player.getName());
-      }
-      if (player.isLocked()) {
-        throw new BusinessException("Cannot trade locked player: " + player.getName());
-      }
-    }
-
-    for (Player player : requestedPlayers) {
-      if (!teamOwnsPlayer(toTeam, player)) {
-        throw new BusinessException(
-            "Target team does not own requested player: " + player.getName());
-      }
-      if (player.isLocked()) {
-        throw new BusinessException("Cannot trade locked player: " + player.getName());
-      }
-    }
-
-    // Validate max players per trade (5 is reasonable limit)
-    if (offeredPlayers.size() > 5 || requestedPlayers.size() > 5) {
-      throw new BusinessException("Too many players in trade (maximum 5 per side)");
-    }
-
-    // Create the trade
-    Trade trade =
-        Trade.builder()
-            .fromTeam(fromTeam)
-            .toTeam(toTeam)
-            .offeredPlayers(offeredPlayers)
-            .requestedPlayers(requestedPlayers)
-            .status(Trade.Status.PENDING)
-            .proposedAt(LocalDateTime.now())
-            .build();
-
-    Trade savedTrade = tradeRepository.save(trade);
-    tradeNotificationService.notifyTradeProposed(savedTrade);
-    return savedTrade;
+    Trade trade = buildPendingTrade(fromTeam, toTeam, offeredPlayers, requestedPlayers);
+    return saveAndNotifyTradeProposed(trade);
   }
 
   /**
@@ -165,73 +102,13 @@ public class TradingService {
   public Trade acceptTrade(UUID tradeId, UUID userId) {
     log.info("Accepting trade {} by user {}", tradeId, userId);
 
-    Trade trade =
-        tradeRepository
-            .findById(tradeId)
-            .orElseThrow(() -> new BusinessException("Trade not found"));
+    Trade trade = loadTradeOrThrow(tradeId);
+    validateTradeAcceptanceRights(trade, userId);
 
-    // Validate user can accept this trade
-    if (!trade.getToTeam().getUser().getId().equals(userId)) {
-      throw new BusinessException("Only the target team owner can accept this trade");
-    }
-
-    // Validate trade is pending
-    if (trade.getStatus() != Trade.Status.PENDING) {
-      throw new BusinessException("Trade is not in pending status");
-    }
-
-    // Validate regional rules after trade
-    Team fromTeam = trade.getFromTeam();
-    Team toTeam = trade.getToTeam();
-
-    // Create copies of player lists to simulate the trade
-    List<Player> fromTeamPlayersAfterTrade = new ArrayList<>(getActivePlayers(fromTeam));
-    fromTeamPlayersAfterTrade.removeAll(trade.getOfferedPlayers());
-    fromTeamPlayersAfterTrade.addAll(trade.getRequestedPlayers());
-
-    List<Player> toTeamPlayersAfterTrade = new ArrayList<>(getActivePlayers(toTeam));
-    toTeamPlayersAfterTrade.removeAll(trade.getRequestedPlayers());
-    toTeamPlayersAfterTrade.addAll(trade.getOfferedPlayers());
-
-    // Create temporary team objects for validation
-    Team tempFromTeam = new Team();
-    tempFromTeam.setName(fromTeam.getName());
-    tempFromTeam.setPlayers(asTeamPlayers(tempFromTeam, fromTeamPlayersAfterTrade));
-
-    Team tempToTeam = new Team();
-    tempToTeam.setName(toTeam.getName());
-    tempToTeam.setPlayers(asTeamPlayers(tempToTeam, toTeamPlayersAfterTrade));
-
-    // Validate team compositions with simulated state
-    validationService.validateTeamComposition(tempFromTeam, fromTeam.getGame().getRegionRules());
-    validationService.validateTeamComposition(tempToTeam, toTeam.getGame().getRegionRules());
-
-    // Execute the actual trade
-    // Step 1: Remove offered players from fromTeam
-    trade.getOfferedPlayers().forEach(p -> removePlayerFromTeam(fromTeam, p));
-
-    // Step 2: Remove requested players from toTeam
-    trade.getRequestedPlayers().forEach(p -> removePlayerFromTeam(toTeam, p));
-
-    // Step 3: Add requested players to fromTeam
-    trade.getRequestedPlayers().forEach(p -> addPlayerToTeam(fromTeam, p));
-
-    // Step 4: Add offered players to toTeam
-    trade.getOfferedPlayers().forEach(p -> addPlayerToTeam(toTeam, p));
-
-    trade.setStatus(Trade.Status.ACCEPTED);
-    trade.setAcceptedAt(LocalDateTime.now());
-
-    // Update trade counters
-    fromTeam.setCompletedTradesCount(fromTeam.getCompletedTradesCount() + 1);
-    toTeam.setCompletedTradesCount(toTeam.getCompletedTradesCount() + 1);
-
-    // Save everything
-    teamRepository.save(fromTeam);
-    teamRepository.save(toTeam);
-    Trade savedTrade = tradeRepository.save(trade);
-    tradeNotificationService.notifyTradeAccepted(savedTrade);
-    return savedTrade;
+    validatePostTradeComposition(trade);
+    executePlayerSwap(trade);
+    finalizeAcceptedTrade(trade);
+    return saveTeamsAndTradeAndNotifyAccepted(trade);
   }
 
   /**
@@ -245,7 +122,7 @@ public class TradingService {
     log.info("Rejecting trade {} by user {}", tradeId, userId);
 
     Trade trade =
-        tradeRepository
+        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
             .findById(tradeId)
             .orElseThrow(() -> new BusinessException("Trade not found"));
 
@@ -278,7 +155,7 @@ public class TradingService {
     log.info("Canceling trade {} by user {}", tradeId, userId);
 
     Trade trade =
-        tradeRepository
+        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
             .findById(tradeId)
             .orElseThrow(() -> new BusinessException("Trade not found"));
 
@@ -355,7 +232,7 @@ public class TradingService {
     log.info("Creating counter-offer for trade {} by user {}", originalTradeId, userId);
 
     Trade originalTrade =
-        tradeRepository
+        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
             .findById(originalTradeId)
             .orElseThrow(() -> new BusinessException("Original trade not found"));
 
@@ -385,6 +262,136 @@ public class TradingService {
     Trade savedCounter = tradeRepository.save(counterTrade);
     tradeNotificationService.notifyTradeCountered(savedOriginal, savedCounter);
     return savedCounter;
+  }
+
+  private void validateGameTradingRules(Team fromTeam, Team toTeam) {
+    if (!fromTeam.getGame().getId().equals(toTeam.getGame().getId())) {
+      throw new BusinessException("Teams must be in the same game");
+    }
+    Game game = fromTeam.getGame();
+    if (!Boolean.TRUE.equals(game.getTradingEnabled())) {
+      throw new BusinessException("Trading is disabled for this game");
+    }
+    if (game.getTradeDeadline() != null && LocalDateTime.now().isAfter(game.getTradeDeadline())) {
+      throw new BusinessException("Trade deadline has passed");
+    }
+    if (fromTeam.getCompletedTradesCount() >= game.getMaxTradesPerTeam()) {
+      throw new BusinessException("Team has reached maximum number of trades");
+    }
+    if (toTeam.getCompletedTradesCount() >= game.getMaxTradesPerTeam()) {
+      throw new BusinessException("Target team has reached maximum number of trades");
+    }
+  }
+
+  private void validatePlayerOwnershipAndLocks(
+      Team team, List<Player> players, String ownershipErrorPrefix) {
+    for (Player player : players) {
+      if (!teamOwnsPlayer(team, player)) {
+        throw new BusinessException(ownershipErrorPrefix + player.getName());
+      }
+      if (player.isLocked()) {
+        throw new BusinessException("Cannot trade locked player: " + player.getName());
+      }
+    }
+  }
+
+  private void validatePostTradeComposition(Trade trade) {
+    Team fromTeam = trade.getFromTeam();
+    Team toTeam = trade.getToTeam();
+
+    List<Player> fromPlayersAfter =
+        simulatePlayersAfterTrade(fromTeam, trade.getOfferedPlayers(), trade.getRequestedPlayers());
+    List<Player> toPlayersAfter =
+        simulatePlayersAfterTrade(toTeam, trade.getRequestedPlayers(), trade.getOfferedPlayers());
+
+    Team tempFromTeam = new Team();
+    tempFromTeam.setName(fromTeam.getName());
+    tempFromTeam.setPlayers(asTeamPlayers(tempFromTeam, fromPlayersAfter));
+
+    Team tempToTeam = new Team();
+    tempToTeam.setName(toTeam.getName());
+    tempToTeam.setPlayers(asTeamPlayers(tempToTeam, toPlayersAfter));
+
+    validationService.validateTeamComposition(tempFromTeam, fromTeam.getGame().getRegionRules());
+    validationService.validateTeamComposition(tempToTeam, toTeam.getGame().getRegionRules());
+  }
+
+  private Team findTeamOrThrow(UUID teamId, String errorMessage) {
+    return teamRepository.findById(teamId).orElseThrow(() -> new BusinessException(errorMessage));
+  }
+
+  private void validateTradeSize(List<Player> offeredPlayers, List<Player> requestedPlayers) {
+    if (offeredPlayers.size() > 5 || requestedPlayers.size() > 5) {
+      throw new BusinessException("Too many players in trade (maximum 5 per side)");
+    }
+  }
+
+  private Trade buildPendingTrade(
+      Team fromTeam, Team toTeam, List<Player> offeredPlayers, List<Player> requestedPlayers) {
+    return Trade.builder()
+        .fromTeam(fromTeam)
+        .toTeam(toTeam)
+        .offeredPlayers(offeredPlayers)
+        .requestedPlayers(requestedPlayers)
+        .status(Trade.Status.PENDING)
+        .proposedAt(LocalDateTime.now())
+        .build();
+  }
+
+  private Trade saveAndNotifyTradeProposed(Trade trade) {
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeProposed(savedTrade);
+    return savedTrade;
+  }
+
+  private Trade loadTradeOrThrow(UUID tradeId) {
+    return ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+        .findById(tradeId)
+        .orElseThrow(() -> new BusinessException("Trade not found"));
+  }
+
+  private void validateTradeAcceptanceRights(Trade trade, UUID userId) {
+    if (!trade.getToTeam().getUser().getId().equals(userId)) {
+      throw new BusinessException("Only the target team owner can accept this trade");
+    }
+    if (trade.getStatus() != Trade.Status.PENDING) {
+      throw new BusinessException("Trade is not in pending status");
+    }
+  }
+
+  private List<Player> simulatePlayersAfterTrade(
+      Team team, List<Player> playersToRemove, List<Player> playersToAdd) {
+    List<Player> playersAfterTrade = new ArrayList<>(getActivePlayers(team));
+    playersAfterTrade.removeAll(playersToRemove);
+    playersAfterTrade.addAll(playersToAdd);
+    return playersAfterTrade;
+  }
+
+  private void executePlayerSwap(Trade trade) {
+    Team fromTeam = trade.getFromTeam();
+    Team toTeam = trade.getToTeam();
+    trade.getOfferedPlayers().forEach(p -> removePlayerFromTeam(fromTeam, p));
+    trade.getRequestedPlayers().forEach(p -> removePlayerFromTeam(toTeam, p));
+    trade.getRequestedPlayers().forEach(p -> addPlayerToTeam(fromTeam, p));
+    trade.getOfferedPlayers().forEach(p -> addPlayerToTeam(toTeam, p));
+  }
+
+  private void finalizeAcceptedTrade(Trade trade) {
+    trade.setStatus(Trade.Status.ACCEPTED);
+    trade.setAcceptedAt(LocalDateTime.now());
+
+    Team fromTeam = trade.getFromTeam();
+    Team toTeam = trade.getToTeam();
+    fromTeam.setCompletedTradesCount(fromTeam.getCompletedTradesCount() + 1);
+    toTeam.setCompletedTradesCount(toTeam.getCompletedTradesCount() + 1);
+  }
+
+  private Trade saveTeamsAndTradeAndNotifyAccepted(Trade trade) {
+    teamRepository.save(trade.getFromTeam());
+    teamRepository.save(trade.getToTeam());
+    Trade savedTrade = tradeRepository.save(trade);
+    tradeNotificationService.notifyTradeAccepted(savedTrade);
+    return savedTrade;
   }
 
   // Helpers to work with TeamPlayer mapping

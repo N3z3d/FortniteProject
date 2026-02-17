@@ -1,0 +1,77 @@
+<!-- Smart Suggestions -->
+<div class="smart-suggestions" *ngIf="hasSuggestions">
+  <h3>{{ t.t('draft.ui.suggestionsTitle') }}</h3>
+  <div class="suggestions-grid">
+    <div
+      *ngFor="let suggestion of suggestions"
+      class="suggestion-card"
+      (click)="selectPlayer(suggestion.player)">
+      <div class="suggestion-rank">{{ getSuggestionRankLabel(suggestion.rank) }}</div>
+      <div class="suggestion-player">
+        <h4>{{ suggestion.player.nickname }}</h4>
+        <span class="suggestion-region">{{ getRegionLabel(suggestion.player.region) }}</span>
+      </div>
+      <div class="suggestion-score">{{ suggestion.score }} {{ t.t('draft.ui.pointsShort') }}</div>
+      <button mat-fab mini color="primary" class="select-fab">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Filtered Results (Only if searching) -->
+<div class="search-results" *ngIf="hasResults">
+  <h3>{{ getSearchResultsTitle(safePlayers.length) }}</h3>
+  <div class="results-list">
+    <div
+      *ngFor="let player of visiblePlayers"
+      class="result-item"
+      (click)="selectPlayer(player)">
+      <div class="player-info">
+        <span class="player-name">{{ player.nickname }}</span>
+        <span class="player-details">{{ getRegionLabel(player.region) }} &bull; {{ getTrancheLabel(player.tranche) }}</span>
+      </div>
+      <button mat-button color="primary">{{ t.t('draft.ui.selectAction') }}</button>
+    </div>
+  </div>
+
+  <!-- Show More Results -->
+  <button
+    *ngIf="shouldShowMoreButton"
+    mat-button
+    (click)="toggleShowAllResults()"
+    class="show-more-btn">
+    {{ showAllResults ? t.t('draft.ui.showLess') : getShowAllResultsLabel(safePlayers.length) }}
+  </button>
+</div>
+
+<!-- All Results (Extended View) -->
+<div class="all-results" *ngIf="showAllResults && hasSearchTerm">
+  <div class="results-grid">
+    <div
+      *ngFor="let player of safePlayers"
+      class="player-card-mini"
+      [class.disabled]="!canSelect"
+      (click)="selectPlayer(player)">
+      <div class="player-header">
+        <span class="player-nickname">{{ player.nickname }}</span>
+        <mat-chip class="region-mini" color="primary" selected>
+          {{ getRegionLabel(player.region) }}
+        </mat-chip>
+      </div>
+      <button mat-icon-button color="primary" class="select-mini">
+        <mat-icon>add_circle</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- No Results -->
+<div class="no-results" *ngIf="hasNoResults">
+  <mat-icon class="no-results-icon">search_off</mat-icon>
+  <h3>{{ t.t('draft.ui.noResultsTitle') }}</h3>
+  <p>{{ t.t('draft.ui.noResultsDescription') }}</p>
+  <button mat-button (click)="requestClearSearch()" color="primary">
+    {{ t.t('draft.ui.clearSearch') }}
+  </button>
+</div>

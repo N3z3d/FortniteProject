@@ -6,9 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserProfile } from '../../../core/services/user-context.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 @Component({
   selector: 'app-edit-profile-dialog',
@@ -20,8 +20,7 @@ import { TranslationService } from '../../../core/services/translation.service';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule,
-    MatSnackBarModule
+    MatIconModule
   ],
   templateUrl: './edit-profile-dialog.component.html',
   styleUrls: ['./edit-profile-dialog.component.scss']
@@ -34,7 +33,7 @@ export class EditProfileDialogComponent {
     private readonly dialogRef: MatDialogRef<EditProfileDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { user: UserProfile },
     private readonly fb: FormBuilder,
-    private readonly snackBar: MatSnackBar,
+    private readonly uiFeedback: UiErrorFeedbackService,
     public readonly t: TranslationService
   ) {
     this.profileForm = this.fb.group({
@@ -45,9 +44,7 @@ export class EditProfileDialogComponent {
 
   onSave(): void {
     if (this.profileForm.invalid) {
-      this.snackBar.open(this.t.t('profile.editDialog.formInvalid'), this.t.t('common.close'), {
-        duration: 3000
-      });
+      this.uiFeedback.showError(null, 'profile.editDialog.formInvalid', { duration: 3000 });
       return;
     }
 
@@ -61,9 +58,7 @@ export class EditProfileDialogComponent {
         email: this.profileForm.value.email
       };
 
-      this.snackBar.open(this.t.t('profile.editDialog.success'), this.t.t('common.close'), {
-        duration: 3000
-      });
+      this.uiFeedback.showSuccessFromKey('profile.editDialog.success', 3000);
 
       this.saving = false;
       this.dialogRef.close(updatedUser);

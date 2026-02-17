@@ -1,0 +1,351 @@
+@import '../../../shared/styles/mixins';
+
+:host {
+  display: block;
+  padding: var(--space-lg);
+}
+
+.admin-dashboard {
+  @include responsive-container(1400px);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+
+  .dashboard-title {
+    @include gaming-title;
+    @include responsive-font(2rem, 1.5rem, 1.2rem);
+    margin: 0;
+  }
+
+  button {
+    color: var(--gaming-gray-light);
+
+    &:hover {
+      color: var(--gaming-primary);
+    }
+  }
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: var(--space-md);
+  color: var(--gaming-gray-light);
+
+  .error-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: var(--gaming-error, #f44336);
+  }
+}
+
+.dashboard-grid {
+  @include responsive-grid(2, 1, 1, var(--space-lg));
+}
+
+.dashboard-card {
+  @include glass-card-dark(0.85, 16px, 0.12);
+  padding: var(--space-lg);
+  @include fade-in-up(0s, 0.5s);
+
+  &:nth-child(2) { animation-delay: 0.1s; }
+  &:nth-child(3) { animation-delay: 0.2s; }
+  &:nth-child(4) { animation-delay: 0.3s; }
+
+  mat-card-header {
+    margin-bottom: var(--space-md);
+
+    .card-icon {
+      color: var(--gaming-primary);
+      font-size: 24px;
+    }
+
+    mat-card-title {
+      @include gaming-font;
+      @include responsive-font(1.1rem, 1rem, 0.9rem);
+      color: var(--gaming-light, #fff);
+    }
+  }
+
+  mat-card-content {
+    color: var(--gaming-gray-light, #aaa);
+  }
+}
+
+// KPI Card
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.kpi-item {
+  text-align: center;
+  padding: var(--space-md);
+  border-radius: var(--radius-medium);
+  background: rgba(255, 255, 255, 0.05);
+
+  .kpi-value {
+    display: block;
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    @include gaming-text-gradient;
+    margin-bottom: var(--space-xs);
+  }
+
+  .kpi-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gaming-gray-light);
+  }
+}
+
+.games-by-status {
+  h4 {
+    @include gaming-font;
+    font-size: 0.85rem;
+    color: var(--gaming-light, #fff);
+    margin-bottom: var(--space-sm);
+  }
+}
+
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-small, 4px);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.85rem;
+
+  .status-label {
+    color: var(--gaming-gray-light);
+  }
+
+  .status-value {
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    color: var(--gaming-primary);
+  }
+}
+
+// Health Card
+.health-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-medium);
+  margin-bottom: var(--space-md);
+  font-weight: 600;
+  font-size: 1.1rem;
+
+  &.status-up {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4caf50;
+
+    mat-icon { color: #4caf50; }
+  }
+
+  &.status-down {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+
+    mat-icon { color: #f44336; }
+  }
+
+  &.status-unknown {
+    background: rgba(255, 152, 0, 0.15);
+    color: #ff9800;
+  }
+}
+
+.health-detail {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--gaming-gray-light);
+    margin-bottom: var(--space-xs);
+  }
+
+  .detail-value {
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    color: var(--gaming-light, #fff);
+  }
+
+  mat-progress-bar {
+    margin-top: var(--space-xs);
+    border-radius: 4px;
+  }
+}
+
+// Activity Card
+.activity-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.activity-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border-radius: var(--radius-medium);
+  background: rgba(255, 255, 255, 0.05);
+
+  mat-icon {
+    color: var(--gaming-primary);
+  }
+
+  .activity-count {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gaming-light, #fff);
+  }
+
+  .activity-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--gaming-gray-light);
+    text-align: center;
+  }
+}
+
+.recent-list {
+  h4 {
+    @include gaming-font;
+    font-size: 0.85rem;
+    color: var(--gaming-light, #fff);
+    margin-bottom: var(--space-sm);
+  }
+}
+
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .recent-name {
+    color: var(--gaming-light, #fff);
+    font-size: 0.9rem;
+  }
+
+  .recent-status {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.badge-creating {
+      background: rgba(33, 150, 243, 0.2);
+      color: #2196f3;
+    }
+
+    &.badge-drafting {
+      background: rgba(255, 152, 0, 0.2);
+      color: #ff9800;
+    }
+
+    &.badge-active {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+
+    &.badge-finished {
+      background: rgba(158, 158, 158, 0.2);
+      color: #9e9e9e;
+    }
+
+    &.badge-cancelled {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+  }
+}
+
+// Metrics Card
+.metric-section {
+  margin-bottom: var(--space-md);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    @include gaming-font;
+    font-size: 0.85rem;
+    color: var(--gaming-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  mat-progress-bar {
+    margin: var(--space-xs) 0 var(--space-sm);
+    border-radius: 4px;
+  }
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+
+  .metric-label {
+    font-size: 0.85rem;
+    color: var(--gaming-gray-light);
+  }
+
+  .metric-value {
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    color: var(--gaming-light, #fff);
+
+    &.error-text {
+      color: #f44336;
+    }
+  }
+}
+
+@include mobile {
+  .kpi-grid,
+  .activity-stats {
+    grid-template-columns: 1fr;
+  }
+}

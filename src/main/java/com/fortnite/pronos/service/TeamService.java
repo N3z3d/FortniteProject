@@ -8,26 +8,26 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.player.model.Player;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
+import com.fortnite.pronos.domain.team.model.Team;
 import com.fortnite.pronos.dto.SwapPlayersRequest;
 import com.fortnite.pronos.dto.SwapPlayersResponse;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.exception.InvalidSwapException;
 import com.fortnite.pronos.exception.TeamNotFoundException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.TeamPlayer;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamPlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Service de gestion des équipes */
+/** Service de gestion des equipes */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,34 +37,32 @@ public class TeamService {
   private static final String TEAM_NOT_FOUND_MESSAGE = "Equipe non trouvee";
   private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouve";
 
+  private final TeamDomainRepositoryPort teamDomainRepository;
+  private final PlayerDomainRepositoryPort playerDomainRepository;
   private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
   private final UserRepositoryPort userRepository;
   private final TeamPlayerRepository teamPlayerRepository;
 
-  // Note: Query methods moved to TeamQueryService
-
-  /** Crée une nouvelle équipe pour un utilisateur */
+  /** Cree une nouvelle equipe pour un utilisateur */
   @Transactional
   public TeamDto createTeam(UUID userId, String name, int season) {
     log.info(
-        "Création d'une équipe '{}' pour l'utilisateur {} et la saison {}", name, userId, season);
+        "Creation d'une equipe '{}' pour l'utilisateur {} et la saison {}", name, userId, season);
 
     User user = findUserById(userId);
     validateTeamCreation(user, season);
 
-    Team team = buildNewTeam(name, user, season);
-    Team savedTeam = teamRepository.save(team);
+    Team savedTeam = teamDomainRepository.save(buildNewTeam(name, user, season));
 
-    log.info("Équipe {} créée avec succès pour l'utilisateur {}", savedTeam.getId(), userId);
-    return TeamDto.from(savedTeam);
+    log.info("Equipe {} creee avec succes pour l'utilisateur {}", savedTeam.getId(), userId);
+    return toTeamDto(savedTeam.getId());
   }
 
-  /** Ajoute un joueur à une équipe */
+  /** Ajoute un joueur a une equipe */
   @Transactional
   public TeamDto addPlayerToTeam(UUID userId, UUID playerId, int position, int season) {
     log.info(
-        "Ajout du joueur {} à l'équipe de l'utilisateur {} (position: {})",
+        "Ajout du joueur {} a l'equipe de l'utilisateur {} (position: {})",
         playerId,
         userId,
         position);
@@ -74,30 +72,28 @@ public class TeamService {
     Team team = findTeamByUserAndSeason(user, season);
 
     validatePlayerAddition(team, player);
-    team.addPlayer(player, position);
+    team.addMember(player.getId(), position);
 
-    Team savedTeam = teamRepository.save(team);
-    log.info("Joueur {} ajouté avec succès à l'équipe {}", playerId, team.getId());
-
-    return TeamDto.from(savedTeam);
+    Team savedTeam = teamDomainRepository.save(team);
+    log.info("Joueur {} ajoute avec succes a l'equipe {}", playerId, team.getId());
+    return toTeamDto(savedTeam.getId());
   }
 
-  /** Retire un joueur d'une équipe */
+  /** Retire un joueur d'une equipe */
   @Transactional
   public TeamDto removePlayerFromTeam(UUID userId, UUID playerId, int season) {
-    log.info("Suppression du joueur {} de l'équipe de l'utilisateur {}", playerId, userId);
+    log.info("Suppression du joueur {} de l'equipe de l'utilisateur {}", playerId, userId);
 
     User user = findUserById(userId);
     Player player = findPlayerById(playerId);
     Team team = findTeamByUserAndSeason(user, season);
 
     validatePlayerRemoval(team, player);
-    team.removePlayer(player);
+    team.removeMember(player.getId());
 
-    Team savedTeam = teamRepository.save(team);
-    log.info("Joueur {} supprimé avec succès de l'équipe {}", playerId, team.getId());
-
-    return TeamDto.from(savedTeam);
+    Team savedTeam = teamDomainRepository.save(team);
+    log.info("Joueur {} supprime avec succes de l'equipe {}", playerId, team.getId());
+    return toTeamDto(savedTeam.getId());
   }
 
   /** Effectue des changements de joueurs en lot */
@@ -114,70 +110,77 @@ public class TeamService {
     validateUserPermissions(user);
     processPlayerChanges(team, playerChanges, season);
 
-    Team savedTeam = teamRepository.save(team);
-    log.info("Changements de joueurs effectués avec succès pour l'équipe {}", team.getId());
-
-    return TeamDto.from(savedTeam);
+    Team savedTeam = teamDomainRepository.save(team);
+    log.info("Changements de joueurs effectues avec succes pour l'equipe {}", team.getId());
+    return toTeamDto(savedTeam.getId());
   }
 
-  /**
-   * Échange deux joueurs entre deux équipes Clean Code : méthode principale qui orchestre le
-   * processus
-   */
+  /** Echange deux joueurs entre deux equipes */
   @Transactional
   public SwapPlayersResponse swapPlayers(UUID userId, SwapPlayersRequest request) {
-    log.debug("Demande d'échange de joueurs par l'utilisateur {}", userId);
+    log.debug("Demande d'echange de joueurs par l'utilisateur {}", userId);
 
-    // Valider l'utilisateur
     User user = validateUserExists(userId);
+    Team team1 = findDomainTeamOrThrow(request.getTeamId1());
+    Team team2 = findDomainTeamOrThrow(request.getTeamId2());
 
-    // Récupérer les équipes
-    Team team1 = findTeamOrThrow(request.getTeamId1());
-    Team team2 = findTeamOrThrow(request.getTeamId2());
-
-    // Valider les droits et conditions
     validateUserCanSwap(user, team1, team2);
     validateTeamsCanSwap(team1, team2);
 
-    // Récupérer et valider les joueurs
-    Player player1 = findPlayerOrThrow(request.getPlayerId1());
-    Player player2 = findPlayerOrThrow(request.getPlayerId2());
+    Player player1 = findPlayerById(request.getPlayerId1());
+    Player player2 = findPlayerById(request.getPlayerId2());
 
-    // Effectuer l'échange
     performSwap(team1, player1, team2, player2);
 
-    // Créer la réponse
     return createSuccessResponse(team1, player1, team2, player2, user);
   }
 
-  /** Valide qu'un utilisateur existe Clean Code : méthode avec responsabilité unique */
+  /** Met a jour une equipe existante */
+  @Transactional
+  public TeamDto updateTeam(UUID teamId, TeamDto teamDto) {
+    log.debug("Mise a jour de l'equipe: {}", teamId);
+
+    Team team =
+        teamDomainRepository
+            .findById(teamId)
+            .orElseThrow(() -> new EntityNotFoundException("Equipe non trouvee"));
+    User owner = findUserById(team.getOwnerId());
+
+    team.rename("Equipe " + owner.getUsername());
+    Team updatedTeam = teamDomainRepository.save(team);
+
+    log.info("Equipe mise a jour: {}", teamId);
+    return toTeamDto(updatedTeam.getId());
+  }
+
+  /** Supprime une equipe */
+  @Transactional
+  public void deleteTeam(UUID teamId) {
+    log.info("Suppression de l'equipe {}", teamId);
+
+    if (teamDomainRepository.findById(teamId).isEmpty()) {
+      throw new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE);
+    }
+
+    teamRepository.deleteById(teamId);
+    log.info("Equipe {} supprimee avec succes", teamId);
+  }
+
   private User validateUserExists(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new EntityNotFoundException(USER_NOT_FOUND_MESSAGE));
   }
 
-  /** Trouve une équipe ou lance une exception Clean Code : évite la duplication */
-  private Team findTeamOrThrow(UUID teamId) {
-    return teamRepository
+  private Team findDomainTeamOrThrow(UUID teamId) {
+    return teamDomainRepository
         .findById(teamId)
         .orElseThrow(() -> new TeamNotFoundException("Equipe non trouvee : " + teamId));
   }
 
-  /** Trouve un joueur ou lance une exception Clean Code : méthode focalisée */
-  private Player findPlayerOrThrow(UUID playerId) {
-    return ((PlayerRepositoryPort) playerRepository)
-        .findById(playerId)
-        .orElseThrow(
-            () -> new EntityNotFoundException(PLAYER_NOT_FOUND_MESSAGE + " : " + playerId));
-  }
-
-  /**
-   * Valide que l'utilisateur peut effectuer l'échange Clean Code : séparation des préoccupations
-   */
   private void validateUserCanSwap(User user, Team team1, Team team2) {
-    boolean isOwnerTeam1 = team1.getOwner().getId().equals(user.getId());
-    boolean isOwnerTeam2 = team2.getOwner().getId().equals(user.getId());
+    boolean isOwnerTeam1 = team1.getOwnerId().equals(user.getId());
+    boolean isOwnerTeam2 = team2.getOwnerId().equals(user.getId());
 
     if (!isOwnerTeam1 && !isOwnerTeam2) {
       throw new UnauthorizedAccessException(
@@ -185,52 +188,52 @@ public class TeamService {
     }
   }
 
-  /** Valide que les équipes peuvent échanger Clean Code : validation métier isolée */
   private void validateTeamsCanSwap(Team team1, Team team2) {
-    if (!team1.getSeason().equals(team2.getSeason())) {
+    if (team1.getSeason() != team2.getSeason()) {
       throw new InvalidSwapException(
           "Les equipes doivent etre dans la meme saison pour echanger des joueurs");
     }
   }
 
-  /** Effectue l'échange physique des joueurs Clean Code : méthode qui fait une seule chose */
   private void performSwap(Team team1, Player player1, Team team2, Player player2) {
-    // Récupérer les associations actuelles
-    TeamPlayer tp1 = findTeamPlayerOrThrow(team1, player1, team1.getName());
-    TeamPlayer tp2 = findTeamPlayerOrThrow(team2, player2, team2.getName());
+    com.fortnite.pronos.model.Team team1Ref = toEntityTeamReference(team1);
+    com.fortnite.pronos.model.Team team2Ref = toEntityTeamReference(team2);
+    com.fortnite.pronos.model.Player player1Ref = toEntityPlayerReference(player1);
+    com.fortnite.pronos.model.Player player2Ref = toEntityPlayerReference(player2);
 
-    // Échanger les équipes
-    tp1.setTeam(team2);
-    tp2.setTeam(team1);
+    TeamPlayer tp1 =
+        findTeamPlayerOrThrow(team1Ref, player1Ref, team1.getName(), player1.getNickname());
+    TeamPlayer tp2 =
+        findTeamPlayerOrThrow(team2Ref, player2Ref, team2.getName(), player2.getNickname());
 
-    // Sauvegarder les modifications
+    tp1.setTeam(team2Ref);
+    tp2.setTeam(team1Ref);
+
     teamPlayerRepository.save(tp1);
     teamPlayerRepository.save(tp2);
 
     log.info(
-        "Échange effectué : {} ({}) ↔ {} ({})",
+        "Echange effectue : {} ({}) <-> {} ({})",
         player1.getNickname(),
         team1.getName(),
         player2.getNickname(),
         team2.getName());
   }
 
-  /**
-   * Trouve l'association TeamPlayer ou lance une exception Clean Code : méthode utilitaire
-   * réutilisable
-   */
-  private TeamPlayer findTeamPlayerOrThrow(Team team, Player player, String teamName) {
+  private TeamPlayer findTeamPlayerOrThrow(
+      com.fortnite.pronos.model.Team team,
+      com.fortnite.pronos.model.Player player,
+      String teamName,
+      String playerNickname) {
     return teamPlayerRepository
         .findByTeamAndPlayer(team, player)
         .orElseThrow(
             () ->
                 new InvalidSwapException(
                     String.format(
-                        "Le joueur %s n'est pas dans l'equipe %s",
-                        player.getNickname(), teamName)));
+                        "Le joueur %s n'est pas dans l'equipe %s", playerNickname, teamName)));
   }
 
-  /** Crée la réponse de succès Clean Code : construction de la réponse isolée */
   private SwapPlayersResponse createSuccessResponse(
       Team team1, Player player1, Team team2, Player player2, User initiator) {
 
@@ -250,81 +253,66 @@ public class TeamService {
             player2.getId(),
             "Echange effectue avec succes entre " + team1.getName() + " et " + team2.getName());
     response.setSwapDetails(details);
-
     return response;
   }
-
-  // Méthodes utilitaires privées
 
   private User findUserById(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(
             () -> {
-              log.warn("Utilisateur non trouvé avec l'ID: {}", userId);
+              log.warn("Utilisateur non trouve avec l'ID: {}", userId);
               return new EntityNotFoundException(USER_NOT_FOUND_MESSAGE);
             });
   }
 
-  private User findUserByUsername(String username) {
-    return userRepository
-        .findByUsernameIgnoreCase(username)
-        .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouve: " + username));
-  }
-
   private Team findTeamByUserAndSeason(User user, int season) {
-    return teamRepository
-        .findByOwnerAndSeason(user, season)
+    return teamDomainRepository
+        .findByOwnerIdAndSeason(user.getId(), season)
         .orElseThrow(
             () -> {
               log.warn(
-                  "Équipe non trouvée pour l'utilisateur {} et la saison {}", user.getId(), season);
+                  "Equipe non trouvee pour l'utilisateur {} et la saison {}", user.getId(), season);
               return new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE);
             });
   }
 
   private Player findPlayerById(UUID playerId) {
-    return ((PlayerRepositoryPort) playerRepository)
+    return playerDomainRepository
         .findById(playerId)
         .orElseThrow(
             () -> {
-              log.warn("Joueur non trouvé avec l'ID: {}", playerId);
+              log.warn("Joueur non trouve avec l'ID: {}", playerId);
               return new EntityNotFoundException(PLAYER_NOT_FOUND_MESSAGE);
             });
   }
 
   private void validateTeamCreation(User user, int season) {
-    if (teamRepository.findByOwnerAndSeason(user, season).isPresent()) {
-      log.warn("L'utilisateur {} a déjà une équipe pour la saison {}", user.getId(), season);
+    if (teamDomainRepository.findByOwnerIdAndSeason(user.getId(), season).isPresent()) {
+      log.warn("L'utilisateur {} a deja une equipe pour la saison {}", user.getId(), season);
       throw new IllegalStateException("L'utilisateur a deja une equipe pour cette saison");
     }
   }
 
   private Team buildNewTeam(String name, User user, int season) {
-    Team team = new Team();
-    team.setName(name);
-    team.setOwner(user);
-    team.setSeason(season);
-    return team;
+    return new Team(name, user.getId(), season);
   }
 
   private void validatePlayerAddition(Team team, Player player) {
-    if (team.hasPlayer(player)) {
-      log.warn("Le joueur {} est déjà dans l'équipe {}", player.getId(), team.getId());
+    if (team.hasActiveMember(player.getId())) {
+      log.warn("Le joueur {} est deja dans l'equipe {}", player.getId(), team.getId());
       throw new IllegalStateException("Le joueur est deja dans l'equipe");
     }
   }
 
   private void validatePlayerRemoval(Team team, Player player) {
-    if (!team.hasPlayer(player)) {
-      log.warn("Le joueur {} n'est pas dans l'équipe {}", player.getId(), team.getId());
+    if (!team.hasActiveMember(player.getId())) {
+      log.warn("Le joueur {} n'est pas dans l'equipe {}", player.getId(), team.getId());
       throw new IllegalStateException("Le joueur n'est pas dans l'equipe");
     }
   }
 
   private void validateUserPermissions(User user) {
-    // Tous les utilisateurs peuvent modifier leur équipe maintenant
-    // Plus de restriction spéciale pour Marcel
     log.debug("Validation des permissions pour l'utilisateur {}", user.getId());
   }
 
@@ -336,10 +324,9 @@ public class TeamService {
             Player playerIn = findPlayerById(playerInId);
 
             validatePlayerChange(team, playerOut, playerIn, season);
-            executePlayerChange(team, playerOut, playerIn, season);
-
-            log.debug("Changement effectué: {} -> {}", playerOutId, playerInId);
-          } catch (Exception e) {
+            executePlayerChange(team, playerOut, playerIn);
+            log.debug("Changement effectue: {} -> {}", playerOutId, playerInId);
+          } catch (RuntimeException e) {
             log.error(
                 "Erreur lors du changement de joueur {} -> {}: {}",
                 playerOutId,
@@ -351,92 +338,48 @@ public class TeamService {
   }
 
   private void validatePlayerChange(Team team, Player playerOut, Player playerIn, int season) {
-    // Vérifier que le joueur sortant est dans l'équipe
-    if (!team.hasPlayer(playerOut)) {
-      throw new IllegalStateException("Le joueur sortant n'est pas dans l'équipe");
+    if (!team.hasActiveMember(playerOut.getId())) {
+      throw new IllegalStateException("Le joueur sortant n'est pas dans l'equipe");
     }
 
-    // Vérifier que le joueur entrant est disponible
-    if (teamRepository.findTeamByPlayerAndSeason(playerIn.getId(), season).isPresent()) {
+    if (teamDomainRepository.findTeamByPlayerAndSeason(playerIn.getId(), season).isPresent()) {
       throw new IllegalStateException("Le joueur entrant n'est pas disponible");
     }
 
-    // Vérifier les règles de changement
-    validateChangeRules(playerOut, playerIn, season);
+    validateChangeRules(playerOut, playerIn);
   }
 
-  private void executePlayerChange(Team team, Player playerOut, Player playerIn, int season) {
-    // Récupérer la position du joueur sortant
-    int position = team.findPlayerPositionInTeam(playerOut);
-
-    // Effectuer le changement
-    team.removePlayer(playerOut);
-    team.addPlayer(playerIn, position);
+  private void executePlayerChange(Team team, Player playerOut, Player playerIn) {
+    int position = team.getMemberPosition(playerOut.getId());
+    team.removeMember(playerOut.getId());
+    team.addMember(playerIn.getId(), position);
   }
 
-  private void validateChangeRules(Player playerOut, Player playerIn, int season) {
-    // Règles métier spécifiques aux changements
-    // À implémenter selon les règles du jeu
+  private void validateChangeRules(Player playerOut, Player playerIn) {
     log.debug(
-        "Validation des règles de changement pour {} -> {}", playerOut.getId(), playerIn.getId());
+        "Validation des regles de changement pour {} -> {}", playerOut.getId(), playerIn.getId());
   }
 
-  // Note: Query methods (getTeamByPlayer, getTeamsByPlayers, getTeamsBySeason,
-  // getParticipantTeams, getMarcelTeams, getTeamByUserAndSeason) moved to TeamQueryService
-
-  /** Crée une nouvelle équipe */
-  @Transactional
-  public TeamDto createTeam(TeamDto teamDto) {
-    log.debug("Création d'une nouvelle équipe");
-
-    // Simplification : créer une équipe avec des valeurs par défaut
-    User owner =
-        userRepository
-            .findById(teamDto.getUserId())
-            .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouve"));
-
-    Team team = new Team();
-    team.setName("Équipe " + owner.getUsername()); // Nom par défaut
-    team.setOwner(owner);
-    team.setSeason(owner.getCurrentSeason()); // Saison de l'utilisateur
-
-    Team savedTeam = teamRepository.save(team);
-    log.info("Équipe créée: {}", savedTeam.getId());
-
-    return TeamDto.from(savedTeam);
-  }
-
-  /** Met à jour une équipe existante */
-  @Transactional
-  public TeamDto updateTeam(UUID teamId, TeamDto teamDto) {
-    log.debug("Mise à jour de l'équipe: {}", teamId);
-
-    Team team =
+  private TeamDto toTeamDto(UUID teamId) {
+    com.fortnite.pronos.model.Team entity =
         teamRepository
-            .findById(teamId)
-            .orElseThrow(() -> new EntityNotFoundException("Equipe non trouvee"));
-
-    // Mise à jour simple du nom uniquement
-    team.setName("Équipe " + team.getOwner().getUsername());
-
-    Team updatedTeam = teamRepository.save(team);
-    log.info("Équipe mise à jour: {}", teamId);
-
-    return TeamDto.from(updatedTeam);
+            .findByIdWithFetch(teamId)
+            .orElseThrow(() -> new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE));
+    return TeamDto.from(entity);
   }
 
-  /** Supprime une équipe */
-  @Transactional
-  public void deleteTeam(UUID teamId) {
-    log.info("Suppression de l'équipe {}", teamId);
-
-    if (!teamRepository.existsById(teamId)) {
-      throw new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE);
-    }
-
-    teamRepository.deleteById(teamId);
-    log.info("Équipe {} supprimée avec succès", teamId);
+  private com.fortnite.pronos.model.Team toEntityTeamReference(Team team) {
+    com.fortnite.pronos.model.Team entity = new com.fortnite.pronos.model.Team();
+    entity.setId(team.getId());
+    entity.setName(team.getName());
+    entity.setSeason(team.getSeason());
+    return entity;
   }
 
-  // Note: getTeamsByGame moved to TeamQueryService
+  private com.fortnite.pronos.model.Player toEntityPlayerReference(Player player) {
+    return com.fortnite.pronos.model.Player.builder()
+        .id(player.getId())
+        .nickname(player.getNickname())
+        .build();
+  }
 }

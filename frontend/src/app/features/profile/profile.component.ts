@@ -6,9 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserContextService, UserProfile } from '../../core/services/user-context.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 import { Router } from '@angular/router';
 import { EditProfileDialogComponent } from './edit-profile-dialog/edit-profile-dialog.component';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
@@ -24,8 +24,7 @@ import { UserStatsDialogComponent } from './user-stats-dialog/user-stats-dialog.
     MatButtonModule,
     MatDividerModule,
     MatListModule,
-    MatDialogModule,
-    MatSnackBarModule
+    MatDialogModule
   ],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
@@ -37,7 +36,7 @@ export class ProfileComponent implements OnInit {
     private readonly userContextService: UserContextService,
     private readonly router: Router,
     private readonly dialog: MatDialog,
-    private readonly snackBar: MatSnackBar,
+    private readonly uiFeedback: UiErrorFeedbackService,
     public readonly t: TranslationService
   ) {}
 
@@ -62,7 +61,7 @@ export class ProfileComponent implements OnInit {
       if (result) {
         this.currentUser = result;
         this.userContextService.login(result);
-        this.snackBar.open(this.t.t('profile.snackbar.profileUpdated'), this.t.t('common.close'), { duration: 3000 });
+        this.uiFeedback.showSuccessFromKey('profile.snackbar.profileUpdated', 3000);
       }
     });
   }
@@ -76,7 +75,7 @@ export class ProfileComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((success: boolean) => {
       if (success) {
-        this.snackBar.open(this.t.t('profile.snackbar.passwordChanged'), this.t.t('common.close'), { duration: 3000 });
+        this.uiFeedback.showSuccessFromKey('profile.snackbar.passwordChanged', 3000);
       }
     });
   }

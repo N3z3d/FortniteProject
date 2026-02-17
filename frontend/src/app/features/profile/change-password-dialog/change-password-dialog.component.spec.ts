@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ChangePasswordDialogComponent } from './change-password-dialog.component';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 describe('ChangePasswordDialogComponent', () => {
   let component: ChangePasswordDialogComponent;
   let fixture: ComponentFixture<ChangePasswordDialogComponent>;
   let dialogRef: jasmine.SpyObj<MatDialogRef<ChangePasswordDialogComponent>>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let translationService: jasmine.SpyObj<TranslationService>;
 
   beforeEach(async () => {
     dialogRef = jasmine.createSpyObj('MatDialogRef', ['close']);
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessFromKey', 'showError']);
     translationService = jasmine.createSpyObj('TranslationService', ['t', 'translate']);
     translationService.t.and.callFake((key: string) => key);
     translationService.translate.and.callFake((key: string) => key);
@@ -26,7 +26,7 @@ describe('ChangePasswordDialogComponent', () => {
       set: {
         providers: [
           { provide: MatDialogRef, useValue: dialogRef },
-          { provide: MatSnackBar, useValue: snackBar },
+          { provide: UiErrorFeedbackService, useValue: uiFeedback },
           { provide: TranslationService, useValue: translationService }
         ]
       }
@@ -70,9 +70,9 @@ describe('ChangePasswordDialogComponent', () => {
 
     component.onSave();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
+    expect(uiFeedback.showError).toHaveBeenCalledWith(
+      null,
       'profile.changePasswordDialog.errors.formInvalid',
-      'common.close',
       { duration: 3000 }
     );
     expect(dialogRef.close).not.toHaveBeenCalled();
@@ -88,11 +88,7 @@ describe('ChangePasswordDialogComponent', () => {
     expect(component.saving).toBeTrue();
     tick(1500);
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'profile.changePasswordDialog.success',
-      'common.close',
-      { duration: 3000 }
-    );
+    expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('profile.changePasswordDialog.success', 3000);
     expect(component.saving).toBeFalse();
     expect(dialogRef.close).toHaveBeenCalledWith(true);
   }));

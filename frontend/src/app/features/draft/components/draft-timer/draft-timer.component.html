@@ -1,0 +1,14 @@
+<div class="current-turn-focus">
+  <div class="turn-announcement">
+    <div class="turn-player">
+      <mat-icon class="crown-icon">emoji_events</mat-icon>
+      <h2>{{ currentPlayer?.username }}</h2>
+      <span class="turn-subtitle">{{ t.t('draft.ui.currentTurnSubtitle') }}</span>
+    </div>
+    <div class="turn-timer" *ngIf="hasTimer">
+      <div class="timer-circle">
+        <span class="timer-value">{{ formattedTime }}</span>
+      </div>
+    </div>
+  </div>
+</div>

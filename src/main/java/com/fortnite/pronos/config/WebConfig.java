@@ -9,7 +9,6 @@ import org.springframework.core.Ordered;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.filter.ShallowEtagHeaderFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -24,24 +23,6 @@ import lombok.RequiredArgsConstructor;
 public class WebConfig implements WebMvcConfigurer {
 
   private final LoggingInterceptor loggingInterceptor;
-
-  @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry
-        .addMapping("/api/**")
-        .allowedOrigins("http://localhost:4200", "http://localhost:4201")
-        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        .allowedHeaders("*")
-        .allowCredentials(true);
-
-    // Global CORS for all endpoints
-    registry
-        .addMapping("/**")
-        .allowedOrigins("http://localhost:4200", "http://localhost:4201")
-        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        .allowedHeaders("*")
-        .allowCredentials(true);
-  }
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {

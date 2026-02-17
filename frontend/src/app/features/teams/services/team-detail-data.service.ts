@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of } from 'rxjs';
 
 import { LeaderboardService } from '../../../core/services/leaderboard.service';
+import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { TeamDto } from '../../../core/services/team.service';
 
@@ -50,6 +51,7 @@ export interface TeamLoadResult {
 })
 export class TeamDetailDataService {
   private readonly leaderboardService = inject(LeaderboardService);
+  private readonly logger = inject(LoggerService);
   private readonly t = inject(TranslationService);
 
   /**
@@ -77,7 +79,7 @@ export class TeamDetailDataService {
         }
       }),
       catchError((error) => {
-        console.warn('Erreur lors du chargement des équipes:', error);
+        this.logger.warn('TeamDetailDataService: failed to load teams for user', { username, error });
         return of({
           team: null,
           allTeams: [],
@@ -110,7 +112,7 @@ export class TeamDetailDataService {
         }
       }),
       catchError((error) => {
-        console.warn('Erreur lors du chargement des équipes:', error);
+        this.logger.warn('TeamDetailDataService: failed to load team by id', { teamId, error });
         return of({
           team: null,
           allTeams: [],

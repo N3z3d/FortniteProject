@@ -89,6 +89,10 @@
           class="premium-game-card"
           [class.selected]="selectedGame?.id === game.id"
           [style.animation-delay.s]="i * 0.1"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="t.t('games.home.viewDetails') + ': ' + game.name"
+          (keydown)="onGameCardKeyDown($event, game)"
           (click)="selectGame(game)">
 
           <!-- Card Background Effects -->

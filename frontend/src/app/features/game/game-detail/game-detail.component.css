@@ -241,6 +241,27 @@
   color: #000 !important;
 }
 
+.action-buttons .start-draft-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(59, 130, 246, 0.55) !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+.action-buttons .start-draft-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.action-buttons .start-draft-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.action-buttons .start-draft-btn mat-icon.spin {
+  animation: draft-button-spin 1s linear infinite;
+}
+
 .action-buttons button[color="accent"]:hover {
   background: var(--nexus-gold-light, #e0c88a) !important;
   box-shadow: 0 4px 20px rgba(201, 169, 98, 0.4);
@@ -254,6 +275,29 @@
 
 .action-buttons button[color="warn"]:hover {
   background: rgba(248, 113, 113, 0.1) !important;
+}
+
+.action-buttons .delete-game-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.delete-disabled-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--gaming-error, #f87171);
+  font-size: 0.85rem;
+}
+
+.delete-disabled-reason mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .game-full-message {
@@ -484,6 +528,7 @@
 .invitation-code-wrapper {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -502,6 +547,12 @@
 .regenerate-btn {
   color: var(--nexus-gold, #c9a962) !important;
   transition: all 0.2s ease;
+}
+
+.generate-code-btn {
+  white-space: normal;
+  line-height: 1.2;
+  min-height: 36px;
 }
 
 .copy-btn:hover,
@@ -849,4 +900,14 @@ mat-progress-bar {
 
 mat-progress-bar .mdc-linear-progress__bar-inner {
   background: var(--nexus-gold, #c9a962) !important;
+}
+
+@keyframes draft-button-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

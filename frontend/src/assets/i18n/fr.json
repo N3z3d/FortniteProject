@@ -23,7 +23,9 @@
     "details": "Détails",
     "players": "Joueurs",
     "player": "Joueur",
-    "retry": "Réessayer"
+    "invalidDate": "Date invalide",
+    "retry": "Réessayer",
+    "generateConfirm": "Générer le code"
   },
   "layout": {
     "welcome": "Bienvenue",
@@ -43,7 +45,7 @@
     "password": "Mot de passe",
     "email": "Email",
     "register": "S'inscrire",
-    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPassword": "Mot de passe oublié ",
     "rememberMe": "Se souvenir de moi"
   },
   "profile": {
@@ -96,7 +98,7 @@
         "length": "Utilisez au moins 8 caractères",
         "case": "Incluez des majuscules et minuscules",
         "numbers": "Ajoutez des chiffres et caractères spéciaux",
-        "avoidCommon": "Évitez les mots de passe évidents"
+        "avoidCommon": "?vitez les mots de passe ?vidents"
       },
       "errors": {
         "formInvalid": "Veuillez corriger les erreurs du formulaire",
@@ -119,8 +121,8 @@
       "bestRank": "Meilleur classement",
       "winRate": "Taux de victoire",
       "activityTitle": "Activité",
-      "teamsCreated": "Équipes créées",
-      "tradesCompleted": "Échanges réalisés",
+      "teamsCreated": "?quipes cr??es",
+      "tradesCompleted": "?changes r?alis?s",
       "draftsParticipations": "Drafts participés",
       "preferencesTitle": "Préférences",
       "favoriteRegion": "Région favorite",
@@ -171,16 +173,17 @@
     "deleteAccount": "Supprimer le compte",
     "resetDefaults": "Réinitialiser",
     "settingsSaved": "Paramètres enregistrés !",
-    "settingsReset": "Paramètres réinitialisés"
+    "settingsReset": "Paramètres réinitialisés",
+    "exportStarted": "Export des données lancé. Vous recevrez un email quand il sera prêt."
   },
   "navigation": {
     "home": "Accueil",
     "dashboard": "Tableau de bord",
     "games": "Parties",
-    "teams": "Équipes",
+    "teams": "Ã‰quipes",
     "leaderboard": "Classement",
     "draft": "Draft",
-    "trades": "Échanges",
+    "trades": "Ã‰changes",
     "profile": "Profil",
     "settings": "Paramètres"
   },
@@ -196,9 +199,9 @@
       "navigationHint": "Accès rapide aux fonctionnalités"
     },
     "labels": {
-      "team": "Équipe",
-      "teams": "Équipes",
-      "activeTeams": "Équipes actives",
+      "team": "?quipe",
+      "teams": "?quipes",
+      "activeTeams": "?quipes actives",
       "players": "Joueurs",
       "proPlayers": "Joueurs draftés",
       "points": "Points",
@@ -212,7 +215,7 @@
       "noTeamsFound": "Aucune équipe trouvée",
       "viewFullLeaderboard": "Voir le classement complet",
       "lastUpdated": "Dernière mise à jour :",
-      "myTeams": "Mon Équipe",
+      "myTeams": "Mon ?quipe",
       "participants": "Participants",
       "currentTop5": "Top 5 actuel",
       "rank": "Rang"
@@ -224,12 +227,14 @@
     },
     "noGame": {
       "title": "Commencer",
-      "subtitle": "Vous n'avez pas encore de partie active"
+      "subtitle": "Vous n'avez pas encore de partie active",
+      "generateTitle": "Generer un code d invitation",
+      "generateSubtitle": "Choisissez la duree de validite du code."
     },
     "charts": {
       "regionTitle": "Répartition par région",
       "regionDesc": "Distribution des joueurs professionnels",
-      "top10Title": "Top 10 Équipes",
+      "top10Title": "Top 10 ?quipes",
       "performanceByPoints": "Performance par points",
       "pointsAxis": "Points"
     },
@@ -265,9 +270,9 @@
       "teamsAria": "Aller à la gestion des équipes",
       "teamsDescription": "Construire et gérer vos équipes fantasy, recruter des joueurs et optimiser votre escouade",
       "tradesDesc": "Boutique d'objets",
-      "tradesTooltip": "Échanger des joueurs",
+      "tradesTooltip": "?changer des joueurs",
       "tradesAria": "Aller aux échanges",
-      "tradesDescription": "Échanger des joueurs avec d'autres équipes, négocier et améliorer votre effectif",
+      "tradesDescription": "?changer des joueurs avec d'autres ?quipes, n?gocier et am?liorer votre effectif",
       "draftDesc": "Passe de combat",
       "draftTooltip": "Participer au draft",
       "draftAria": "Aller au draft",
@@ -288,6 +293,10 @@
       "players": "joueurs",
       "errorLoading": "Erreur lors du chargement du tableau de bord. Veuillez réessayer.",
       "navigatingTo": "Navigation vers"
+    },
+    "fallback": {
+      "noTeam": "Aucune équipe",
+      "unknownTeam": "?quipe inconnue"
     }
   },
   "games": {
@@ -324,7 +333,7 @@
       "gamesCreated": "Parties créées",
       "satisfaction": "Satisfaction",
       "averageTime": "Temps moyen",
-      "errorCreate": "Impossible de créer la game. Réessayez ?",
+      "errorCreate": "Impossible de créer la game. Réessayez ",
       "successMessage": "Game créée ! Invitation envoyée",
       "nPlayers": "{n} joueurs"
     },
@@ -367,14 +376,14 @@
       "participantsRecommendation": "Recommandé: 5-8 joueurs pour une expérience optimale",
       "draftConfig": "Configuration du draft",
       "timePerPick": "Temps par pick",
-      "oneMinute": "1 minute ⚡",
+      "oneMinute": "1 minute âš¡",
       "twoMinutes": "2 minutes",
       "threeMinutesRec": "3 minutes (recommandé)",
       "fiveMinutes": "5 minutes",
       "tenMinutes": "10 minutes",
       "fifteenMinutes": "15 minutes",
       "autoPickDelay": "Délai avant auto-pick",
-      "fiveMinutesFast": "5 minutes ⚡",
+      "fiveMinutesFast": "5 minutes âš¡",
       "thirtyMinutes": "30 minutes",
       "oneHourRec": "1 heure (recommandé)",
       "twoHours": "2 heures",
@@ -420,9 +429,9 @@
         "customDesc": "Créez votre propre configuration"
       },
       "smartDesc": {
-        "quickPlay": "Partie rapide créée le {date} à {time}. Que le meilleur gagne ! 🚀",
-        "championship": "Tournoi officiel - {date}. Préparez-vous pour la compétition ! 🏆",
-        "casual": "Game détente entre amis - {date}. Fun garanti ! 🎮",
+        "quickPlay": "Partie rapide créée le {date} à {time}. Que le meilleur gagne !",
+        "championship": "Tournoi officiel - {date}. Préparez-vous pour la compétition !",
+        "casual": "Game détente entre amis - {date}. Fun garanti !",
         "custom": "Game custom créée le {date} à {time}"
       }
     },
@@ -477,6 +486,7 @@
       "participantsTitle": "Participants",
       "participantsSubtitle": "Liste des joueurs participant à cette partie",
       "creator": "Créateur",
+      "participant": "Participant",
       "noParticipants": "Aucun participant",
       "beFirst": "Soyez le premier à rejoindre cette partie !",
       "gameInfo": "Informations de la Game",
@@ -485,6 +495,7 @@
       "createdOn": "Créée le",
       "status": "Statut",
       "invitationCode": "Code d'invitation",
+      "permanent": "Permanent",
       "expired": "Expiré",
       "expiresOn": "Expire:",
       "copyCode": "Copier le code",
@@ -492,7 +503,97 @@
       "draftPhase": "Phase de Draft",
       "draftSubtitle": "Les participants sélectionnent leurs joueurs",
       "draftInProgress": "Le draft est en cours. Les participants peuvent maintenant sélectionner leurs joueurs.",
-      "viewDraft": "Voir le Draft"
+      "viewDraft": "Voir le Draft",
+      "deleteDisabledStatus": "Suppression disponible uniquement quand la partie est en création.",
+      "deleteDisabledNotHost": "Seul le créateur peut supprimer cette partie.",
+      "generateCode": "Générer un code",
+      "regenerateDialog": {
+        "title": "Régénérer le code d'invitation",
+        "subtitle": "Choisissez la durée de validité du nouveau code.",
+        "generateTitle": "Générer un code d'invitation",
+        "generateSubtitle": "Choisissez la durée de validité du code.",
+        "option24hTitle": "24 heures",
+        "option24hDescription": "Expire automatiquement dans 24 heures.",
+        "option48hTitle": "48 heures",
+        "option48hDescription": "Expire automatiquement dans 48 heures.",
+        "option7dTitle": "7 jours",
+        "option7dDescription": "Expire automatiquement dans 7 jours.",
+        "optionPermanentTitle": "Permanent",
+        "optionPermanentDescription": "Le code reste valide jusqu'à sa prochaine régénération.",
+        "cancel": "Annuler",
+        "confirm": "Générer le code",
+        "generateConfirm": "Générer le code"
+      },
+      "gameUnavailable": "Cette partie n'est plus disponible ou vous n'avez plus accès.",
+      "actions": {
+        "draftStarted": "Draft demarre avec succes.",
+        "draftStartBlocked": "Impossible de demarrer le draft. Verifiez le createur et le nombre minimum de participants.",
+        "draftStartError": "Erreur lors du demarrage du draft.",
+        "draftCreatorMissing": "Le createur de cette partie est introuvable. Contactez un administrateur.",
+        "archiveSuccess": "Partie archivee avec succes.",
+        "archiveFailed": "Impossible d'archiver la partie.",
+        "archiveError": "Erreur lors de l'archivage de la partie.",
+        "leaveSuccess": "Vous avez quitte la partie.",
+        "leaveFailed": "Impossible de quitter la partie.",
+        "leaveError": "Erreur lors de la sortie de la partie.",
+        "joinSuccess": "Vous avez rejoint la partie avec succes.",
+        "joinFailed": "Impossible de rejoindre la partie.",
+        "joinError": "Erreur lors de la tentative de rejoindre la partie.",
+        "codeCopied": "Code d'invitation copie dans le presse-papiers.",
+        "codeCopyFailed": "Impossible de copier le code d'invitation.",
+        "invitationCodeGenerateVerb": "Code d'invitation genere",
+        "invitationCodeRegenerateVerb": "Code d'invitation regenere",
+        "invitationCodeWithValue": "{verb} : {code}",
+        "invitationCodeWithoutValue": "{verb}.",
+        "invitationCodeGenerationFailed": "Impossible de generer le code d'invitation.",
+        "invitationCodeRegeneratedAnnounce": "Code d'invitation regenere avec succes.",
+        "renameSuccess": "Partie renommee avec succes.",
+        "renameError": "Erreur lors du renommage de la partie.",
+        "renamePromptTitle": "Saisissez un nouveau nom de partie",
+        "renameAnnounce": "Partie renommee en {name}",
+        "deleteSuccessAnnounce": "Partie supprimee avec succes.",
+        "deleteError": "Erreur lors de la suppression de la partie.",
+        "draftFinishedAnnounce": "Draft termine avec succes.",
+        "draftFinishError": "Erreur lors de la finalisation du draft.",
+        "draftPausedAnnounce": "Draft mis en pause.",
+        "draftResumedAnnounce": "Draft repris."
+      },
+      "renameDialog": {
+        "title": "Renommer la partie",
+        "subtitle": "Choisissez un nom clair pour votre partie.",
+        "label": "Nouveau nom",
+        "confirm": "Enregistrer",
+        "validationRequired": "Le nom de la partie est obligatoire.",
+        "validationMin": "Le nom doit contenir au moins 3 caracteres.",
+        "validationMax": "Le nom doit contenir au maximum 50 caracteres.",
+        "validationUnchanged": "Le nouveau nom doit etre different du nom actuel."
+      },
+      "confirmDialogs": {
+        "archive": {
+          "title": "Archiver la partie",
+          "message": "Cette partie sera archivee et retiree de la liste active. Continuer ",
+          "confirm": "Archiver",
+          "cancel": "Annuler"
+        },
+        "leave": {
+          "title": "Quitter la partie",
+          "message": "Voulez-vous vraiment quitter cette partie ",
+          "confirm": "Quitter",
+          "cancel": "Annuler"
+        },
+        "delete": {
+          "title": "Supprimer la partie",
+          "message": "Cette action est definitive. Voulez-vous vraiment supprimer cette partie ",
+          "confirm": "Supprimer",
+          "cancel": "Annuler"
+        },
+        "startDraft": {
+          "title": "Demarrer le draft",
+          "message": "Voulez-vous demarrer le draft maintenant ",
+          "confirm": "Demarrer le draft",
+          "cancel": "Annuler"
+        }
+      }
     },
     "joinDialog": {
       "title": "Rejoindre une partie",
@@ -504,18 +605,31 @@
       "joining": "Connexion en cours...",
       "joinButton": "Rejoindre la partie",
       "cancel": "Annuler",
-      "noCodeTitle": "Vous n'avez pas de code ?",
+      "noCodeTitle": "Vous n'avez pas de code ",
       "noCodeDesc": "Demandez au créateur de la partie de vous partager le code d'invitation, ou créez votre propre partie.",
       "createNew": "Créer une nouvelle partie",
       "enterCodeError": "Veuillez entrer un code d'invitation",
       "close": "Fermer",
       "successJoined": "Partie {name} rejointe avec succès !",
       "view": "Voir",
-      "invalidCode": "Code d'invitation invalide"
+      "invalidCode": "Code d'invitation invalide",
+      "invalidCodeFormat": "Format de code invalide. Utilisez uniquement lettres, chiffres et tirets.",
+      "invalidOrUnavailableCode": "Code invalide ou partie indisponible. Vérifiez le code ou demandez-en un nouveau au créateur.",
+      "tooManyAttempts": "Trop de tentatives de connexion par code. Réessayez dans une minute.",
+      "alreadyInGame": "Vous êtes déjà dans cette partie"
+    },
+    "validation": {
+      "idMissing": "Identifiant de partie manquant",
+      "nameRequired": "Nom de partie obligatoire",
+      "creatorMissing": "Nom du createur manquant",
+      "maxParticipantsInvalid": "Le nombre max de participants doit etre superieur a zero",
+      "participantCountNegative": "Le nombre de participants ne peut pas etre negatif",
+      "participantCountExceeded": "Le nombre de participants depasse le maximum",
+      "selectGameRequired": "Veuillez d'abord selectionner une partie"
     }
   },
   "trades": {
-    "title": "Centre d'Échanges",
+    "title": "Centre d'?changes",
     "subtitle": "Gérez vos échanges de joueurs et négociations",
     "createTrade": "Créer un échange",
     "refreshData": "Actualiser les données",
@@ -524,9 +638,9 @@
     "errorTitle": "Une erreur est survenue",
     "tryAgain": "Réessayer",
     "list": {
-      "marketOpen": "MARCHÉ OUVERT",
+      "marketOpen": "MARCH? OUVERT",
       "marketTitle": "Trade Hub",
-      "marketSubtitle": "Échangez vos joueurs pour maximiser votre score",
+      "marketSubtitle": "?changez vos joueurs pour maximiser votre score",
       "totalOffers": "Offres totales",
       "active": "En cours",
       "all": "Tout",
@@ -552,12 +666,12 @@
       "offering": "Propose",
       "receiving": "Reçoit",
       "getsMoreValue": "gagne en valeur",
-      "balancedTrade": "Échange équilibré",
+      "balancedTrade": "?change équilibré",
       "tradeOverview": "Vue d'ensemble",
       "totalPlayers": "Total joueurs",
       "totalValue": "Valeur totale",
       "avgPerPlayer": "Moyenne par joueur",
-      "fairnessRating": "Équité",
+      "fairnessRating": "?quité",
       "excellent": "Excellent",
       "good": "Bon",
       "fair": "Correct",
@@ -566,10 +680,10 @@
       "requestedPlayers": "Joueurs demandés",
       "avgScore": "Score moy.",
       "games": "Parties",
-      "eliminations": "Éliminations",
+      "eliminations": "?liminations",
       "totalValueLabel": "Valeur totale",
       "timeline": "Chronologie",
-      "tradeCreated": "Échange créé",
+      "tradeCreated": "?change créé",
       "offerSent": "Offre envoyée",
       "underReview": "En examen",
       "tradeActions": "Actions",
@@ -592,16 +706,16 @@
       "tradeStatusLabel": "Statut de l'échange:",
       "by": "par",
       "system": "Système",
-      "timelineProposedAction": "Échange proposé",
+      "timelineProposedAction": "?change proposé",
       "timelineProposedDesc": "Offre envoyée",
       "timelineAwaitingAction": "En attente de réponse",
       "timelineAwaitingDesc": "En attente d'une réponse",
-      "timelineExpiresAction": "Échange expire",
+      "timelineExpiresAction": "?change expire",
       "timelineExpiresDesc": "L'échange expirera automatiquement si aucune action n'est prise",
-      "timelineAcceptedDesc": "Échange accepté",
-      "timelineRejectedDesc": "Échange refusé",
-      "timelineWithdrawnDesc": "Échange retiré",
-      "timelineExpiredDesc": "Échange expiré",
+      "timelineAcceptedDesc": "?change accepté",
+      "timelineRejectedDesc": "?change refusé",
+      "timelineWithdrawnDesc": "?change retiré",
+      "timelineExpiredDesc": "?change expiré",
       "timelineStatusUpdatedDesc": "Statut de l'échange mis à jour"
     },
     "history": {
@@ -611,7 +725,7 @@
       "newTrade": "Nouvel échange",
       "filtersTitle": "Filtres",
       "statusLabel": "Statut",
-      "teamLabel": "Équipe",
+      "teamLabel": "?quipe",
       "playerLabel": "Joueur",
       "playerPlaceholder": "Nom du joueur",
       "clearFilters": "Effacer",
@@ -622,8 +736,8 @@
       "noResultsDesc": "Aucun échange ne correspond aux critères sélectionnés",
       "columns": {
         "status": "Statut",
-        "trade": "Échange",
-        "team": "Équipe",
+        "trade": "?change",
+        "team": "?quipe",
         "created": "Créé",
         "completed": "Finalisé",
         "actions": "Actions"
@@ -649,7 +763,7 @@
         "wins": "Victoires",
         "kd": "K/D"
       },
-      "teamSectionTitle": "Équipe concernée",
+      "teamSectionTitle": "?quipe concernée",
       "teamOwnerLabel": "Propriétaire",
       "timelineTitle": "Chronologie",
       "timelineCreated": "Trade créé",
@@ -665,7 +779,7 @@
       "titleNew": "Nouvel échange",
       "titleEdit": "Modifier l'échange",
       "subtitle": "Créez un échange de joueurs entre équipes",
-      "teamSectionTitle": "Équipe concernée",
+      "teamSectionTitle": "?quipe concernée",
       "teamSelectLabel": "Sélectionner l'équipe",
       "playerOutTitle": "Joueur sortant",
       "playerOutLabel": "Sélectionner le joueur sortant",
@@ -674,7 +788,7 @@
       "previewTitle": "Aperçu de l'échange",
       "previewOut": "Sortant",
       "previewIn": "Entrant",
-      "teamLabel": "Équipe",
+      "teamLabel": "?quipe",
       "ownerLabel": "Propriétaire",
       "validation": {
         "selectTeam": "Veuillez sélectionner une équipe",
@@ -684,7 +798,7 @@
       },
       "create": "Créer un échange",
       "creating": "Création...",
-      "createdSuccess": "Échange créé avec succès !"
+      "createdSuccess": "?change créé avec succès !"
     },
     "filters": {
       "all": "Tous les échanges",
@@ -724,7 +838,7 @@
       "expiresSoon": "Expire bientôt",
       "youGetMoreValue": "Vous gagnez en valeur",
       "youGiveMoreValue": "Vous perdez en valeur",
-      "balancedTrade": "Échange équilibré"
+      "balancedTrade": "?change équilibré"
     },
     "actions": {
       "accept": "Accepter",
@@ -742,23 +856,24 @@
       "cancelled": "Annulé"
     },
     "errors": {
-      "loadTrades": "Échec du chargement des échanges",
-      "loadTeams": "Échec du chargement des équipes",
-      "loadHistory": "Échec du chargement de l'historique",
-      "loadStats": "Échec du chargement des statistiques",
-      "createOffer": "Échec de la création de l'offre",
-      "acceptOffer": "Échec de l'acceptation de l'offre",
-      "rejectOffer": "Échec du refus de l'offre",
-      "withdrawOffer": "Échec du retrait de l'offre",
-      "counterOffer": "Échec de la contre-offre",
-      "refreshFailed": "Échec du rafraîchissement",
+      "loadTrades": "?chec du chargement des échanges",
+      "loadTeams": "?chec du chargement des équipes",
+      "loadHistory": "?chec du chargement de l'historique",
+      "loadStats": "?chec du chargement des statistiques",
+      "createOffer": "?chec de la création de l'offre",
+      "acceptOffer": "?chec de l'acceptation de l'offre",
+      "rejectOffer": "?chec du refus de l'offre",
+      "withdrawOffer": "?chec du retrait de l'offre",
+      "counterOffer": "?chec de la contre-offre",
+      "refreshFailed": "?chec du rafraîchissement",
       "actionFailed": "Action échouée. Veuillez réessayer."
     },
     "messages": {
       "refreshed": "Données actualisées",
-      "tradeAccepted": "Échange accepté avec succès !",
-      "tradeRejected": "Échange refusé",
-      "tradeWithdrawn": "Échange retiré",
+      "newOffers": "Vous avez {count} nouvelle(s) offre(s) d'échange",
+      "tradeAccepted": "?change accepté avec succès !",
+      "tradeRejected": "?change refusé",
+      "tradeWithdrawn": "?change retiré",
       "counterOfferSent": "Contre-offre envoyée avec succès !"
     },
     "proposal": {
@@ -791,7 +906,7 @@
       "labels": {
         "ownerBy": "par",
         "score": "Score",
-        "teamSelected": "Équipe sélectionnée",
+        "teamSelected": "?quipe sélectionnée",
         "playersOffered": "Joueurs proposés",
         "playersRequested": "Joueurs demandés"
       },
@@ -807,8 +922,11 @@
         "moveNotAllowed": "Ce déplacement n'est pas autorisé",
         "completeProposal": "Veuillez compléter votre proposition",
         "offerSent": "Offre d'échange envoyée avec succès !",
-        "offerSendFailed": "Échec de l'envoi de l'offre"
+        "offerSendFailed": "?chec de l'envoi de l'offre"
       }
+    },
+    "dashboard": {
+      "filterAriaLabel": "Filtres de trades"
     }
   },
   "leaderboard": {
@@ -887,7 +1005,43 @@
     "network": "Erreur de connexion au serveur",
     "unauthorized": "Non autorisé",
     "notFound": "Non trouvé",
-    "validation": "Erreur de validation"
+    "validation": "Erreur de validation",
+    "handler": {
+      "skipToRecovery": "Aller aux actions de récupération",
+      "skipToRecoveryFor": "Aller aux actions de récupération pour :",
+      "technicalInfo": "Informations techniques",
+      "statusCode": "Code de statut :",
+      "errorCode": "Code d'erreur :",
+      "path": "Chemin :",
+      "requestId": "ID de requête :",
+      "timestamp": "Horodatage :",
+      "validationErrors": "Erreurs de validation :",
+      "availableActions": "Actions possibles :",
+      "keyboardShortcut": "Raccourci clavier",
+      "navigationInstructions": "Instructions de navigation",
+      "instructionsPrefix": "Instructions :",
+      "navigationHelp": "Utilisez Tab et Shift+Tab pour naviguer, Entrée ou Espace pour activer les boutons. 0chap pour fermer cette erreur si possible.",
+      "serverCommError": "Erreur de communication avec le serveur",
+      "serverCommMessage": "Une erreur est survenue lors de la communication avec le serveur.",
+      "connectionProblem": "Problème de connexion",
+      "connectionMessage": "Impossible de contacter le serveur. Vérifiez votre connexion internet.",
+      "invalidRequest": "Demande invalide",
+      "authRequired": "Authentification requise",
+      "authMessage": "Vous devez vous authentifier pour accéder à cette ressource.",
+      "forbidden": "Accès refusé",
+      "forbiddenMessage": "Vous n'avez pas les droits pour effectuer cette action.",
+      "notFound": "Ressource introuvable",
+      "notFoundMessage": "La ressource demandée n'existe pas ou n'est plus disponible.",
+      "serverError": "Erreur interne du serveur",
+      "serverErrorMessage": "Une erreur technique est survenue. Reessayez dans quelques instants.",
+      "errorDialogOpened": "Dialogue d'erreur ouvert avec actions de récupération",
+      "errorDialogClosed": "Dialogue d'erreur fermé",
+      "executingAction": "Exécution de l'action :",
+      "retry": "Réessayer",
+      "goHome": "Retour à l'accueil",
+      "close": "Fermer",
+      "escapeKey": "?chap"
+    }
   },
   "notifications": {
     "close": "Fermer",
@@ -911,7 +1065,7 @@
     "team": {
       "playerAdded": "{player} ajouté à votre équipe",
       "playerRemoved": "{player} retiré de votre équipe",
-      "tradeCompleted": "Trade effectué: {out} ↔ {in}"
+      "tradeCompleted": "Trade effectu?: {out} <-> {in}"
     },
     "auth": {
       "loginSuccess": "Connexion réussie en tant que {username}",
@@ -929,7 +1083,7 @@
     "disconnected": "Déconnecté",
     "noNotifications": "Aucune notification",
     "time": {
-      "justNow": "À l'instant",
+      "justNow": "Ã€ l'instant",
       "minutesAgo": "Il y a {n} min",
       "hoursAgo": "Il y a {n}h",
       "daysAgo": "Il y a {n}j"
@@ -1006,7 +1160,7 @@
       "draftStarted": "Le draft a commencé",
       "draftCompleted": "Le draft est terminé",
       "turnUpdated": "C'est votre tour de drafter",
-      "teamUpdated": "Équipe mise à jour",
+      "teamUpdated": "?quipe mise ? jour",
       "draftPaused": "Le draft a été mis en pause",
       "draftResumed": "Le draft a repris",
       "playerSelectedWithName": "Joueur {player} sélectionné !",
@@ -1052,7 +1206,7 @@
       "waitingNextTurn": "En attente du prochain tour",
       "waitingTurn": "C'est au tour de {username}",
       "cancelDraftTitle": "Annuler le draft",
-      "cancelDraftMessage": "êtes-vous sûr de vouloir annuler ce draft ? Cette action est irréversible.",
+      "cancelDraftMessage": "êtes-vous sûr de vouloir annuler ce draft  Cette action est irréversible.",
       "cancelDraftConfirm": "Annuler le draft",
       "cancelDraftCancel": "Retour",
       "pointsShort": "pts"
@@ -1078,8 +1232,8 @@
   },
   "teams": {
     "common": {
-      "teams": "Équipes",
-      "team": "Équipe",
+      "teams": "?quipes",
+      "team": "?quipe",
       "players": "Joueurs",
       "points": "Points",
       "pointsShort": "pts",
@@ -1088,13 +1242,13 @@
       "season": "Saison",
       "loadingTeams": "Chargement des équipes...",
       "loadingTeam": "Chargement de l'équipe...",
-      "unnamedTeam": "Équipe sans nom",
+      "unnamedTeam": "?quipe sans nom",
       "unknownOwner": "Propriétaire inconnu",
       "unknownPlayer": "Joueur"
     },
     "list": {
-      "titleGame": "Équipes du jeu",
-      "titleMine": "Mes Équipes",
+      "titleGame": "?quipes du jeu",
+      "titleMine": "Mes ?quipes",
       "subtitle": "Gérez vos équipes et optimisez votre roster pour dominer le classement",
       "searchPlaceholder": "Rechercher une équipe, un joueur...",
       "loading": "Chargement de vos équipes...",
@@ -1106,7 +1260,7 @@
       "createTeam": "Créer une équipe",
       "viewDetails": "Voir détails",
       "manage": "Gérer",
-      "seasonTitle": "Équipes Saison {season}",
+      "seasonTitle": "?quipes Saison {season}",
       "seasonSubtitle": "Toutes les équipes de la fantasy league",
       "noPlayers": "Aucun joueur dans cette équipe",
       "emptySeason": "Il n'y a pas encore d'équipe pour la saison {season}.",
@@ -1133,7 +1287,7 @@
       "saveChanges": "Enregistrer les modifications",
       "snackbar": {
         "formInvalid": "Veuillez corriger les erreurs du formulaire",
-        "updated": "Équipe mise à jour avec succès !",
+        "updated": "?quipe mise à jour avec succès !",
         "playerRemoved": "{player} retiré de l'équipe",
         "playerRestored": "Joueur restauré",
         "viewAction": "Voir"
@@ -1156,8 +1310,8 @@
       "bestPlayer": "Meilleur Joueur",
       "loadingTeamData": "Chargement des données de l'équipe...",
       "errorTitle": "Erreur",
-      "notFound": "Équipe non trouvée",
-      "notFoundForUser": "Équipe non trouvée pour cet utilisateur",
+      "notFound": "?quipe non trouvée",
+      "notFoundForUser": "?quipe non trouvée pour cet utilisateur",
       "dataUnavailable": "Données indisponibles (CSV non chargé)"
     }
   },
@@ -1167,13 +1321,13 @@
     "contact": {
       "title": "Contact",
       "emailTitle": "Email",
-      "emailContent": "Pour toute question, contactez-nous à : [TODO: EMAIL À AJOUTER]",
+      "emailContent": "Pour toute question, contactez-nous à : [TODO: EMAIL ì AJOUTER]",
       "supportTitle": "Support",
       "supportContent": "Notre équipe de support est disponible du lundi au vendredi, de 9h à 18h (CET)."
     },
     "legalNotice": {
       "title": "Mentions Légales",
-      "editorTitle": "Éditeur",
+      "editorTitle": "Ã‰diteur",
       "editorContent": "Ce site est édité à titre personnel dans le cadre d'un projet de développement.",
       "hostingTitle": "Hébergement",
       "hostingContent": "Ce site est hébergé sur une infrastructure cloud sécurisée.",
@@ -1204,7 +1358,7 @@
       "login": "Connexion"
     },
     "hero": {
-      "title": "BÂTISSEZ VOTRE EMPIRE",
+      "title": "B?TISSEZ VOTRE EMPIRE",
       "subtitle": "FORTNITE",
       "description": "Région par région, sélectionnez les meilleurs joueurs pro et dominez le classement mondial. La ligue fantasy ultime pour les vrais passionnés d'e-sport.",
       "createTeam": "Créer mon équipe",
@@ -1222,13 +1376,13 @@
       "subtitle": "Chaque région a ses légendes. Construisez votre dream team en naviguant à travers les continents.",
       "stats": {
         "players": "Joueurs",
-        "topTeams": "Top Équipes"
+        "topTeams": "Top ?quipes"
       },
       "exploreTooltip": "Explorer la région {name}",
       "explore": "Explorer"
     },
     "features": {
-      "title": "FONCTIONNALITÉS AVANCÉES",
+      "title": "FONCTIONNALIT?S AVANC?ES",
       "subtitle": "Une expérience de ligue fantasy révolutionnaire avec des outils pro.",
       "realtime": {
         "title": "Suivi en Temps Réel",
@@ -1238,9 +1392,9 @@
         "stats": "Statistiques détaillées"
       },
       "trading": {
-        "title": "Système d'Échanges",
+        "title": "Syst?me d'?changes",
         "description": "Négociez avec d'autres managers, remplacez vos joueurs et optimisez votre roster selon les règles.",
-        "trades": "Échanges de joueurs",
+        "trades": "?changes de joueurs",
         "windows": "Fenêtres de transfert",
         "tier": "Système de tiers"
       },
@@ -1260,8 +1414,8 @@
       }
     },
     "cta": {
-      "title": "PRêT À CONQUÉRIR LE MONDE ?",
-      "subtitle": "Rejoignez des milliers de managers et prouvez que vous avez l'Å“il pour repérer les futurs champions.",
+      "title": "PR?T ? CONQU?RIR LE MONDE ?",
+      "subtitle": "Rejoignez des milliers de managers et prouvez que vous avez l'?il pour rep?rer les futurs champions.",
       "startNow": "Commencer maintenant",
       "startNowTooltip": "Lancez votre aventure maintenant !",
       "beginnersGuide": "Guide du débutant",
@@ -1287,7 +1441,7 @@
     "regions": {
       "eu": {
         "name": "Europe",
-        "description": "Le cÅ“ur stratégique du competitive. Des équipes disciplinées et une mécanique impeccable."
+        "description": "Le c?ur strat?gique du competitive. Des ?quipes disciplin?es et une m?canique impeccable."
       },
       "nac": {
         "name": "North America Central",
@@ -1313,6 +1467,98 @@
         "name": "Asia",
         "description": "La région de l'innovation technologique. Précision et excellence."
       }
+    }
+  },
+  "loginPage": {
+    "heroSubtitle": "Créez votre équipe de rêve et dominez la compétition",
+    "chooseProfile": "Choisissez votre profil",
+    "switchUser": "Changer d'utilisateur",
+    "selectUserSubtitle": "Sélectionnez votre utilisateur pour commencer",
+    "switchUserSubtitle": "Sélectionnez un autre utilisateur",
+    "connecting": "Connexion en cours...",
+    "emailOrUsername": "Email ou pseudo",
+    "enterIdentifier": "Entrez votre identifiant",
+    "identifierRequired": "Un identifiant est requis",
+    "quickLogin": "Connexion rapide",
+    "otherAccount": "Autre compte ",
+    "hide": "Masquer",
+    "activePlayers": "Joueurs actifs",
+    "ongoingGames": "Games en cours",
+    "free": "Gratuit",
+    "selectLanguage": "Choisir la langue"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Tableau de bord Admin",
+      "summary": "Vue d'ensemble",
+      "health": "Santé du système",
+      "recentActivity": "Activité récente",
+      "metrics": "Métriques système",
+      "refresh": "Actualiser",
+      "loadError": "?chec du chargement des donn?es."
+    },
+    "kpi": {
+      "totalUsers": "Utilisateurs",
+      "totalGames": "Parties",
+      "totalTrades": "Ã‰changes",
+      "gamesByStatus": "Parties par statut"
+    },
+    "health": {
+      "uptime": "Temps d'activité",
+      "dbPool": "Pool DB (actives/max)",
+      "disk": "Utilisation disque"
+    },
+    "activity": {
+      "recentGames": "Parties récentes",
+      "recentTrades": "?changes r?cents",
+      "totalUsers": "Utilisateurs",
+      "latestGames": "Dernières parties"
+    },
+    "metrics": {
+      "heapUsed": "Heap utilisé",
+      "heapMax": "Heap max",
+      "threads": "Threads",
+      "totalRequests": "Requêtes totales",
+      "errorRate": "Taux d'erreur"
+    },
+    "errors": {
+      "title": "Journal d'erreurs",
+      "loadError": "Impossible de charger le journal d'erreurs.",
+      "empty": "Aucune erreur enregistrée. Tout fonctionne correctement !",
+      "stats": {
+        "totalErrors": "Erreurs totales (24h)",
+        "uniqueTypes": "Types uniques",
+        "serverErrors": "Erreurs serveur (5xx)",
+        "notFound": "Non trouvé (404)"
+      },
+      "filter": {
+        "status": "Code HTTP",
+        "type": "Type d'exception",
+        "clear": "Réinitialiser"
+      },
+      "table": {
+        "timestamp": "Date/Heure",
+        "type": "Type",
+        "status": "Statut",
+        "message": "Message",
+        "path": "Chemin",
+        "viewDetail": "Voir les détails"
+      },
+      "detail": {
+        "title": "Détails de l'erreur",
+        "errorCode": "Code erreur",
+        "stackTrace": "Trace d'exécution",
+        "close": "Fermer"
+      }
+    }
+  },
+  "authSwitch": {
+    "messages": {
+      "switchSuccess": "Changement vers {username} effectué avec succès",
+      "notifySwitchSaved": "Notification de changement {fromUser} -> {toUser} enregistrée",
+      "notifyFallback": "Notification échouée mais changement effectué",
+      "switchErrorLocalFallback": "Erreur lors du changement vers {username}. Mode local activé.",
+      "unknownError": "Erreur inconnue"
     }
   }
 }

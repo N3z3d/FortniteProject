@@ -1,29 +1,30 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
+
 import { TeamEditComponent } from './team-edit.component';
 import { TeamService } from '../../../core/services/team.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 describe('TeamEditComponent', () => {
   let component: TeamEditComponent;
   let fixture: ComponentFixture<TeamEditComponent>;
   let router: jasmine.SpyObj<Router>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let teamService: jasmine.SpyObj<TeamService>;
   let translationService: jasmine.SpyObj<TranslationService>;
-  let activatedRoute: any;
-  let snackBarRef: any;
+  let activatedRoute: { params: any };
 
   beforeEach(async () => {
     router = jasmine.createSpyObj('Router', ['navigate']);
-    snackBarRef = {
-      onAction: jasmine.createSpy('onAction').and.returnValue(of(void 0))
-    };
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
-    snackBar.open.and.returnValue(snackBarRef);
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', [
+      'showErrorFromKey',
+      'showSuccessWithAction',
+      'showInfoWithAction',
+      'showSuccessFromKey'
+    ]);
     teamService = jasmine.createSpyObj('TeamService', ['getTeam', 'updateTeam']);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
     translationService.t.and.callFake((key: string) => key);
@@ -35,12 +36,12 @@ describe('TeamEditComponent', () => {
     await TestBed.configureTestingModule({
       imports: [TeamEditComponent, ReactiveFormsModule]
     })
-    .overrideProvider(Router, { useValue: router })
-    .overrideProvider(ActivatedRoute, { useValue: activatedRoute })
-    .overrideProvider(MatSnackBar, { useValue: snackBar })
-    .overrideProvider(TeamService, { useValue: teamService })
-    .overrideProvider(TranslationService, { useValue: translationService })
-    .compileComponents();
+      .overrideProvider(Router, { useValue: router })
+      .overrideProvider(ActivatedRoute, { useValue: activatedRoute })
+      .overrideProvider(UiErrorFeedbackService, { useValue: uiFeedback })
+      .overrideProvider(TeamService, { useValue: teamService })
+      .overrideProvider(TranslationService, { useValue: translationService })
+      .compileComponents();
 
     fixture = TestBed.createComponent(TeamEditComponent);
     component = fixture.componentInstance;
@@ -96,11 +97,7 @@ describe('TeamEditComponent', () => {
 
     component.onSave();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'teams.edit.snackbar.formInvalid',
-      'common.close',
-      { duration: 3000 }
-    );
+    expect(uiFeedback.showErrorFromKey).toHaveBeenCalledWith('teams.edit.snackbar.formInvalid', 3000);
     expect(component.saving).toBeFalse();
   });
 
@@ -114,10 +111,11 @@ describe('TeamEditComponent', () => {
     tick(1000);
 
     expect(component.saving).toBeFalse();
-    expect(snackBar.open).toHaveBeenCalledWith(
+    expect(uiFeedback.showSuccessWithAction).toHaveBeenCalledWith(
       'teams.edit.snackbar.updated',
       'teams.edit.snackbar.viewAction',
-      { duration: 3000 }
+      jasmine.any(Function),
+      3000
     );
   }));
 
@@ -128,9 +126,10 @@ describe('TeamEditComponent', () => {
     component.onSave();
     tick(1000);
 
-    snackBarRef.onAction().subscribe(() => {
-      expect(router.navigate).toHaveBeenCalledWith(['/games', 'game1', 'teams']);
-    });
+    const onAction = uiFeedback.showSuccessWithAction.calls.mostRecent().args[2] as () => void;
+    onAction();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/games', 'game1', 'teams']);
   }));
 
   it('should navigate back on cancel', () => {
@@ -151,14 +150,8 @@ describe('TeamEditComponent', () => {
 
   it('should remove player and show undo option', fakeAsync(() => {
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
-
-    // Use Subject instead of of() to prevent immediate emission
-    const onActionSubject = new Subject<void>();
-    snackBarRef.onAction = jasmine.createSpy('onAction').and.returnValue(onActionSubject.asObservable());
-
-    // Use callFake instead of returnValues to avoid NG0100 error
-    const translations: { [key: string]: string } = {
-      'teams.edit.snackbar.playerRemoved': '{player} retiré',
+    const translations: Record<string, string> = {
+      'teams.edit.snackbar.playerRemoved': '{player} retire',
       'common.cancel': 'common.cancel'
     };
     translationService.t.and.callFake((key: string) => translations[key] || key);
@@ -170,19 +163,13 @@ describe('TeamEditComponent', () => {
     component.removePlayer(player);
 
     expect(component.players.length).toBe(0);
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showInfoWithAction).toHaveBeenCalled();
   }));
 
   it('should restore player on undo', fakeAsync(() => {
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
-
-    // Use Subject to control when onAction emits
-    const onActionSubject = new Subject<void>();
-    snackBarRef.onAction = jasmine.createSpy('onAction').and.returnValue(onActionSubject.asObservable());
-
-    // Use callFake instead of returnValues to avoid NG0100 error
-    const translations: { [key: string]: string } = {
-      'teams.edit.snackbar.playerRemoved': '{player} retiré',
+    const translations: Record<string, string> = {
+      'teams.edit.snackbar.playerRemoved': '{player} retire',
       'common.cancel': 'common.cancel',
       'teams.edit.snackbar.playerRestored': 'teams.edit.snackbar.playerRestored',
       'common.close': 'common.close'
@@ -196,12 +183,13 @@ describe('TeamEditComponent', () => {
     component.removePlayer(player);
     expect(component.players.length).toBe(0);
 
-    // Simulate undo action - trigger the Subject
-    onActionSubject.next();
+    const undoAction = uiFeedback.showInfoWithAction.calls.mostRecent().args[2] as () => void;
+    undoAction();
     tick();
 
     expect(component.players.length).toBe(1);
     expect(component.players[0]).toBe(player);
+    expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('teams.edit.snackbar.playerRestored', 2000);
   }));
 
   it('should return correct region color', () => {

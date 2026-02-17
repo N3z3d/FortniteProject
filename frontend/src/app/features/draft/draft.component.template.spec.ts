@@ -3,12 +3,12 @@ import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 
 import { DraftComponent } from './draft.component';
 import { DraftService } from './services/draft.service';
 import { DraftBoardState, DraftStatus } from './models/draft.interface';
+import { DraftPlayerListComponent } from './components/draft-player-list/draft-player-list.component';
 
 describe('DraftComponent Progressive Template', () => {
   let component: DraftComponent;
@@ -95,7 +95,7 @@ describe('DraftComponent Progressive Template', () => {
     draftServiceSpy.getDraftBoardState.and.returnValue(of(mockDraftBoardState));
 
     await TestBed.configureTestingModule({
-      imports: [DraftComponent, RouterTestingModule, NoopAnimationsModule, MatSnackBarModule, MatDialogModule],
+      imports: [DraftComponent, RouterTestingModule, NoopAnimationsModule, MatDialogModule],
       providers: [{ provide: DraftService, useValue: draftServiceSpy }]
     }).compileComponents();
 
@@ -137,14 +137,14 @@ describe('DraftComponent Progressive Template', () => {
     expect(progressText.nativeElement.textContent).toContain('/');
   });
 
-  it('calls refreshDraftState when the refresh button is clicked', () => {
-    spyOn(component, 'refreshDraftState');
+  it('calls loadDraftState when the refresh button is clicked', () => {
+    spyOn(component, 'loadDraftState');
 
     const refreshButton = fixture.debugElement.query(By.css('.draft-actions-minimal button'));
     expect(refreshButton).toBeTruthy();
 
     refreshButton.nativeElement.click();
-    expect(component.refreshDraftState).toHaveBeenCalled();
+    expect(component.loadDraftState).toHaveBeenCalled();
   });
 
   it('shows the loading overlay when isLoading is true', () => {
@@ -194,6 +194,61 @@ describe('DraftComponent Progressive Template', () => {
 
     expect(fixture.debugElement.query(By.css('.smart-selection'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('.search-mega input'))).toBeTruthy();
+  });
+
+  it('renders draft player list component when the current user can select', () => {
+    component.gameId = 'game-123';
+    component.currentUserId = 'participant-1';
+    component.draftState = mockDraftBoardState;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.directive(DraftPlayerListComponent))).toBeTruthy();
+  });
+
+  it('updates showAllResults when child emits showAllResultsChange', () => {
+    component.gameId = 'game-123';
+    component.currentUserId = 'participant-1';
+    component.draftState = mockDraftBoardState;
+    fixture.detectChanges();
+
+    const playerList = fixture.debugElement.query(By.directive(DraftPlayerListComponent));
+    const playerListComponent = playerList.componentInstance as DraftPlayerListComponent;
+    playerListComponent.showAllResultsChange.emit(true);
+    fixture.detectChanges();
+
+    expect(component.showAllResults).toBeTrue();
+  });
+
+  it('clears search and collapses all results when child emits clearSearch', () => {
+    component.gameId = 'game-123';
+    component.currentUserId = 'participant-1';
+    component.draftState = mockDraftBoardState;
+    component.searchTerm = 'pixie';
+    component.showAllResults = true;
+    fixture.detectChanges();
+
+    const playerList = fixture.debugElement.query(By.directive(DraftPlayerListComponent));
+    const playerListComponent = playerList.componentInstance as DraftPlayerListComponent;
+    playerListComponent.clearSearch.emit();
+    fixture.detectChanges();
+
+    expect(component.searchTerm).toBe('');
+    expect(component.showAllResults).toBeFalse();
+  });
+
+  it('delegates playerSelected output to selectPlayer', () => {
+    component.gameId = 'game-123';
+    component.currentUserId = 'participant-1';
+    component.draftState = mockDraftBoardState;
+    fixture.detectChanges();
+
+    const selectSpy = spyOn(component, 'selectPlayer');
+    const playerList = fixture.debugElement.query(By.directive(DraftPlayerListComponent));
+    const playerListComponent = playerList.componentInstance as DraftPlayerListComponent;
+    const selectedPlayer = mockDraftBoardState.availablePlayers[0];
+    playerListComponent.playerSelected.emit(selectedPlayer);
+
+    expect(selectSpy).toHaveBeenCalledWith(selectedPlayer);
   });
 
   it('shows waiting state when the current user cannot select', () => {

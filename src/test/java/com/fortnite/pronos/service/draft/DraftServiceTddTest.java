@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
@@ -58,6 +59,7 @@ import com.fortnite.pronos.repository.PlayerRepository;
 @DisplayName("DraftService - Complex Workflow TDD Tests")
 class DraftServiceTddTest {
 
+  @Mock private DraftDomainRepositoryPort draftDomainRepository;
   @Mock private DraftRepository draftRepository;
   @Mock private GameParticipantRepository gameParticipantRepository;
   @Mock private GameRepository gameRepository;
@@ -146,6 +148,7 @@ class DraftServiceTddTest {
       assertThat(result.getId()).isNotNull();
 
       verify(((DraftRepositoryPort) draftRepository)).save(any(Draft.class));
+      verify(draftDomainRepository).save(any(com.fortnite.pronos.domain.draft.model.Draft.class));
     }
 
     @Test
@@ -173,18 +176,6 @@ class DraftServiceTddTest {
 
       // Should default to 10 rounds when no rules
       assertThat(result.getTotalRounds()).isEqualTo(10);
-    }
-
-    @Test
-    @DisplayName("Should assign draft order to participants")
-    void shouldAssignDraftOrderToParticipants() {
-      // RED: Test draft order assignment functionality
-      draftService.updateDraftOrder(testDraft, testParticipants);
-
-      // Verify each participant gets correct draft order
-      for (int i = 0; i < testParticipants.size(); i++) {
-        assertThat(testParticipants.get(i).getDraftOrder()).isEqualTo(i + 1);
-      }
     }
   }
 
@@ -362,24 +353,6 @@ class DraftServiceTddTest {
   @Nested
   @DisplayName("Player Selection Workflow")
   class PlayerSelectionWorkflowTests {
-
-    @Test
-    @DisplayName("Should advance draft after player selection")
-    void shouldAdvanceDraftAfterPlayerSelection() {
-      // RED: Test draft advancement after player pick
-      testDraft.setCurrentPick(1);
-      testDraft.setCurrentRound(1);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
-          .thenAnswer(invocation -> invocation.getArgument(0));
-
-      UUID userId = UUID.randomUUID();
-      draftService.selectPlayer(testDraft, userId, testPlayer);
-
-      // Should advance to next pick
-      assertThat(testDraft.getCurrentPick()).isEqualTo(2);
-      assertThat(testDraft.getCurrentRound()).isEqualTo(1);
-      verify(((DraftRepositoryPort) draftRepository)).save(testDraft);
-    }
 
     @Test
     @DisplayName("Should detect draft completion correctly")

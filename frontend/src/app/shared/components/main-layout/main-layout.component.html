@@ -44,10 +44,12 @@
 
       <!-- User Actions -->
       <div class="user-section">
-        <button mat-icon-button [matTooltip]="t.t('navigation.profile')" routerLink="/profile">
+        <button mat-icon-button [matTooltip]="t.t('navigation.profile')" routerLink="/profile"
+                [attr.aria-label]="t.t('navigation.profile')">
           <mat-icon>account_circle</mat-icon>
         </button>
-        <button mat-icon-button [matTooltip]="t.t('navigation.settings')" routerLink="/settings">
+        <button mat-icon-button [matTooltip]="t.t('navigation.settings')" routerLink="/settings"
+                [attr.aria-label]="t.t('navigation.settings')">
           <mat-icon>settings</mat-icon>
         </button>
         <button mat-stroked-button class="logout-btn logout-button" [matTooltip]="t.t('auth.logout')" (click)="logout()">
@@ -77,12 +79,15 @@
               </ng-container>
             </span>
           </button>
-          <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()" [matTooltip]="sidebarCollapsed ? t.t('layout.expand') : t.t('layout.collapse')">
+          <button mat-icon-button class="toggle-sidebar-btn" (click)="toggleSidebarCollapse()"
+                  [matTooltip]="sidebarCollapsed ? t.t('layout.expand') : t.t('layout.collapse')"
+                  [attr.aria-label]="sidebarCollapsed ? t.t('layout.expand') : t.t('layout.collapse')">
             <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
           </button>
         </h3>
         <div class="sidebar-actions" *ngIf="!sidebarCollapsed">
-          <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="t.t('games.createGame')" (click)="createGame()">
+          <button mat-icon-button class="create-game-sidebar-btn" [matTooltip]="t.t('games.createGame')"
+                  [attr.aria-label]="t.t('games.createGame')" (click)="createGame()">
             <mat-icon>add_circle</mat-icon>
           </button>
           <button mat-button class="join-game-btn" [matTooltip]="t.t('games.home.joinWithCode')" (click)="openJoinDialog()">
@@ -94,6 +99,15 @@
 
       <!-- Join Code Section -->
       <div class="join-code-section" *ngIf="showJoinCodeInput">
+        <div
+          *ngIf="joinFeedbackMessage"
+          class="join-feedback join-feedback--error"
+          role="alert"
+          aria-live="assertive">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <span>{{ joinFeedbackMessage }}</span>
+        </div>
+
         <mat-form-field appearance="outline">
           <mat-label>{{ t.t('layout.code') }}</mat-label>
           <input matInput [(ngModel)]="invitationCode" (keyup.enter)="joinWithCode()" [placeholder]="t.t('games.enterCode')">
@@ -129,6 +143,10 @@
         <div class="game-item game-list-item" 
              *ngFor="let game of userGames" 
              [class.selected]="selectedGame?.id === game.id"
+             role="button"
+             tabindex="0"
+             [attr.aria-label]="t.t('games.home.viewDetails') + ': ' + game.name"
+             (keydown)="onGameItemKeyDown($event, game)"
              (click)="selectGame(game)">
           <div class="game-icon">
             <mat-icon [attr.data-status]="game.status">

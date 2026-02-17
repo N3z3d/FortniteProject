@@ -390,6 +390,19 @@ class DraftWorkflowIntegrationTest {
   }
 
   @Test
+  @DisplayName("Should return 400 when select-player body is missing")
+  void shouldReturnBadRequestWhenSelectionBodyIsMissing() throws Exception {
+    UUID gameId = testGame.getId();
+
+    mockMvc
+        .perform(
+            post("/api/draft/{gameId}/select-player", gameId)
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("Request body is required"));
+  }
+
+  @Test
   @DisplayName("Devrait gérer les erreurs de game inexistante")
   void shouldHandleNonExistentGameErrors() throws Exception {
     // Given - Tentative d'accès à une game inexistante

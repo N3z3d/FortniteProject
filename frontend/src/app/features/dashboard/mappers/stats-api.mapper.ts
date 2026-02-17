@@ -25,7 +25,6 @@ export class StatsApiMapper {
     };
   } {
     if (!apiResponse) {
-      console.warn('StatsApiMapper: API response is null or undefined');
       return this.getEmptyStats();
     }
 
@@ -94,7 +93,6 @@ export class StatsApiMapper {
    */
   static validateMappedStats(mappedStats: any): boolean {
     if (!mappedStats) {
-      console.warn('StatsApiMapper: Mapped stats is null or undefined');
       return false;
     }
 
@@ -102,24 +100,20 @@ export class StatsApiMapper {
     const requiredFields = ['totalTeams', 'totalPlayers', 'totalPoints', 'averagePointsPerTeam'];
     for (const field of requiredFields) {
       if (mappedStats[field] === undefined || mappedStats[field] === null) {
-        console.warn(`StatsApiMapper: Required field '${field}' is missing`);
         return false;
       }
     }
 
     // Vérifications de cohérence
     if (mappedStats.totalTeams < 0 || mappedStats.totalPlayers < 0 || mappedStats.totalPoints < 0) {
-      console.warn('StatsApiMapper: Negative values detected in stats');
       return false;
     }
 
     if (mappedStats.totalPlayers > 0 && mappedStats.totalTeams === 0) {
-      console.warn('StatsApiMapper: Players exist but no teams - inconsistent data');
       return false;
     }
 
     if (mappedStats.seasonProgress < 0 || mappedStats.seasonProgress > 100) {
-      console.warn('StatsApiMapper: Season progress out of valid range (0-100)');
       return false;
     }
 

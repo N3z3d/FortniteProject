@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,20 +20,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.ValidationService;
 
 @ExtendWith(MockitoExtension.class)
 class CreateGameUseCaseTest {
 
-  @Mock private GameRepositoryPort gameRepositoryPort;
+  @Mock private GameDomainRepositoryPort gameDomainRepositoryPort;
 
   @Mock private UserRepositoryPort userRepositoryPort;
 
@@ -65,48 +63,38 @@ class CreateGameUseCaseTest {
 
   @Test
   void shouldCreateGameWhenUserIsValid() {
-    UUID gameId = UUID.randomUUID();
-
     when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
-    when(gameRepositoryPort.countByCreatorAndStatusIn(eq(user), anyList())).thenReturn(0L);
-    when(gameRepositoryPort.save(any(Game.class)))
-        .thenAnswer(
-            invocation -> {
-              Game game = invocation.getArgument(0);
-              game.setId(gameId);
-              return game;
-            });
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(0L);
+    when(gameDomainRepositoryPort.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     GameDto result = createGameUseCase.execute(userId, request);
 
-    assertThat(result.getId()).isEqualTo(gameId);
+    assertThat(result.getName()).isEqualTo("Test Game");
     assertThat(result.getCreatorId()).isEqualTo(userId);
-    assertThat(result.getStatus()).isEqualTo(GameStatus.CREATING);
+    assertThat(result.getStatus()).isEqualTo(com.fortnite.pronos.model.GameStatus.CREATING);
     assertThat(result.getCurrentParticipantCount()).isEqualTo(1);
+    assertThat(result.getInvitationCode()).isNull();
     assertThat(request.getCreatorId()).isEqualTo(userId);
 
     verify(validationService).validateCreateGameRequest(request);
     verify(userRepositoryPort).findById(userId);
-    verify(gameRepositoryPort).countByCreatorAndStatusIn(eq(user), anyList());
-    verify(gameRepositoryPort).save(any(Game.class));
+    verify(gameDomainRepositoryPort).countByCreatorAndStatusIn(eq(userId), anyList());
+    verify(gameDomainRepositoryPort).save(any(Game.class));
+    // No invitation code generated at creation (manual generation policy)
   }
 
   @Test
   void shouldCreateFallbackUserWhenMissing() {
-    UUID gameId = UUID.randomUUID();
-
     when(userRepositoryPort.findById(userId)).thenReturn(Optional.empty());
-    when(userRepositoryPort.findByUsername(anyString())).thenReturn(Optional.empty());
+    when(userRepositoryPort.findByUsername("auto-" + userId.toString().substring(0, 8)))
+        .thenReturn(Optional.empty());
     when(userRepositoryPort.save(any(User.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(gameRepositoryPort.countByCreatorAndStatusIn(any(User.class), anyList())).thenReturn(0L);
-    when(gameRepositoryPort.save(any(Game.class)))
-        .thenAnswer(
-            invocation -> {
-              Game game = invocation.getArgument(0);
-              game.setId(gameId);
-              return game;
-            });
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(any(UUID.class), anyList()))
+        .thenReturn(0L);
+    when(gameDomainRepositoryPort.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     GameDto result = createGameUseCase.execute(userId, request);
 
@@ -114,10 +102,13 @@ class CreateGameUseCaseTest {
     verify(userRepositoryPort).save(userCaptor.capture());
     User created = userCaptor.getValue();
 
-    assertThat(created.getUsername()).startsWith("auto-");
+    assertThat(created.getId()).isEqualTo(userId);
+    assertThat(created.getUsername()).isEqualTo("auto-" + userId.toString().substring(0, 8));
     assertThat(created.getRole()).isEqualTo(User.UserRole.ADMIN);
-    assertThat(request.getCreatorId()).isEqualTo(created.getId());
-    assertThat(result.getCreatorId()).isEqualTo(created.getId());
+    assertThat(request.getCreatorId()).isEqualTo(userId);
+    assertThat(result.getCreatorId()).isEqualTo(userId);
+    assertThat(result.getInvitationCode()).isNull();
+    // No invitation code generated at creation (manual generation policy)
   }
 
   @Test
@@ -129,20 +120,20 @@ class CreateGameUseCaseTest {
         .isInstanceOf(InvalidGameRequestException.class)
         .hasMessageContaining("valid role");
 
-    verify(gameRepositoryPort, never()).save(any(Game.class));
-    verify(gameRepositoryPort, never()).countByCreatorAndStatusIn(any(User.class), anyList());
+    verify(gameDomainRepositoryPort, never()).save(any(Game.class));
+    verify(gameDomainRepositoryPort, never()).countByCreatorAndStatusIn(any(UUID.class), anyList());
   }
 
   @Test
   void shouldRejectWhenActiveGameLimitReached() {
     user.setRole(User.UserRole.USER);
     when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
-    when(gameRepositoryPort.countByCreatorAndStatusIn(eq(user), anyList())).thenReturn(5L);
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(5L);
 
     assertThatThrownBy(() -> createGameUseCase.execute(userId, request))
         .isInstanceOf(InvalidGameRequestException.class)
         .hasMessageContaining("more than 5 active games");
 
-    verify(gameRepositoryPort, never()).save(any(Game.class));
+    verify(gameDomainRepositoryPort, never()).save(any(Game.class));
   }
 }

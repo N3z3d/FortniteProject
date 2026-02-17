@@ -1,9 +1,11 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ThemeService } from './theme.service';
+import { LoggerService } from './logger.service';
 
 describe('ThemeService', () => {
   const storageKey = 'user-theme-preference';
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
 
   const resetDom = () => {
     document.body.classList.remove('dark-theme', 'light-theme');
@@ -11,11 +13,13 @@ describe('ThemeService', () => {
   };
 
   const createService = (platformId: Object) => {
+    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         ThemeService,
-        { provide: PLATFORM_ID, useValue: platformId }
+        { provide: PLATFORM_ID, useValue: platformId },
+        { provide: LoggerService, useValue: loggerSpy }
       ]
     });
 
@@ -38,12 +42,14 @@ describe('ThemeService', () => {
   });
 
   it('setTheme falls back to default on invalid value', () => {
-    const warnSpy = spyOn(console, 'warn');
     const service = createService('browser');
 
     service.setTheme('invalid' as any);
 
-    expect(warnSpy).toHaveBeenCalled();
+    expect(loggerSpy.warn).toHaveBeenCalledWith('ThemeService: invalid theme, using fallback', jasmine.objectContaining({
+      attemptedTheme: 'invalid',
+      fallbackTheme: 'dark'
+    }));
     expect(service.getCurrentTheme()).toBe('dark');
     expect(document.body.classList.contains('dark-theme')).toBeTrue();
   });
@@ -58,12 +64,13 @@ describe('ThemeService', () => {
   });
 
   it('handles localStorage errors gracefully', () => {
-    const warnSpy = spyOn(console, 'warn');
     spyOn(localStorage, 'getItem').and.throwError('fail');
 
     const service = createService('browser');
 
-    expect(warnSpy).toHaveBeenCalled();
+    expect(loggerSpy.warn).toHaveBeenCalledWith('ThemeService: failed to load theme from localStorage', jasmine.objectContaining({
+      error: jasmine.any(Error)
+    }));
     expect(service.getCurrentTheme()).toBe('dark');
   });
 

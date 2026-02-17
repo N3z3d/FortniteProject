@@ -44,7 +44,7 @@
         <mat-icon matPrefix>search</mat-icon>
       </mat-form-field>
 
-      <mat-chip-set class="filter-chips" aria-label="Trade filters">
+      <mat-chip-set class="filter-chips" [attr.aria-label]="t.t('trades.dashboard.filterAriaLabel')">
         <mat-chip
           *ngFor="let filter of filterOptions"
           [class.selected]="(selectedFilter | async) === filter.value"
@@ -171,7 +171,12 @@
                     </div>
                   </div>
 
-                  <div class="trade-content" (click)="onViewTradeDetails(trade)">
+                  <div
+                    class="trade-content"
+                    role="button"
+                    tabindex="0"
+                    (click)="onViewTradeDetails(trade)"
+                    (keydown)="onTradeCardKeydown($event, trade)">
                     <div class="players-section">
                       <div class="offered-players">
                         <h4>{{ t.t('trades.labels.offeredPlayers') }}</h4>
@@ -274,7 +279,10 @@
                   *ngFor="let trade of trades; trackBy: trackByTradeId"
                   class="trade-item sent-trade"
                   [@cardHover]
-                  (click)="onViewTradeDetails(trade)">
+                  role="button"
+                  tabindex="0"
+                  (click)="onViewTradeDetails(trade)"
+                  (keydown)="onTradeCardKeydown($event, trade)">
 
                   <div class="trade-summary">
                     <div class="trade-info">
@@ -334,7 +342,10 @@
                   class="trade-item received-trade"
                   [@cardHover]
                   [class.urgent]="isTradeExpiringSoon(trade)"
-                  (click)="onViewTradeDetails(trade)">
+                  role="button"
+                  tabindex="0"
+                  (click)="onViewTradeDetails(trade)"
+                  (keydown)="onTradeCardKeydown($event, trade)">
 
                   <div class="trade-summary">
                     <div class="trade-info">
@@ -403,7 +414,10 @@
                   class="trade-item completed-trade"
                   [@cardHover]
                   [class]="getTradeStatusClass(trade.status)"
-                  (click)="onViewTradeDetails(trade)">
+                  role="button"
+                  tabindex="0"
+                  (click)="onViewTradeDetails(trade)"
+                  (keydown)="onTradeCardKeydown($event, trade)">
 
                   <div class="trade-summary">
                     <div class="completion-indicator">

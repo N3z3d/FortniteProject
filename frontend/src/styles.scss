@@ -799,6 +799,21 @@ a:not(.mat-button):not(.nav-link) {
   position: relative;
 }
 
+/* ============================================
+   NEXUS DIALOG STYLES
+   ============================================ */
+.nexus-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+  background: var(--nexus-bg-secondary) !important;
+  background-color: var(--nexus-bg-secondary) !important;
+  border: 1px solid var(--nexus-border-gold) !important;
+  border-radius: var(--radius-large) !important;
+  box-shadow: var(--glass-shadow), 0 0 30px rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  color: var(--nexus-text-primary) !important;
+}
+
+
 .premium-tooltip::after {
   content: attr(data-tooltip);
   position: absolute;

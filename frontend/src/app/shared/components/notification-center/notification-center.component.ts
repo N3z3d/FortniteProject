@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, Renderer2, RendererFactory2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,8 +42,14 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
   connectionStatus = false;
 
   private subscriptions: Subscription[] = [];
+  private readonly renderer: Renderer2;
 
-  constructor(public notificationService: NotificationService) {}
+  constructor(
+    public notificationService: NotificationService,
+    rendererFactory: RendererFactory2
+  ) {
+    this.renderer = rendererFactory.createRenderer(null, null);
+  }
   
   ngOnInit() {
     // S'abonner aux notifications
@@ -94,6 +100,15 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
     // Pour l'instant on dismiss la notification
     this.notificationService.dismiss(notification.id);
   }
+
+  onNotificationKeydown(event: KeyboardEvent, notification: NotificationMessage): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    this.markAsRead(notification);
+  }
   
   deleteNotification(notification: NotificationMessage, event: Event) {
     event.stopPropagation();
@@ -135,18 +150,7 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
     if (!notification) return;
 
     // Créer un toast temporaire
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    const notificationTitle = this.t.t('notificationCenter.notification');
-    toast.innerHTML = `
-      <div class="toast-icon">
-        <i class="material-icons">${this.getNotificationIcon(notification.type)}</i>
-      </div>
-      <div class="toast-content">
-        <h4>${notificationTitle}</h4>
-        <p>${notification.message}</p>
-      </div>
-    `;
+    const toast = this.createToastElement(notification);
     
     document.body.appendChild(toast);
     
@@ -164,6 +168,41 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
     });
+  }
+
+  private createToastElement(notification: NotificationMessage): HTMLDivElement {
+    const toast = this.renderer.createElement('div') as HTMLDivElement;
+    this.renderer.addClass(toast, 'notification-toast');
+    this.renderer.appendChild(toast, this.createToastIconElement(notification));
+    this.renderer.appendChild(toast, this.createToastContentElement(notification));
+    return toast;
+  }
+
+  private createToastIconElement(notification: NotificationMessage): HTMLElement {
+    const iconWrapper = this.renderer.createElement('div');
+    this.renderer.addClass(iconWrapper, 'toast-icon');
+
+    const icon = this.renderer.createElement('i');
+    this.renderer.addClass(icon, 'material-icons');
+    this.renderer.setProperty(icon, 'textContent', this.getNotificationIcon(notification.type));
+
+    this.renderer.appendChild(iconWrapper, icon);
+    return iconWrapper;
+  }
+
+  private createToastContentElement(notification: NotificationMessage): HTMLElement {
+    const contentWrapper = this.renderer.createElement('div');
+    this.renderer.addClass(contentWrapper, 'toast-content');
+
+    const title = this.renderer.createElement('h4');
+    this.renderer.setProperty(title, 'textContent', this.t.t('notificationCenter.notification'));
+
+    const message = this.renderer.createElement('p');
+    this.renderer.setProperty(message, 'textContent', notification.message);
+
+    this.renderer.appendChild(contentWrapper, title);
+    this.renderer.appendChild(contentWrapper, message);
+    return contentWrapper;
   }
   
   trackByFn(index: number, notification: NotificationMessage): string {

@@ -1,6 +1,7 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { LoggerService } from './logger.service';
 
 /**
  * Theme types - simplified to dark/light only (FF-204)
@@ -26,6 +27,7 @@ export type Theme = 'dark' | 'light';
 export class ThemeService {
   private readonly STORAGE_KEY = 'user-theme-preference';
   private readonly DEFAULT_THEME: Theme = 'dark';
+  private readonly logger = inject(LoggerService);
 
   private themeSubject: BehaviorSubject<Theme>;
   public theme$: Observable<Theme>;
@@ -54,7 +56,10 @@ export class ThemeService {
    */
   setTheme(theme: Theme): void {
     if (theme !== 'dark' && theme !== 'light') {
-      console.warn(`Invalid theme "${theme}", falling back to ${this.DEFAULT_THEME}`);
+      this.logger.warn('ThemeService: invalid theme, using fallback', {
+        attemptedTheme: theme,
+        fallbackTheme: this.DEFAULT_THEME
+      });
       theme = this.DEFAULT_THEME;
     }
 
@@ -107,7 +112,7 @@ export class ThemeService {
         return saved;
       }
     } catch (error) {
-      console.warn('Failed to load theme from localStorage:', error);
+      this.logger.warn('ThemeService: failed to load theme from localStorage', { error });
     }
 
     return this.DEFAULT_THEME;
@@ -125,7 +130,7 @@ export class ThemeService {
     try {
       localStorage.setItem(this.STORAGE_KEY, theme);
     } catch (error) {
-      console.warn('Failed to save theme to localStorage:', error);
+      this.logger.warn('ThemeService: failed to save theme to localStorage', { theme, error });
     }
   }
 

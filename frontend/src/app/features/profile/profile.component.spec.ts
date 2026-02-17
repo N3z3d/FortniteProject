@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 import { ProfileComponent } from './profile.component';
 import { UserContextService, UserProfile } from '../../core/services/user-context.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 import { EditProfileDialogComponent } from './edit-profile-dialog/edit-profile-dialog.component';
 import { ChangePasswordDialogComponent } from './change-password-dialog/change-password-dialog.component';
 import { UserStatsDialogComponent } from './user-stats-dialog/user-stats-dialog.component';
@@ -16,7 +16,7 @@ describe('ProfileComponent', () => {
   let userContextService: jasmine.SpyObj<UserContextService>;
   let router: jasmine.SpyObj<Router>;
   let dialog: jasmine.SpyObj<MatDialog>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let translationService: jasmine.SpyObj<TranslationService>;
 
   const mockUser: UserProfile = {
@@ -30,7 +30,7 @@ describe('ProfileComponent', () => {
     userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'login', 'logout']);
     router = jasmine.createSpyObj('Router', ['navigate']);
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessFromKey', 'showError']);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
     translationService.t.and.callFake((key: string) => key);
 
@@ -43,7 +43,7 @@ describe('ProfileComponent', () => {
           { provide: UserContextService, useValue: userContextService },
           { provide: Router, useValue: router },
           { provide: MatDialog, useValue: dialog },
-          { provide: MatSnackBar, useValue: snackBar },
+          { provide: UiErrorFeedbackService, useValue: uiFeedback },
           { provide: TranslationService, useValue: translationService }
         ]
       }
@@ -91,7 +91,7 @@ describe('ProfileComponent', () => {
     });
     expect(component.currentUser).toEqual(updatedUser);
     expect(userContextService.login).toHaveBeenCalledWith(updatedUser);
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('profile.snackbar.profileUpdated', 3000);
   });
 
   it('should not update user when edit dialog cancelled', () => {
@@ -126,7 +126,7 @@ describe('ProfileComponent', () => {
       maxWidth: '95vw',
       panelClass: 'premium-dialog'
     });
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('profile.snackbar.passwordChanged', 3000);
   });
 
   it('should not show snackbar when password change cancelled', () => {
@@ -136,7 +136,7 @@ describe('ProfileComponent', () => {
 
     component.changePassword();
 
-    expect(snackBar.open).not.toHaveBeenCalled();
+    expect(uiFeedback.showSuccessFromKey).not.toHaveBeenCalled();
   });
 
   it('should open stats dialog', () => {

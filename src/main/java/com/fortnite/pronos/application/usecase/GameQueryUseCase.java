@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.dto.GameDto;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameStatus;
 
 /** Application use case for Game query operations. Defines the public API for querying games. */
 public interface GameQueryUseCase {
@@ -20,8 +19,6 @@ public interface GameQueryUseCase {
   Optional<GameDto> getGameById(UUID gameId);
 
   GameDto getGameByIdOrThrow(UUID gameId);
-
-  Game getGameEntityById(UUID gameId);
 
   Optional<GameDto> getGameByInvitationCode(String invitationCode);
 

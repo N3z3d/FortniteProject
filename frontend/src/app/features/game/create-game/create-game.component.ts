@@ -10,7 +10,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
@@ -18,6 +17,8 @@ import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Component({
   selector: 'app-create-game',
@@ -34,7 +35,6 @@ import { TranslationService } from '../../../core/services/translation.service';
     MatSelectModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatTooltipModule,
     MatCheckboxModule
   ],
@@ -68,8 +68,9 @@ export class CreateGameComponent implements OnInit {
     private formBuilder: FormBuilder,
     private gameService: GameService,
     private router: Router,
-    private snackBar: MatSnackBar,
-    private userGamesStore: UserGamesStore
+    private userGamesStore: UserGamesStore,
+    private readonly uiFeedback: UiErrorFeedbackService,
+    private readonly logger: LoggerService
   ) { }
 
   ngOnInit(): void {
@@ -80,7 +81,7 @@ export class CreateGameComponent implements OnInit {
     this.gameForm = this.formBuilder.group({
       name: ['', [
         Validators.required,
-        Validators.minLength(2),
+        Validators.minLength(3),
         Validators.maxLength(30)
       ]],
       maxParticipants: [5, [
@@ -138,7 +139,7 @@ export class CreateGameComponent implements OnInit {
       autoStartDraft: true,
       draftTimeLimit: 300, // 5 minutes per pick
       autoPickDelay: 43200, // 12 hours for auto-pick
-      currentSeason: 2025,
+      currentSeason: new Date().getFullYear(),
       regionRules: {} // Simplified - no complex region rules for now
     };
 
@@ -147,10 +148,7 @@ export class CreateGameComponent implements OnInit {
         this.loading = false;
         // Add the new game to the store so sidebar refreshes immediately
         this.userGamesStore.addGame(game);
-        this.snackBar.open('🎉 Game créée ! Invitation envoyée', '', {
-          duration: 2000,
-          panelClass: 'success-snackbar'
-        });
+        this.uiFeedback.showSuccessMessage(this.buildCreateSuccessMessage(game.invitationCode), 2000);
         // Navigate directly to the game to start playing
         this.router.navigate(['/games', game.id], {
           queryParams: { created: 'true' }
@@ -158,8 +156,11 @@ export class CreateGameComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        this.error = 'Impossible de créer la game. Réessayez ?';
-        console.error('Error creating game:', error);
+        this.error = this.uiFeedback.showError(error, 'games.create.errorCreate', { duration: 5000 });
+        this.logger.error('CreateGameComponent: failed to create game', {
+          formName: this.gameForm?.value?.name,
+          error
+        });
       }
     });
   }
@@ -234,4 +235,13 @@ export class CreateGameComponent implements OnInit {
     const regions = Object.keys(this.DEFAULT_REGION_CONFIG).length;
     return `${totalPlayers} joueurs répartis sur ${regions} régions (7 par région)`;
   }
-} 
+
+  private buildCreateSuccessMessage(invitationCode?: string): string {
+    if (!invitationCode) {
+      return 'Game creee ! Generez un code d\'invitation depuis la page de la partie.';
+    }
+
+    return `Game creee ! Code d'invitation : ${invitationCode}`;
+  }
+
+}

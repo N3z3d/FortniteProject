@@ -7,12 +7,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { GameService } from '../services/game.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import {
+  extractJoinErrorDetails,
+  isInvitationCodeFormatValid,
+  resolveJoinErrorTranslationKey
+} from '../services/join-error-message.resolver';
 
 @Component({
   selector: 'app-join-game',
@@ -25,7 +30,6 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSnackBarModule,
     MatProgressSpinnerModule
   ],
   templateUrl: './join-game.component.html',
@@ -35,35 +39,41 @@ export class JoinGameComponent {
   public readonly t = inject(TranslationService);
   invitationCode = '';
   joiningGame = false;
+  joinFeedbackMessage: string | null = null;
+  joinFeedbackType: 'error' | 'success' = 'error';
 
   constructor(
     private readonly gameService: GameService,
     public readonly router: Router,
-    private readonly snackBar: MatSnackBar,
-    private readonly userGamesStore: UserGamesStore
+    private readonly userGamesStore: UserGamesStore,
+    private readonly uiFeedback: UiErrorFeedbackService
   ) {}
 
   joinWithCode(): void {
     if (!this.invitationCode.trim()) {
-      this.snackBar.open(this.t.t('games.joinDialog.enterCodeError'), this.t.t('games.joinDialog.close'), {
-        duration: 3000
-      });
+      this.showJoinError(this.t.t('games.joinDialog.enterCodeError'));
       return;
     }
 
     const normalizedCode = this.invitationCode.trim().toUpperCase();
+    if (!isInvitationCodeFormatValid(normalizedCode)) {
+      this.showJoinError(this.t.t('games.joinDialog.invalidCodeFormat'));
+      return;
+    }
+
+    this.clearJoinFeedback();
     this.joiningGame = true;
     this.gameService.joinGameWithCode(normalizedCode).subscribe({
       next: (game) => {
         this.joiningGame = false;
+        this.clearJoinFeedback();
         this.userGamesStore.refreshGames().subscribe({ error: () => undefined });
-        this.snackBar.open(
+        this.uiFeedback.showSuccessWithAction(
           this.t.t('games.joinDialog.successJoined').replace('{name}', game.name),
-          this.t.t('games.joinDialog.view'),
-          { duration: 5000 }
-        ).onAction().subscribe(() => {
-          this.router.navigate(['/games', game.id, 'dashboard']);
-        });
+          'games.joinDialog.view',
+          () => this.router.navigate(['/games', game.id, 'dashboard']),
+          5000
+        );
 
         // Redirect to game dashboard after 1 second
         setTimeout(() => {
@@ -72,30 +82,31 @@ export class JoinGameComponent {
       },
       error: (error) => {
         const message = this.extractErrorMessage(error, this.t.t('games.joinDialog.invalidCode'));
-        this.snackBar.open(
-          message,
-          this.t.t('games.joinDialog.close'),
-          { duration: 5000 }
-        );
+        this.showJoinError(message);
         this.joiningGame = false;
       }
     });
   }
 
   cancel(): void {
+    this.clearJoinFeedback();
     this.router.navigate(['/games']);
   }
 
-  private extractErrorMessage(error: unknown, fallback: string): string {
-    if (error instanceof Error && error.message) {
-      return error.message;
-    }
+  private showJoinError(message: string): void {
+    this.joinFeedbackType = 'error';
+    this.joinFeedbackMessage = message;
+  }
 
-    if (typeof error === 'object' && error !== null) {
-      const errorObject = error as { error?: { message?: string } };
-      if (errorObject.error?.message) {
-        return errorObject.error.message;
-      }
+  private clearJoinFeedback(): void {
+    this.joinFeedbackMessage = null;
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    const details = extractJoinErrorDetails(error);
+    const translationKey = resolveJoinErrorTranslationKey(details);
+    if (translationKey) {
+      return this.t.t(translationKey);
     }
 
     return fallback;

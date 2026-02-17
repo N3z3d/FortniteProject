@@ -10,13 +10,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 
 import { TeamService } from '../../../core/services/team.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
 
 interface Player {
@@ -55,7 +55,6 @@ interface TeamEditData {
     MatSelectModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatDividerModule,
     MatTooltipModule
   ],
@@ -78,7 +77,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly fb: FormBuilder,
     private readonly teamService: TeamService,
-    private readonly snackBar: MatSnackBar,
+    private readonly uiFeedback: UiErrorFeedbackService,
     public readonly t: TranslationService
   ) {
     this.initForm();
@@ -151,9 +150,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   onSave(): void {
     if (this.teamForm.invalid) {
-      this.snackBar.open(this.t.t('teams.edit.snackbar.formInvalid'), this.t.t('common.close'), {
-        duration: 3000
-      });
+      this.uiFeedback.showErrorFromKey('teams.edit.snackbar.formInvalid', 3000);
       return;
     }
 
@@ -161,11 +158,12 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
     // Simuler la sauvegarde
     setTimeout(() => {
-      this.snackBar.open(this.t.t('teams.edit.snackbar.updated'), this.t.t('teams.edit.snackbar.viewAction'), {
-        duration: 3000
-      }).onAction().subscribe(() => {
-        this.goBack();
-      });
+      this.uiFeedback.showSuccessWithAction(
+        this.t.t('teams.edit.snackbar.updated'),
+        'teams.edit.snackbar.viewAction',
+        () => this.goBack(),
+        3000
+      );
 
       this.saving = false;
     }, 1000);
@@ -187,19 +185,15 @@ export class TeamEditComponent implements OnInit, OnDestroy {
     const index = this.players.findIndex(p => p.id === player.id);
     if (index > -1) {
       this.players.splice(index, 1);
-      this.snackBar.open(
+      this.uiFeedback.showInfoWithAction(
         this.formatTemplate(this.t.t('teams.edit.snackbar.playerRemoved'), { player: player.nickname }),
-        this.t.t('common.cancel'),
-        {
-          duration: 5000
-        }
-      ).onAction().subscribe(() => {
-        // Restaurer le joueur
-        this.players.push(player);
-        this.snackBar.open(this.t.t('teams.edit.snackbar.playerRestored'), this.t.t('common.close'), {
-          duration: 2000
-        });
-      });
+        'common.cancel',
+        () => {
+          this.players.push(player);
+          this.uiFeedback.showSuccessFromKey('teams.edit.snackbar.playerRestored', 2000);
+        },
+        5000
+      );
     }
   }
 

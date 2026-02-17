@@ -91,22 +91,34 @@
             <!-- Start Draft Button -->
             <button mat-raised-button
                     color="primary"
+                    class="start-draft-btn"
                     *ngIf="canStartDraft()"
+                    [disabled]="isStartDraftActionDisabled()"
                     (click)="confirmStartDraft()"
                     [matTooltip]="t.t('games.detail.startDraftTooltip')">
-              <mat-icon>play_arrow</mat-icon>
+              <mat-icon [class.spin]="isStartingDraft">
+                {{ isStartingDraft ? 'autorenew' : 'play_arrow' }}
+              </mat-icon>
               {{ t.t('games.detail.startDraft') }}
             </button>
 
-            <!-- Delete Game Button (Host only, CREATING status only) -->
-            <button mat-raised-button
-                    color="warn"
-                    *ngIf="canDeleteGame()"
-                    (click)="confirmDelete()"
-                    [matTooltip]="t.t('games.detail.deleteTooltip')">
-              <mat-icon>delete_forever</mat-icon>
-              {{ t.t('games.detail.delete') }}
-            </button>
+            <!-- Delete Game Button (Host visible, disabled with explicit reason when not deletable) -->
+            <ng-container *ngIf="canShowDeleteGameAction()">
+              <button mat-raised-button
+                      color="warn"
+                      class="delete-game-btn"
+                      [disabled]="isDeleteActionDisabled()"
+                      (click)="confirmDelete()"
+                      [matTooltip]="t.t(getDeleteTooltipKey())">
+                <mat-icon>delete_forever</mat-icon>
+                {{ t.t('games.detail.delete') }}
+              </button>
+              <div class="delete-disabled-reason"
+                   *ngIf="isDeleteActionDisabled() && getDeleteRestrictionReasonKey() as reasonKey">
+                <mat-icon>info</mat-icon>
+                <span>{{ t.t(reasonKey) }}</span>
+              </div>
+            </ng-container>
 
             <!-- Archive Game Button (Host only, for finished games) -->
             <button mat-raised-button
@@ -257,11 +269,11 @@
             </div>
 
             <!-- Invitation Code -->
-            <div class="info-item invitation-code-item" *ngIf="game.invitationCode">
+            <div class="info-item invitation-code-item" *ngIf="game.invitationCode || canRegenerateCode()">
               <mat-icon>vpn_key</mat-icon>
               <div class="info-content">
                 <span class="info-label">{{ t.t('games.detail.invitationCode') }}</span>
-                <div class="invitation-code-wrapper">
+                <div class="invitation-code-wrapper" *ngIf="game.invitationCode; else noInvitationCodeBlock">
                   <span class="info-value code-value"
                         [class.expired]="game.isInvitationCodeExpired">
                     {{ game.invitationCode }}
@@ -288,6 +300,21 @@
                     <mat-icon>refresh</mat-icon>
                   </button>
                 </div>
+
+                <ng-template #noInvitationCodeBlock>
+                  <div class="invitation-code-wrapper">
+                    <span class="info-value code-value">-</span>
+                    <button mat-stroked-button
+                            color="primary"
+                            class="generate-code-btn"
+                            *ngIf="canRegenerateCode()"
+                            (click)="promptRegenerateCode()"
+                            [matTooltip]="t.t('games.detail.generateCode')">
+                      <mat-icon>add_circle</mat-icon>
+                      {{ t.t('games.detail.generateCode') }}
+                    </button>
+                  </div>
+                </ng-template>
               </div>
             </div>
           </div>

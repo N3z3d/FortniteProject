@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { UserContextService } from './core/services/user-context.service';
+import { TranslationService } from './core/services/translation.service';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -63,11 +65,22 @@ import { environment } from '../environments/environment';
     }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
+  private readonly userSub: Subscription;
+
   constructor(
     private userContextService: UserContextService,
+    private translationService: TranslationService,
     private router: Router
-  ) {}
+  ) {
+    this.userSub = this.userContextService.userChanged$.subscribe(user => {
+      this.translationService.setCurrentUserId(user?.id ?? null);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.userSub.unsubscribe();
+  }
 
   isDevelopment(): boolean {
     return !environment.production;

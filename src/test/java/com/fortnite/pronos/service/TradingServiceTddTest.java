@@ -205,6 +205,28 @@ class TradingServiceTddTest {
     }
 
     @Test
+    @DisplayName("Devrait rejeter un trade si l'equipe cible a atteint la limite de trades")
+    void shouldRejectTradeIfTargetTeamMaxTradesReached() {
+      // Given
+      team2.setCompletedTradesCount(5);
+      addPlayer(team1, player1);
+      addPlayer(team2, player2);
+
+      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
+      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+
+      // When & Then
+      BusinessException exception =
+          assertThrows(
+              BusinessException.class,
+              () ->
+                  tradingService.proposeTrade(
+                      team1.getId(), team2.getId(), List.of(player1), List.of(player2)));
+      assertTrue(
+          exception.getMessage().contains("Target team has reached maximum number of trades"));
+    }
+
+    @Test
     @DisplayName("Devrait rejeter un trade avec un joueur non possédé")
     void shouldRejectTradeWithUnownedPlayer() {
       // Given
@@ -251,7 +273,9 @@ class TradingServiceTddTest {
     @DisplayName("Devrait accepter un trade valide et échanger les joueurs")
     void shouldAcceptValidTradeAndSwapPlayers() {
       // Given
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
       when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
       when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -277,7 +301,9 @@ class TradingServiceTddTest {
     void shouldRejectAcceptanceByUnauthorizedUser() {
       // Given
       UUID wrongUserId = UUID.randomUUID();
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
 
       // When & Then
       assertThrows(
@@ -290,7 +316,9 @@ class TradingServiceTddTest {
     void shouldRejectAcceptanceOfProcessedTrade() {
       // Given
       pendingTrade.setStatus(Trade.Status.ACCEPTED);
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
 
       // When & Then
       assertThrows(
@@ -305,7 +333,9 @@ class TradingServiceTddTest {
       team1.setCompletedTradesCount(2);
       team2.setCompletedTradesCount(1);
 
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
       when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
       when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -315,6 +345,26 @@ class TradingServiceTddTest {
       // Then
       assertEquals(3, team1.getCompletedTradesCount());
       assertEquals(2, team2.getCompletedTradesCount());
+    }
+
+    @Test
+    @DisplayName("Devrait persister les 2 equipes, le trade et notifier a l'acceptation")
+    void shouldPersistTeamsTradeAndNotifyOnAccept() {
+      // Given
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
+      when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+
+      // When
+      Trade acceptedTrade = tradingService.acceptTrade(pendingTrade.getId(), user2.getId());
+
+      // Then
+      verify(teamRepository).save(team1);
+      verify(teamRepository).save(team2);
+      verify(tradeRepository).save(acceptedTrade);
+      verify(tradeNotificationService).notifyTradeAccepted(acceptedTrade);
     }
   }
 
@@ -337,7 +387,9 @@ class TradingServiceTddTest {
     @DisplayName("Devrait rejeter un trade par le destinataire")
     void shouldRejectTradeByRecipient() {
       // Given
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
       when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
 
       // When
@@ -353,7 +405,9 @@ class TradingServiceTddTest {
     @DisplayName("Devrait permettre l'annulation par l'initiateur")
     void shouldAllowCancellationByInitiator() {
       // Given
-      when(tradeRepository.findById(pendingTrade.getId())).thenReturn(Optional.of(pendingTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(pendingTrade.getId()))
+          .thenReturn(Optional.of(pendingTrade));
       when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
 
       // When
@@ -393,7 +447,9 @@ class TradingServiceTddTest {
       List<Player> counterOffered = List.of(player3);
       List<Player> counterRequested = List.of(player1);
 
-      when(tradeRepository.findById(originalTrade.getId())).thenReturn(Optional.of(originalTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(originalTrade.getId()))
+          .thenReturn(Optional.of(originalTrade));
       when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
       when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
       when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
@@ -445,7 +501,9 @@ class TradingServiceTddTest {
       invalidTrade.setOfferedPlayers(List.of(player1)); // EU
       invalidTrade.setRequestedPlayers(List.of(player2)); // NA
 
-      when(tradeRepository.findById(any())).thenReturn(Optional.of(invalidTrade));
+      when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+              .findById(any()))
+          .thenReturn(Optional.of(invalidTrade));
       doThrow(new BusinessException("Regional rules violated"))
           .when(validationService)
           .validateTeamComposition(any(), any());

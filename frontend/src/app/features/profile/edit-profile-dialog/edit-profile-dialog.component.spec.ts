@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditProfileDialogComponent } from './edit-profile-dialog.component';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { UserProfile } from '../../../core/services/user-context.service';
 
 describe('EditProfileDialogComponent', () => {
   let component: EditProfileDialogComponent;
   let fixture: ComponentFixture<EditProfileDialogComponent>;
   let dialogRef: jasmine.SpyObj<MatDialogRef<EditProfileDialogComponent>>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let translationService: jasmine.SpyObj<TranslationService>;
 
   const user: UserProfile = {
@@ -21,7 +21,7 @@ describe('EditProfileDialogComponent', () => {
 
   beforeEach(async () => {
     dialogRef = jasmine.createSpyObj('MatDialogRef', ['close']);
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessFromKey', 'showError']);
     translationService = jasmine.createSpyObj('TranslationService', ['t', 'translate']);
     translationService.t.and.callFake((key: string) => key);
     translationService.translate.and.callFake((key: string) => key);
@@ -33,7 +33,7 @@ describe('EditProfileDialogComponent', () => {
       set: {
         providers: [
           { provide: MatDialogRef, useValue: dialogRef },
-          { provide: MatSnackBar, useValue: snackBar },
+          { provide: UiErrorFeedbackService, useValue: uiFeedback },
           { provide: MAT_DIALOG_DATA, useValue: { user } },
           { provide: TranslationService, useValue: translationService }
         ]
@@ -58,9 +58,9 @@ describe('EditProfileDialogComponent', () => {
 
     component.onSave();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
+    expect(uiFeedback.showError).toHaveBeenCalledWith(
+      null,
       'profile.editDialog.formInvalid',
-      'common.close',
       { duration: 3000 }
     );
     expect(dialogRef.close).not.toHaveBeenCalled();
@@ -75,11 +75,7 @@ describe('EditProfileDialogComponent', () => {
     expect(component.saving).toBeTrue();
     tick(1000);
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'profile.editDialog.success',
-      'common.close',
-      { duration: 3000 }
-    );
+    expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('profile.editDialog.success', 3000);
     expect(component.saving).toBeFalse();
     expect(dialogRef.close).toHaveBeenCalledWith({
       ...user,

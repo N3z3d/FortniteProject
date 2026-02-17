@@ -23,7 +23,9 @@
     "details": "Detalhes",
     "players": "Jogadores",
     "player": "Jogador",
-    "retry": "Tentar novamente"
+    "invalidDate": "Data invalida",
+    "retry": "Tentar novamente",
+    "generateConfirm": "Gerar código"
   },
   "layout": {
     "welcome": "Bem-vindo",
@@ -43,7 +45,7 @@
     "password": "Senha",
     "email": "E-mail",
     "register": "Registrar",
-    "forgotPassword": "Esqueceu sua senha?",
+    "forgotPassword": "Forgot password",
     "rememberMe": "Lembrar-me"
   },
   "profile": {
@@ -129,6 +131,51 @@
       "lastActive": "última atividade"
     }
   },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "theme": "Tema",
+    "themeDesc": "Escolha seu tema preferido",
+    "darkMode": "Modo escuro",
+    "lightMode": "Modo claro",
+    "lightModeComingSoon": "(em breve)",
+    "lightModeHint": "O modo claro estará disponível em uma próxima versão",
+    "systemDefault": "Padrão do sistema",
+    "notifications": "Notificações",
+    "emailNotifications": "Notificações por e-mail",
+    "emailNotificationsDesc": "Receber atualizações por e-mail",
+    "pushNotifications": "Notificações push",
+    "pushNotificationsDesc": "Notificações push do navegador",
+    "gameReminders": "Lembretes de partidas",
+    "gameRemindersDesc": "Lembrar-me das partidas futuras",
+    "draftAlerts": "Alertas de draft",
+    "draftAlertsDesc": "Notificar quando for minha vez de draftear",
+    "tradeNotifications": "Notificações de trocas",
+    "tradeNotificationsDesc": "Avisar sobre ofertas de troca",
+    "draftTurnNotifications": "Notificações de turno de draft",
+    "draftTurnNotificationsDesc": "Avisar quando for minha vez de draftear",
+    "privacy": "Privacidade",
+    "privacyData": "Privacidade e dados",
+    "account": "Conta",
+    "general": "Geral",
+    "appearance": "Aparência",
+    "selectLanguage": "Selecionar idioma",
+    "french": "Francês",
+    "english": "Inglês",
+    "spanish": "Espanhol",
+    "portuguese": "Português",
+    "gamePreferences": "Preferências de jogo",
+    "autoJoinDraft": "Entrar automaticamente no draft",
+    "autoJoinDraftDesc": "Entrar automaticamente no draft quando começar",
+    "showOnlineStatus": "Mostrar status online",
+    "showOnlineStatusDesc": "Permitir que outros vejam quando estou online",
+    "exportData": "Exportar meus dados",
+    "deleteAccount": "Excluir conta",
+    "resetDefaults": "Restaurar padrões",
+    "settingsSaved": "Configurações salvas!",
+    "settingsReset": "Configurações redefinidas",
+    "exportStarted": "A exportação de dados começou. Você receberá um e-mail quando estiver pronta."
+  },
   "navigation": {
     "home": "Início",
     "dashboard": "Painel",
@@ -180,7 +227,9 @@
     },
     "noGame": {
       "title": "Começar",
-      "subtitle": "Você ainda não tem uma partida ativa"
+      "subtitle": "Você ainda não tem uma partida ativa",
+      "generateTitle": "Gerar codigo de convite",
+      "generateSubtitle": "Escolha por quanto tempo o codigo deve permanecer valido."
     },
     "charts": {
       "regionTitle": "Distribuição por região",
@@ -244,6 +293,10 @@
       "players": "jogadores",
       "errorLoading": "Erro ao carregar o painel. Tente novamente.",
       "navigatingTo": "Navegando para"
+    },
+    "fallback": {
+      "noTeam": "Nenhum time",
+      "unknownTeam": "Time desconhecido"
     }
   },
   "games": {
@@ -261,7 +314,7 @@
       "subtitle": "Crie sua partida em 10 segundos",
       "nameLabel": "Nome da sua partida",
       "namePlaceholder": "Ex: Partida entre amigos",
-      "nameHint": "É tudo o que você precisa!",
+      "nameHint": "? tudo o que voc? precisa!",
       "nameRequired": "Dê um nome à sua partida",
       "optimalConfig": "Configuração ideal",
       "maxParticipants": "5 participantes máx",
@@ -280,7 +333,7 @@
       "gamesCreated": "Partidas criadas",
       "satisfaction": "Satisfação",
       "averageTime": "Tempo médio",
-      "errorCreate": "Não foi possível criar a partida. Tentar novamente?",
+      "errorCreate": "Unable to create game. Try again",
       "successMessage": "Partida criada! Convite enviado",
       "nPlayers": "{n} jogadores"
     },
@@ -323,14 +376,14 @@
       "participantsRecommendation": "Recomendado: 5-8 jogadores para uma experiência ideal",
       "draftConfig": "Configuração do draft",
       "timePerPick": "Tempo por escolha",
-      "oneMinute": "1 minuto ⚡",
+      "oneMinute": "1 minuto âš¡",
       "twoMinutes": "2 minutos",
       "threeMinutesRec": "3 minutos (recomendado)",
       "fiveMinutes": "5 minutos",
       "tenMinutes": "10 minutos",
       "fifteenMinutes": "15 minutos",
       "autoPickDelay": "Tempo antes da escolha automática",
-      "fiveMinutesFast": "5 minutos ⚡",
+      "fiveMinutesFast": "5 minutos âš¡",
       "thirtyMinutes": "30 minutos",
       "oneHourRec": "1 hora (recomendado)",
       "twoHours": "2 horas",
@@ -376,9 +429,9 @@
         "customDesc": "Crie sua própria configuração"
       },
       "smartDesc": {
-        "quickPlay": "Partida rápida criada em {date} à s {time}. Que vença o melhor! 🚀",
-        "championship": "Torneio oficial - {date}. Prepare-se para a competição! 🏆",
-        "casual": "Partida relaxada com amigos - {date}. Diversão garantida! 🎮",
+        "quickPlay": "Partida r?pida criada em {date} ?s {time}. Que ven?a o melhor!",
+        "championship": "Torneio oficial - {date}. Prepare-se para a competi??o!",
+        "casual": "Partida relaxada com amigos - {date}. Divers?o garantida!",
         "custom": "Partida personalizada criada em {date} à s {time}"
       }
     },
@@ -433,6 +486,7 @@
       "participantsTitle": "Participantes",
       "participantsSubtitle": "Lista de jogadores participando desta partida",
       "creator": "Criador",
+      "participant": "Participante",
       "noParticipants": "Sem participantes",
       "beFirst": "Seja o primeiro a entrar nesta partida!",
       "gameInfo": "Informações da Partida",
@@ -441,6 +495,7 @@
       "createdOn": "Criada em",
       "status": "Status",
       "invitationCode": "Código de convite",
+      "permanent": "Permanente",
       "expired": "Expirado",
       "expiresOn": "Expira:",
       "copyCode": "Copiar código",
@@ -448,7 +503,97 @@
       "draftPhase": "Fase de Draft",
       "draftSubtitle": "Os participantes estão selecionando seus jogadores",
       "draftInProgress": "O draft está em andamento. Os participantes agora podem selecionar seus jogadores.",
-      "viewDraft": "Ver Draft"
+      "viewDraft": "Ver Draft",
+      "deleteDisabledStatus": "A exclusão só está disponível enquanto a partida estiver em criação.",
+      "deleteDisabledNotHost": "Somente o criador pode excluir esta partida.",
+      "generateCode": "Gerar código",
+      "regenerateDialog": {
+        "title": "Regenerar código de convite",
+        "subtitle": "Escolha por quanto tempo o novo código deve permanecer válido.",
+        "generateTitle": "Gerar código de convite",
+        "generateSubtitle": "Escolha por quanto tempo o código deve permanecer válido.",
+        "option24hTitle": "24 horas",
+        "option24hDescription": "Expira automaticamente em 24 horas.",
+        "option48hTitle": "48 horas",
+        "option48hDescription": "Expira automaticamente em 48 horas.",
+        "option7dTitle": "7 dias",
+        "option7dDescription": "Expira automaticamente em 7 dias.",
+        "optionPermanentTitle": "Permanente",
+        "optionPermanentDescription": "O código permanece válido até a próxima regeneração.",
+        "cancel": "Cancelar",
+        "confirm": "Gerar código",
+        "generateConfirm": "Gerar código"
+      },
+      "gameUnavailable": "Esta partida nao esta mais disponivel ou voce nao tem mais acesso.",
+      "actions": {
+        "draftStarted": "Draft started successfully.",
+        "draftStartBlocked": "Cannot start draft. Ensure you are the creator and at least two participants joined.",
+        "draftStartError": "Error while starting draft.",
+        "draftCreatorMissing": "O criador desta partida nao foi encontrado. Contacte um administrador.",
+        "archiveSuccess": "Game archived successfully.",
+        "archiveFailed": "Unable to archive the game.",
+        "archiveError": "Error while archiving the game.",
+        "leaveSuccess": "You left the game.",
+        "leaveFailed": "Unable to leave the game.",
+        "leaveError": "Error while leaving the game.",
+        "joinSuccess": "You joined the game successfully.",
+        "joinFailed": "Unable to join the game.",
+        "joinError": "Error while joining the game.",
+        "codeCopied": "Invitation code copied to clipboard.",
+        "codeCopyFailed": "Unable to copy invitation code.",
+        "invitationCodeGenerateVerb": "Invitation code generated",
+        "invitationCodeRegenerateVerb": "Invitation code regenerated",
+        "invitationCodeWithValue": "{verb}: {code}",
+        "invitationCodeWithoutValue": "{verb}.",
+        "invitationCodeGenerationFailed": "Unable to generate invitation code.",
+        "invitationCodeRegeneratedAnnounce": "Invitation code regenerated successfully.",
+        "renameSuccess": "Game renamed successfully.",
+        "renameError": "Error while renaming game.",
+        "renamePromptTitle": "Enter a new game name",
+        "renameAnnounce": "Game renamed to {name}",
+        "deleteSuccessAnnounce": "Game deleted successfully.",
+        "deleteError": "Error while deleting game.",
+        "draftFinishedAnnounce": "Draft finished successfully.",
+        "draftFinishError": "Error while finishing draft.",
+        "draftPausedAnnounce": "Draft paused.",
+        "draftResumedAnnounce": "Draft resumed."
+      },
+      "renameDialog": {
+        "title": "Renomear partida",
+        "subtitle": "Escolha um nome claro para sua partida.",
+        "label": "Novo nome",
+        "confirm": "Salvar",
+        "validationRequired": "O nome da partida e obrigatorio.",
+        "validationMin": "O nome deve ter pelo menos 3 caracteres.",
+        "validationMax": "O nome deve ter no maximo 50 caracteres.",
+        "validationUnchanged": "Escolha um nome diferente do atual."
+      },
+      "confirmDialogs": {
+        "archive": {
+          "title": "Archive game",
+          "message": "This game will be archived and removed from your active list. Continue",
+          "confirm": "Archive",
+          "cancel": "Cancel"
+        },
+        "leave": {
+          "title": "Leave game",
+          "message": "Do you really want to leave this game",
+          "confirm": "Leave",
+          "cancel": "Cancel"
+        },
+        "delete": {
+          "title": "Delete game",
+          "message": "This action is permanent. Do you really want to delete this game",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        },
+        "startDraft": {
+          "title": "Start draft",
+          "message": "Do you want to start the draft now",
+          "confirm": "Start draft",
+          "cancel": "Cancel"
+        }
+      }
     },
     "joinDialog": {
       "title": "Entrar em uma partida",
@@ -460,14 +605,27 @@
       "joining": "Conectando...",
       "joinButton": "Entrar na partida",
       "cancel": "Cancelar",
-      "noCodeTitle": "Não tem código?",
+      "noCodeTitle": "Don't have a code",
       "noCodeDesc": "Peça ao criador da partida para compartilhar o código de convite com você, ou crie sua própria partida.",
       "createNew": "Criar uma nova partida",
       "enterCodeError": "Por favor, digite um código de convite",
       "close": "Fechar",
       "successJoined": "Entrou em {name} com sucesso!",
       "view": "Ver",
-      "invalidCode": "Código de convite inválido"
+      "invalidCode": "Código de convite inválido",
+      "invalidCodeFormat": "Formato de código inválido. Use apenas letras, números e hífens.",
+      "invalidOrUnavailableCode": "Código inválido ou partida indisponível. Verifique o código ou peça um novo ao criador.",
+      "tooManyAttempts": "Muitas tentativas com código. Tente novamente em um minuto.",
+      "alreadyInGame": "Você já está nesta partida"
+    },
+    "validation": {
+      "idMissing": "Identificador da partida ausente",
+      "nameRequired": "Nome da partida obrigatorio",
+      "creatorMissing": "Nome do criador ausente",
+      "maxParticipantsInvalid": "O maximo de participantes deve ser maior que zero",
+      "participantCountNegative": "O numero de participantes nao pode ser negativo",
+      "participantCountExceeded": "O numero de participantes excede o maximo",
+      "selectGameRequired": "Selecione uma partida primeiro"
     }
   },
   "trades": {
@@ -712,6 +870,7 @@
     },
     "messages": {
       "refreshed": "Dados atualizados",
+      "newOffers": "Você tem {count} nova(s) oferta(s) de troca",
       "tradeAccepted": "Troca aceita com sucesso!",
       "tradeRejected": "Troca rejeitada",
       "tradeWithdrawn": "Troca retirada",
@@ -765,51 +924,10 @@
         "offerSent": "Oferta de troca enviada com sucesso!",
         "offerSendFailed": "Erro ao enviar a oferta"
       }
+    },
+    "dashboard": {
+      "filterAriaLabel": "Filtros de trocas"
     }
-  },
-  "settings": {
-    "title": "Configurações",
-    "language": "Idioma",
-    "theme": "Tema",
-    "themeDesc": "Escolha seu tema preferido",
-    "darkMode": "Modo escuro",
-    "lightMode": "Modo claro",
-    "lightModeComingSoon": "(em breve)",
-    "lightModeHint": "O modo claro estará disponível em uma próxima versão",
-    "systemDefault": "Padrão do sistema",
-    "notifications": "Notificações",
-    "emailNotifications": "Notificações por e-mail",
-    "emailNotificationsDesc": "Receber atualizações por e-mail",
-    "pushNotifications": "Notificações push",
-    "pushNotificationsDesc": "Notificações push do navegador",
-    "gameReminders": "Lembretes de partidas",
-    "gameRemindersDesc": "Lembrar-me das partidas futuras",
-    "draftAlerts": "Alertas de draft",
-    "draftAlertsDesc": "Notificar quando for minha vez de draftear",
-    "tradeNotifications": "Notificações de trocas",
-    "tradeNotificationsDesc": "Avisar sobre ofertas de troca",
-    "draftTurnNotifications": "Notificações de turno de draft",
-    "draftTurnNotificationsDesc": "Avisar quando for minha vez de draftear",
-    "privacy": "Privacidade",
-    "privacyData": "Privacidade e dados",
-    "account": "Conta",
-    "general": "Geral",
-    "appearance": "Aparência",
-    "french": "Francês",
-    "english": "Inglês",
-    "spanish": "Espanhol",
-    "portuguese": "Português",
-    "selectLanguage": "Selecionar idioma",
-    "gamePreferences": "Preferências de jogo",
-    "autoJoinDraft": "Entrar automaticamente no draft",
-    "autoJoinDraftDesc": "Entrar automaticamente no draft quando começar",
-    "showOnlineStatus": "Mostrar status online",
-    "showOnlineStatusDesc": "Permitir que outros vejam quando estou online",
-    "exportData": "Exportar meus dados",
-    "deleteAccount": "Excluir conta",
-    "resetDefaults": "Restaurar padrões",
-    "settingsSaved": "Configurações salvas!",
-    "settingsReset": "Configurações redefinidas"
   },
   "leaderboard": {
     "title": "Classificação de jogadores - Temporada 2025",
@@ -844,7 +962,7 @@
     "regions": {
       "EU": "Europa",
       "NAW": "NAW (América do Norte Oeste)",
-      "ASIA": "Ásia",
+      "ASIA": "Ãsia",
       "BR": "Brasil",
       "NAC": "NAC (América do Norte Central)",
       "OCE": "Oceania",
@@ -887,7 +1005,43 @@
     "network": "Erro de conexão",
     "unauthorized": "Não autorizado",
     "notFound": "Não encontrado",
-    "validation": "Erro de validação"
+    "validation": "Erro de validação",
+    "handler": {
+      "skipToRecovery": "Ir para ações de recuperação",
+      "skipToRecoveryFor": "Ir para ações de recuperação para:",
+      "technicalInfo": "Informações técnicas",
+      "statusCode": "Código de status:",
+      "errorCode": "Código de erro:",
+      "path": "Caminho:",
+      "requestId": "ID da solicitação:",
+      "timestamp": "Data e hora:",
+      "validationErrors": "Erros de validação:",
+      "availableActions": "Ações disponíveis:",
+      "keyboardShortcut": "Atalho de teclado",
+      "navigationInstructions": "Instruções de navegação",
+      "instructionsPrefix": "Instruções:",
+      "navigationHelp": "Use Tab e Shift+Tab para navegar, Enter ou Espaço para ativar botões. Escape para fechar este erro se possível.",
+      "serverCommError": "Erro de comunicação com o servidor",
+      "serverCommMessage": "Ocorreu um erro ao comunicar com o servidor.",
+      "connectionProblem": "Problema de conexão",
+      "connectionMessage": "Não foi possível contactar o servidor. Verifique sua conexão com a internet.",
+      "invalidRequest": "Solicitação inválida",
+      "authRequired": "Autenticação necessária",
+      "authMessage": "Você deve se autenticar para acessar este recurso.",
+      "forbidden": "Acesso negado",
+      "forbiddenMessage": "Você não tem permissão para realizar esta ação.",
+      "notFound": "Recurso não encontrado",
+      "notFoundMessage": "O recurso solicitado não existe ou não está mais disponível.",
+      "serverError": "Erro interno do servidor",
+      "serverErrorMessage": "Ocorreu um erro tecnico. Tente novamente em alguns instantes.",
+      "errorDialogOpened": "Diálogo de erro aberto com ações de recuperação",
+      "errorDialogClosed": "Diálogo de erro fechado",
+      "executingAction": "Executando ação:",
+      "retry": "Tentar novamente",
+      "goHome": "Voltar ao início",
+      "close": "Fechar",
+      "escapeKey": "Escape"
+    }
   },
   "notifications": {
     "close": "Fechar",
@@ -911,7 +1065,7 @@
     "team": {
       "playerAdded": "{player} adicionado ao seu time",
       "playerRemoved": "{player} removido do seu time",
-      "tradeCompleted": "Troca concluída: {out} ↔ {in}"
+      "tradeCompleted": "Troca conclu?da: {out} <-> {in}"
     },
     "auth": {
       "loginSuccess": "Login realizado como {username}",
@@ -1052,7 +1206,7 @@
       "waitingNextTurn": "Aguardando o próximo turno",
       "waitingTurn": "É a vez de {username}",
       "cancelDraftTitle": "Cancelar o draft",
-      "cancelDraftMessage": "Tem certeza de que deseja cancelar este draft? Esta ação é irreversível.",
+      "cancelDraftMessage": "Are you sure you want to cancel this draft This action is irreversible.",
       "cancelDraftConfirm": "Cancelar o draft",
       "cancelDraftCancel": "Voltar",
       "pointsShort": "pts"
@@ -1260,7 +1414,7 @@
       }
     },
     "cta": {
-      "title": "PRONTO PARA CONQUISTAR O MUNDO?",
+      "title": "READY TO CONQUER THE WORLD",
       "subtitle": "Junte-se a milhares de managers e prove que você tem olho para identificar futuros campeões.",
       "startNow": "Começar agora",
       "startNowTooltip": "Comece sua aventura agora!",
@@ -1313,6 +1467,98 @@
         "name": "Ásia",
         "description": "Precisão e excelência tecnológica."
       }
+    }
+  },
+  "loginPage": {
+    "heroSubtitle": "Crie seu time dos sonhos e domine a competição",
+    "chooseProfile": "Escolha seu perfil",
+    "switchUser": "Trocar de usuário",
+    "selectUserSubtitle": "Selecione seu usuário para começar",
+    "switchUserSubtitle": "Selecione outro usuário",
+    "connecting": "Conectando...",
+    "emailOrUsername": "Email ou nome de usuário",
+    "enterIdentifier": "Digite seu identificador",
+    "identifierRequired": "Um identificador é necessário",
+    "quickLogin": "Login rápido",
+    "otherAccount": "Other account",
+    "hide": "Ocultar",
+    "activePlayers": "Jogadores ativos",
+    "ongoingGames": "Partidas em andamento",
+    "free": "Grátis",
+    "selectLanguage": "Selecionar idioma"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Painel de Administração",
+      "summary": "Visão geral",
+      "health": "Saúde do sistema",
+      "recentActivity": "Atividade recente",
+      "metrics": "Métricas do sistema",
+      "refresh": "Atualizar",
+      "loadError": "Erro ao carregar os dados."
+    },
+    "kpi": {
+      "totalUsers": "Usuários",
+      "totalGames": "Partidas",
+      "totalTrades": "Trocas",
+      "gamesByStatus": "Partidas por status"
+    },
+    "health": {
+      "uptime": "Tempo ativo",
+      "dbPool": "Pool DB (ativas/max)",
+      "disk": "Uso de disco"
+    },
+    "activity": {
+      "recentGames": "Partidas recentes",
+      "recentTrades": "Trocas recentes",
+      "totalUsers": "Usuários",
+      "latestGames": "?ltimas partidas"
+    },
+    "metrics": {
+      "heapUsed": "Heap usado",
+      "heapMax": "Heap máx",
+      "threads": "Threads",
+      "totalRequests": "Requisições totais",
+      "errorRate": "Taxa de erro"
+    },
+    "errors": {
+      "title": "Registro de erros",
+      "loadError": "Não foi possível carregar o registro de erros.",
+      "empty": "Nenhum erro registrado. Tudo está funcionando corretamente!",
+      "stats": {
+        "totalErrors": "Erros totais (24h)",
+        "uniqueTypes": "Tipos únicos",
+        "serverErrors": "Erros do servidor (5xx)",
+        "notFound": "Não encontrado (404)"
+      },
+      "filter": {
+        "status": "Código HTTP",
+        "type": "Tipo de exceção",
+        "clear": "Limpar filtros"
+      },
+      "table": {
+        "timestamp": "Data/Hora",
+        "type": "Tipo",
+        "status": "Status",
+        "message": "Mensagem",
+        "path": "Caminho",
+        "viewDetail": "Ver detalhes"
+      },
+      "detail": {
+        "title": "Detalhes do erro",
+        "errorCode": "Código do erro",
+        "stackTrace": "Rastreamento de pilha",
+        "close": "Fechar"
+      }
+    }
+  },
+  "authSwitch": {
+    "messages": {
+      "switchSuccess": "Mudança para {username} concluída com sucesso",
+      "notifySwitchSaved": "Notificação de mudança {fromUser} -> {toUser} registrada",
+      "notifyFallback": "A notificação falhou, mas a mudança foi concluída",
+      "switchErrorLocalFallback": "Erro ao mudar para {username}. Modo local ativado.",
+      "unknownError": "Erro desconhecido"
     }
   }
 }

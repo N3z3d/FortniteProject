@@ -1,20 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { DraftComponent } from './draft.component';
 import { DraftService } from './services/draft.service';
 import { UserContextService, UserProfile } from '../../core/services/user-context.service';
-import { DraftBoardState, Player, GameParticipant, DraftStatus, PlayerRegion } from './models/draft.interface';
-import { REGION_LABELS, STATUS_LABELS } from './constants/draft.constants';
+import { DraftBoardState, Player, DraftStatus, PlayerRegion } from './models/draft.interface';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 describe('DraftComponent', () => {
   let component: DraftComponent;
   let fixture: ComponentFixture<DraftComponent>;
   let draftService: jasmine.SpyObj<DraftService>;
   let userContextService: jasmine.SpyObj<UserContextService>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
   let dialog: jasmine.SpyObj<MatDialog>;
   const mockUser: UserProfile = { id: '1', username: 'Thibaut', email: 'thibaut@test.com' };
   const mockDraftState: DraftBoardState = {
@@ -61,7 +60,10 @@ describe('DraftComponent', () => {
       'getDraftBoardState', 'makePlayerSelection', 'pauseDraft', 'resumeDraft', 'cancelDraft'
     ]);
     const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
-    const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    const uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', [
+      'showSuccessMessage',
+      'showErrorMessage'
+    ]);
     const dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
     draftServiceSpy.getDraftBoardState.and.returnValue(of(mockDraftState));
@@ -71,7 +73,7 @@ describe('DraftComponent', () => {
       providers: [
         { provide: DraftService, useValue: draftServiceSpy },
         { provide: UserContextService, useValue: userContextSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
         { provide: MatDialog, useValue: dialogSpy },
         {
           provide: ActivatedRoute,
@@ -86,7 +88,7 @@ describe('DraftComponent', () => {
     component = fixture.componentInstance;
     draftService = TestBed.inject(DraftService) as jasmine.SpyObj<DraftService>;
     userContextService = TestBed.inject(UserContextService) as jasmine.SpyObj<UserContextService>;
-    snackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
+    uiFeedback = TestBed.inject(UiErrorFeedbackService) as jasmine.SpyObj<UiErrorFeedbackService>;
     dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
     // État de base pour autoriser les actions dans les tests
     component.gameId = '1';
@@ -105,59 +107,11 @@ describe('DraftComponent', () => {
       expect(component.draftState).toEqual(mockDraftState);
     });
   });
-  describe('confirmCancel', () => {
+  describe('cancelDraft', () => {
     it('should open confirmation dialog before draft cancellation', () => {
-      component.confirmCancel();
-      
+      component.cancelDraft();
+
       expect(dialog.open).toHaveBeenCalled();
-    });
-  });
-  describe('getRegionLabel', () => {
-    it('should return correct region label for EU', () => {
-      const result = component.getRegionLabel('EU' as PlayerRegion);
-      expect(result).toBe(component.t.t(REGION_LABELS['EU'], 'EU'));
-    });
-    it('should return correct region label for NAW', () => {
-      const result = component.getRegionLabel('NAW' as PlayerRegion);
-      expect(result).toBe(component.t.t(REGION_LABELS['NAW'], 'NAW'));
-    });
-    it('should return region code for unknown region', () => {
-      const result = component.getRegionLabel('UNKNOWN' as PlayerRegion);
-      expect(result).toBe('UNKNOWN');
-    });
-  });
-  describe('getTrancheLabel', () => {
-    it('should return correct tranche label for T1', () => {
-      const result = component.getTrancheLabel('T1');
-      expect(result).toBe(component.t.t('draft.selection.trancheValue'));
-    });
-    it('should return correct tranche label for T2', () => {
-      const result = component.getTrancheLabel('T2');
-      expect(result).toBe(component.t.t('draft.selection.trancheValue'));
-    });
-    it('should return tranche code for unknown tranche', () => {
-      const result = component.getTrancheLabel('UNKNOWN');
-      expect(result).toBe('UNKNOWN');
-    });
-  });
-  describe('getStatusColor', () => {
-    it('should return correct color for ACTIVE status', () => {
-      const result = component.getStatusColor('ACTIVE' as DraftStatus);
-      expect(result).toBe('accent');
-    });
-    it('should return correct color for PAUSED status', () => {
-      const result = component.getStatusColor('PAUSED' as DraftStatus);
-      expect(result).toBe('warn');
-    });
-  });
-  describe('getStatusLabel', () => {
-    it('should return correct label for ACTIVE status', () => {
-      const result = component.getStatusLabel('ACTIVE' as DraftStatus);
-      expect(result).toBe(component.t.t(STATUS_LABELS['ACTIVE']));
-    });
-    it('should return correct label for PAUSED status', () => {
-      const result = component.getStatusLabel('PAUSED' as DraftStatus);
-      expect(result).toBe(component.t.t(STATUS_LABELS['PAUSED']));
     });
   });
   describe('selectPlayer', () => {
@@ -176,6 +130,25 @@ describe('DraftComponent', () => {
       component.selectPlayer(player);
       
       expect(draftService.makePlayerSelection).toHaveBeenCalledWith('1', '1');
+      expect(uiFeedback.showSuccessMessage).toHaveBeenCalled();
+    });
+
+    it('should show error message when selection fails', () => {
+      const player: Player = {
+        id: '1',
+        username: 'player1',
+        nickname: 'Player1',
+        region: 'EU' as PlayerRegion,
+        tranche: 'T1',
+        currentSeason: 2025,
+        selected: false,
+        available: true
+      };
+      draftService.makePlayerSelection.and.returnValue(throwError(() => new Error('selection failed')));
+
+      component.selectPlayer(player);
+
+      expect(uiFeedback.showErrorMessage).toHaveBeenCalled();
     });
   });
   describe('pauseDraft', () => {
@@ -255,21 +228,7 @@ describe('DraftComponent', () => {
       expect(result[0].region).toBe('EU');
     });
   });
-  describe('getRegionQuotas', () => {
-    it('should return region quotas from draft state', () => {
-      component.draftState = mockDraftState;
-      
-      const result = component.getRegionQuotas();
-      
-      expect(result).toEqual([
-        { region: 'EU', limit: 2 },
-        { region: 'NAW', limit: 2 },
-        { region: 'ASIA', limit: 1 }
-      ]);
-    });
-  });
 });
-
 
 
 

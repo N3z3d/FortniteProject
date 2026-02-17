@@ -18,6 +18,9 @@ import { GameDetailPermissionsService } from '../services/game-detail-permission
 import { GameDetailUIService } from '../services/game-detail-ui.service';
 import { Game, GameStatus, GameParticipant } from '../models/game.interface';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UserGamesStore } from '../../../core/services/user-games.store';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 @Component({
   selector: 'app-game-detail',
@@ -48,12 +51,16 @@ export class GameDetailComponent implements OnInit {
   error: string | null = null;
   participantsError: string | null = null;
   gameId: string = '';
+  isStartingDraft = false;
 
   constructor(
     private readonly gameDataService: GameDataService,
     private readonly actions: GameDetailActionsService,
     private readonly permissions: GameDetailPermissionsService,
     private readonly ui: GameDetailUIService,
+    private readonly userGamesStore: UserGamesStore,
+    private readonly uiFeedback: UiErrorFeedbackService,
+    private readonly logger: LoggerService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
   ) { }
@@ -71,7 +78,20 @@ export class GameDetailComponent implements OnInit {
     this.loading = true;
     this.error = null;
     this.participantsError = null;
+    this.userGamesStore.refreshGames().subscribe({
+      next: (games) => {
+        if (!this.isGameVisibleForCurrentUser(games)) {
+          this.handleInaccessibleGame();
+          return;
+        }
+        this.fetchGameDetails();
+      },
+      // If refresh fails, we still try to load details to avoid blocking the screen on transient API errors.
+      error: () => this.fetchGameDetails()
+    });
+  }
 
+  private fetchGameDetails(): void {
     this.gameDataService.getGameById(this.gameId).subscribe({
       next: (game: Game) => {
         this.game = game;
@@ -80,17 +100,33 @@ export class GameDetailComponent implements OnInit {
         // Validation des données reçues
         const validation = this.gameDataService.validateGameData(game);
         if (!validation.isValid) {
-          console.warn('Game data validation failed:', validation.errors);
+          this.logger.warn('GameDetailComponent: game data validation failed', {
+            gameId: this.gameId,
+            errors: validation.errors
+          });
         }
 
         this.loadParticipants();
       },
       error: (error: Error) => {
+        if (this.isNotFoundError(error)) {
+          this.handleNotFoundGame();
+          this.loading = false;
+          return;
+        }
+
         this.error = error.message;
         this.loading = false;
-        console.error('Error loading game details:', error);
+        this.logger.error('GameDetailComponent: failed to load game details', {
+          gameId: this.gameId,
+          error
+        });
       }
     });
+  }
+
+  private isGameVisibleForCurrentUser(games: Game[]): boolean {
+    return games.some(game => game.id === this.gameId);
   }
 
   loadParticipants(): void {
@@ -98,12 +134,18 @@ export class GameDetailComponent implements OnInit {
     this.gameDataService.getGameParticipants(this.gameId).subscribe({
       next: (participants: GameParticipant[]) => {
         this.participants = participants;
+        if (this.game) {
+          this.game.participants = participants;
+        }
         this.participantsError = null;
       },
       error: (error: Error) => {
         const message = error.message || 'Erreur lors du chargement des participants';
         this.participantsError = message;
-        console.error('Error loading participants:', error);
+        this.logger.error('GameDetailComponent: failed to load participants', {
+          gameId: this.gameId,
+          error
+        });
       }
     });
   }
@@ -115,7 +157,17 @@ export class GameDetailComponent implements OnInit {
   }
 
   startDraft(): void {
-    this.actions.startDraft(this.gameId, () => this.loadGameDetails());
+    if (this.isStartingDraft) {
+      return;
+    }
+    this.isStartingDraft = true;
+    this.actions.startDraft(
+      this.gameId,
+      () => this.loadGameDetails(),
+      () => {
+        this.isStartingDraft = false;
+      }
+    );
   }
 
   archiveGame(): void {
@@ -173,6 +225,23 @@ export class GameDetailComponent implements OnInit {
     return this.permissions.canDeleteGame(this.game);
   }
 
+  canShowDeleteGameAction(): boolean {
+    return this.permissions.canSeeDeleteGameAction(this.game);
+  }
+
+  isDeleteActionDisabled(): boolean {
+    return this.canShowDeleteGameAction() && !this.canDeleteGame();
+  }
+
+  getDeleteRestrictionReasonKey(): string | null {
+    return this.permissions.getDeleteRestrictionReasonKey(this.game);
+  }
+
+  getDeleteTooltipKey(): string {
+    const reasonKey = this.getDeleteRestrictionReasonKey();
+    return reasonKey ?? 'games.detail.deleteTooltip';
+  }
+
   canJoinGame(): boolean {
     return this.permissions.canJoinGame(this.game);
   }
@@ -210,7 +279,21 @@ export class GameDetailComponent implements OnInit {
   }
 
   confirmStartDraft(): void {
-    this.actions.confirmStartDraft(this.gameId, () => this.loadGameDetails());
+    if (this.isStartingDraft) {
+      return;
+    }
+    this.isStartingDraft = true;
+    this.actions.confirmStartDraft(
+      this.gameId,
+      () => this.loadGameDetails(),
+      () => {
+        this.isStartingDraft = false;
+      }
+    );
+  }
+
+  isStartDraftActionDisabled(): boolean {
+    return this.loading || this.isStartingDraft;
   }
 
   copyInvitationCode(): void {
@@ -220,7 +303,7 @@ export class GameDetailComponent implements OnInit {
 
   regenerateInvitationCode(duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): void {
     if (!this.game) return;
-    this.actions.regenerateInvitationCode(this.gameId, duration, (updatedGame) => {
+    this.actions.regenerateInvitationCode(this.gameId, duration, 'regenerate', (updatedGame) => {
       if (this.game) {
         this.game.invitationCode = updatedGame.invitationCode;
         this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
@@ -230,7 +313,8 @@ export class GameDetailComponent implements OnInit {
   }
 
   promptRegenerateCode(): void {
-    this.actions.promptRegenerateCode(this.gameId, (updatedGame) => {
+    const hasExistingCode = !!this.game?.invitationCode;
+    this.actions.promptRegenerateCode(this.gameId, hasExistingCode, (updatedGame) => {
       if (this.game) {
         this.game.invitationCode = updatedGame.invitationCode;
         this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
@@ -279,4 +363,29 @@ export class GameDetailComponent implements OnInit {
   getParticipantStatusLabel(participant: GameParticipant): string {
     return this.ui.getParticipantStatusLabel(participant);
   }
-} 
+
+  private isNotFoundError(error: Error): boolean {
+    const withStatus = error as Error & { status?: number };
+    if (withStatus.status === 404) {
+      return true;
+    }
+
+    const message = (error.message || '').toLowerCase();
+    return message.includes('not found') ||
+      message.includes('introuvable') ||
+      message.includes('no existe');
+  }
+
+  private handleNotFoundGame(): void {
+    this.handleInaccessibleGame();
+  }
+
+  private handleInaccessibleGame(): void {
+    this.game = null;
+    this.participants = [];
+    this.loading = false;
+    this.userGamesStore.removeGame(this.gameId);
+    this.uiFeedback.showError(null, 'games.detail.gameUnavailable', { duration: 5000 });
+    this.router.navigate(['/games']);
+  }
+}

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subscription, throwError, interval } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
 import { Game } from '../../features/game/models/game.interface';
 import { GameService } from '../../features/game/services/game.service';
@@ -33,6 +33,8 @@ export class UserGamesStore {
   public readonly error$ = new BehaviorSubject<string | null>(null);
 
   private readonly CACHE_DURATION_MS = 30000; // 30 seconds cache
+  private readonly DEFAULT_AUTO_REFRESH_INTERVAL_MS = 15000;
+  private autoRefreshSubscription: Subscription | null = null;
 
   constructor(
     private readonly gameService: GameService,
@@ -93,6 +95,27 @@ export class UserGamesStore {
    */
   refreshGames(): Observable<Game[]> {
     return this.loadGames(true);
+  }
+
+  /**
+   * Start periodic refresh to keep multi-session sidebars in sync.
+   */
+  startAutoRefresh(intervalMs = this.DEFAULT_AUTO_REFRESH_INTERVAL_MS): void {
+    if (this.autoRefreshSubscription) {
+      return;
+    }
+
+    this.autoRefreshSubscription = interval(intervalMs).subscribe(() => {
+      this.refreshGames().subscribe({ error: () => undefined });
+    });
+  }
+
+  /**
+   * Stop periodic refresh.
+   */
+  stopAutoRefresh(): void {
+    this.autoRefreshSubscription?.unsubscribe();
+    this.autoRefreshSubscription = null;
   }
 
   /**

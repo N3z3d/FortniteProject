@@ -117,7 +117,8 @@ class GameWorkflowIntegrationTest {
     joinRequest.setUserId(secondUser.getId());
 
     // When & Then
-    performWithUser(
+    performAs(
+            secondUser.getUsername(),
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
@@ -138,8 +139,8 @@ class GameWorkflowIntegrationTest {
     User thirdUser = createTestUser("ThirdUser", "third@test.com");
 
     // Ajouter des participants
-    joinGame(testGame.getId(), secondUser.getId());
-    joinGame(testGame.getId(), thirdUser.getId());
+    joinGameAs(testGame.getId(), secondUser.getId(), secondUser.getUsername());
+    joinGameAs(testGame.getId(), thirdUser.getId(), thirdUser.getUsername());
 
     // Flush and clear to ensure draft service sees fresh participant count
     flushAndClear();
@@ -218,7 +219,7 @@ class GameWorkflowIntegrationTest {
 
     // Ajouter un premier participant
     User secondUser = createTestUser("SecondUser", "second@test.com");
-    joinGame(fullGame.getId(), secondUser.getId());
+    joinGameAs(fullGame.getId(), secondUser.getId(), secondUser.getUsername());
 
     // Flush and clear so service sees correct participant count
     flushAndClear();
@@ -230,11 +231,12 @@ class GameWorkflowIntegrationTest {
     joinRequest.setUserId(thirdUser.getId());
 
     // When & Then
-    performWithUser(
+    performAs(
+            thirdUser.getUsername(),
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isConflict());
   }
 
   @Test
@@ -255,8 +257,8 @@ class GameWorkflowIntegrationTest {
     User thirdUser = createTestUser("ThirdUser", "third@test.com");
 
     // When - Opérations multiples
-    joinGame(testGame.getId(), secondUser.getId());
-    joinGame(testGame.getId(), thirdUser.getId());
+    joinGameAs(testGame.getId(), secondUser.getId(), secondUser.getUsername());
+    joinGameAs(testGame.getId(), thirdUser.getId(), thirdUser.getUsername());
 
     // Flush and clear to see fresh data
     flushAndClear();
@@ -321,21 +323,29 @@ class GameWorkflowIntegrationTest {
     return ((GameRepositoryPort) gameRepository).save(game);
   }
 
-  private void joinGame(UUID gameId, UUID userId) throws Exception {
+  private void joinGameAs(UUID gameId, UUID userId, String actorUsername) throws Exception {
     JoinGameRequest joinRequest = new JoinGameRequest();
     joinRequest.setGameId(gameId);
     joinRequest.setUserId(userId);
 
-    performWithUser(
+    performAs(
+            actorUsername,
             post("/api/games/join")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(joinRequest)))
         .andExpect(status().isOk());
   }
 
+  private ResultActions performAs(
+      String username,
+      org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
+      throws Exception {
+    return mockMvc.perform(builder.header("X-Test-User", username));
+  }
+
   private ResultActions performWithUser(
       org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
       throws Exception {
-    return mockMvc.perform(builder.header("X-Test-User", TEST_USERNAME));
+    return performAs(TEST_USERNAME, builder);
   }
 }

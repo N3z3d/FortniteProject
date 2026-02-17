@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError } from 'rxjs';
 import { JoinGameComponent } from './join-game.component';
 import { GameService } from '../services/game.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { Game } from '../models/game.interface';
 
 describe('JoinGameComponent', () => {
@@ -13,9 +13,9 @@ describe('JoinGameComponent', () => {
   let fixture: ComponentFixture<JoinGameComponent>;
   let gameService: jasmine.SpyObj<GameService>;
   let router: jasmine.SpyObj<Router>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
   let translationService: jasmine.SpyObj<TranslationService>;
   let userGamesStore: jasmine.SpyObj<UserGamesStore>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
 
   const mockGame: Game = {
     id: 'game1',
@@ -32,14 +32,11 @@ describe('JoinGameComponent', () => {
   beforeEach(async () => {
     gameService = jasmine.createSpyObj('GameService', ['joinGameWithCode']);
     router = jasmine.createSpyObj('Router', ['navigate']);
-    const snackBarRef = jasmine.createSpyObj('MatSnackBarRef', ['onAction']);
-    snackBarRef.onAction.and.returnValue(of(undefined));
-    snackBar = jasmine.createSpyObj('MatSnackBar', ['open']);
-    snackBar.open.and.returnValue(snackBarRef);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
     translationService.t.and.callFake((key: string) => key);
     userGamesStore = jasmine.createSpyObj('UserGamesStore', ['refreshGames']);
     userGamesStore.refreshGames.and.returnValue(of([]));
+    uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessWithAction']);
 
     TestBed.configureTestingModule({
       imports: [JoinGameComponent]
@@ -49,9 +46,9 @@ describe('JoinGameComponent', () => {
         providers: [
           { provide: GameService, useValue: gameService },
           { provide: Router, useValue: router },
-          { provide: MatSnackBar, useValue: snackBar },
           { provide: TranslationService, useValue: translationService },
-          { provide: UserGamesStore, useValue: userGamesStore }
+          { provide: UserGamesStore, useValue: userGamesStore },
+          { provide: UiErrorFeedbackService, useValue: uiFeedback }
         ]
       }
     });
@@ -76,12 +73,13 @@ describe('JoinGameComponent', () => {
   it('should show error when code is empty', () => {
     component.invitationCode = '';
     component.joinWithCode();
+    fixture.detectChanges();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'games.joinDialog.enterCodeError',
-      'games.joinDialog.close',
-      { duration: 3000 }
-    );
+    const feedback = fixture.nativeElement.querySelector('.join-feedback');
+    expect(feedback).toBeTruthy();
+    expect(feedback.textContent).toContain('games.joinDialog.enterCodeError');
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.enterCodeError');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
     expect(gameService.joinGameWithCode).not.toHaveBeenCalled();
   });
 
@@ -89,7 +87,18 @@ describe('JoinGameComponent', () => {
     component.invitationCode = '   ';
     component.joinWithCode();
 
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.enterCodeError');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+    expect(gameService.joinGameWithCode).not.toHaveBeenCalled();
+  });
+
+  it('should show format error and skip API call when code contains invalid characters', () => {
+    component.invitationCode = '@@';
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidCodeFormat');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
     expect(gameService.joinGameWithCode).not.toHaveBeenCalled();
   });
 
@@ -101,7 +110,7 @@ describe('JoinGameComponent', () => {
 
     expect(component.joiningGame).toBeFalse();
     expect(gameService.joinGameWithCode).toHaveBeenCalledWith('VALID123');
-    expect(snackBar.open).toHaveBeenCalled();
+    expect(uiFeedback.showSuccessWithAction).toHaveBeenCalled();
 
     tick(1000);
     expect(router.navigate).toHaveBeenCalledWith(['/games', 'game1', 'dashboard']);
@@ -132,9 +141,10 @@ describe('JoinGameComponent', () => {
     component.joinWithCode();
 
     expect(userGamesStore.refreshGames).toHaveBeenCalled();
+    expect(component.joinFeedbackMessage).toBeNull();
   });
 
-  it('should handle join error', () => {
+  it('should fallback to translated invalid code for unknown backend messages', () => {
     component.invitationCode = 'INVALID';
     gameService.joinGameWithCode.and.returnValue(
       throwError(() => ({ error: { message: 'Code expired' } }))
@@ -143,11 +153,8 @@ describe('JoinGameComponent', () => {
     component.joinWithCode();
 
     expect(component.joiningGame).toBeFalse();
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Code expired',
-      'games.joinDialog.close',
-      { duration: 5000 }
-    );
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
   });
 
   it('should handle error without message', () => {
@@ -156,35 +163,153 @@ describe('JoinGameComponent', () => {
 
     component.joinWithCode();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'games.joinDialog.invalidCode',
-      'games.joinDialog.close',
-      { duration: 5000 }
-    );
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
   });
 
-  it('should display error message from Error instance', () => {
+  it('should not expose raw technical Error messages from Error instance', () => {
     component.invitationCode = 'INVALID';
     gameService.joinGameWithCode.and.returnValue(throwError(() => new Error('Game is full')));
 
     component.joinWithCode();
 
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Game is full',
-      'games.joinDialog.close',
-      { duration: 5000 }
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map USER_ALREADY_IN_GAME to explicit already-in-game message', () => {
+    component.invitationCode = 'DUPLICATE';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => ({ error: { code: 'USER_ALREADY_IN_GAME', message: 'User is already participating in this game' } }))
     );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.alreadyInGame');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map already-in-game english message to explicit already-in-game message', () => {
+    component.invitationCode = 'DUPLICATE';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('User is already participating in this game'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.alreadyInGame');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map resource-not-found errors to explicit invalid or unavailable message', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('Ressource non trouvee'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map RESOURCE_NOT_FOUND backend code to invalid or unavailable message', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => ({ error: { code: 'RESOURCE_NOT_FOUND', message: 'Not found' } }))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map mojibake invalid invitation code message to invalid or unavailable message', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('cÃ³digo de invitaciÃ³n invÃ¡lido'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should show format message before API call for INVALID_INPUT_PARAMETERS-shaped input', () => {
+    component.invitationCode = '@@';
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidCodeFormat');
+    expect(gameService.joinGameWithCode).not.toHaveBeenCalled();
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map INVALID_INPUT_PARAMETERS backend code when input format is valid', () => {
+    component.invitationCode = 'VALID123';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => ({ error: { code: 'INVALID_INPUT_PARAMETERS', message: 'Invalid input parameters' } }))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map rate-limit backend code to too-many-attempts message', () => {
+    component.invitationCode = 'VALID123';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => ({ error: { code: 'SYS_004', message: 'Too many attempts' } }))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.tooManyAttempts');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map French not-found message to translated invalid or unavailable message', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('Non trouvé'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
+  it('should map unexpected backend errors to invalid or unavailable message for join-with-code', () => {
+    component.invitationCode = 'INVALID';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('An unexpected error occurred'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
   });
 
   it('should navigate to games on cancel', () => {
+    component.joinFeedbackMessage = 'games.joinDialog.alreadyInGame';
     component.cancel();
 
+    expect(component.joinFeedbackMessage).toBeNull();
     expect(router.navigate).toHaveBeenCalledWith(['/games']);
   });
 
   it('should navigate to game dashboard on snackbar action', fakeAsync(() => {
     component.invitationCode = 'CODE';
     gameService.joinGameWithCode.and.returnValue(of(mockGame));
+
+    uiFeedback.showSuccessWithAction.and.callFake((message, action, onAction) => {
+      onAction();
+    });
 
     component.joinWithCode();
     tick();

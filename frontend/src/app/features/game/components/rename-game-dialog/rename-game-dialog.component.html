@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ t.t('games.detail.renameDialog.title') }}</h2>
+
+<mat-dialog-content class="rename-dialog-content">
+  <p class="rename-dialog-subtitle">{{ t.t('games.detail.renameDialog.subtitle') }}</p>
+
+  <mat-form-field appearance="outline" class="rename-dialog-field">
+    <mat-label>{{ t.t('games.detail.renameDialog.label') }}</mat-label>
+    <input
+      matInput
+      [formControl]="nameControl"
+      [maxlength]="maxLength"
+      cdkFocusInitial
+      autocomplete="off"
+    />
+
+    <mat-hint align="end">
+      {{ nameControl.value.length }}/{{ maxLength }}
+    </mat-hint>
+
+    <mat-error *ngIf="nameControl.hasError('required') || nameControl.hasError('blank')">
+      {{ t.t('games.detail.renameDialog.validationRequired') }}
+    </mat-error>
+
+    <mat-error *ngIf="nameControl.hasError('minlength')">
+      {{ t.t('games.detail.renameDialog.validationMin') }}
+    </mat-error>
+
+    <mat-error *ngIf="nameControl.hasError('maxlength')">
+      {{ t.t('games.detail.renameDialog.validationMax') }}
+    </mat-error>
+
+    <mat-error *ngIf="!nameControl.invalid && isUnchanged">
+      {{ t.t('games.detail.renameDialog.validationUnchanged') }}
+    </mat-error>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">
+    {{ t.t('common.cancel') }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="nameControl.invalid || isUnchanged"
+    (click)="confirm()"
+  >
+    {{ t.t('games.detail.renameDialog.confirm') }}
+  </button>
+</mat-dialog-actions>

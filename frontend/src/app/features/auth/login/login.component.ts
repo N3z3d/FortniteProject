@@ -6,11 +6,28 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { Router, ActivatedRoute } from '@angular/router';
 
 import { UserContextService, UserProfile } from '../../../core/services/user-context.service';
+import { TranslationService, SupportedLanguage } from '../../../core/services/translation.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { AccessibilityAnnouncerService } from '../../../shared/services/accessibility-announcer.service';
+
+const toSvgDataUri = (svg: string): string => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+
+const FR_FLAG_SVG = toSvgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><rect width="1" height="2" fill="#0055A4"/><rect x="1" width="1" height="2" fill="#FFFFFF"/><rect x="2" width="1" height="2" fill="#EF4135"/></svg>'
+);
+const EN_FLAG_SVG = toSvgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14"><rect width="20" height="14" fill="#012169"/><path d="M0 0 L8 5.6 L6.6 7 L0 2.4 Z M20 0 L12 5.6 L13.4 7 L20 2.4 Z M0 14 L8 8.4 L6.6 7 L0 11.6 Z M20 14 L12 8.4 L13.4 7 L20 11.6 Z" fill="#FFFFFF"/><rect width="20" height="2.4" y="5.8" fill="#FFFFFF"/><rect width="2.4" height="14" x="8.8" fill="#FFFFFF"/><rect width="20" height="1.2" y="6.4" fill="#C8102E"/><rect width="1.2" height="14" x="9.4" fill="#C8102E"/></svg>'
+);
+const ES_FLAG_SVG = toSvgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14"><rect width="20" height="14" fill="#C60B1E"/><rect width="20" height="7" y="3.5" fill="#FFC400"/></svg>'
+);
+const PT_FLAG_SVG = toSvgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 14"><rect width="20" height="14" fill="#FF0000"/><rect width="8" height="14" fill="#006600"/><circle cx="8" cy="7" r="2.2" fill="#FFCC00"/></svg>'
+);
 
 @Component({
   selector: 'app-login',
@@ -22,29 +39,54 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ],
   template: `
     <div class="user-controlled-login">
+      <!-- Language Selector -->
+      <nav class="language-selector" [attr.aria-label]="t.t('loginPage.selectLanguage')">
+        <mat-form-field appearance="outline" class="lang-select-field">
+          <mat-label>{{ t.t('loginPage.selectLanguage') }}</mat-label>
+          <mat-select
+            [value]="t.currentLanguage"
+            (selectionChange)="switchLanguage($event.value)"
+            [attr.aria-label]="t.t('loginPage.selectLanguage')">
+            <mat-select-trigger>
+              <span class="lang-trigger">
+                <img class="lang-flag-icon" [src]="currentLanguageOption.flagAsset" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <span class="lang-label">{{ currentLanguageOption.label }}</span>
+              </span>
+            </mat-select-trigger>
+            <mat-option *ngFor="let lang of languages" [value]="lang.code">
+              <span class="lang-option">
+                <img class="lang-flag-icon" [src]="lang.flagAsset" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <span class="lang-label">{{ lang.label }}</span>
+              </span>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </nav>
+
       <!-- Hero Section -->
       <div class="hero-section">
         <div class="hero-content">
           <h1 class="game-title">Fortnite Fantasy</h1>
-          <p class="hero-subtitle">Créez votre équipe de rêve et dominez la compétition</p>
+          <p class="hero-subtitle">{{ t.t('loginPage.heroSubtitle') }}</p>
         </div>
       </div>
 
       <!-- User Selection Login -->
       <div class="user-selection-login">
-        <h2>{{ isSwitchingUser ? "Changer d'utilisateur" : "Choisissez votre profil" }}</h2>
-        <p class="login-subtitle">{{ isSwitchingUser ? "Sélectionnez un autre utilisateur" : "Sélectionnez votre utilisateur pour commencer" }}</p>
-        
+        <h2>{{ isSwitchingUser ? t.t('loginPage.switchUser') : t.t('loginPage.chooseProfile') }}</h2>
+        <p class="login-subtitle">{{ isSwitchingUser ? t.t('loginPage.switchUserSubtitle') : t.t('loginPage.selectUserSubtitle') }}</p>
+
         <!-- User Profile Selection -->
         <fieldset class="user-selection-section" *ngIf="!isLoading">
           <legend class="sr-only">Select your user profile to login</legend>
-          <button 
-            *ngFor="let profile of availableProfiles; let i = index" 
-            mat-fab 
+          <button
+            *ngFor="let profile of availableProfiles; let i = index"
+            mat-fab
             extended
             color="primary"
             class="user-profile-btn accessible-focus"
@@ -58,67 +100,115 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
             </span>
           </button>
         </fieldset>
-        
+
         <!-- Loading State -->
         <div *ngIf="isLoading" class="user-loading" role="status" aria-live="polite">
           <mat-spinner diameter="48" aria-label="Loading indicator"></mat-spinner>
-          <p id="loading-message">Connexion en cours...</p>
+          <p id="loading-message">{{ t.t('loginPage.connecting') }}</p>
         </div>
-        
+
         <!-- Alternative Login (Hidden by Default) -->
         <div class="alternative-login" *ngIf="showAlternative && !isLoading">
-          <form [formGroup]="quickForm" (ngSubmit)="onQuickSubmit()" class="minimal-form" 
+          <form [formGroup]="quickForm" (ngSubmit)="onQuickSubmit()" class="minimal-form"
                 role="form" aria-labelledby="alt-login-heading">
             <h3 id="alt-login-heading" class="sr-only">Alternative login form</h3>
             <mat-form-field appearance="outline" class="single-field">
-              <mat-label>Email ou pseudo</mat-label>
-              <input matInput formControlName="identifier" 
-                     placeholder="Entrez votre identifiant"
+              <mat-label>{{ t.t('loginPage.emailOrUsername') }}</mat-label>
+              <input matInput formControlName="identifier"
+                     [placeholder]="t.t('loginPage.enterIdentifier')"
                      aria-label="Email or username"
                      aria-required="true"
                      autocomplete="username">
               <mat-error *ngIf="quickForm.get('identifier')?.invalid && quickForm.get('identifier')?.touched">
-                Un identifiant est requis
+                {{ t.t('loginPage.identifierRequired') }}
               </mat-error>
             </mat-form-field>
-            <button mat-raised-button color="primary" type="submit" 
+            <button mat-raised-button color="primary" type="submit"
                     [disabled]="quickForm.invalid"
                     aria-label="Login with entered credentials">
-              Connexion rapide
+              {{ t.t('loginPage.quickLogin') }}
             </button>
           </form>
         </div>
-        
+
         <!-- Toggle Alternative -->
-        <button 
-          mat-button 
+        <button
+          mat-button
           class="show-alternative"
           (click)="toggleAlternative()"
           *ngIf="!isLoading"
           [attr.aria-label]="showAlternative ? 'Hide alternative login form' : 'Show alternative login form'"
           [attr.aria-expanded]="showAlternative">
-          {{ showAlternative ? 'Masquer' : 'Autre compte?' }}
+          {{ showAlternative ? t.t('loginPage.hide') : t.t('loginPage.otherAccount') }}
         </button>
       </div>
-      
+
       <!-- Quick Stats to Build Trust -->
       <div class="trust-indicators" *ngIf="!isLoading">
         <div class="stat-item">
           <span class="stat-number">500+</span>
-          <span class="stat-label">Joueurs actifs</span>
+          <span class="stat-label">{{ t.t('loginPage.activePlayers') }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-number">50+</span>
-          <span class="stat-label">Games en cours</span>
+          <span class="stat-label">{{ t.t('loginPage.ongoingGames') }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-number">100%</span>
-          <span class="stat-label">Gratuit</span>
+          <span class="stat-label">{{ t.t('loginPage.free') }}</span>
         </div>
       </div>
     </div>
   `,
   styles: [`
+    .language-selector {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 10;
+      min-width: 170px;
+    }
+
+    .lang-select-field {
+      width: 210px;
+    }
+
+    .lang-trigger,
+    .lang-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .lang-flag-icon {
+      width: 20px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .lang-label {
+      font-size: 0.9rem;
+    }
+
+    :host ::ng-deep .lang-select-field .mat-mdc-text-field-wrapper {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      border: 1px solid rgba(201, 169, 98, 0.35);
+    }
+
+    :host ::ng-deep .lang-select-field .mat-mdc-form-field-focus-overlay {
+      background-color: rgba(201, 169, 98, 0.1);
+    }
+
+    :host ::ng-deep .lang-select-field .mat-mdc-select-value,
+    :host ::ng-deep .lang-select-field .mat-mdc-select-arrow,
+    :host ::ng-deep .lang-select-field .mat-mdc-floating-label {
+      color: rgba(255, 255, 255, 0.92) !important;
+    }
+
     .user-controlled-login {
       min-height: 100vh;
       background: #0d0d0d;
@@ -320,6 +410,15 @@ import { AccessibilityAnnouncerService } from '../../../shared/services/accessib
     }
 
     @media (max-width: 768px) {
+      .language-selector {
+        top: 1rem;
+        right: 1rem;
+      }
+
+      .lang-select-field {
+        width: 180px;
+      }
+
       .user-selection-login {
         min-width: auto;
         margin: 0 1rem;
@@ -353,11 +452,23 @@ export class LoginComponent implements OnInit {
   availableProfiles: UserProfile[] = [];
   isSwitchingUser = false;
 
+  readonly languages: { code: SupportedLanguage; flagAsset: string; label: string }[] = [
+    { code: 'fr', flagAsset: FR_FLAG_SVG, label: 'Fran\u00e7ais' },
+    { code: 'en', flagAsset: EN_FLAG_SVG, label: 'English' },
+    { code: 'es', flagAsset: ES_FLAG_SVG, label: 'Espa\u00f1ol' },
+    { code: 'pt', flagAsset: PT_FLAG_SVG, label: 'Portugu\u00eas' }
+  ];
+
+  get currentLanguageOption(): { code: SupportedLanguage; flagAsset: string; label: string } {
+    return this.languages.find(lang => lang.code === this.t.currentLanguage) ?? this.languages[0];
+  }
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private userContextService: UserContextService,
+    public readonly t: TranslationService,
     private logger: LoggerService,
     private accessibilityService: AccessibilityAnnouncerService
   ) {
@@ -453,6 +564,10 @@ export class LoginComponent implements OnInit {
     if (this.quickForm.get('identifier')?.invalid && this.quickForm.get('identifier')?.touched) {
       this.announceFormError('Identifiant', 'Un identifiant est requis');
     }
+  }
+
+  switchLanguage(lang: SupportedLanguage): void {
+    this.t.setLanguage(lang);
   }
 
   toggleAlternative(): void {

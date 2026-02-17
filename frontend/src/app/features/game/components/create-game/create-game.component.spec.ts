@@ -197,7 +197,7 @@ describe('CreateGameComponent', () => {
 
     component.onSubmit();
 
-    expect(component.error).toContain('Impossible');
+    expect(component.error).toContain('Creation failed');
     expect(component.loading).toBeFalsy();
   });
 

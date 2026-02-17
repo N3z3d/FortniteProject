@@ -16,7 +16,11 @@ import com.fortnite.pronos.model.User;
 /**
  * Facade bridging Game entity with pure domain rules. Extracts entity data, applies domain logic,
  * and returns results or applies changes to entities.
+ *
+ * @deprecated Consumers should use domain models directly via GameDomainRepositoryPort. This facade
+ *     will be removed once all entity-based consumers are migrated.
  */
+@Deprecated
 @Component
 public class GameDomainFacade {
 

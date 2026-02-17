@@ -80,7 +80,9 @@ public class NamingConventionTest {
             .orShould()
             .haveSimpleNameContaining("Status")
             .orShould()
-            .haveSimpleNameContaining("PlayerStats");
+            .haveSimpleNameContaining("PlayerStats")
+            .orShould()
+            .haveSimpleNameEndingWith("Mapper");
 
     rule.check(classes);
   }

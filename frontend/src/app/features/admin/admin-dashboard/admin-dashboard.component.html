@@ -1,0 +1,172 @@
+<div class="admin-dashboard">
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">{{ t.t('admin.dashboard.title') }}</h1>
+    <button mat-icon-button (click)="loadDashboard()" [matTooltip]="t.t('admin.dashboard.refresh')">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>{{ t.t('common.loading') }}</p>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-container">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <p>{{ t.t('admin.dashboard.loadError') }}</p>
+    <button mat-raised-button color="primary" (click)="loadDashboard()">
+      {{ t.t('common.retry') }}
+    </button>
+  </div>
+
+  <div *ngIf="!loading && !error" class="dashboard-grid">
+    <!-- KPI Summary Card -->
+    <mat-card class="dashboard-card kpi-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">dashboard</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.summary') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="kpi-grid" *ngIf="summary">
+          <div class="kpi-item">
+            <span class="kpi-value">{{ summary.totalUsers }}</span>
+            <span class="kpi-label">{{ t.t('admin.kpi.totalUsers') }}</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-value">{{ summary.totalGames }}</span>
+            <span class="kpi-label">{{ t.t('admin.kpi.totalGames') }}</span>
+          </div>
+          <div class="kpi-item">
+            <span class="kpi-value">{{ summary.totalTrades }}</span>
+            <span class="kpi-label">{{ t.t('admin.kpi.totalTrades') }}</span>
+          </div>
+        </div>
+        <div class="games-by-status" *ngIf="summary">
+          <h4>{{ t.t('admin.kpi.gamesByStatus') }}</h4>
+          <div class="status-list">
+            <div class="status-item" *ngFor="let entry of getGameStatusEntries()">
+              <span class="status-label">{{ entry.key }}</span>
+              <span class="status-value">{{ entry.value }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- System Health Card -->
+    <mat-card class="dashboard-card health-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">monitor_heart</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.health') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="health">
+        <div class="health-status" [ngClass]="getStatusColor(health.status)">
+          <mat-icon>{{ health.status === 'UP' ? 'check_circle' : 'error' }}</mat-icon>
+          <span>{{ health.status }}</span>
+        </div>
+        <div class="health-detail">
+          <span class="detail-label">{{ t.t('admin.health.uptime') }}</span>
+          <span class="detail-value">{{ formatUptime(health.uptimeMillis) }}</span>
+        </div>
+        <div class="health-detail" *ngIf="health.databasePool.activeConnections >= 0">
+          <span class="detail-label">{{ t.t('admin.health.dbPool') }}</span>
+          <span class="detail-value">
+            {{ health.databasePool.activeConnections }}/{{ health.databasePool.maxConnections }}
+          </span>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="health.databasePool.maxConnections > 0
+              ? (health.databasePool.activeConnections / health.databasePool.maxConnections) * 100
+              : 0">
+          </mat-progress-bar>
+        </div>
+        <div class="health-detail">
+          <span class="detail-label">{{ t.t('admin.health.disk') }}</span>
+          <span class="detail-value">{{ health.disk.usagePercent | number:'1.1-1' }}%</span>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="health.disk.usagePercent"
+            [color]="health.disk.usagePercent > 80 ? 'warn' : 'primary'">
+          </mat-progress-bar>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Recent Activity Card -->
+    <mat-card class="dashboard-card activity-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">timeline</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.recentActivity') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="activity">
+        <div class="activity-stats">
+          <div class="activity-stat">
+            <mat-icon>sports_esports</mat-icon>
+            <span class="activity-count">{{ activity.recentGamesCount }}</span>
+            <span class="activity-label">{{ t.t('admin.activity.recentGames') }}</span>
+          </div>
+          <div class="activity-stat">
+            <mat-icon>swap_horiz</mat-icon>
+            <span class="activity-count">{{ activity.recentTradesCount }}</span>
+            <span class="activity-label">{{ t.t('admin.activity.recentTrades') }}</span>
+          </div>
+          <div class="activity-stat">
+            <mat-icon>people</mat-icon>
+            <span class="activity-count">{{ activity.recentUsersCount }}</span>
+            <span class="activity-label">{{ t.t('admin.activity.totalUsers') }}</span>
+          </div>
+        </div>
+        <div class="recent-list" *ngIf="activity.recentGames?.length">
+          <h4>{{ t.t('admin.activity.latestGames') }}</h4>
+          <div class="recent-item" *ngFor="let game of activity.recentGames">
+            <span class="recent-name">{{ game.name }}</span>
+            <span class="recent-status badge-{{ game.status | lowercase }}">{{ game.status }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- System Metrics Card -->
+    <mat-card class="dashboard-card metrics-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">memory</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.metrics') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="metrics">
+        <div class="metric-section">
+          <h4>JVM</h4>
+          <div class="metric-item">
+            <span class="metric-label">{{ t.t('admin.metrics.heapUsed') }}</span>
+            <span class="metric-value">{{ formatBytes(metrics.jvm.heapUsedBytes) }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">{{ t.t('admin.metrics.heapMax') }}</span>
+            <span class="metric-value">{{ formatBytes(metrics.jvm.heapMaxBytes) }}</span>
+          </div>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="metrics.jvm.heapUsagePercent"
+            [color]="metrics.jvm.heapUsagePercent > 80 ? 'warn' : 'primary'">
+          </mat-progress-bar>
+          <div class="metric-item">
+            <span class="metric-label">{{ t.t('admin.metrics.threads') }}</span>
+            <span class="metric-value">{{ metrics.jvm.threadCount }}</span>
+          </div>
+        </div>
+        <div class="metric-section">
+          <h4>HTTP</h4>
+          <div class="metric-item">
+            <span class="metric-label">{{ t.t('admin.metrics.totalRequests') }}</span>
+            <span class="metric-value">{{ metrics.http.totalRequests | number:'1.0-0' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">{{ t.t('admin.metrics.errorRate') }}</span>
+            <span class="metric-value" [class.error-text]="metrics.http.errorRate > 5">
+              {{ metrics.http.errorRate | number:'1.1-1' }}%
+            </span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

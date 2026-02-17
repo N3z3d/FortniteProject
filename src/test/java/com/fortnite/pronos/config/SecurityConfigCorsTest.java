@@ -14,24 +14,61 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 class SecurityConfigCorsTest {
 
-  @Test
-  void corsConfiguration_allowsXTestUserHeader() {
+  private SecurityConfig buildSecurityConfigForProfiles(String... activeProfiles) {
     JwtAuthenticationFilter jwtAuthFilter = mock(JwtAuthenticationFilter.class);
     UserDetailsService userDetailsService = mock(UserDetailsService.class);
     Environment environment = mock(Environment.class);
     @SuppressWarnings("unchecked")
     ObjectProvider<TestFallbackAuthenticationFilter> fallbackProvider = mock(ObjectProvider.class);
 
-    when(environment.getActiveProfiles()).thenReturn(new String[] {"dev"});
+    when(environment.getActiveProfiles()).thenReturn(activeProfiles);
 
-    SecurityConfig securityConfig =
-        new SecurityConfig(jwtAuthFilter, userDetailsService, environment, fallbackProvider);
+    return new SecurityConfig(jwtAuthFilter, userDetailsService, environment, fallbackProvider);
+  }
+
+  private CorsConfiguration loadCorsConfiguration(SecurityConfig securityConfig) {
     CorsConfigurationSource source = securityConfig.corsConfigurationSource();
-
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/games/my-games");
-    CorsConfiguration configuration = source.getCorsConfiguration(request);
+    return source.getCorsConfiguration(request);
+  }
+
+  @Test
+  void corsConfiguration_allowsXTestUserHeader() {
+    SecurityConfig securityConfig = buildSecurityConfigForProfiles("dev");
+    CorsConfiguration configuration = loadCorsConfiguration(securityConfig);
 
     assertThat(configuration).isNotNull();
     assertThat(configuration.getAllowedHeaders()).contains("X-Test-User");
+  }
+
+  @Test
+  void corsConfiguration_doesNotUseWildcardMethodsOrHeaders() {
+    SecurityConfig securityConfig = buildSecurityConfigForProfiles("dev");
+    CorsConfiguration configuration = loadCorsConfiguration(securityConfig);
+
+    assertThat(configuration).isNotNull();
+    assertThat(configuration.getAllowedMethods()).doesNotContain("*");
+    assertThat(configuration.getAllowedHeaders()).doesNotContain("*");
+  }
+
+  @Test
+  void corsConfiguration_usesLocalOriginsInDevProfile() {
+    SecurityConfig securityConfig = buildSecurityConfigForProfiles("dev");
+    CorsConfiguration configuration = loadCorsConfiguration(securityConfig);
+
+    assertThat(configuration).isNotNull();
+    assertThat(configuration.getAllowedOriginPatterns())
+        .contains("http://localhost:4200", "http://localhost:4201");
+  }
+
+  @Test
+  void corsConfiguration_usesStrictOriginsInProdProfile() {
+    SecurityConfig securityConfig = buildSecurityConfigForProfiles("prod");
+    CorsConfiguration configuration = loadCorsConfiguration(securityConfig);
+
+    assertThat(configuration).isNotNull();
+    assertThat(configuration.getAllowedOriginPatterns())
+        .contains("https://fortnitepronos.com", "https://*.fortnitepronos.com");
+    assertThat(configuration.getAllowedOriginPatterns()).doesNotContain("http://localhost:4200");
   }
 }

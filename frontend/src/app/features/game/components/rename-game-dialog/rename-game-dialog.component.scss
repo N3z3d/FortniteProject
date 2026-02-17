@@ -1,0 +1,15 @@
+.rename-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 320px;
+}
+
+.rename-dialog-subtitle {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.rename-dialog-field {
+  width: 100%;
+}

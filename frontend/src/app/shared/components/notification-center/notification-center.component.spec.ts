@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BehaviorSubject } from 'rxjs';
 import { NotificationCenterComponent } from './notification-center.component';
 import { NotificationService, NotificationMessage } from '../../services/notification.service';
@@ -44,7 +45,7 @@ describe('NotificationCenterComponent', () => {
     translationService.t.and.callFake((key: string) => key);
 
     await TestBed.configureTestingModule({
-      imports: [NotificationCenterComponent],
+      imports: [NotificationCenterComponent, NoopAnimationsModule],
       providers: [
         { provide: NotificationService, useValue: notificationService },
         { provide: TranslationService, useValue: translationService }
@@ -98,6 +99,12 @@ describe('NotificationCenterComponent', () => {
     expect(component.isOpen).toBeFalse();
   });
 
+  it('should expose main notification button with aria-label', () => {
+    const toggleButton = fixture.nativeElement.querySelector('.notification-button') as HTMLButtonElement;
+
+    expect(toggleButton.getAttribute('aria-label')).toBe('notificationCenter.title');
+  });
+
   it('should dismiss all notifications after 2s when opening with unread count', fakeAsync(() => {
     component.unreadCount = 3;
     component.isOpen = false;
@@ -135,6 +142,22 @@ describe('NotificationCenterComponent', () => {
     component.markAsRead(mockNotification);
 
     expect(notificationService.dismiss).toHaveBeenCalledWith('notif1');
+  });
+
+  it('should mark notification as read on Enter key', () => {
+    const keyboardEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+
+    component.onNotificationKeydown(keyboardEvent, mockNotification);
+
+    expect(notificationService.dismiss).toHaveBeenCalledWith('notif1');
+  });
+
+  it('should ignore unrelated key for notification keyboard handler', () => {
+    const keyboardEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+
+    component.onNotificationKeydown(keyboardEvent, mockNotification);
+
+    expect(notificationService.dismiss).not.toHaveBeenCalled();
   });
 
   it('should delete notification and stop event propagation', () => {
@@ -233,6 +256,27 @@ describe('NotificationCenterComponent', () => {
     expect(appendChildSpy).toHaveBeenCalled();
   });
 
+  it('should render malicious toast payload as plain text (no HTML injection)', () => {
+    const appendChildSpy = spyOn(document.body, 'appendChild').and.callThrough();
+    const maliciousPayload = '<img src=x onerror=\"window.__xss=1\"><script>window.__xss=2</script>';
+    const maliciousNotification: NotificationMessage = {
+      ...mockNotification,
+      id: 'malicious',
+      message: maliciousPayload
+    };
+
+    component['showToastNotification'](maliciousNotification);
+
+    const toast = appendChildSpy.calls.mostRecent().args[0] as HTMLElement;
+    const messageElement = toast.querySelector('.toast-content p') as HTMLElement;
+
+    expect(toast.querySelector('script')).toBeNull();
+    expect(messageElement.textContent).toBe(maliciousPayload);
+    expect(messageElement.innerHTML).toContain('&lt;script&gt;');
+
+    toast.remove();
+  });
+
   it('should track notifications by id', () => {
     const result = component.trackByFn(0, mockNotification);
 
@@ -260,5 +304,17 @@ describe('NotificationCenterComponent', () => {
     newNotificationSubject.next(mockNotification);
 
     expect(component['showToastNotification']).toHaveBeenCalledWith(mockNotification);
+  });
+
+  it('should render notification items as keyboard-focusable buttons', () => {
+    notificationsSubject.next([mockNotification]);
+    component.isOpen = true;
+    fixture.detectChanges();
+
+    const notificationItem = fixture.nativeElement.querySelector('.notification-item') as HTMLElement;
+
+    expect(notificationItem.getAttribute('role')).toBe('button');
+    expect(notificationItem.getAttribute('tabindex')).toBe('0');
+    expect(notificationItem.getAttribute('aria-label')).toContain('notificationCenter.notification');
   });
 });

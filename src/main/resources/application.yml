@@ -154,7 +154,7 @@ management:
     web:
       exposure:
         # PHASE 3A - SPRINT 4: ENHANCED MONITORING FOR 500+ USERS
-        include: health,info,metrics,prometheus,datasource,configprops,env,loggers
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always

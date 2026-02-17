@@ -8,10 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 
 interface Player {
   id: string;
@@ -39,8 +39,7 @@ interface Team {
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="trade-form-container">
@@ -378,7 +377,7 @@ export class TradeFormComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private snackBar: MatSnackBar,
+    private uiFeedback: UiErrorFeedbackService,
     private logger: LoggerService
   ) {
     this.tradeForm = this.fb.group({
@@ -452,10 +451,7 @@ export class TradeFormComponent implements OnInit, OnDestroy {
       // Simulate API call
       this.submitTimeoutId = setTimeout(() => {
         this.isSubmitting = false;
-        this.snackBar.open(this.t.t('trades.form.createdSuccess'), this.t.t('common.close'), {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
+        this.uiFeedback.showSuccessMessage(this.t.t('trades.form.createdSuccess'), 3000);
         this.router.navigate(['/trades']);
       }, 2000);
     }

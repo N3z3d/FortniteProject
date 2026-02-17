@@ -8,10 +8,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { UserContextService } from '../../core/services/user-context.service';
 import { TranslationService, SupportedLanguage } from '../../core/services/translation.service';
 import { ThemeService, Theme } from '../../core/services/theme.service';
+import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
 import { Router } from '@angular/router';
 import { LoggerService } from '../../core/services/logger.service';
 
@@ -27,8 +27,7 @@ import { LoggerService } from '../../core/services/logger.service';
     MatDividerModule,
     MatSlideToggleModule,
     MatFormFieldModule,
-    MatSelectModule,
-    MatSnackBarModule
+    MatSelectModule
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
@@ -50,7 +49,7 @@ export class SettingsComponent implements OnInit {
   constructor(
     private userContextService: UserContextService,
     private router: Router,
-    private snackBar: MatSnackBar,
+    private uiFeedback: UiErrorFeedbackService,
     private logger: LoggerService,
     public t: TranslationService,
     private themeService: ThemeService // NEW: Inject ThemeService
@@ -101,9 +100,7 @@ export class SettingsComponent implements OnInit {
     // Save to localStorage (in real app, save to backend)
     localStorage.setItem('userSettings', JSON.stringify(settings));
 
-    this.snackBar.open(this.t.t('settings.settingsSaved'), this.t.t('common.close'), {
-      duration: 3000
-    });
+    this.uiFeedback.showSuccessFromKey('settings.settingsSaved', 3000);
   }
 
   resetSettings(): void {
@@ -117,7 +114,7 @@ export class SettingsComponent implements OnInit {
     this.showOnlineStatus = true;
 
     this.t.setLanguage(this.language);
-    this.snackBar.open(this.t.t('settings.settingsReset'), this.t.t('common.close'), { duration: 3000 });
+    this.uiFeedback.showSuccessFromKey('settings.settingsReset', 3000);
   }
 
   deleteAccount(): void {
@@ -130,8 +127,6 @@ export class SettingsComponent implements OnInit {
   exportData(): void {
     // Implement data export functionality
     this.logger.info('Settings: export data requested');
-    this.snackBar.open('Data export started. You will receive an email when ready.', 'Close', {
-      duration: 5000
-    });
+    this.uiFeedback.showSuccessFromKey('settings.exportStarted', 5000);
   }
 }

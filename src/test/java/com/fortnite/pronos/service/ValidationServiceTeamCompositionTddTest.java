@@ -111,6 +111,44 @@ class ValidationServiceTeamCompositionTddTest {
         .hasMessageContaining("requires a region");
   }
 
+  @Test
+  @DisplayName("Should reject unknown region in RegionRule")
+  void shouldRejectUnknownRegionInRegionRule() {
+    Team team = buildTeamWithPlayers(Player.Region.EU);
+    RegionRule rule = new RegionRule();
+    rule.setRegion("UNKNOWN_REGION");
+    rule.setMaxPlayers(2);
+
+    assertThatThrownBy(() -> validationService.validateTeamComposition(team, List.of(rule)))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining("Unknown region in rule");
+  }
+
+  @Test
+  @DisplayName("Should reject unsupported region rule type")
+  void shouldRejectUnsupportedRegionRuleType() {
+    Team team = buildTeamWithPlayers(Player.Region.EU);
+
+    assertThatThrownBy(() -> validationService.validateTeamComposition(team, List.of("EU")))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining("Unsupported region rule type");
+  }
+
+  @Test
+  @DisplayName("Should pass when team has no players")
+  void shouldPassWhenTeamHasNoPlayers() {
+    Team team = new Team();
+    team.setName("NoPlayersTeam");
+    team.setPlayers(null);
+
+    GameRegionRule rule = new GameRegionRule();
+    rule.setRegion(Player.Region.EU);
+    rule.setMaxPlayers(1);
+
+    assertThatCode(() -> validationService.validateTeamComposition(team, List.of(rule)))
+        .doesNotThrowAnyException();
+  }
+
   private Team buildTeamWithPlayers(Player.Region... regions) {
     Team team = new Team();
     team.setName("TestTeam");

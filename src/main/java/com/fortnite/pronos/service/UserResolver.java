@@ -1,7 +1,10 @@
 package com.fortnite.pronos.service;
 
+import java.util.Arrays;
+
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -14,8 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Utility component for resolving the current user from various authentication sources.
  *
- * <p>Resolution order: 1. Username parameter (if provided) 2. X-Test-User header 3. Authorization
- * Bearer token 4. SecurityContext authentication 5. Test user fallback for mock requests
+ * <p>Resolution order:
+ *
+ * <p>- In test/dev/h2 profiles: username parameter, then X-Test-User, then JWT/SecurityContext.
+ *
+ * <p>- In all other profiles: JWT/SecurityContext only.
  */
 @Component
 @RequiredArgsConstructor
@@ -24,6 +30,7 @@ public class UserResolver {
 
   private final UserService userService;
   private final JwtService jwtService;
+  private final Environment environment;
 
   /**
    * Resolves the current user from the request context.
@@ -35,21 +42,23 @@ public class UserResolver {
   public User resolve(String username, HttpServletRequest httpRequest) {
     User user = null;
 
-    // 1. Check username parameter
-    if (username != null && !username.isBlank()) {
-      user = userService.findUserByUsername(username).orElse(null);
-      if (user != null) {
-        return user;
-      }
-    }
-
-    // 2. Check X-Test-User header
-    if (httpRequest != null) {
-      String headerUser = httpRequest.getHeader("X-Test-User");
-      if (headerUser != null && !headerUser.isBlank()) {
-        user = userService.findUserByUsername(headerUser).orElse(null);
+    if (allowNonAuthenticatedIdentitySources()) {
+      // 1. Check username parameter
+      if (username != null && !username.isBlank()) {
+        user = userService.findUserByUsername(username).orElse(null);
         if (user != null) {
           return user;
+        }
+      }
+
+      // 2. Check X-Test-User header
+      if (httpRequest != null) {
+        String headerUser = httpRequest.getHeader("X-Test-User");
+        if (headerUser != null && !headerUser.isBlank()) {
+          user = userService.findUserByUsername(headerUser).orElse(null);
+          if (user != null) {
+            return user;
+          }
         }
       }
     }
@@ -109,5 +118,15 @@ public class UserResolver {
       log.warn("Impossible d'extraire l'utilisateur du token JWT: {}", e.getMessage());
       return null;
     }
+  }
+
+  private boolean allowNonAuthenticatedIdentitySources() {
+    String[] activeProfiles = environment.getActiveProfiles();
+    return Arrays.stream(activeProfiles)
+        .anyMatch(
+            profile ->
+                profile.equalsIgnoreCase("dev")
+                    || profile.equalsIgnoreCase("h2")
+                    || profile.equalsIgnoreCase("test"));
   }
 }

@@ -15,7 +15,7 @@ buildNumber.properties
 *.iws
 *.iml
 *.ipr
-out/
+/out/
 
 # VS Code
 .vscode/
@@ -69,3 +69,8 @@ Thumbs.db
 *.patch
 temp_*.txt
 test_results.txt
+keys_used_temp.txt
+backend-live.*
+backend-run.*
+frontend-live.*
+frontend/test-output.txt

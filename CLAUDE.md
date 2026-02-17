@@ -28,6 +28,7 @@
 - Méthodes **courtes et cohérentes** (une seule intention).
 - Respect des conventions du repo (indentation, style, lint/format).
 - **Tests unitaires systématiques** sur tout code modifié/ajouté.
+- **Loi de Demeter** (principe de moindre connaissance) — Un objet ne doit interagir qu'avec ses dépendances directes. Interdire les chaînes d'appels type `a.getB().getC().doSomething()`. Préférer déléguer via une méthode dédiée sur l'objet direct.
 
 ## SOLID (obligatoire)
 - **SRP** — Single Responsibility Principle

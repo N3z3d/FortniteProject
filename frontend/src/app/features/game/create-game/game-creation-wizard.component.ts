@@ -11,7 +11,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
@@ -20,6 +19,8 @@ import { MatSliderModule } from '@angular/material/slider';
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
 import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 interface GameTemplate {
   id: string;
@@ -46,7 +47,6 @@ interface GameTemplate {
     MatSelectModule,
     MatChipsModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     MatTooltipModule,
     MatCheckboxModule,
     MatRadioModule,
@@ -130,7 +130,8 @@ export class GameCreationWizardComponent implements OnInit {
     private formBuilder: FormBuilder,
     private gameService: GameService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private uiFeedback: UiErrorFeedbackService,
+    private readonly logger: LoggerService
   ) {}
 
   ngOnInit(): void {
@@ -316,13 +317,9 @@ export class GameCreationWizardComponent implements OnInit {
     this.gameService.createGame(gameData).subscribe({
       next: (game) => {
         this.loading = false;
-        this.snackBar.open(
-          `🎉 ${this.t.t('games.wizard.successCreated').replace('{name}', game.name)}`,
-          this.t.t('games.wizard.viewGame'),
-          {
-            duration: 5000,
-            panelClass: 'success-snackbar'
-          }
+        this.uiFeedback.showSuccessMessage(
+          this.t.t('games.wizard.successCreated').replace('{name}', game.name),
+          5000
         );
 
         // Navigate to the created game
@@ -336,15 +333,15 @@ export class GameCreationWizardComponent implements OnInit {
       error: (error) => {
         this.loading = false;
         this.error = this.t.t('games.wizard.errorCreate');
-        console.error('Game creation error:', error);
+        this.logger.error('GameCreationWizardComponent: failed to create game', {
+          formName: this.basicInfoForm?.value?.name,
+          selectedTemplateId: this.selectedTemplate?.id ?? 'unknown',
+          error
+        });
 
-        this.snackBar.open(
-          `❌ ${this.t.t('games.wizard.errorCreation')}`,
-          this.t.t('games.wizard.retry'),
-          {
-            duration: 5000,
-            panelClass: 'error-snackbar'
-          }
+        this.uiFeedback.showErrorMessage(
+          this.t.t('games.wizard.errorCreation'),
+          5000
         );
       }
     });

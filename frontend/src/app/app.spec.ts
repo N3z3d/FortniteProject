@@ -1,11 +1,14 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { of } from 'rxjs';
 import { AppComponent } from './app.component';
 import { UserContextService } from './core/services/user-context.service';
+import { TranslationService } from './core/services/translation.service';
 
 describe('App', () => {
   let userContextService: jasmine.SpyObj<UserContextService>;
+  let translationService: jasmine.SpyObj<TranslationService>;
 
   beforeEach(async () => {
     userContextService = jasmine.createSpyObj('UserContextService', [
@@ -13,7 +16,10 @@ describe('App', () => {
       'getAvailableProfiles',
       'login',
       'logout'
-    ]);
+    ], {
+      userChanged$: of(null)
+    });
+    translationService = jasmine.createSpyObj('TranslationService', ['setCurrentUserId']);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -22,7 +28,8 @@ describe('App', () => {
       ],
       providers: [
         provideZonelessChangeDetection(),
-        { provide: UserContextService, useValue: userContextService }
+        { provide: UserContextService, useValue: userContextService },
+        { provide: TranslationService, useValue: translationService }
       ]
     }).compileComponents();
   });

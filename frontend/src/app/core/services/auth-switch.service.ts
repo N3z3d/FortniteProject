@@ -4,6 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from './logger.service';
+import { TranslationService } from './translation.service';
 
 export interface AuthSwitchResponse {
   success: boolean;
@@ -21,7 +22,8 @@ export class AuthSwitchService {
 
   constructor(
     private http: HttpClient,
-    private logger: LoggerService
+    private logger: LoggerService,
+    private translationService: TranslationService
   ) {}
 
   /**
@@ -58,7 +60,11 @@ export class AuthSwitchService {
     // Simulate network delay
     return of({
       success: true,
-      message: `Changement vers ${username} effectué avec succès`,
+      message: this.translateWithParams(
+        'authSwitch.messages.switchSuccess',
+        'Switched to {username} successfully',
+        { username }
+      ),
       userId: this.generateMockUserId(username),
       username: username,
       timestamp: new Date().toISOString()
@@ -111,7 +117,11 @@ export class AuthSwitchService {
     if (!environment.production) {
       return of({
         success: true,
-        message: `Notification de changement ${fromUser} → ${toUser} enregistrée`,
+        message: this.translateWithParams(
+          'authSwitch.messages.notifySwitchSaved',
+          'Switch notification {fromUser} -> {toUser} saved',
+          { fromUser, toUser }
+        ),
         timestamp: new Date().toISOString()
       }).pipe(delay(100));
     }
@@ -126,7 +136,10 @@ export class AuthSwitchService {
         // Return success anyway - this is not critical
         return of({
           success: true,
-          message: 'Notification échouée mais changement effectué',
+          message: this.translationService.t(
+            'authSwitch.messages.notifyFallback',
+            'Notification failed but switch completed'
+          ),
           timestamp: new Date().toISOString()
         });
       })
@@ -208,16 +221,32 @@ export class AuthSwitchService {
       action: 'switch',
       username,
       success: false,
-      error: error.message || 'Erreur inconnue'
+      error: error.message || this.translationService.t('authSwitch.messages.unknownError', 'Erreur inconnue')
     });
 
     // Return a fallback response that doesn't block the user
     return of({
       success: false,
-      message: `Erreur lors du changement vers ${username}. Mode local activé.`,
+      message: this.translateWithParams(
+        'authSwitch.messages.switchErrorLocalFallback',
+        'Error switching to {username}. Local mode enabled.',
+        { username }
+      ),
       username,
       timestamp: new Date().toISOString()
     });
+  }
+
+  private translateWithParams(
+    key: string,
+    fallback: string,
+    params: Record<string, string>
+  ): string {
+    const template = this.translationService.t(key, fallback);
+    return Object.entries(params).reduce(
+      (message, [token, value]) => message.replace(new RegExp(`\\{${token}\\}`, 'g'), value),
+      template
+    );
   }
 
   /**

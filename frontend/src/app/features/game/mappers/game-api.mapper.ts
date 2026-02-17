@@ -24,6 +24,7 @@ export class GameApiMapper {
       participantCount: apiResponse.currentParticipantCount || apiResponse.participantCount || 0,
       canJoin: this.determineCanJoin(apiResponse),
       invitationCode: apiResponse.invitationCode,
+      participants: this.mapGameParticipants(apiResponse),
       draftRules: apiResponse.draftRules,
       regionRules: apiResponse.regionRules
     };
@@ -63,12 +64,10 @@ export class GameApiMapper {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        console.warn(`Invalid date string: ${dateString}`);
         return new Date().toISOString();
       }
       return date.toISOString();
-    } catch (error) {
-      console.error(`Error parsing date: ${dateString}`, error);
+    } catch {
       return new Date().toISOString();
     }
   }
@@ -90,6 +89,37 @@ export class GameApiMapper {
     const isActive = !apiResponse.cancelled && !apiResponse.finished;
 
     return isActive && currentCount < maxParticipants && apiResponse.status !== 'FINISHED';
+  }
+
+  /**
+   * Maps participants from a game payload.
+   * Supports both array payload and backend map payload { userId: username }.
+   */
+  private static mapGameParticipants(apiResponse: any): GameParticipant[] | undefined {
+    const participants = apiResponse?.participants;
+    if (!participants) {
+      return undefined;
+    }
+
+    if (Array.isArray(participants)) {
+      return this.mapApiParticipants(participants);
+    }
+
+    if (typeof participants !== 'object') {
+      return undefined;
+    }
+
+    const creatorId = typeof apiResponse.creatorId === 'string' ? apiResponse.creatorId : '';
+    const createdAt = this.validateAndFormatDate(apiResponse.createdAt || new Date().toISOString());
+
+    return Object.entries(participants)
+      .filter(([id, username]) => typeof id === 'string' && typeof username === 'string')
+      .map(([id, username]) => ({
+        id,
+        username: username as string,
+        joinedAt: createdAt,
+        isCreator: id === creatorId
+      }));
   }
 
   /**
@@ -159,8 +189,7 @@ export class GameApiMapper {
       if (diffInDays < 7) return `Il y a ${diffInDays}j`;
 
       return date.toLocaleDateString('fr-FR');
-    } catch (error) {
-      console.error('Error formatting relative time:', error);
+    } catch {
       return 'Date invalide';
     }
   }

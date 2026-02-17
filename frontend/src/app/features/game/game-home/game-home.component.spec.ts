@@ -164,6 +164,30 @@ describe('GameHomeComponent', () => {
     });
   });
 
+  describe('accessibility', () => {
+    it('should render game cards as keyboard-focusable buttons', () => {
+      component.ngOnInit();
+      stateSubject.next({ ...initialState, games: mockGames });
+      fixture.detectChanges();
+
+      const gameCard = fixture.nativeElement.querySelector('.premium-game-card') as HTMLElement;
+
+      expect(gameCard).toBeTruthy();
+      expect(gameCard.getAttribute('role')).toBe('button');
+      expect(gameCard.getAttribute('tabindex')).toBe('0');
+      expect(gameCard.getAttribute('aria-label')).toContain(component.t.t('games.home.viewDetails'));
+    });
+
+    it('should select game on Enter key from game card', () => {
+      const selectGameSpy = spyOn(component, 'selectGame');
+      const event = new KeyboardEvent('keydown', { key: 'Enter' });
+
+      component.onGameCardKeyDown(event, mockGames[0]);
+
+      expect(selectGameSpy).toHaveBeenCalledWith(mockGames[0]);
+    });
+  });
+
   describe('navigation actions', () => {
     it('should navigate to create game page', () => {
       component.createGame();

@@ -1,17 +1,16 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
 import { takeUntil, map, startWith, debounceTime } from 'rxjs/operators';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
+import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
 import { TradingService, TradeOffer, TradeStats } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { LoggerService } from '../../../../core/services/logger.service';
 
 @Component({
   selector: 'app-trading-dashboard',
@@ -74,9 +73,8 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   public readonly userContextService = inject(UserContextService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly notificationService = inject(NotificationService);
+  private readonly uiFeedback = inject(UiErrorFeedbackService);
+  private readonly logger = inject(LoggerService);
   public readonly t = inject(TranslationService);
 
   // Game context
@@ -234,7 +232,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
 
   private loadInitialData(): void {
     if (!this.gameId) {
-      console.warn('TradingDashboard: No gameId available, cannot load trades');
+      this.logger.warn('TradingDashboardComponent: missing gameId, skip initial load');
       return;
     }
 
@@ -275,7 +273,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(error => {
       if (error) {
-        this.notificationService.showError(error);
+        this.uiFeedback.showError({ message: error }, 'trades.errors.loadTrades');
       }
     });
   }
@@ -305,6 +303,15 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  onTradeCardKeydown(event: KeyboardEvent, trade: TradeOffer): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
+    this.onViewTradeDetails(trade);
+  }
+
   onAcceptTrade(trade: TradeOffer): void {
     this.tradingService.acceptTradeOffer(trade.id)
       .pipe(takeUntil(this.destroy$))
@@ -314,7 +321,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
           this.triggerCelebration();
         },
         error: () => {
-          this.notificationService.showError(this.t.t('trades.errors.acceptOffer'));
+          this.uiFeedback.showErrorFromKey('trades.errors.acceptOffer');
         }
       });
   }
@@ -327,7 +334,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
           this.showSuccessMessage(this.t.t('trades.messages.tradeRejected'));
         },
         error: () => {
-          this.notificationService.showError(this.t.t('trades.errors.rejectOffer'));
+          this.uiFeedback.showErrorFromKey('trades.errors.rejectOffer');
         }
       });
   }
@@ -340,7 +347,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
           this.showSuccessMessage(this.t.t('trades.messages.tradeWithdrawn'));
         },
         error: () => {
-          this.notificationService.showError(this.t.t('trades.errors.withdrawOffer'));
+          this.uiFeedback.showErrorFromKey('trades.errors.withdrawOffer');
         }
       });
   }
@@ -366,7 +373,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.isRefreshing.next(false);
-          this.notificationService.showError(this.t.t('trades.errors.refreshFailed', 'Échec du rafraîchissement'));
+          this.uiFeedback.showErrorFromKey('trades.errors.refreshFailed');
         }
       });
 
@@ -433,19 +440,22 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   private showTradeNotification(count: number): void {
-    this.notificationService.showInfo(
-      `You have ${count} new trade offer${count > 1 ? 's' : ''}`,
-      'View Trades'
-    );
+    this.uiFeedback.showInfoMessage(this.buildNewTradeOffersMessage(count), 5000);
+  }
+
+  private buildNewTradeOffersMessage(count: number): string {
+    const fallbackMessage = `You have ${count} new trade offer${count > 1 ? 's' : ''}`;
+    const translatedTemplate = this.t.t('trades.messages.newOffers');
+    const template =
+      translatedTemplate && translatedTemplate !== 'trades.messages.newOffers'
+        ? translatedTemplate
+        : fallbackMessage;
+
+    return template.replace('{count}', String(count));
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['success-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.uiFeedback.showSuccessMessage(message, 3000);
   }
 
   private triggerCelebration(): void {

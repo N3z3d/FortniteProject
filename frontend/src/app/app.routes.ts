@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { AdminGuard } from './core/guards/admin.guard';
 import { GameSelectionGuard } from './core/guards/game-selection.guard';
 import { gamesResolver } from './features/game/resolvers/games.resolver';
 import { MainLayoutComponent } from './shared/components/main-layout/main-layout.component';
@@ -84,6 +85,11 @@ export const routes: Routes = [
         path: 'privacy',
         loadComponent: () => import('./features/legal/legal.component').then(c => c.LegalComponent),
         data: { pageType: 'privacy' }
+      },
+      {
+        path: 'admin',
+        loadChildren: () => import('./features/admin/admin.routes').then(r => r.ADMIN_ROUTES),
+        canActivate: [AdminGuard]
       }
     ]
   },

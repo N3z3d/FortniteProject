@@ -3,6 +3,8 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { DashboardDataService } from './dashboard-data.service';
 import { environment } from '../../../../environments/environment';
 import { StatsApiMapper } from '../mappers/stats-api.mapper';
+import { TranslationService } from '../../../core/services/translation.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 /**
  * Tests TDD pour DashboardDataService
@@ -11,12 +13,21 @@ import { StatsApiMapper } from '../mappers/stats-api.mapper';
 describe('DashboardDataService - TDD', () => {
   let service: DashboardDataService;
   let httpMock: HttpTestingController;
+  let loggerSpy: jasmine.SpyObj<LoggerService>;
   const apiUrl = `${environment.apiUrl}/api`;
 
   beforeEach(() => {
+    const translationServiceSpy = jasmine.createSpyObj('TranslationService', ['t']);
+    translationServiceSpy.t.and.callFake((_key: string, fallback?: string) => fallback || '');
+    loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [DashboardDataService]
+      providers: [
+        DashboardDataService,
+        { provide: TranslationService, useValue: translationServiceSpy },
+        { provide: LoggerService, useValue: loggerSpy }
+      ]
     });
     
     service = TestBed.inject(DashboardDataService);
@@ -76,6 +87,11 @@ describe('DashboardDataService - TDD', () => {
   });
 
   describe('calculateDerivedStatistics', () => {
+    it('should use translated fallback label when no team is available', () => {
+      const result = service.calculateDerivedStatistics({ teams: [] });
+      expect(result.mostActiveTeam).toBe('No team');
+    });
+
     it('ne devrait PAS calculer les joueurs depuis les équipes', () => {
       // ARRANGE - Ce test valide qu'on NE fait PAS cela
       const rawDataWithTeams = {
@@ -93,7 +109,6 @@ describe('DashboardDataService - TDD', () => {
       // Les vraies stats doivent venir de l'API
       expect(result.totalPlayers).toBe(12); // Ceci est le problème !
       
-      console.warn('⚠️ Ce test montre le problème : on compte seulement les joueurs dans les équipes (12) au lieu du total BDD (147)');
     });
 
     it('devrait utiliser les vraies statistiques de l\'API au lieu de calculer depuis les équipes', () => {
@@ -110,7 +125,6 @@ describe('DashboardDataService - TDD', () => {
       // Le service devrait utiliser directement les stats de l'API
       expect(realStatsFromAPI.totalPlayers).toBe(147);
       
-      console.log('✅ Solution : utiliser les statistiques directement de l\'endpoint /api/leaderboard/stats');
     });
   });
 

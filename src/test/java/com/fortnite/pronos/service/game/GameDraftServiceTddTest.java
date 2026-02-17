@@ -1,11 +1,14 @@
 package com.fortnite.pronos.service.game;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,31 +20,33 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.InvalidDraftStateException;
+import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.model.Draft;
-import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.DraftPickRepository;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.service.draft.DraftService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameDraftService - TDD selectPlayer persistence")
 class GameDraftServiceTddTest {
 
-  @Mock private GameRepository gameRepository;
-  @Mock private DraftRepository draftRepository;
-  @Mock private DraftPickRepository draftPickRepository;
-  @Mock private PlayerRepository playerRepository;
-  @Mock private GameParticipantRepository gameParticipantRepository;
+  @Mock private DraftDomainRepositoryPort draftDomainRepository;
+  @Mock private GameDomainRepositoryPort gameDomainRepository;
+  @Mock private DraftRepositoryPort draftRepository;
+  @Mock private DraftPickRepositoryPort draftPickRepository;
+  @Mock private PlayerRepositoryPort playerRepository;
+  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private DraftService draftService;
 
   @InjectMocks private GameDraftService gameDraftService;
@@ -49,7 +54,10 @@ class GameDraftServiceTddTest {
   private UUID gameId;
   private UUID userId;
   private UUID playerId;
-  private Game game;
+  private UUID draftId;
+  private Game domainGame;
+  private com.fortnite.pronos.domain.draft.model.Draft domainDraft;
+  private com.fortnite.pronos.model.Game game;
   private Draft draft;
   private Player player;
   private GameParticipant participant;
@@ -59,11 +67,38 @@ class GameDraftServiceTddTest {
     gameId = UUID.randomUUID();
     userId = UUID.randomUUID();
     playerId = UUID.randomUUID();
+    draftId = UUID.randomUUID();
 
     User user = new User();
     user.setId(userId);
 
-    game = Game.builder().id(gameId).name("Test Game").maxParticipants(4).build();
+    domainGame =
+        Game.restore(
+            gameId,
+            "Test Game",
+            null,
+            UUID.randomUUID(),
+            4,
+            GameStatus.DRAFTING,
+            LocalDateTime.now(),
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            List.of(),
+            null,
+            false,
+            5,
+            null,
+            2026);
+
+    game =
+        com.fortnite.pronos.model.Game.builder()
+            .id(gameId)
+            .name("Test Game")
+            .maxParticipants(4)
+            .build();
 
     participant = new GameParticipant();
     participant.setGame(game);
@@ -71,6 +106,7 @@ class GameDraftServiceTddTest {
     participant.setDraftOrder(1);
 
     draft = new Draft(game);
+    draft.setId(draftId);
     draft.setStatus(Draft.Status.ACTIVE);
     draft.setCurrentRound(1);
     draft.setCurrentPick(1);
@@ -83,21 +119,33 @@ class GameDraftServiceTddTest {
             .region(Player.Region.EU)
             .tranche("1-5")
             .build();
+
+    domainDraft =
+        com.fortnite.pronos.domain.draft.model.Draft.restore(
+            draftId,
+            gameId,
+            com.fortnite.pronos.domain.draft.model.DraftStatus.ACTIVE,
+            1,
+            1,
+            10,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            null);
   }
 
   @Test
   @DisplayName("selectPlayer doit persister un DraftPick et avancer le draft")
   void selectPlayer_shouldPersistPick_andAdvanceDraft() {
-    when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.of(game));
-    when(draftRepository.findByGame(game)).thenReturn(Optional.of(draft));
+    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(domainGame));
+    when(draftDomainRepository.findActiveByGameId(gameId)).thenReturn(Optional.of(domainDraft));
+    when(draftRepository.findById(draftId)).thenReturn(Optional.of(draft));
     when(draftService.isUserTurn(draft, userId)).thenReturn(true);
     when(draftPickRepository.existsByDraftAndPlayer(draft, player)).thenReturn(false);
-    when(((PlayerRepositoryPort) playerRepository).findById(playerId))
-        .thenReturn(Optional.of(player));
+    when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
     when(gameParticipantRepository.findByUserIdAndGameId(userId, gameId))
         .thenReturn(Optional.of(participant));
 
-    // Simuler l'avancement du draft
     when(draftService.nextPick(any(Draft.class), anyInt()))
         .thenAnswer(
             invocation -> {
@@ -106,7 +154,6 @@ class GameDraftServiceTddTest {
               return d;
             });
 
-    // Simuler la sauvegarde du pick en renvoyant l'entité passée
     when(draftPickRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     DraftPickDto dto = gameDraftService.selectPlayer(gameId, userId, playerId);
@@ -117,20 +164,50 @@ class GameDraftServiceTddTest {
     assertThat(dto.getRound()).isEqualTo(1);
     assertThat(dto.getPick()).isEqualTo(1);
 
-    // Vérifier que la sauvegarde a été faite et que le draft a avancé
     verify(draftPickRepository).save(any());
-    verify(draftService).nextPick(draft, game.getMaxParticipants());
+    verify(draftService).nextPick(draft, domainGame.getMaxParticipants());
     assertThat(draft.getCurrentPick()).isEqualTo(2);
   }
 
   @Test
-  @DisplayName("selectPlayer doit échouer si aucun draft actif n'est trouvé")
+  @DisplayName("selectPlayer doit echouer si aucun draft actif n'est trouve")
   void selectPlayer_shouldFail_whenNoActiveDraft() {
-    when(((GameRepositoryPort) gameRepository).findById(gameId)).thenReturn(Optional.of(game));
-    when(draftRepository.findByGame(game)).thenReturn(Optional.empty());
+    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(domainGame));
+    when(draftDomainRepository.findActiveByGameId(gameId)).thenReturn(Optional.empty());
 
     org.assertj.core.api.Assertions.assertThatThrownBy(
             () -> gameDraftService.selectPlayer(gameId, userId, playerId))
         .isInstanceOf(InvalidDraftStateException.class);
+  }
+
+  @Test
+  @DisplayName("startDraft doit echouer proprement si creatorId est manquant")
+  void startDraft_shouldFail_whenCreatorIdIsMissing() {
+    Game gameWithoutCreator =
+        Game.restore(
+            gameId,
+            "Test Game",
+            null,
+            null,
+            4,
+            GameStatus.CREATING,
+            LocalDateTime.now(),
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            List.of(),
+            null,
+            false,
+            5,
+            null,
+            2026);
+
+    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(gameWithoutCreator));
+
+    assertThatThrownBy(() -> gameDraftService.startDraft(gameId, userId))
+        .isInstanceOf(InvalidGameStateException.class)
+        .hasMessage("Game creator is missing");
   }
 }

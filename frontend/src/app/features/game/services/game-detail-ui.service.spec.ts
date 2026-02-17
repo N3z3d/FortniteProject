@@ -208,28 +208,32 @@ describe('GameDetailUIService', () => {
       expect(typeof result).toBe('string');
     });
 
-    it('should return "Date invalide" for null', () => {
-      expect(service.getTimeAgo(null)).toBe('Date invalide');
+    it('should return translated fallback for null date', () => {
+      expect(service.getTimeAgo(null)).toBe('common.invalidDate');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('common.invalidDate');
     });
 
-    it('should return "Date invalide" for undefined', () => {
-      expect(service.getTimeAgo(undefined)).toBe('Date invalide');
+    it('should return translated fallback for undefined date', () => {
+      expect(service.getTimeAgo(undefined)).toBe('common.invalidDate');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('common.invalidDate');
     });
   });
 
   describe('getInvitationCodeExpiry', () => {
-    it('should return "Permanent" when no expiration', () => {
+    it('should return translated permanent label when no expiration', () => {
       const game = { ...mockGame };
-      expect(service.getInvitationCodeExpiry(game)).toBe('Permanent');
+      expect(service.getInvitationCodeExpiry(game)).toBe('games.detail.permanent');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('games.detail.permanent');
     });
 
-    it('should return "Expiré" when code is expired', () => {
+    it('should return translated expired label when code is expired', () => {
       const game = {
         ...mockGame,
         invitationCodeExpiresAt: '2024-01-01T00:00:00Z',
         isInvitationCodeExpired: true
       };
-      expect(service.getInvitationCodeExpiry(game)).toBe('Expiré');
+      expect(service.getInvitationCodeExpiry(game)).toBe('games.detail.expired');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('games.detail.expired');
     });
 
     it('should return time ago when not expired', () => {
@@ -244,12 +248,13 @@ describe('GameDetailUIService', () => {
 
       const result = service.getInvitationCodeExpiry(game);
       expect(result).toBeDefined();
-      expect(result).not.toBe('Permanent');
-      expect(result).not.toBe('Expiré');
+      expect(result).not.toBe('games.detail.permanent');
+      expect(result).not.toBe('games.detail.expired');
     });
 
     it('should handle null game', () => {
-      expect(service.getInvitationCodeExpiry(null)).toBe('Permanent');
+      expect(service.getInvitationCodeExpiry(null)).toBe('games.detail.permanent');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('games.detail.permanent');
     });
   });
 
@@ -313,13 +318,15 @@ describe('GameDetailUIService', () => {
   });
 
   describe('getParticipantStatusLabel', () => {
-    it('should return "Créateur" for creator', () => {
-      expect(service.getParticipantStatusLabel(mockParticipants[0])).toBe('Créateur');
+    it('should return translated creator label for creator', () => {
+      expect(service.getParticipantStatusLabel(mockParticipants[0])).toBe('games.detail.creator');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('games.detail.creator');
     });
 
-    it('should return "Participant" for non-creator', () => {
-      expect(service.getParticipantStatusLabel(mockParticipants[1])).toBe('Participant');
-      expect(service.getParticipantStatusLabel(mockParticipants[2])).toBe('Participant');
+    it('should return translated participant label for non-creator', () => {
+      expect(service.getParticipantStatusLabel(mockParticipants[1])).toBe('games.detail.participant');
+      expect(service.getParticipantStatusLabel(mockParticipants[2])).toBe('games.detail.participant');
+      expect(translationServiceSpy.t).toHaveBeenCalledWith('games.detail.participant');
     });
   });
 
@@ -357,7 +364,7 @@ describe('GameDetailUIService', () => {
 
       expect(service.getParticipantStatusIcon(minimalParticipant)).toBe('person');
       expect(service.getParticipantStatusColor(minimalParticipant)).toBe('primary');
-      expect(service.getParticipantStatusLabel(minimalParticipant)).toBe('Participant');
+      expect(service.getParticipantStatusLabel(minimalParticipant)).toBe('games.detail.participant');
     });
   });
 });

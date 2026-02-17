@@ -1,0 +1,16 @@
+<div class="team-preview">
+  <h3>{{ t.t('draft.ui.currentTeamTitle') }}</h3>
+  <div class="current-team">
+    <div
+      *ngFor="let player of team"
+      class="team-player">
+      <span>{{ player.nickname }}</span>
+      <mat-chip class="region-chip" color="accent" selected>
+        {{ getRegionLabel(player.region) }}
+      </mat-chip>
+    </div>
+    <div class="team-slots" *ngIf="remainingSlots > 0">
+      <span class="slots-remaining">{{ getSlotsRemainingLabel() }}</span>
+    </div>
+  </div>
+</div>

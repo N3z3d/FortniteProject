@@ -1,20 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 
 import { CreateGameComponent } from './create-game.component';
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
+import { TranslationService } from '../../../core/services/translation.service';
+import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { LoggerService } from '../../../core/services/logger.service';
 
 describe('CreateGameComponent', () => {
   let component: CreateGameComponent;
   let fixture: ComponentFixture<CreateGameComponent>;
   let gameService: jasmine.SpyObj<GameService>;
   let router: jasmine.SpyObj<Router>;
-  let snackBar: jasmine.SpyObj<MatSnackBar>;
+  let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
+  let logger: jasmine.SpyObj<LoggerService>;
 
   const mockGame = {
     id: '1',
@@ -30,9 +33,16 @@ describe('CreateGameComponent', () => {
   beforeEach(async () => {
     const gameServiceSpy = jasmine.createSpyObj('GameService', ['createGame']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    const uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', [
+      'showSuccessMessage',
+      'showError'
+    ]);
+    const loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    const translationSpy = jasmine.createSpyObj('TranslationService', ['t']);
 
     gameServiceSpy.createGame.and.returnValue(of(mockGame));
+    uiFeedbackSpy.showError.and.callFake((error: unknown) => (error as Error)?.message ?? 'games.create.errorCreate');
+    translationSpy.t.and.callFake((key: string) => key);
 
     TestBed.configureTestingModule({
       imports: [
@@ -44,17 +54,19 @@ describe('CreateGameComponent', () => {
       providers: [
         { provide: GameService, useValue: gameServiceSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
+        { provide: TranslationService, useValue: translationSpy },
+        { provide: LoggerService, useValue: loggerSpy }
       ]
     });
-
-    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
     await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(CreateGameComponent);
     component = fixture.componentInstance;
     gameService = TestBed.inject(GameService) as jasmine.SpyObj<GameService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    snackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
+    uiFeedback = TestBed.inject(UiErrorFeedbackService) as jasmine.SpyObj<UiErrorFeedbackService>;
+    logger = TestBed.inject(LoggerService) as jasmine.SpyObj<LoggerService>;
   });
 
   it('should create', () => {
@@ -98,6 +110,27 @@ describe('CreateGameComponent', () => {
   });
 
   describe('onSubmit', () => {
+    it('should show invitation code in success snackbar when provided', () => {
+      gameService.createGame.and.returnValue(of({
+        ...mockGame,
+        invitationCode: 'ABCD12'
+      } as any));
+
+      component.ngOnInit();
+      component.gameForm.patchValue({
+        name: 'Test Game',
+        maxParticipants: 5,
+        regionRules: {}
+      });
+
+      component.onSubmit();
+
+      expect(uiFeedback.showSuccessMessage).toHaveBeenCalledWith(
+        "Game creee ! Code d'invitation : ABCD12",
+        2000
+      );
+    });
+
     it('should create game successfully with default configuration', () => {
       component.ngOnInit();
       component.gameForm.patchValue({
@@ -116,13 +149,12 @@ describe('CreateGameComponent', () => {
         autoStartDraft: true,
         draftTimeLimit: 300,
         autoPickDelay: 43200,
-        currentSeason: 2025,
+        currentSeason: new Date().getFullYear(),
         description: jasmine.any(String)
       }));
-      expect(snackBar.open).toHaveBeenCalledWith(
-        jasmine.any(String),
-        '',
-        jasmine.objectContaining({ duration: 2000, panelClass: 'success-snackbar' })
+      expect(uiFeedback.showSuccessMessage).toHaveBeenCalledWith(
+        "Game creee ! Generez un code d'invitation depuis la page de la partie.",
+        2000
       );
       expect(router.navigate).toHaveBeenCalledWith(['/games', '1'], { queryParams: { created: 'true' } });
     });
@@ -140,7 +172,19 @@ describe('CreateGameComponent', () => {
 
       component.onSubmit();
 
-      expect(component.error).toContain('Impossible');
+      expect(component.error).toBe('Network error');
+      expect(uiFeedback.showError).toHaveBeenCalledWith(
+        error,
+        'games.create.errorCreate',
+        jasmine.objectContaining({ duration: 5000 })
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        'CreateGameComponent: failed to create game',
+        jasmine.objectContaining({
+          formName: 'Test Game',
+          error
+        })
+      );
       expect(component.loading).toBe(false);
     });
 
