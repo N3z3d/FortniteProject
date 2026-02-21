@@ -11,10 +11,10 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry;
 
 @Configuration
 @Profile("test")
-public class TestPrometheusConfig {
+class TestPrometheusConfig {
 
   @Bean
-  public PrometheusMeterRegistry prometheusMeterRegistry() {
+  PrometheusMeterRegistry prometheusMeterRegistry() {
     PrometheusRegistry coreRegistry = new PrometheusRegistry();
     return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT, coreRegistry, Clock.SYSTEM);
   }

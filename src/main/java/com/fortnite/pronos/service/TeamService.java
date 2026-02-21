@@ -15,14 +15,11 @@ import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.domain.team.model.Team;
 import com.fortnite.pronos.dto.SwapPlayersRequest;
 import com.fortnite.pronos.dto.SwapPlayersResponse;
+import com.fortnite.pronos.dto.mapper.TeamDomainDtoMapper;
 import com.fortnite.pronos.dto.team.TeamDto;
 import com.fortnite.pronos.exception.InvalidSwapException;
 import com.fortnite.pronos.exception.TeamNotFoundException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
-import com.fortnite.pronos.model.TeamPlayer;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.TeamPlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S1172"})
 public class TeamService {
 
   private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouve";
@@ -39,9 +37,10 @@ public class TeamService {
 
   private final TeamDomainRepositoryPort teamDomainRepository;
   private final PlayerDomainRepositoryPort playerDomainRepository;
-  private final TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final UserRepositoryPort userRepository;
-  private final TeamPlayerRepository teamPlayerRepository;
+  private final com.fortnite.pronos.repository.TeamPlayerRepository teamPlayerRepository;
+  private final TeamDomainDtoMapper teamDomainDtoMapper = new TeamDomainDtoMapper();
 
   /** Cree une nouvelle equipe pour un utilisateur */
   @Transactional
@@ -49,13 +48,13 @@ public class TeamService {
     log.info(
         "Creation d'une equipe '{}' pour l'utilisateur {} et la saison {}", name, userId, season);
 
-    User user = findUserById(userId);
+    com.fortnite.pronos.model.User user = findUserById(userId);
     validateTeamCreation(user, season);
 
     Team savedTeam = teamDomainRepository.save(buildNewTeam(name, user, season));
 
     log.info("Equipe {} creee avec succes pour l'utilisateur {}", savedTeam.getId(), userId);
-    return toTeamDto(savedTeam.getId());
+    return toTeamDto(savedTeam);
   }
 
   /** Ajoute un joueur a une equipe */
@@ -67,7 +66,7 @@ public class TeamService {
         userId,
         position);
 
-    User user = findUserById(userId);
+    com.fortnite.pronos.model.User user = findUserById(userId);
     Player player = findPlayerById(playerId);
     Team team = findTeamByUserAndSeason(user, season);
 
@@ -76,7 +75,7 @@ public class TeamService {
 
     Team savedTeam = teamDomainRepository.save(team);
     log.info("Joueur {} ajoute avec succes a l'equipe {}", playerId, team.getId());
-    return toTeamDto(savedTeam.getId());
+    return toTeamDto(savedTeam);
   }
 
   /** Retire un joueur d'une equipe */
@@ -84,7 +83,7 @@ public class TeamService {
   public TeamDto removePlayerFromTeam(UUID userId, UUID playerId, int season) {
     log.info("Suppression du joueur {} de l'equipe de l'utilisateur {}", playerId, userId);
 
-    User user = findUserById(userId);
+    com.fortnite.pronos.model.User user = findUserById(userId);
     Player player = findPlayerById(playerId);
     Team team = findTeamByUserAndSeason(user, season);
 
@@ -93,7 +92,7 @@ public class TeamService {
 
     Team savedTeam = teamDomainRepository.save(team);
     log.info("Joueur {} supprime avec succes de l'equipe {}", playerId, team.getId());
-    return toTeamDto(savedTeam.getId());
+    return toTeamDto(savedTeam);
   }
 
   /** Effectue des changements de joueurs en lot */
@@ -104,7 +103,7 @@ public class TeamService {
         userId,
         playerChanges.size());
 
-    User user = findUserById(userId);
+    com.fortnite.pronos.model.User user = findUserById(userId);
     Team team = findTeamByUserAndSeason(user, season);
 
     validateUserPermissions(user);
@@ -112,7 +111,7 @@ public class TeamService {
 
     Team savedTeam = teamDomainRepository.save(team);
     log.info("Changements de joueurs effectues avec succes pour l'equipe {}", team.getId());
-    return toTeamDto(savedTeam.getId());
+    return toTeamDto(savedTeam);
   }
 
   /** Echange deux joueurs entre deux equipes */
@@ -120,7 +119,7 @@ public class TeamService {
   public SwapPlayersResponse swapPlayers(UUID userId, SwapPlayersRequest request) {
     log.debug("Demande d'echange de joueurs par l'utilisateur {}", userId);
 
-    User user = validateUserExists(userId);
+    com.fortnite.pronos.model.User user = validateUserExists(userId);
     Team team1 = findDomainTeamOrThrow(request.getTeamId1());
     Team team2 = findDomainTeamOrThrow(request.getTeamId2());
 
@@ -143,14 +142,14 @@ public class TeamService {
     Team team =
         teamDomainRepository
             .findById(teamId)
-            .orElseThrow(() -> new EntityNotFoundException("Equipe non trouvee"));
-    User owner = findUserById(team.getOwnerId());
+            .orElseThrow(() -> new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE));
+    com.fortnite.pronos.model.User owner = findUserById(team.getOwnerId());
 
     team.rename("Equipe " + owner.getUsername());
     Team updatedTeam = teamDomainRepository.save(team);
 
     log.info("Equipe mise a jour: {}", teamId);
-    return toTeamDto(updatedTeam.getId());
+    return toTeamDto(updatedTeam);
   }
 
   /** Supprime une equipe */
@@ -166,7 +165,7 @@ public class TeamService {
     log.info("Equipe {} supprimee avec succes", teamId);
   }
 
-  private User validateUserExists(UUID userId) {
+  private com.fortnite.pronos.model.User validateUserExists(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new EntityNotFoundException(USER_NOT_FOUND_MESSAGE));
@@ -175,10 +174,10 @@ public class TeamService {
   private Team findDomainTeamOrThrow(UUID teamId) {
     return teamDomainRepository
         .findById(teamId)
-        .orElseThrow(() -> new TeamNotFoundException("Equipe non trouvee : " + teamId));
+        .orElseThrow(() -> new TeamNotFoundException(TEAM_NOT_FOUND_MESSAGE + ": " + teamId));
   }
 
-  private void validateUserCanSwap(User user, Team team1, Team team2) {
+  private void validateUserCanSwap(com.fortnite.pronos.model.User user, Team team1, Team team2) {
     boolean isOwnerTeam1 = team1.getOwnerId().equals(user.getId());
     boolean isOwnerTeam2 = team2.getOwnerId().equals(user.getId());
 
@@ -201,9 +200,9 @@ public class TeamService {
     com.fortnite.pronos.model.Player player1Ref = toEntityPlayerReference(player1);
     com.fortnite.pronos.model.Player player2Ref = toEntityPlayerReference(player2);
 
-    TeamPlayer tp1 =
+    com.fortnite.pronos.model.TeamPlayer tp1 =
         findTeamPlayerOrThrow(team1Ref, player1Ref, team1.getName(), player1.getNickname());
-    TeamPlayer tp2 =
+    com.fortnite.pronos.model.TeamPlayer tp2 =
         findTeamPlayerOrThrow(team2Ref, player2Ref, team2.getName(), player2.getNickname());
 
     tp1.setTeam(team2Ref);
@@ -220,7 +219,7 @@ public class TeamService {
         team2.getName());
   }
 
-  private TeamPlayer findTeamPlayerOrThrow(
+  private com.fortnite.pronos.model.TeamPlayer findTeamPlayerOrThrow(
       com.fortnite.pronos.model.Team team,
       com.fortnite.pronos.model.Player player,
       String teamName,
@@ -235,7 +234,11 @@ public class TeamService {
   }
 
   private SwapPlayersResponse createSuccessResponse(
-      Team team1, Player player1, Team team2, Player player2, User initiator) {
+      Team team1,
+      Player player1,
+      Team team2,
+      Player player2,
+      com.fortnite.pronos.model.User initiator) {
 
     SwapPlayersResponse.SwapDetails details =
         SwapPlayersResponse.SwapDetails.builder()
@@ -256,7 +259,7 @@ public class TeamService {
     return response;
   }
 
-  private User findUserById(UUID userId) {
+  private com.fortnite.pronos.model.User findUserById(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(
@@ -266,7 +269,7 @@ public class TeamService {
             });
   }
 
-  private Team findTeamByUserAndSeason(User user, int season) {
+  private Team findTeamByUserAndSeason(com.fortnite.pronos.model.User user, int season) {
     return teamDomainRepository
         .findByOwnerIdAndSeason(user.getId(), season)
         .orElseThrow(
@@ -287,14 +290,14 @@ public class TeamService {
             });
   }
 
-  private void validateTeamCreation(User user, int season) {
+  private void validateTeamCreation(com.fortnite.pronos.model.User user, int season) {
     if (teamDomainRepository.findByOwnerIdAndSeason(user.getId(), season).isPresent()) {
       log.warn("L'utilisateur {} a deja une equipe pour la saison {}", user.getId(), season);
       throw new IllegalStateException("L'utilisateur a deja une equipe pour cette saison");
     }
   }
 
-  private Team buildNewTeam(String name, User user, int season) {
+  private Team buildNewTeam(String name, com.fortnite.pronos.model.User user, int season) {
     return new Team(name, user.getId(), season);
   }
 
@@ -312,7 +315,7 @@ public class TeamService {
     }
   }
 
-  private void validateUserPermissions(User user) {
+  private void validateUserPermissions(com.fortnite.pronos.model.User user) {
     log.debug("Validation des permissions pour l'utilisateur {}", user.getId());
   }
 
@@ -360,12 +363,9 @@ public class TeamService {
         "Validation des regles de changement pour {} -> {}", playerOut.getId(), playerIn.getId());
   }
 
-  private TeamDto toTeamDto(UUID teamId) {
-    com.fortnite.pronos.model.Team entity =
-        teamRepository
-            .findByIdWithFetch(teamId)
-            .orElseThrow(() -> new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE));
-    return TeamDto.from(entity);
+  private TeamDto toTeamDto(Team team) {
+    return teamDomainDtoMapper.fromDomainTeam(
+        team, userRepository::findById, playerDomainRepository::findById);
   }
 
   private com.fortnite.pronos.model.Team toEntityTeamReference(Team team) {

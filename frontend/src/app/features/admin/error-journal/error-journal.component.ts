@@ -15,7 +15,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { AdminService } from '../services/admin.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { ErrorEntry, ErrorStatistics } from '../models/error-journal.models';
+import { ErrorEntry, ErrorStatistics, ErrorTrendPoint } from '../models/error-journal.models';
 import { ErrorDetailDialogComponent } from './error-detail-dialog/error-detail-dialog.component';
 
 @Component({
@@ -156,6 +156,24 @@ export class ErrorJournalComponent implements OnInit, OnDestroy {
       key,
       value
     }));
+  }
+
+  getTrendEntries(): ErrorTrendPoint[] {
+    return this.statistics?.errorTrend ?? [];
+  }
+
+  getTrendBarWidth(count: number): string {
+    const maxCount = Math.max(...this.getTrendEntries().map(point => point.count), 1);
+    return `${Math.round((count / maxCount) * 100)}%`;
+  }
+
+  formatTrendLabel(periodStart: string): string {
+    if (!periodStart) return '';
+    const date = new Date(periodStart);
+    if (this.statistics?.trendGranularity === 'DAY') {
+      return date.toLocaleDateString();
+    }
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   formatTimestamp(ts: string): string {

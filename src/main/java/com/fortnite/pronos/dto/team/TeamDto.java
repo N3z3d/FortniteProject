@@ -2,13 +2,13 @@ package com.fortnite.pronos.dto.team;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import com.fortnite.pronos.model.Team;
 
 import lombok.Data;
 
 @Data
+@SuppressWarnings({"java:S1612"})
 public class TeamDto {
   private UUID id;
   private UUID userId;
@@ -69,7 +69,7 @@ public class TeamDto {
                     playerDto.tranche = tp.getPlayer().getTranche();
                     return playerDto;
                   })
-              .collect(Collectors.toList());
+              .toList();
     } else {
       dto.totalScore = 0;
       dto.players = List.of();

@@ -42,7 +42,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("USER_ALREADY_IN_GAME");
-    assertThat(response.getBody().getMessage()).contains("already participating");
+    assertThat(response.getMessage()).contains("already participating");
     assertThat(response.getBody().getPath()).isEqualTo("/api/games");
   }
 
@@ -55,8 +55,7 @@ class GlobalExceptionHandlerTest {
         handler.handleUserAlreadyInGameException(exception, request);
 
     assertThat(response.getStatusCode().value()).isEqualTo(409);
-    assertThat(response.getBody().getMessage()).contains("Marcel");
-    assertThat(response.getBody().getMessage()).contains("Championship 2026");
+    assertThat(response.getBody().getMessage()).contains("Marcel").contains("Championship 2026");
   }
 
   @Test
@@ -70,7 +69,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(400);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("INVALID_GAME_REQUEST");
-    assertThat(response.getBody().getMessage()).contains("more than 5 active games");
+    assertThat(response.getMessage()).contains("more than 5 active games");
     assertThat(response.getBody().getPath()).isEqualTo("/api/games");
   }
 
@@ -85,7 +84,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("USER_ALREADY_IN_GAME");
-    assertThat(response.getBody().getMessage()).contains("already in this game");
+    assertThat(response.getMessage()).contains("already in this game");
     assertThat(response.getBody().getPath()).isEqualTo("/api/games/join-with-code");
   }
 
@@ -103,7 +102,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("USER_ALREADY_IN_GAME");
-    assertThat(response.getBody().getMessage()).contains("already participating");
+    assertThat(response.getMessage()).contains("already participating");
     assertThat(response.getBody().getPath()).isEqualTo("/api/games/join-with-code");
   }
 
@@ -139,7 +138,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("GAME_FULL");
-    assertThat(response.getBody().getMessage()).contains("full");
+    assertThat(response.getMessage()).contains("full");
   }
 
   @Test
@@ -152,7 +151,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(404);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("GAME_NOT_FOUND");
-    assertThat(response.getBody().getMessage()).contains("xyz");
+    assertThat(response.getMessage()).contains("xyz");
   }
 
   @Test

@@ -13,6 +13,7 @@ import com.fortnite.pronos.model.Player;
  * de données mock
  */
 @DisplayName("MockDataGeneratorService - Tests unitaires")
+@SuppressWarnings({"java:S5833", "java:S5841", "java:S5853"})
 class MockDataGeneratorServiceTest {
 
   private MockDataGeneratorService service;
@@ -30,7 +31,7 @@ class MockDataGeneratorServiceTest {
 
     // THEN
     assertThat(result).isNotNull();
-    assertThat(result.total()).isGreaterThan(0);
+    assertThat(result.total()).isPositive();
     assertThat(result.getAllPlayers()).isNotEmpty();
     assertThat(result.getAllScores()).isNotEmpty();
     assertThat(result.getPronosticators()).isNotEmpty();
@@ -74,10 +75,10 @@ class MockDataGeneratorServiceTest {
     var allPlayers = mockData.getAllPlayers();
 
     // THEN
-    assertThat(allPlayers).isNotEmpty();
-    assertThat(allPlayers).allMatch(player -> player.getUsername() != null);
-    assertThat(allPlayers).allMatch(player -> player.getNickname() != null);
-    assertThat(allPlayers).allMatch(player -> player.getRegion() != null);
+    assertThat(allPlayers).isNotEmpty().allMatch(player -> player.getUsername() != null);
+    assertThat(allPlayers)
+        .allMatch(player -> player.getNickname() != null)
+        .allMatch(player -> player.getRegion() != null);
   }
 
   @Test
@@ -90,10 +91,10 @@ class MockDataGeneratorServiceTest {
     var allScores = mockData.getAllScores();
 
     // THEN
-    assertThat(allScores).isNotEmpty();
-    assertThat(allScores).hasSameSizeAs(mockData.getAllPlayers());
-    assertThat(allScores).allMatch(score -> score.getPoints() >= 0);
-    assertThat(allScores).allMatch(score -> score.getSeason() == 2025);
+    assertThat(allScores).isNotEmpty().hasSameSizeAs(mockData.getAllPlayers());
+    assertThat(allScores)
+        .allMatch(score -> score.getPoints() >= 0)
+        .allMatch(score -> score.getSeason() == 2025);
   }
 
   @Test

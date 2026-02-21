@@ -26,7 +26,8 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class GameControllerAuthenticationTest {
+@SuppressWarnings({"java:S5838"})
+class GameControllerAuthenticationTest {
 
   @LocalServerPort private int port;
 
@@ -78,9 +79,8 @@ public class GameControllerAuthenticationTest {
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().get("name")).isEqualTo("Tournoi Test TDD");
-    assertThat(response.getBody().get("creatorName")).isEqualTo("Thibaut");
+    assertThat(response.getBody()).isNotNull().containsEntry("name", "Tournoi Test TDD");
+    assertThat(response.getBody()).containsEntry("creatorName", "Thibaut");
   }
 
   @Test
@@ -154,7 +154,7 @@ public class GameControllerAuthenticationTest {
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().length).isGreaterThan(0);
+    assertThat(response.getBody().length).isPositive();
   }
 
   @Test
@@ -179,7 +179,7 @@ public class GameControllerAuthenticationTest {
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().length).isEqualTo(0);
+    assertThat(response.getBody().length).isZero();
   }
 
   private org.springframework.http.HttpHeaders withTestUserHeader(String username) {

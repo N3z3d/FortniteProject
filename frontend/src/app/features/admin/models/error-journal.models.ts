@@ -14,6 +14,8 @@ export interface ErrorStatistics {
   errorsByType: Record<string, number>;
   errorsByStatusCode: Record<number, number>;
   topErrors: TopErrorEntry[];
+  trendGranularity?: 'HOUR' | 'DAY' | string;
+  errorTrend?: ErrorTrendPoint[];
 }
 
 export interface TopErrorEntry {
@@ -21,4 +23,9 @@ export interface TopErrorEntry {
   message: string;
   count: number;
   lastOccurrence: string;
+}
+
+export interface ErrorTrendPoint {
+  periodStart: string;
+  count: number;
 }

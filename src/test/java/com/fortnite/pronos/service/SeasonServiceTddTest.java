@@ -28,6 +28,7 @@ import com.fortnite.pronos.service.SeasonService.SeasonInfo;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SeasonService - Business Critical TDD Tests")
+@SuppressWarnings({"java:S5853"})
 class SeasonServiceTddTest {
 
   private SeasonService seasonService;
@@ -270,7 +271,7 @@ class SeasonServiceTddTest {
 
       assertThat(years1).isEqualTo(3);
       assertThat(years2).isEqualTo(3); // Should be absolute
-      assertThat(yearsSame).isEqualTo(0);
+      assertThat(yearsSame).isZero();
     }
   }
 
@@ -285,8 +286,7 @@ class SeasonServiceTddTest {
       List<Integer> validSeasons = seasonService.getAllValidSeasons();
       int expectedSize = seasonService.getMaxValidSeason() - FIRST_SEASON + 1;
 
-      assertThat(validSeasons).hasSize(expectedSize);
-      assertThat(validSeasons.get(0)).isEqualTo(FIRST_SEASON);
+      assertThat(validSeasons).hasSize(expectedSize).containsEntry(0, FIRST_SEASON);
       assertThat(validSeasons.get(validSeasons.size() - 1))
           .isEqualTo(seasonService.getMaxValidSeason());
     }
@@ -298,9 +298,8 @@ class SeasonServiceTddTest {
       List<Integer> availableSeasons = seasonService.getAvailableSeasons();
       int expectedSize = TEST_CURRENT_SEASON - FIRST_SEASON + 1;
 
-      assertThat(availableSeasons).hasSize(expectedSize);
-      assertThat(availableSeasons.get(0)).isEqualTo(FIRST_SEASON);
-      assertThat(availableSeasons.get(availableSeasons.size() - 1)).isEqualTo(TEST_CURRENT_SEASON);
+      assertThat(availableSeasons).hasSize(expectedSize).containsEntry(0, FIRST_SEASON);
+      assertThat(availableSeasons).containsEntry(availableSeasons.size() - 1, TEST_CURRENT_SEASON);
 
       // Should not contain future seasons
       assertThat(availableSeasons).doesNotContain(TEST_CURRENT_SEASON + 1);
@@ -314,7 +313,7 @@ class SeasonServiceTddTest {
 
       // Verify ascending order
       for (int i = 0; i < seasons.size() - 1; i++) {
-        assertThat(seasons.get(i + 1)).isEqualTo(seasons.get(i) + 1);
+        assertThat(seasons).containsEntry(i + 1, seasons.get(i) + 1);
       }
     }
 
@@ -494,10 +493,8 @@ class SeasonServiceTddTest {
       SeasonInfo info = seasonService.getSeasonInfo(TEST_CURRENT_SEASON);
       String toString = info.toString();
 
-      assertThat(toString).contains("SeasonInfo");
-      assertThat(toString).contains(String.valueOf(TEST_CURRENT_SEASON));
-      assertThat(toString).contains("current=true");
-      assertThat(toString).contains("past=false");
+      assertThat(toString).contains("SeasonInfo").contains(String.valueOf(TEST_CURRENT_SEASON));
+      assertThat(toString).contains("current=true").contains("past=false");
       assertThat(toString).contains("future=false");
     }
   }
@@ -515,9 +512,8 @@ class SeasonServiceTddTest {
       List<Integer> allSeasons = seasonService.getAllValidSeasons();
 
       // Should generate large list without issues
-      assertThat(allSeasons.size()).isGreaterThan(50);
-      assertThat(allSeasons.get(0)).isEqualTo(FIRST_SEASON);
-      assertThat(allSeasons.get(allSeasons.size() - 1)).isEqualTo(currentYear + 50);
+      assertThat(allSeasons).hasSizeGreaterThan(50).containsEntry(0, FIRST_SEASON);
+      assertThat(allSeasons).containsEntry(allSeasons.size() - 1, currentYear + 50);
     }
 
     @Test

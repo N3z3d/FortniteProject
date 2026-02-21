@@ -5,7 +5,7 @@ export interface BackendErrorDetails {
   readonly code: string | null;
 }
 
-const MOJIBAKE_PATTERN = /Ã|Â|\uFFFD/;
+const MOJIBAKE_PATTERN = /[ÃÂ\uFFFD]/;
 const TECHNICAL_MESSAGE_PATTERNS = [
   /exception/i,
   /stack\s*trace/i,
@@ -111,3 +111,4 @@ function readCodeFromObject(payload: Record<string, unknown>): string | null {
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
+

@@ -37,7 +37,7 @@ import com.fortnite.pronos.util.LoggingUtils;
  * domain only 3. adapter.in DEPENDS ON application & domain.port.in 4. adapter.out DEPENDS ON
  * domain.port.out 5. domain NEVER DEPENDS ON adapter 6. application NEVER DEPENDS ON adapter
  */
-public class HexagonalArchitectureTest {
+class HexagonalArchitectureTest {
 
   private static JavaClasses importedClasses;
   private static boolean hexagonalPackagesPresent;

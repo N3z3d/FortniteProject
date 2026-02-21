@@ -18,12 +18,12 @@ import lombok.RequiredArgsConstructor;
 @Profile("test")
 @RequiredArgsConstructor
 @RequestMapping("/actuator/prometheus")
-public class TestPrometheusEndpointController {
+class TestPrometheusEndpointController {
 
   private final PrometheusMeterRegistry prometheusMeterRegistry;
 
   @GetMapping(produces = MediaType.TEXT_PLAIN_VALUE)
-  public ResponseEntity<String> scrape() {
+  ResponseEntity<String> scrape() {
     return ResponseEntity.ok(prometheusMeterRegistry.scrape());
   }
 }

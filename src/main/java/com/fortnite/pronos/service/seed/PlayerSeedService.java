@@ -4,10 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Score;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
 import com.fortnite.pronos.service.CsvDataLoaderService;
 import com.fortnite.pronos.service.MockDataGeneratorService;
 
@@ -23,8 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PlayerSeedService {
 
-  private final PlayerRepository playerRepository;
-  private final ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
   private final CsvDataLoaderService csvDataLoaderService;
   private final SeedDataProviderSelectorService seedDataProviderSelector;
 
@@ -33,7 +29,7 @@ public class PlayerSeedService {
    *
    * @return list of saved players
    */
-  public List<Player> initializePlayers() {
+  public List<com.fortnite.pronos.model.Player> initializePlayers() {
     log.info("Loading player data from CSV...");
     MockDataGeneratorService.MockDataSet mockData = seedDataProviderSelector.loadSeedData();
 
@@ -44,16 +40,16 @@ public class PlayerSeedService {
       saveMockPlayersAndScores(mockData);
     }
 
-    List<Player> savedPlayers = playerRepository.findAll();
+    List<com.fortnite.pronos.model.Player> savedPlayers = playerRepository.findAll();
     log.info("{} real players loaded from CSV with their complete scores", savedPlayers.size());
     return savedPlayers;
   }
 
   private void saveMockPlayersAndScores(MockDataGeneratorService.MockDataSet mockData) {
-    List<Player> mockPlayers = mockData.getAllPlayers();
-    List<Player> savedMockPlayers = playerRepository.saveAll(mockPlayers);
+    List<com.fortnite.pronos.model.Player> mockPlayers = mockData.getAllPlayers();
+    List<com.fortnite.pronos.model.Player> savedMockPlayers = playerRepository.saveAll(mockPlayers);
 
-    List<Score> mockScores = mockData.getAllScores();
+    List<com.fortnite.pronos.model.Score> mockScores = mockData.getAllScores();
     for (int i = 0; i < savedMockPlayers.size() && i < mockScores.size(); i++) {
       mockScores.get(i).setPlayer(savedMockPlayers.get(i));
     }
@@ -63,7 +59,7 @@ public class PlayerSeedService {
   }
 
   /** Returns all players in the repository. */
-  public List<Player> getAllPlayers() {
+  public List<com.fortnite.pronos.model.Player> getAllPlayers() {
     return playerRepository.findAll();
   }
 

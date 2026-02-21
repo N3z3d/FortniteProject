@@ -6,9 +6,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.dto.LeaderboardEntryDTO;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings({"java:S112"})
 public class TeamLeaderboardService {
 
-  private final TeamRepository teamRepository;
-  private final ScoreRepository scoreRepository;
-  private final PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
 
   /** Obtenir le leaderboard complet - VERSION OPTIMISÉE SANS N+1 + CACHE */
   @Cacheable(value = "leaderboard", key = "#season", unless = "#result.isEmpty()")
@@ -36,7 +36,7 @@ public class TeamLeaderboardService {
         "[LEADERBOARD] Recuperation du leaderboard pour la saison {} - VERSION OPTIMISEE", season);
 
     // 1. Récupérer toutes les équipes avec FETCH EAGER optimisé
-    List<Team> teams = teamRepository.findBySeasonWithFetch(season);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findBySeasonWithFetch(season);
     log.debug("[DATA] {} equipes trouvees", teams.size());
 
     // 2. OPTIMISATION: Récupérer tous les scores en UNE SEULE requête
@@ -46,15 +46,15 @@ public class TeamLeaderboardService {
     // 3. Construire le leaderboard sans requêtes supplémentaires
     List<LeaderboardEntryDTO> entries = new ArrayList<>();
 
-    for (Team team : teams) {
+    for (com.fortnite.pronos.model.Team team : teams) {
       long totalPoints = 0;
       List<LeaderboardEntryDTO.PlayerInfo> playerInfos = new ArrayList<>();
 
       // Récupérer les joueurs de l'équipe (déjà en mémoire via fetch)
-      for (TeamPlayer teamPlayer : team.getPlayers()) {
+      for (com.fortnite.pronos.model.TeamPlayer teamPlayer : team.getPlayers()) {
         if (!teamPlayer.isActive()) continue;
 
-        Player player = teamPlayer.getPlayer();
+        com.fortnite.pronos.model.Player player = teamPlayer.getPlayer();
 
         // Utiliser les points du cache au lieu d'une nouvelle requête
         Integer points = playerPointsMap.getOrDefault(player.getId(), 0);
@@ -98,7 +98,7 @@ public class TeamLeaderboardService {
     log.info("[LEADERBOARD] Recuperation du leaderboard pour la game {}", gameId);
 
     // 1. Récupérer les équipes de cette game avec FETCH EAGER
-    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findByGameIdWithFetch(gameId);
     log.debug("[DATA] {} equipes trouvees pour la game {}", teams.size(), gameId);
 
     if (teams.isEmpty()) {
@@ -112,14 +112,14 @@ public class TeamLeaderboardService {
     // 3. Construire le leaderboard
     List<LeaderboardEntryDTO> entries = new ArrayList<>();
 
-    for (Team team : teams) {
+    for (com.fortnite.pronos.model.Team team : teams) {
       long totalPoints = 0;
       List<LeaderboardEntryDTO.PlayerInfo> playerInfos = new ArrayList<>();
 
-      for (TeamPlayer teamPlayer : team.getPlayers()) {
+      for (com.fortnite.pronos.model.TeamPlayer teamPlayer : team.getPlayers()) {
         if (!teamPlayer.isActive()) continue;
 
-        Player player = teamPlayer.getPlayer();
+        com.fortnite.pronos.model.Player player = teamPlayer.getPlayer();
         Integer points = playerPointsMap.getOrDefault(player.getId(), 0);
         totalPoints += points;
 
@@ -159,12 +159,13 @@ public class TeamLeaderboardService {
   /** Récupère le classement d'une équipe spécifique */
   public LeaderboardEntryDTO getTeamRanking(String teamId) {
     UUID teamUuid = UUID.fromString(teamId);
-    Optional<Team> teamOpt = teamRepository.findById(teamUuid);
+    Optional<com.fortnite.pronos.model.Team> teamOpt =
+        ((TeamRepositoryPort) teamRepository).findById(teamUuid);
     if (teamOpt.isEmpty()) {
       throw new RuntimeException("Équipe non trouvée");
     }
 
-    Team team = teamOpt.get();
+    com.fortnite.pronos.model.Team team = teamOpt.get();
     List<LeaderboardEntryDTO> allEntries = getLeaderboard(team.getSeason());
 
     return allEntries.stream()

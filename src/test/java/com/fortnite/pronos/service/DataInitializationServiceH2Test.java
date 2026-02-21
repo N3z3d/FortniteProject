@@ -112,8 +112,7 @@ class DataInitializationServiceH2Test {
     assertThat(participant.getGame()).isEqualTo(game);
     assertThat(participant.getUser()).isEqualTo(thibaut);
     assertThat(participant.getDraftOrder()).isEqualTo(1);
-    assertThat(participant.getSelectedPlayers()).isNotNull();
-    assertThat(participant.getSelectedPlayers()).isEmpty();
+    assertThat(participant.getSelectedPlayers()).isNotNull().isEmpty();
   }
 
   @Test
@@ -131,8 +130,9 @@ class DataInitializationServiceH2Test {
     game.addParticipant(participant3);
 
     // Then
-    assertThat(game.getParticipants()).hasSize(3);
-    assertThat(game.getParticipants()).contains(participant1, participant2, participant3);
+    assertThat(game.getParticipants())
+        .hasSize(3)
+        .contains(participant1, participant2, participant3);
 
     // Vérifier les back-references
     assertThat(participant1.getGame()).isEqualTo(game);

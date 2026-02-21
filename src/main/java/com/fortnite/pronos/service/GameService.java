@@ -1,19 +1,21 @@
 package com.fortnite.pronos.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
-import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.service.game.GameCreationService;
 import com.fortnite.pronos.service.game.GameDraftService;
 import com.fortnite.pronos.service.game.GameParticipantService;
@@ -36,7 +38,8 @@ public class GameService {
   private final GameQueryService gameQueryService;
   private final GameParticipantService gameParticipantService;
   private final GameDraftService gameDraftService;
-  private final TeamRepository teamRepository;
+  private final TeamDomainRepositoryPort teamDomainRepository;
+  private final GameRealtimeEventService gameRealtimeEventService;
 
   // Game Creation Operations
 
@@ -47,22 +50,31 @@ public class GameService {
 
   /** Deletes a game */
   public void deleteGame(UUID gameId) {
+    Set<UUID> participants = getParticipantIdsOrEmpty(gameId);
     gameCreationService.deleteGame(gameId);
+    gameRealtimeEventService.publishToUsers(
+        participants, GameRealtimeEventService.GAME_DELETED, gameId);
   }
 
   /** Regenerates the invitation code for a game (permanent by default) */
   public GameDto regenerateInvitationCode(UUID gameId) {
-    return gameCreationService.regenerateInvitationCode(gameId);
+    GameDto updatedGame = gameCreationService.regenerateInvitationCode(gameId);
+    publishGameUpdate(gameId);
+    return updatedGame;
   }
 
   /** Regenerates the invitation code for a game with configurable duration */
   public GameDto regenerateInvitationCode(UUID gameId, String duration) {
-    return gameCreationService.regenerateInvitationCode(gameId, duration);
+    GameDto updatedGame = gameCreationService.regenerateInvitationCode(gameId, duration);
+    publishGameUpdate(gameId);
+    return updatedGame;
   }
 
   /** Renames a game */
   public GameDto renameGame(UUID gameId, String newName) {
-    return gameCreationService.renameGame(gameId, newName);
+    GameDto updatedGame = gameCreationService.renameGame(gameId, newName);
+    publishGameUpdate(gameId);
+    return updatedGame;
   }
 
   // Game Query Operations
@@ -136,12 +148,17 @@ public class GameService {
 
   /** Adds a user to a game */
   public boolean joinGame(UUID userId, JoinGameRequest request) {
-    return gameParticipantService.joinGame(userId, request);
+    boolean joined = gameParticipantService.joinGame(userId, request);
+    if (joined) {
+      publishParticipantEvent(request.getGameId(), userId, GameRealtimeEventService.GAME_JOINED);
+    }
+    return joined;
   }
 
   /** Removes a user from a game */
   public void leaveGame(UUID userId, UUID gameId) {
     gameParticipantService.leaveGame(userId, gameId);
+    publishParticipantEvent(gameId, userId, GameRealtimeEventService.GAME_LEFT);
   }
 
   /** Checks if user is participant in game */
@@ -158,7 +175,9 @@ public class GameService {
 
   /** Starts draft for a game */
   public DraftDto startDraft(UUID gameId, UUID creatorId) {
-    return gameDraftService.startDraft(gameId, creatorId);
+    DraftDto draft = gameDraftService.startDraft(gameId, creatorId);
+    publishParticipantEvent(gameId, creatorId, GameRealtimeEventService.GAME_UPDATED);
+    return draft;
   }
 
   /** Pauses draft for a game */
@@ -194,13 +213,40 @@ public class GameService {
   // Team Operations
 
   /** Gets all teams for a specific game */
-  public List<?> getGameTeams(UUID gameId) {
+  public List<com.fortnite.pronos.domain.team.model.Team> getGameTeams(UUID gameId) {
     log.debug("Getting teams for game: {}", gameId);
 
-    // Vérifier que le jeu existe
+    // VÃ©rifier que le jeu existe
     gameQueryService.getGameByIdOrThrow(gameId);
 
-    // Récupérer les équipes du jeu avec fetch optimisé
-    return teamRepository.findByGameIdWithFetch(gameId);
+    // RÃ©cupÃ©rer les Ã©quipes du jeu avec fetch optimisÃ©
+    return teamDomainRepository.findByGameIdWithFetch(gameId);
+  }
+
+  private void publishGameUpdate(UUID gameId) {
+    gameRealtimeEventService.publishToUsers(
+        getParticipantIdsOrEmpty(gameId), GameRealtimeEventService.GAME_UPDATED, gameId);
+  }
+
+  private void publishParticipantEvent(UUID gameId, UUID actorUserId, String eventType) {
+    Set<UUID> recipients = new HashSet<>(getParticipantIdsOrEmpty(gameId));
+    recipients.add(actorUserId);
+    gameRealtimeEventService.publishToUsers(recipients, eventType, gameId);
+  }
+
+  private Set<UUID> getParticipantIdsOrEmpty(UUID gameId) {
+    try {
+      GameDto game = gameQueryService.getGameByIdOrThrow(gameId);
+      if (game == null || game.getParticipants() == null) {
+        return Set.of();
+      }
+      return new HashSet<>(game.getParticipants().keySet());
+    } catch (Exception exception) {
+      log.debug(
+          "GameService: unable to resolve participants for realtime event - gameId={}, reason={}",
+          gameId,
+          exception.getMessage());
+      return Set.of();
+    }
   }
 }

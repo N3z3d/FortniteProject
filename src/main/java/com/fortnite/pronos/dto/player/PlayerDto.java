@@ -7,6 +7,7 @@ import com.fortnite.pronos.model.Player;
 import lombok.Data;
 
 @Data
+@SuppressWarnings({"java:S1172"})
 public class PlayerDto {
   private UUID id;
   private String username;

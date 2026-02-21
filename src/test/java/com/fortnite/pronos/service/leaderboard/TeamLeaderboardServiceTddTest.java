@@ -30,6 +30,7 @@ import com.fortnite.pronos.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TeamLeaderboardService - TDD Tests")
+@SuppressWarnings({"java:S5778"})
 class TeamLeaderboardServiceTddTest {
 
   @Mock private TeamRepository teamRepository;

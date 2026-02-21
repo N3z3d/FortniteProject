@@ -32,7 +32,7 @@ public class TestSecurityConfig {
 
   @Bean
   @Primary
-  public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+  SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
@@ -61,7 +61,7 @@ public class TestSecurityConfig {
 
   @Bean
   @Primary
-  public JwtService testJwtService() {
+  JwtService testJwtService() {
     JwtService mockJwtService = org.mockito.Mockito.mock(JwtService.class);
 
     org.mockito.Mockito.when(mockJwtService.extractUsername(org.mockito.Mockito.anyString()))
@@ -87,7 +87,7 @@ public class TestSecurityConfig {
   /** PasswordEncoder pour les tests (necessaire pour l'initialisation des donnees) */
   @Bean
   @Primary
-  public PasswordEncoder testPasswordEncoder() {
+  PasswordEncoder testPasswordEncoder() {
     return new BCryptPasswordEncoder();
   }
 }

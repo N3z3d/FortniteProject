@@ -36,6 +36,7 @@ import com.fortnite.pronos.service.InvitationCodeService;
 import com.fortnite.pronos.service.ValidationService;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5838"})
 class GameCreationServiceDomainMigrationTest {
 
   @Mock private GameDomainRepositoryPort gameDomainRepository;

@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 import com.fortnite.pronos.model.Player;
 
 /** Tests de validation pour CreateGameRequest */
-public class CreateGameRequestValidationTest {
+@SuppressWarnings({"java:S5976"})
+class CreateGameRequestValidationTest {
 
   private CreateGameRequest request;
 

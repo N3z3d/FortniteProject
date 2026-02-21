@@ -15,10 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamPlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.dto.TeamScoreDto;
 import com.fortnite.pronos.dto.TeamScoreDto.PlayerScore;
 import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 /**
  * TDD Tests for ScoreCalculationService - Business Critical Component
@@ -36,9 +38,9 @@ import com.fortnite.pronos.repository.*;
 @DisplayName("ScoreCalculationService - Business Critical TDD Tests")
 class ScoreCalculationServiceTddTest {
 
-  @Mock private TeamRepository teamRepository;
-  @Mock private TeamPlayerRepository teamPlayerRepository;
-  @Mock private ScoreRepository scoreRepository;
+  @Mock private TeamRepositoryPort teamRepository;
+  @Mock private TeamPlayerRepositoryPort teamPlayerRepository;
+  @Mock private ScoreRepositoryPort scoreRepository;
 
   @InjectMocks private ScoreCalculationService scoreCalculationService;
 
@@ -128,7 +130,7 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should calculate team score with correct aggregation")
     void shouldCalculateTeamScoreWithCorrectAggregation() {
       // RED: Define expected behavior for team score calculation
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, startDate, endDate))
           .thenReturn(Arrays.asList(testScore1, testScore2));
@@ -165,7 +167,7 @@ class ScoreCalculationServiceTddTest {
       assertThat(player2Score.getTotalPoints()).isEqualTo(600);
       assertThat(player2Score.getPlayerName()).isEqualTo("Average Player");
 
-      verify(teamRepository).findById(teamId);
+      verify(teamRepository).findByIdWithFetch(teamId);
       verify(teamPlayerRepository).findByTeam(testTeam);
       verify(scoreRepository).findByPlayerAndDateBetween(testPlayer1, startDate, endDate);
       verify(scoreRepository).findByPlayerAndDateBetween(testPlayer2, startDate, endDate);
@@ -175,29 +177,29 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should handle team with no scores gracefully")
     void shouldHandleTeamWithNoScoresGracefully() {
       // RED: Test empty score scenario
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(any(), eq(startDate), eq(endDate)))
           .thenReturn(Collections.emptyList());
 
       TeamScoreDto result = scoreCalculationService.calculateTeamScore(teamId, startDate, endDate);
 
-      assertThat(result.getTotalScore()).isEqualTo(0);
+      assertThat(result.getTotalScore()).isZero();
       assertThat(result.getPlayerScores()).hasSize(2);
-      assertThat(result.getPlayerScores().get(0).getTotalPoints()).isEqualTo(0);
-      assertThat(result.getPlayerScores().get(1).getTotalPoints()).isEqualTo(0);
+      assertThat(result.getPlayerScores().get(0).getTotalPoints()).isZero();
+      assertThat(result.getPlayerScores().get(1).getTotalPoints()).isZero();
     }
 
     @Test
     @DisplayName("Should handle team with no players gracefully")
     void shouldHandleTeamWithNoPlayersGracefully() {
       // RED: Test empty team scenario
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(Collections.emptyList());
 
       TeamScoreDto result = scoreCalculationService.calculateTeamScore(teamId, startDate, endDate);
 
-      assertThat(result.getTotalScore()).isEqualTo(0);
+      assertThat(result.getTotalScore()).isZero();
       assertThat(result.getPlayerScores()).isEmpty();
       assertThat(result.getTeamName()).isEqualTo("Test Champions");
     }
@@ -236,7 +238,7 @@ class ScoreCalculationServiceTddTest {
             .thenReturn(playerScores);
       }
 
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(largeTeam);
 
       TeamScoreDto result = scoreCalculationService.calculateTeamScore(teamId, startDate, endDate);
@@ -286,7 +288,7 @@ class ScoreCalculationServiceTddTest {
                   scoreCalculationService.calculateTeamScore(
                       teamId, invalidStartDate, invalidEndDate))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("La date de fin doit être après la date de début");
+          .hasMessageContaining("La date de fin doit \u00eatre apr\u00e8s la date de d\u00e9but");
 
       verifyNoInteractions(teamRepository, teamPlayerRepository, scoreRepository);
     }
@@ -297,7 +299,7 @@ class ScoreCalculationServiceTddTest {
       // RED: Test single day calculation
       LocalDate singleDate = LocalDate.of(2025, 1, 15);
 
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, singleDate, singleDate))
           .thenReturn(Arrays.asList(testScore1)); // testScore1 has date 2025-01-15
@@ -319,7 +321,7 @@ class ScoreCalculationServiceTddTest {
       LocalDate futureStart = LocalDate.of(2025, 12, 1);
       LocalDate futureEnd = LocalDate.of(2025, 12, 31);
 
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(any(), eq(futureStart), eq(futureEnd)))
           .thenReturn(Collections.emptyList());
@@ -327,7 +329,7 @@ class ScoreCalculationServiceTddTest {
       TeamScoreDto result =
           scoreCalculationService.calculateTeamScore(teamId, futureStart, futureEnd);
 
-      assertThat(result.getTotalScore()).isEqualTo(0);
+      assertThat(result.getTotalScore()).isZero();
       assertThat(result.getPlayerScores()).hasSize(2);
       assertThat(result.getPlayerScores().stream().allMatch(ps -> ps.getTotalPoints() == 0))
           .isTrue();
@@ -343,15 +345,15 @@ class ScoreCalculationServiceTddTest {
     void shouldThrowExceptionForNonExistentTeam() {
       // RED: Test team not found scenario
       UUID nonExistentTeamId = UUID.randomUUID();
-      when(teamRepository.findById(nonExistentTeamId)).thenReturn(Optional.empty());
+      when(teamRepository.findByIdWithFetch(nonExistentTeamId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(
               () ->
                   scoreCalculationService.calculateTeamScore(nonExistentTeamId, startDate, endDate))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Équipe non trouvée : " + nonExistentTeamId);
+          .hasMessageContaining("\u00c9quipe non trouv\u00e9e : " + nonExistentTeamId);
 
-      verify(teamRepository).findById(nonExistentTeamId);
+      verify(teamRepository).findByIdWithFetch(nonExistentTeamId);
       verifyNoInteractions(teamPlayerRepository, scoreRepository);
     }
 
@@ -359,7 +361,7 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should handle database errors gracefully")
     void shouldHandleDatabaseErrorsGracefully() {
       // RED: Test database exception handling
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam))
           .thenThrow(new RuntimeException("Database connection failed"));
 
@@ -368,7 +370,7 @@ class ScoreCalculationServiceTddTest {
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Database connection failed");
 
-      verify(teamRepository).findById(teamId);
+      verify(teamRepository).findByIdWithFetch(teamId);
       verify(teamPlayerRepository).findByTeam(testTeam);
       verifyNoInteractions(scoreRepository);
     }
@@ -377,7 +379,7 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should handle repository exceptions gracefully")
     void shouldHandleRepositoryExceptionsGracefully() {
       // RED: Test score repository exception handling
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, startDate, endDate))
           .thenThrow(new RuntimeException("Score repository connection failed"));
@@ -388,7 +390,7 @@ class ScoreCalculationServiceTddTest {
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Score repository connection failed");
 
-      verify(teamRepository).findById(teamId);
+      verify(teamRepository).findByIdWithFetch(teamId);
       verify(teamPlayerRepository).findByTeam(testTeam);
       verify(scoreRepository).findByPlayerAndDateBetween(testPlayer1, startDate, endDate);
     }
@@ -402,7 +404,7 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should minimize database queries efficiently")
     void shouldMinimizeDatabaseQueriesEfficiently() {
       // RED: Test query optimization
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, startDate, endDate))
           .thenReturn(Arrays.asList(testScore1));
@@ -412,7 +414,7 @@ class ScoreCalculationServiceTddTest {
       scoreCalculationService.calculateTeamScore(teamId, startDate, endDate);
 
       // Should make exactly the expected number of queries
-      verify(teamRepository, times(1)).findById(teamId);
+      verify(teamRepository, times(1)).findByIdWithFetch(teamId);
       verify(teamPlayerRepository, times(1)).findByTeam(testTeam);
       verify(scoreRepository, times(1)).findByPlayerAndDateBetween(testPlayer1, startDate, endDate);
       verify(scoreRepository, times(1)).findByPlayerAndDateBetween(testPlayer2, startDate, endDate);
@@ -429,7 +431,7 @@ class ScoreCalculationServiceTddTest {
           createScore(testPlayer1, Integer.MAX_VALUE - 1000, LocalDate.of(2025, 1, 10));
       Score largeScore2 = createScore(testPlayer1, 1000, LocalDate.of(2025, 1, 20));
 
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(Arrays.asList(testTeamPlayer1));
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, startDate, endDate))
           .thenReturn(Arrays.asList(largeScore1, largeScore2));
@@ -445,7 +447,7 @@ class ScoreCalculationServiceTddTest {
     @DisplayName("Should validate all DTO fields are populated correctly")
     void shouldValidateAllDtoFieldsArePopulatedCorrectly() {
       // RED: Test complete DTO construction
-      when(teamRepository.findById(teamId)).thenReturn(Optional.of(testTeam));
+      when(teamRepository.findByIdWithFetch(teamId)).thenReturn(Optional.of(testTeam));
       when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(testTeamPlayers);
       when(scoreRepository.findByPlayerAndDateBetween(testPlayer1, startDate, endDate))
           .thenReturn(Arrays.asList(testScore1, testScore2));
@@ -457,7 +459,7 @@ class ScoreCalculationServiceTddTest {
       // Validate all DTO fields
       assertThat(result.getTeamId()).isNotNull().isEqualTo(teamId);
       assertThat(result.getTeamName()).isNotNull().isEqualTo("Test Champions");
-      assertThat(result.getTotalScore()).isNotNull().isEqualTo(2900);
+      assertThat(result.getTotalScore()).isEqualTo(2900);
       assertThat(result.getStartDate()).isNotNull().isEqualTo(startDate);
       assertThat(result.getEndDate()).isNotNull().isEqualTo(endDate);
       assertThat(result.getPlayerScores()).isNotNull().hasSize(2);
@@ -467,7 +469,7 @@ class ScoreCalculationServiceTddTest {
         assertThat(playerScore.getPlayerId()).isNotNull();
         assertThat(playerScore.getPlayerName()).isNotNull().isNotEmpty();
         assertThat(playerScore.getPlayerRegion()).isNotNull().isNotEmpty();
-        assertThat(playerScore.getTotalPoints()).isNotNull();
+        assertThat(playerScore.getTotalPoints()).isNotNegative();
       }
     }
   }

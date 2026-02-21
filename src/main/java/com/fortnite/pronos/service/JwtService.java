@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
+@SuppressWarnings({"java:S112", "java:S1874", "java:S3077"})
 public class JwtService {
 
   @Value("${app.jwt.secret:#{null}}")

@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
 import com.fortnite.pronos.config.SupabaseProperties;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Score;
 import com.fortnite.pronos.service.MockDataGeneratorService.MockDataSet;
 import com.fortnite.pronos.service.MockDataGeneratorService.PlayerWithScore;
 import com.fortnite.pronos.service.supabase.SupabaseTableService;
@@ -32,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @ConditionalOnProperty(name = "fortnite.supabase.url", matchIfMissing = false)
+@SuppressWarnings({"java:S135"})
 public class SupabaseSeedDataProviderService implements SeedDataProvider {
 
   private static final String KEY = "supabase";
@@ -72,75 +71,116 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
   }
 
   private MockDataSet fetchFromPrimaryTables() {
-    if (!supabaseProperties.hasSeedGameId()) {
-      log.warn("Supabase assignments empty and no seed game id configured");
+    UUID gameId = resolveSeedGameId();
+    if (gameId == null) {
       return MockDataSet.empty();
     }
 
-    UUID gameId;
-    try {
-      gameId = UUID.fromString(supabaseProperties.getSeedGameId());
-    } catch (IllegalArgumentException ex) {
-      log.warn("Invalid supabase seed game id: {}", supabaseProperties.getSeedGameId());
-      return MockDataSet.empty();
-    }
-
-    List<SupabaseUserRowDto> users = supabaseTableService.fetchUsers();
-    List<SupabasePlayerRowDto> players = supabaseTableService.fetchPlayers();
-    List<SupabaseScoreRowDto> scores = supabaseTableService.fetchScores();
-    List<SupabaseTeamRowDto> teams = supabaseTableService.fetchTeams();
-    List<SupabaseTeamPlayerRowDto> teamPlayers = supabaseTableService.fetchTeamPlayers();
-
-    if (teams.isEmpty() || teamPlayers.isEmpty() || players.isEmpty()) {
+    PrimaryTables tables = loadPrimaryTables();
+    if (tables.hasMissingRequiredData()) {
       log.warn("Supabase tables missing data for seed fallback");
       return MockDataSet.empty();
     }
 
-    Map<UUID, String> usernamesById = mapUsernames(users);
-    Map<UUID, Player> playersById = mapPlayers(players);
-    Map<UUID, Score> scoresByPlayer = mapScores(scores, playersById);
-    Map<UUID, List<SupabaseTeamPlayerRowDto>> teamPlayersByTeam = mapTeamPlayers(teamPlayers);
+    Map<UUID, String> usernamesById = mapUsernames(tables.users());
+    Map<UUID, com.fortnite.pronos.model.Player> playersById = mapPlayers(tables.players());
+    Map<UUID, com.fortnite.pronos.model.Score> scoresByPlayer =
+        mapScores(tables.scores(), playersById);
+    Map<UUID, List<SupabaseTeamPlayerRowDto>> teamPlayersByTeam =
+        mapTeamPlayers(tables.teamPlayers());
 
-    Map<String, List<PlayerWithScore>> playersByPronosticator = new LinkedHashMap<>();
+    Map<String, List<PlayerWithScore>> playersByPronosticator =
+        buildPronosticatorFallbackData(
+            gameId, tables.teams(), usernamesById, playersById, scoresByPlayer, teamPlayersByTeam);
 
-    for (SupabaseTeamRowDto team : teams) {
-      if (team.gameId() == null || !team.gameId().equals(gameId)) {
-        continue;
-      }
-      String pronostiqueur = resolvePronostiqueur(usernamesById, team.ownerId());
-      List<SupabaseTeamPlayerRowDto> roster = teamPlayersByTeam.get(team.id());
-      if (roster == null || roster.isEmpty()) {
-        continue;
-      }
+    return toMockDataSet(playersByPronosticator, gameId);
+  }
 
-      for (SupabaseTeamPlayerRowDto row : roster) {
-        Player player = playersById.get(row.playerId());
-        if (player == null) {
-          continue;
-        }
-        Score score = scoresByPlayer.get(player.getId());
-        if (score == null) {
-          score = defaultScore(player);
-        }
-
-        PlayerWithScore playerWithScore = new PlayerWithScore(pronostiqueur, player, score, 0);
-        playersByPronosticator
-            .computeIfAbsent(pronostiqueur, k -> new ArrayList<>())
-            .add(playerWithScore);
-      }
+  private UUID resolveSeedGameId() {
+    if (!supabaseProperties.hasSeedGameId()) {
+      log.warn("Supabase assignments empty and no seed game id configured");
+      return null;
     }
+    try {
+      return UUID.fromString(supabaseProperties.getSeedGameId());
+    } catch (IllegalArgumentException ex) {
+      log.warn("Invalid supabase seed game id: {}", supabaseProperties.getSeedGameId());
+      return null;
+    }
+  }
 
+  private PrimaryTables loadPrimaryTables() {
+    return new PrimaryTables(
+        supabaseTableService.fetchUsers(),
+        supabaseTableService.fetchPlayers(),
+        supabaseTableService.fetchScores(),
+        supabaseTableService.fetchTeams(),
+        supabaseTableService.fetchTeamPlayers());
+  }
+
+  private Map<String, List<PlayerWithScore>> buildPronosticatorFallbackData(
+      UUID gameId,
+      List<SupabaseTeamRowDto> teams,
+      Map<UUID, String> usernamesById,
+      Map<UUID, com.fortnite.pronos.model.Player> playersById,
+      Map<UUID, com.fortnite.pronos.model.Score> scoresByPlayer,
+      Map<UUID, List<SupabaseTeamPlayerRowDto>> teamPlayersByTeam) {
+    Map<String, List<PlayerWithScore>> playersByPronosticator = new LinkedHashMap<>();
+    for (SupabaseTeamRowDto team : teams) {
+      if (!belongsToGame(team, gameId)) {
+        continue;
+      }
+      addTeamRosterToPronosticatorMap(
+          playersByPronosticator,
+          resolvePronostiqueur(usernamesById, team.ownerId()),
+          team.id(),
+          playersById,
+          scoresByPlayer,
+          teamPlayersByTeam);
+    }
+    return playersByPronosticator;
+  }
+
+  private boolean belongsToGame(SupabaseTeamRowDto team, UUID gameId) {
+    return team.gameId() != null && team.gameId().equals(gameId);
+  }
+
+  private void addTeamRosterToPronosticatorMap(
+      Map<String, List<PlayerWithScore>> playersByPronosticator,
+      String pronostiqueur,
+      UUID teamId,
+      Map<UUID, com.fortnite.pronos.model.Player> playersById,
+      Map<UUID, com.fortnite.pronos.model.Score> scoresByPlayer,
+      Map<UUID, List<SupabaseTeamPlayerRowDto>> teamPlayersByTeam) {
+    List<SupabaseTeamPlayerRowDto> roster = teamPlayersByTeam.get(teamId);
+    if (roster == null || roster.isEmpty()) {
+      return;
+    }
+    for (SupabaseTeamPlayerRowDto row : roster) {
+      com.fortnite.pronos.model.Player player = playersById.get(row.playerId());
+      if (player == null) {
+        continue;
+      }
+      com.fortnite.pronos.model.Score score =
+          scoresByPlayer.getOrDefault(player.getId(), defaultScore(player));
+      PlayerWithScore playerWithScore = new PlayerWithScore(pronostiqueur, player, score, 0);
+      playersByPronosticator
+          .computeIfAbsent(pronostiqueur, k -> new ArrayList<>())
+          .add(playerWithScore);
+    }
+  }
+
+  private MockDataSet toMockDataSet(
+      Map<String, List<PlayerWithScore>> playersByPronosticator, UUID gameId) {
     int total = playersByPronosticator.values().stream().mapToInt(List::size).sum();
     if (total == 0) {
       log.warn("Supabase fallback returned no assignments for game {}", gameId);
       return MockDataSet.empty();
     }
-
     log.info(
         "Loaded {} players from Supabase fallback for {} pronostiqueurs",
         total,
         playersByPronosticator.size());
-
     return new MockDataSet(playersByPronosticator, total);
   }
 
@@ -150,14 +190,14 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     for (SupabasePlayerAssignmentRowDto row : rows) {
       String pronostiqueur = resolvePronostiqueur(row.pronostiqueur());
 
-      Player player = new Player();
+      com.fortnite.pronos.model.Player player = new com.fortnite.pronos.model.Player();
       player.setNickname(row.nickname());
       player.setUsername(generateUsername(row.nickname()));
       player.setRegion(parseRegion(row.region()));
       player.setTranche(DEFAULT_TRANCHE);
       player.setCurrentSeason(CURRENT_SEASON);
 
-      Score score = new Score();
+      com.fortnite.pronos.model.Score score = new com.fortnite.pronos.model.Score();
       score.setPlayer(player);
       score.setSeason(CURRENT_SEASON);
       score.setPoints(row.score() != null ? row.score() : 0);
@@ -195,8 +235,8 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return usernames;
   }
 
-  private Map<UUID, Player> mapPlayers(List<SupabasePlayerRowDto> rows) {
-    Map<UUID, Player> players = new LinkedHashMap<>();
+  private Map<UUID, com.fortnite.pronos.model.Player> mapPlayers(List<SupabasePlayerRowDto> rows) {
+    Map<UUID, com.fortnite.pronos.model.Player> players = new LinkedHashMap<>();
     for (SupabasePlayerRowDto row : rows) {
       if (row.id() == null) {
         continue;
@@ -210,7 +250,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
         nickname = username;
       }
 
-      Player player = new Player();
+      com.fortnite.pronos.model.Player player = new com.fortnite.pronos.model.Player();
       player.setId(row.id());
       player.setFortniteId(row.fortniteId());
       player.setUsername(username);
@@ -225,9 +265,9 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return players;
   }
 
-  private Map<UUID, Score> mapScores(
-      List<SupabaseScoreRowDto> rows, Map<UUID, Player> playersById) {
-    Map<UUID, Score> scores = new LinkedHashMap<>();
+  private Map<UUID, com.fortnite.pronos.model.Score> mapScores(
+      List<SupabaseScoreRowDto> rows, Map<UUID, com.fortnite.pronos.model.Player> playersById) {
+    Map<UUID, com.fortnite.pronos.model.Score> scores = new LinkedHashMap<>();
     for (SupabaseScoreRowDto row : rows) {
       if (row.playerId() == null) {
         continue;
@@ -235,12 +275,12 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
       if (row.season() != null && !row.season().equals(CURRENT_SEASON)) {
         continue;
       }
-      Player player = playersById.get(row.playerId());
+      com.fortnite.pronos.model.Player player = playersById.get(row.playerId());
       if (player == null) {
         continue;
       }
-      Score score = buildScore(player, row);
-      Score existing = scores.get(row.playerId());
+      com.fortnite.pronos.model.Score score = buildScore(player, row);
+      com.fortnite.pronos.model.Score existing = scores.get(row.playerId());
       if (existing == null || score.getPoints() > existing.getPoints()) {
         scores.put(row.playerId(), score);
       }
@@ -263,8 +303,9 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return mapped;
   }
 
-  private Score buildScore(Player player, SupabaseScoreRowDto row) {
-    Score score = new Score();
+  private com.fortnite.pronos.model.Score buildScore(
+      com.fortnite.pronos.model.Player player, SupabaseScoreRowDto row) {
+    com.fortnite.pronos.model.Score score = new com.fortnite.pronos.model.Score();
     score.setPlayer(player);
     score.setSeason(row.season() != null ? row.season() : CURRENT_SEASON);
     score.setPoints(row.points() != null ? row.points() : 0);
@@ -277,8 +318,8 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return score;
   }
 
-  private Score defaultScore(Player player) {
-    Score score = new Score();
+  private com.fortnite.pronos.model.Score defaultScore(com.fortnite.pronos.model.Player player) {
+    com.fortnite.pronos.model.Score score = new com.fortnite.pronos.model.Score();
     score.setPlayer(player);
     score.setSeason(CURRENT_SEASON);
     score.setPoints(0);
@@ -302,14 +343,14 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     return pronostiqueur.trim();
   }
 
-  private Player.Region parseRegion(String regionStr) {
+  private com.fortnite.pronos.model.Player.Region parseRegion(String regionStr) {
     if (regionStr == null || regionStr.isBlank()) {
-      return Player.Region.EU;
+      return com.fortnite.pronos.model.Player.Region.EU;
     }
     try {
-      return Player.Region.valueOf(regionStr.toUpperCase().trim());
+      return com.fortnite.pronos.model.Player.Region.valueOf(regionStr.toUpperCase().trim());
     } catch (IllegalArgumentException e) {
-      return Player.Region.EU;
+      return com.fortnite.pronos.model.Player.Region.EU;
     }
   }
 
@@ -318,5 +359,16 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
       return "unknown_user";
     }
     return nickname.toLowerCase().replaceAll("[^a-z0-9]", "_");
+  }
+
+  private record PrimaryTables(
+      List<SupabaseUserRowDto> users,
+      List<SupabasePlayerRowDto> players,
+      List<SupabaseScoreRowDto> scores,
+      List<SupabaseTeamRowDto> teams,
+      List<SupabaseTeamPlayerRowDto> teamPlayers) {
+    boolean hasMissingRequiredData() {
+      return teams.isEmpty() || teamPlayers.isEmpty() || players.isEmpty();
+    }
   }
 }

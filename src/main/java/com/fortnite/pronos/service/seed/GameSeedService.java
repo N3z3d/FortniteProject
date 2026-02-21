@@ -6,13 +6,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameRegionRule;
-import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +27,9 @@ public class GameSeedService {
    * @param users list of users to participate
    * @param realTeams list of teams created from CSV
    */
-  public void createTestGamesWithRealTeams(List<User> users, List<Team> realTeams) {
-    List<User> participants = filterParticipants(users);
+  public void createTestGamesWithRealTeams(
+      List<com.fortnite.pronos.model.User> users, List<com.fortnite.pronos.model.Team> realTeams) {
+    List<com.fortnite.pronos.model.User> participants = filterParticipants(users);
 
     if (participants.size() < 3 || realTeams.size() < 3) {
       log.warn(
@@ -46,17 +40,17 @@ public class GameSeedService {
     }
 
     try {
-      User thibaut = findUserByName(participants, "Thibaut", 0);
-      User teddy = findUserByName(participants, "Teddy", 1);
-      User marcel = findUserByName(participants, "Marcel", 2);
+      com.fortnite.pronos.model.User thibaut = findUserByName(participants, "Thibaut", 0);
+      com.fortnite.pronos.model.User teddy = findUserByName(participants, "Teddy", 1);
+      com.fortnite.pronos.model.User marcel = findUserByName(participants, "Marcel", 2);
 
-      Game gameActive =
+      com.fortnite.pronos.model.Game gameActive =
           createGame(
               "Fantasy League 2025 - Championnat Principal",
               "Game principale avec les equipes reelles basees sur les donnees CSV",
               thibaut,
               3,
-              GameStatus.ACTIVE);
+              com.fortnite.pronos.model.GameStatus.ACTIVE);
 
       gameActive.addParticipant(createGameParticipant(gameActive, thibaut, 1));
       gameActive.addParticipant(createGameParticipant(gameActive, teddy, 2));
@@ -75,8 +69,8 @@ public class GameSeedService {
    *
    * @param users list of users to participate
    */
-  public void createTestGames(List<User> users) {
-    List<User> participants = filterParticipants(users);
+  public void createTestGames(List<com.fortnite.pronos.model.User> users) {
+    List<com.fortnite.pronos.model.User> participants = filterParticipants(users);
 
     if (participants.size() < 3) {
       log.warn("Not enough participants for complete games");
@@ -84,18 +78,18 @@ public class GameSeedService {
     }
 
     try {
-      User thibaut = findUserByName(participants, "Thibaut", 0);
-      User teddy = findUserByName(participants, "Teddy", 1);
-      User marcel = findUserByName(participants, "Marcel", 2);
+      com.fortnite.pronos.model.User thibaut = findUserByName(participants, "Thibaut", 0);
+      com.fortnite.pronos.model.User teddy = findUserByName(participants, "Teddy", 1);
+      com.fortnite.pronos.model.User marcel = findUserByName(participants, "Marcel", 2);
 
       // Main active game
-      Game gameActive =
+      com.fortnite.pronos.model.Game gameActive =
           createGame(
               "Fantasy League Pro 2025",
               "Championnat principal avec Thibaut, Teddy et Marcel - Saison 2025",
               thibaut,
               3,
-              GameStatus.ACTIVE);
+              com.fortnite.pronos.model.GameStatus.ACTIVE);
 
       gameActive.addParticipant(createGameParticipant(gameActive, thibaut, 1));
       gameActive.addParticipant(createGameParticipant(gameActive, teddy, 2));
@@ -104,13 +98,13 @@ public class GameSeedService {
       log.info("Main game '{}' created with 3 participants", gameActive.getName());
 
       // Draft game
-      Game gameDraft =
+      com.fortnite.pronos.model.Game gameDraft =
           createGame(
               "Draft League - Teddy",
               "Nouvelle game en phase de draft organisee par Teddy",
               teddy,
               3,
-              GameStatus.DRAFTING);
+              com.fortnite.pronos.model.GameStatus.DRAFTING);
 
       gameDraft.addParticipant(createGameParticipant(gameDraft, teddy, 1));
       gameDraft.addParticipant(createGameParticipant(gameDraft, thibaut, 2));
@@ -119,13 +113,13 @@ public class GameSeedService {
       log.info("Draft game '{}' created with 3 participants", gameDraft.getName());
 
       // Creating game
-      Game gameCreating =
+      com.fortnite.pronos.model.Game gameCreating =
           createGame(
               "Championship 2025 - Marcel",
               "Nouveau championnat en preparation par Marcel",
               marcel,
               4,
-              GameStatus.CREATING);
+              com.fortnite.pronos.model.GameStatus.CREATING);
 
       gameCreating.addParticipant(createGameParticipant(gameCreating, marcel, 1));
       gameRepository.save(gameCreating);
@@ -138,11 +132,15 @@ public class GameSeedService {
     }
   }
 
-  private List<User> filterParticipants(List<User> users) {
-    return users.stream().filter(u -> u.getRole() == User.UserRole.USER).toList();
+  private List<com.fortnite.pronos.model.User> filterParticipants(
+      List<com.fortnite.pronos.model.User> users) {
+    return users.stream()
+        .filter(u -> u.getRole() == com.fortnite.pronos.model.User.UserRole.USER)
+        .toList();
   }
 
-  private User findUserByName(List<User> participants, String name, int fallbackIndex) {
+  private com.fortnite.pronos.model.User findUserByName(
+      List<com.fortnite.pronos.model.User> participants, String name, int fallbackIndex) {
     return participants.stream()
         .filter(u -> name.equals(u.getUsername()))
         .findFirst()
@@ -150,11 +148,15 @@ public class GameSeedService {
   }
 
   /** Creates a game with specified parameters. */
-  public Game createGame(
-      String name, String description, User creator, int maxParticipants, GameStatus status) {
+  public com.fortnite.pronos.model.Game createGame(
+      String name,
+      String description,
+      com.fortnite.pronos.model.User creator,
+      int maxParticipants,
+      com.fortnite.pronos.model.GameStatus status) {
 
-    Game game =
-        Game.builder()
+    com.fortnite.pronos.model.Game game =
+        com.fortnite.pronos.model.Game.builder()
             .name(name)
             .description(description)
             .creator(creator)
@@ -169,8 +171,9 @@ public class GameSeedService {
   }
 
   /** Creates a game participant. */
-  public GameParticipant createGameParticipant(Game game, User user, int draftOrder) {
-    return GameParticipant.builder()
+  public com.fortnite.pronos.model.GameParticipant createGameParticipant(
+      com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.User user, int draftOrder) {
+    return com.fortnite.pronos.model.GameParticipant.builder()
         .game(game)
         .user(user)
         .draftOrder(draftOrder)
@@ -179,12 +182,24 @@ public class GameSeedService {
   }
 
   /** Adds basic region rules to a game. */
-  public void addBasicRegionRules(Game game) {
+  public void addBasicRegionRules(com.fortnite.pronos.model.Game game) {
     game.addRegionRule(
-        GameRegionRule.builder().game(game).region(Player.Region.EU).maxPlayers(2).build());
+        com.fortnite.pronos.model.GameRegionRule.builder()
+            .game(game)
+            .region(com.fortnite.pronos.model.Player.Region.EU)
+            .maxPlayers(2)
+            .build());
     game.addRegionRule(
-        GameRegionRule.builder().game(game).region(Player.Region.NAC).maxPlayers(2).build());
+        com.fortnite.pronos.model.GameRegionRule.builder()
+            .game(game)
+            .region(com.fortnite.pronos.model.Player.Region.NAC)
+            .maxPlayers(2)
+            .build());
     game.addRegionRule(
-        GameRegionRule.builder().game(game).region(Player.Region.ASIA).maxPlayers(2).build());
+        com.fortnite.pronos.model.GameRegionRule.builder()
+            .game(game)
+            .region(com.fortnite.pronos.model.Player.Region.ASIA)
+            .maxPlayers(2)
+            .build());
   }
 }

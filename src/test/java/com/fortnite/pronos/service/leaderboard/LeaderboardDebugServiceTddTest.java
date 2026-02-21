@@ -23,6 +23,7 @@ import com.fortnite.pronos.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LeaderboardDebugService - TDD Tests")
+@SuppressWarnings({"java:S5853"})
 class LeaderboardDebugServiceTddTest {
 
   @Mock private TeamRepository teamRepository;
@@ -48,9 +49,8 @@ class LeaderboardDebugServiceTddTest {
 
     assertThat(debug)
         .containsKeys("totalTeams", "totalPlayers", "totalScores", "playerPointsMapSize");
-    assertThat(debug.get("totalTeams")).isEqualTo(1L);
-    assertThat(debug.get("totalPlayers")).isEqualTo(2L);
-    assertThat(debug.get("totalScores")).isEqualTo(3L);
+    assertThat(debug).containsEntry("totalTeams", 1L).containsEntry("totalPlayers", 2L);
+    assertThat(debug).containsEntry("totalScores", 3L);
   }
 
   @Test
@@ -67,10 +67,10 @@ class LeaderboardDebugServiceTddTest {
 
     Map<String, Object> debug = leaderboardDebugService.getDebugSimple();
 
-    assertThat(debug).containsKeys("totalPlayers", "totalTeams", "totalScores");
-    assertThat(debug.get("totalPlayers")).isEqualTo(1L);
-    assertThat(debug.get("totalTeams")).isEqualTo(2L);
-    assertThat(debug.get("totalScores")).isEqualTo(3L);
+    assertThat(debug)
+        .containsKeys("totalPlayers", "totalTeams", "totalScores")
+        .containsEntry("totalPlayers", 1L);
+    assertThat(debug).containsEntry("totalTeams", 2L).containsEntry("totalScores", 3L);
   }
 
   private Player buildPlayer() {

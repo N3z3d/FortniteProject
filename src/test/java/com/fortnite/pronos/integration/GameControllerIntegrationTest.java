@@ -36,7 +36,7 @@ import com.fortnite.pronos.repository.UserRepository;
       com.fortnite.pronos.config.TestSecurityConfig.class
     })
 @ActiveProfiles("test")
-public class GameControllerIntegrationTest {
+class GameControllerIntegrationTest {
 
   @LocalServerPort private int port;
 
@@ -88,7 +88,7 @@ public class GameControllerIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getName()).isEqualTo("Test Game Integration");
-    assertThat(response.getBody().getCreatorId()).isEqualTo(testUser.getId());
+    assertThat(response.getCreatorId()).isEqualTo(testUser.getId());
   }
 
   @Test
@@ -169,7 +169,7 @@ public class GameControllerIntegrationTest {
     assertThat(response.getBody()).isNotNull();
 
     if (response.getStatusCode() == HttpStatus.OK) {
-      assertThat(response.getBody().get("success")).isEqualTo(true);
+      assertThat(response.getBody()).containsEntry("success", true);
     } else {
       // BAD_REQUEST is acceptable for business validation errors
       assertThat(response.getBody().get("error")).isNotNull();
@@ -222,7 +222,7 @@ public class GameControllerIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getId()).isEqualTo(game.getId());
-    assertThat(response.getBody().getName()).isEqualTo("Test Game for Get");
+    assertThat(response.getName()).isEqualTo("Test Game for Get");
   }
 
   @Test
@@ -268,7 +268,7 @@ public class GameControllerIntegrationTest {
     assertThat(response.getBody()).isNotNull();
 
     if (response.getStatusCode() == HttpStatus.OK) {
-      assertThat(response.getBody().get("success")).isEqualTo(true);
+      assertThat(response.getBody()).containsEntry("success", true);
     } else {
       // CONFLICT is expected when there are not enough participants
       assertThat(response.getBody().get("error")).isNotNull();

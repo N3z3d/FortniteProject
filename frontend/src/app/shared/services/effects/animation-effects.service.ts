@@ -11,11 +11,11 @@ export class AnimationEffectsService {
   }
 
   smoothScrollTo(target: string, duration: number = 800): void {
-    const targetElement = document.querySelector(target) as HTMLElement;
+    const targetElement = document.querySelector<HTMLElement>(target);
     if (!targetElement) return;
 
     const targetPosition = targetElement.offsetTop - 80;
-    const startPosition = window.pageYOffset;
+    const startPosition = window.scrollY;
     const distance = targetPosition - startPosition;
     let startTime: number | null = null;
 

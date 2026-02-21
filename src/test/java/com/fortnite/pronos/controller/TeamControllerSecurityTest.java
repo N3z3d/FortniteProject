@@ -31,6 +31,7 @@ import com.fortnite.pronos.service.TeamService;
 import com.fortnite.pronos.service.UserResolver;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S6068"})
 class TeamControllerSecurityTest {
 
   @Mock private TeamService teamService;

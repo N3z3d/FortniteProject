@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -14,72 +13,67 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fortnite.pronos.application.usecase.ScoreCommandUseCase;
 import com.fortnite.pronos.application.usecase.ScoreQueryUseCase;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Score;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Service de gestion des scores des joueurs et équipes */
+/** Service de gestion des scores des joueurs et Ã©quipes */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
 
-  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvé";
-  private static final String TEAM_NOT_FOUND_MESSAGE = "Équipe non trouvée";
-  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouvé";
+  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvÃ©";
+  private static final String TEAM_NOT_FOUND_MESSAGE = "Ã‰quipe non trouvÃ©e";
+  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouvÃ©";
 
-  private final ScoreRepository scoreRepository;
-  private final PlayerRepository playerRepository;
-  private final TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
+  private final PlayerRepositoryPort playerRepository;
+  private final TeamRepositoryPort teamRepository;
   private final UserRepositoryPort userRepository;
 
-  /** Met à jour les scores d'un joueur pour une période donnée */
+  /** Met Ã jour les scores d'un joueur pour une pÃ©riode donnÃ©e */
   @Transactional
   public void updatePlayerScores(UUID playerId, int points, OffsetDateTime timestamp) {
     log.info(
-        "Mise à jour du score pour le joueur {} : {} points à {}", playerId, points, timestamp);
+        "Mise Ã  jour du score pour le joueur {} : {} points Ã  {}", playerId, points, timestamp);
 
-    Player player = findPlayerById(playerId);
+    com.fortnite.pronos.model.Player player = findPlayerById(playerId);
 
-    // Vérifier si un score existe déjà pour cette période
+    // VÃ©rifier si un score existe dÃ©jÃ  pour cette pÃ©riode
     OffsetDateTime dayStart = timestamp.withHour(0).withMinute(0).withSecond(0).withNano(0);
     OffsetDateTime dayEnd = dayStart.plusDays(1);
 
-    List<Score> existingScores =
+    List<com.fortnite.pronos.model.Score> existingScores =
         scoreRepository.findByPlayerIdAndTimestampBetween(playerId, dayStart, dayEnd);
 
     if (!existingScores.isEmpty()) {
-      // Mettre à jour le score existant
-      Score existingScore = existingScores.get(0);
+      // Mettre Ã  jour le score existant
+      com.fortnite.pronos.model.Score existingScore = existingScores.get(0);
       existingScore.setPoints(points);
       existingScore.setTimestamp(timestamp);
-      scoreRepository.save(existingScore);
-      log.debug("Score existant mis à jour pour le joueur {}", playerId);
+      ((ScoreRepositoryPort) scoreRepository).save(existingScore);
+      log.debug("Score existant mis Ã  jour pour le joueur {}", playerId);
     } else {
-      // Créer un nouveau score
-      Score newScore = buildScore(player, points, timestamp);
-      scoreRepository.save(newScore);
-      log.debug("Nouveau score créé pour le joueur {}", playerId);
+      // CrÃ©er un nouveau score
+      com.fortnite.pronos.model.Score newScore = buildScore(player, points, timestamp);
+      ((ScoreRepositoryPort) scoreRepository).save(newScore);
+      log.debug("Nouveau score crÃ©Ã© pour le joueur {}", playerId);
     }
 
-    // Mettre à jour les scores des équipes contenant ce joueur
+    // Mettre Ã  jour les scores des Ã©quipes contenant ce joueur
     updateTeamScoresForPlayer(playerId);
 
-    log.info("Scores mis à jour avec succès pour le joueur {}", playerId);
+    log.info("Scores mis Ã  jour avec succÃ¨s pour le joueur {}", playerId);
   }
 
-  /** Met à jour les scores en lot pour plusieurs joueurs */
+  /** Met Ã jour les scores en lot pour plusieurs joueurs */
   @Transactional
   public void updateBatchPlayerScores(Map<UUID, Integer> playerScores, OffsetDateTime timestamp) {
-    log.info("Mise à jour en lot de {} scores de joueurs à {}", playerScores.size(), timestamp);
+    log.info("Mise Ã  jour en lot de {} scores de joueurs Ã  {}", playerScores.size(), timestamp);
 
     int successCount = 0;
     int errorCount = 0;
@@ -90,50 +84,51 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
         successCount++;
       } catch (Exception e) {
         log.error(
-            "Erreur lors de la mise à jour du score pour le joueur {}: {}",
+            "Erreur lors de la mise Ã  jour du score pour le joueur {}: {}",
             entry.getKey(),
             e.getMessage());
         errorCount++;
       }
     }
 
-    log.info("Mise à jour en lot terminée - Succès: {}, Erreurs: {}", successCount, errorCount);
+    log.info("Mise Ã  jour en lot terminÃ©e - SuccÃ¨s: {}, Erreurs: {}", successCount, errorCount);
   }
 
-  /** Recalcule les scores totaux de toutes les équipes d'une saison */
+  /** Recalcule les scores totaux de toutes les Ã©quipes d'une saison */
   @Transactional
   public void recalculateSeasonScores(int season) {
     log.info("Recalcul des scores pour la saison {}", season);
 
-    List<Team> teams = teamRepository.findBySeason(season);
-    log.debug("{} équipes trouvées pour la saison {}", teams.size(), season);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findBySeason(season);
+    log.debug("{} Ã©quipes trouvÃ©es pour la saison {}", teams.size(), season);
 
     int updatedTeams = 0;
-    for (Team team : teams) {
+    for (com.fortnite.pronos.model.Team team : teams) {
       try {
         int newScore = calculateTeamScore(team);
 
-        // Note: totalScore supprimé, le score sera calculé dynamiquement
-        log.debug("Score de l'équipe {} calculé: {}", team.getId(), newScore);
+        // Note: totalScore supprimÃ©, le score sera calculÃ© dynamiquement
+        log.debug("Score de l'Ã©quipe {} calculÃ©: {}", team.getId(), newScore);
         updatedTeams++;
       } catch (Exception e) {
         log.error(
-            "Erreur lors du recalcul du score pour l'équipe {}: {}", team.getId(), e.getMessage());
+            "Erreur lors du recalcul du score pour l'Ã©quipe {}: {}", team.getId(), e.getMessage());
       }
     }
 
-    log.info("Recalcul terminé pour la saison {} - {} équipes mises à jour", season, updatedTeams);
+    log.info(
+        "Recalcul terminÃ© pour la saison {} - {} Ã©quipes mises Ã  jour", season, updatedTeams);
   }
 
-  /** Récupère les derniers scores d'un utilisateur */
+  /** RÃ©cupÃ¨re les derniers scores d'un utilisateur */
   @Transactional(readOnly = true)
-  public List<Score> getUserLatestScores(UUID userId) {
-    log.debug("Récupération des derniers scores pour l'utilisateur {}", userId);
+  public List<com.fortnite.pronos.model.Score> getUserLatestScores(UUID userId) {
+    log.debug("RÃ©cupÃ©ration des derniers scores pour l'utilisateur {}", userId);
 
-    User user = findUserById(userId);
-    Team team = findTeamByUserAndSeason(user, user.getCurrentSeason());
+    com.fortnite.pronos.model.User user = findUserById(userId);
+    com.fortnite.pronos.model.Team team = findTeamByUserAndSeason(user, user.getCurrentSeason());
 
-    List<Score> userScores =
+    List<com.fortnite.pronos.model.Score> userScores =
         team.getPlayers().stream()
             .filter(tp -> tp.getUntil() == null)
             .flatMap(
@@ -141,100 +136,105 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
                     scoreRepository
                         .findLatestScoreByPlayer(tp.getPlayer().getId(), OffsetDateTime.now())
                         .stream())
-            .collect(Collectors.toList());
+            .toList();
 
-    log.info("Scores récupérés pour {} joueurs de l'utilisateur {}", userScores.size(), userId);
+    log.info("Scores rÃ©cupÃ©rÃ©s pour {} joueurs de l'utilisateur {}", userScores.size(), userId);
     return userScores;
   }
 
-  /** Récupère l'historique des scores d'un joueur */
+  /** RÃ©cupÃ¨re l'historique des scores d'un joueur */
   @Transactional(readOnly = true)
-  public Map<UUID, List<Score>> getPlayerScoreHistory(UUID playerId) {
-    log.debug("Récupération de l'historique des scores pour le joueur {}", playerId);
+  public Map<UUID, List<com.fortnite.pronos.model.Score>> getPlayerScoreHistory(UUID playerId) {
+    log.debug("RÃ©cupÃ©ration de l'historique des scores pour le joueur {}", playerId);
 
     findPlayerById(playerId); // Validation de l'existence
 
-    List<Score> scores =
+    List<com.fortnite.pronos.model.Score> scores =
         scoreRepository.findByPlayerIdAndTimestampBetween(
             playerId, OffsetDateTime.now().minusDays(7), OffsetDateTime.now());
 
-    log.info("{} scores trouvés dans l'historique du joueur {}", scores.size(), playerId);
+    log.info("{} scores trouvÃ©s dans l'historique du joueur {}", scores.size(), playerId);
     return Map.of(playerId, scores);
   }
 
-  /** Récupère tous les scores */
+  /** RÃ©cupÃ¨re tous les scores */
   @Transactional(readOnly = true)
-  public List<Score> getAllScores() {
-    log.debug("Récupération de tous les scores");
+  public List<com.fortnite.pronos.model.Score> getAllScores() {
+    log.debug("RÃ©cupÃ©ration de tous les scores");
     return scoreRepository.findAll();
   }
 
   /** Sauvegarde un score */
   @Transactional
-  public Score saveScore(Score score) {
+  public com.fortnite.pronos.model.Score saveScore(com.fortnite.pronos.model.Score score) {
     log.debug("Sauvegarde du score: {}", score);
     if (score.getTimestamp() == null) {
       score.setTimestamp(OffsetDateTime.now());
     }
-    return scoreRepository.save(score);
+    return ((ScoreRepositoryPort) scoreRepository).save(score);
   }
 
-  /** Supprime un score (méthode simplifiée - supprime tous les scores du joueur) */
+  /** Supprime un score (mÃ©thode simplifiÃ©e - supprime tous les scores du joueur) */
   @Transactional
   public void deleteScore(UUID playerId) {
     log.debug("Suppression des scores du joueur: {}", playerId);
     // Supprime tous les scores du joueur
-    List<Score> scores = scoreRepository.findByPlayerIdOrderByTimestampDesc(playerId);
+    List<com.fortnite.pronos.model.Score> scores =
+        scoreRepository.findByPlayerIdOrderByTimestampDesc(playerId);
     scoreRepository.deleteAll(scores);
   }
 
-  // Méthodes utilitaires privées
+  // MÃ©thodes utilitaires privÃ©es
 
-  private User findUserById(UUID userId) {
+  private com.fortnite.pronos.model.User findUserById(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(
             () -> {
-              log.warn("Utilisateur non trouvé avec l'ID: {}", userId);
+              log.warn("Utilisateur non trouvÃ© avec l'ID: {}", userId);
               return new EntityNotFoundException(USER_NOT_FOUND_MESSAGE);
             });
   }
 
-  private Team findTeamByUserAndSeason(User user, int season) {
+  private com.fortnite.pronos.model.Team findTeamByUserAndSeason(
+      com.fortnite.pronos.model.User user, int season) {
     return teamRepository
         .findByOwnerAndSeason(user, season)
         .orElseThrow(
             () -> {
               log.warn(
-                  "Équipe non trouvée pour l'utilisateur {} et la saison {}", user.getId(), season);
+                  "Ã‰quipe non trouvÃ©e pour l'utilisateur {} et la saison {}",
+                  user.getId(),
+                  season);
               return new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE);
             });
   }
 
-  private Player findPlayerById(UUID playerId) {
-    return ((PlayerRepositoryPort) playerRepository)
+  private com.fortnite.pronos.model.Player findPlayerById(UUID playerId) {
+    return playerRepository
         .findById(playerId)
         .orElseThrow(
             () -> {
-              log.warn("Joueur non trouvé avec l'ID: {}", playerId);
+              log.warn("Joueur non trouvÃ© avec l'ID: {}", playerId);
               return new EntityNotFoundException(PLAYER_NOT_FOUND_MESSAGE);
             });
   }
 
-  private Score buildScore(Player player, int points, OffsetDateTime timestamp) {
-    Score score = new Score();
+  private com.fortnite.pronos.model.Score buildScore(
+      com.fortnite.pronos.model.Player player, int points, OffsetDateTime timestamp) {
+    com.fortnite.pronos.model.Score score = new com.fortnite.pronos.model.Score();
     score.setPlayer(player);
     score.setPoints(points);
     score.setTimestamp(timestamp);
     return score;
   }
 
-  private int calculateTeamScore(Team team) {
+  private int calculateTeamScore(com.fortnite.pronos.model.Team team) {
     return team.getPlayers().stream()
         .filter(tp -> tp.getUntil() == null) // Joueurs actifs uniquement
         .mapToInt(
             tp -> {
-              List<Score> scores =
+              List<com.fortnite.pronos.model.Score> scores =
                   scoreRepository.findByPlayerIdOrderByTimestampDesc(tp.getPlayer().getId());
               return scores.isEmpty() ? 0 : scores.get(0).getPoints();
             })
@@ -242,20 +242,24 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
   }
 
   private void updateTeamScoresForPlayer(UUID playerId) {
-    log.debug("Mise à jour des scores d'équipes pour le joueur {}", playerId);
+    log.debug("Mise Ã  jour des scores d'Ã©quipes pour le joueur {}", playerId);
 
-    List<Team> teamsWithPlayer = teamRepository.findTeamsWithActivePlayer(playerId);
+    List<com.fortnite.pronos.model.Team> teamsWithPlayer =
+        teamRepository.findTeamsWithActivePlayer(playerId);
 
-    for (Team team : teamsWithPlayer) {
+    for (com.fortnite.pronos.model.Team team : teamsWithPlayer) {
       try {
         int newScore = calculateTeamScore(team);
-        // Note: totalScore supprimé, le score sera calculé dynamiquement
+        // Note: totalScore supprimÃ©, le score sera calculÃ© dynamiquement
 
         log.debug(
-            "Score de l'équipe {} calculé: {} pour le joueur {}", team.getId(), newScore, playerId);
+            "Score de l'Ã©quipe {} calculÃ©: {} pour le joueur {}",
+            team.getId(),
+            newScore,
+            playerId);
       } catch (Exception e) {
         log.error(
-            "Erreur lors du calcul du score de l'équipe {} pour le joueur {}: {}",
+            "Erreur lors du calcul du score de l'Ã©quipe {} pour le joueur {}: {}",
             team.getId(),
             playerId,
             e.getMessage());

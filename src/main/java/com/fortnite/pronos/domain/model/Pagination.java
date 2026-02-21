@@ -4,6 +4,7 @@ package com.fortnite.pronos.domain.model;
  * Domain-specific pagination DTO (no framework dependencies). Replaces Spring's Pageable to
  * maintain domain layer purity.
  */
+@SuppressWarnings({"java:S6206"})
 public final class Pagination {
   private final int page;
   private final int size;

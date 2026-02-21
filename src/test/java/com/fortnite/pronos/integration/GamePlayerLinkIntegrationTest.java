@@ -26,6 +26,7 @@ import com.fortnite.pronos.repository.*;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Tests d'Intégration TDD - Liaison Joueurs-Pronostiqueurs")
+@SuppressWarnings({"java:S5841"})
 class GamePlayerLinkIntegrationTest {
 
   @Autowired private GameRepository gameRepository;
@@ -121,9 +122,9 @@ class GamePlayerLinkIntegrationTest {
     long nacCount = players.stream().filter(p -> p.getRegion() == Player.Region.NAC).count();
     long brCount = players.stream().filter(p -> p.getRegion() == Player.Region.BR).count();
 
-    assertThat(euCount).isGreaterThan(0);
-    assertThat(nacCount).isGreaterThan(0);
-    assertThat(brCount).isGreaterThan(0);
+    assertThat(euCount).isPositive();
+    assertThat(nacCount).isPositive();
+    assertThat(brCount).isPositive();
   }
 
   @Test

@@ -16,38 +16,42 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller REST pour les détails des games Clean Code : Responsabilité unique - exposition des
- * endpoints de détails
+ * Controller REST pour les dÃ©tails des games Clean Code : ResponsabilitÃ© unique - exposition des
+ * endpoints de dÃ©tails
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/games")
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S2259"})
 public class GameDetailController {
+
+  private static final String ERROR_KEY = "error";
+  private static final String MESSAGE_KEY = "message";
 
   private final GameDetailUseCase gameDetailUseCase;
 
-  /** Récupère les détails complets d'une game Clean Code : méthode simple et claire */
+  /** RÃ©cupÃ¨re les dÃ©tails complets d'une game Clean Code : mÃ©thode simple et claire */
   @GetMapping("/{gameId}/details")
   public ResponseEntity<GameDetailDto> getGameDetails(@PathVariable UUID gameId) {
-    log.debug("Récupération des détails de la game {}", gameId);
+    log.debug("RÃ©cupÃ©ration des dÃ©tails de la game {}", gameId);
 
     GameDetailDto gameDetails = gameDetailUseCase.getGameDetails(gameId);
 
-    log.info("Détails de la game {} récupérés avec succès", gameId);
+    log.info("DÃ©tails de la game {} rÃ©cupÃ©rÃ©s avec succÃ¨s", gameId);
     return ResponseEntity.ok(gameDetails);
   }
 
-  /** Gestion des erreurs GameNotFoundException Clean Code : gestion centralisée des exceptions */
+  /** Gestion des erreurs GameNotFoundException Clean Code : gestion centralisÃ©e des exceptions */
   @ExceptionHandler(GameNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public Map<String, String> handleGameNotFound(GameNotFoundException e) {
-    log.error("Game non trouvée : {}", e.getMessage());
-    return Map.of("error", "GAME_NOT_FOUND", "message", e.getMessage());
+    log.error("Game non trouvÃ©e : {}", e.getMessage());
+    return Map.of(ERROR_KEY, "GAME_NOT_FOUND", MESSAGE_KEY, e.getMessage());
   }
 
   /**
-   * Gestion des erreurs de conversion d'UUID Clean Code : gestion spécifique des erreurs de type
+   * Gestion des erreurs de conversion d'UUID Clean Code : gestion spÃ©cifique des erreurs de type
    */
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -55,11 +59,11 @@ public class GameDetailController {
     if (e.getRequiredType() != null && e.getRequiredType().equals(UUID.class)) {
       log.error("UUID invalide : {}", e.getValue());
       return Map.of(
-          "error", "INVALID_REQUEST",
-          "message", "Format d'UUID invalide");
+          ERROR_KEY, "INVALID_REQUEST",
+          MESSAGE_KEY, "Format d'UUID invalide");
     }
     return Map.of(
-        "error", "INVALID_REQUEST",
-        "message", "Paramètre invalide");
+        ERROR_KEY, "INVALID_REQUEST",
+        MESSAGE_KEY, "Parametre invalide");
   }
 }

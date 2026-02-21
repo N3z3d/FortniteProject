@@ -142,8 +142,17 @@ export class NotificationCenterComponent implements OnInit, OnDestroy {
     if (diffHours < 24) return this.t.t('notificationCenter.time.hoursAgo').replace('{n}', String(diffHours));
     if (diffDays < 7) return this.t.t('notificationCenter.time.daysAgo').replace('{n}', String(diffDays));
 
-    const locale = this.t.currentLanguage === 'fr' ? 'fr-FR' : this.t.currentLanguage === 'es' ? 'es-ES' : this.t.currentLanguage === 'pt' ? 'pt-BR' : 'en-US';
+    const locale = this.resolveLocale(this.t.currentLanguage);
     return notifDate.toLocaleDateString(locale);
+  }
+
+  private resolveLocale(language: string): string {
+    const locales: Record<string, string> = {
+      fr: 'fr-FR',
+      es: 'es-ES',
+      pt: 'pt-BR'
+    };
+    return locales[language] ?? 'en-US';
   }
   
   private showToastNotification(notification: NotificationMessage | null) {

@@ -25,6 +25,7 @@ import com.fortnite.pronos.model.User;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests - UserService")
+@SuppressWarnings({"java:S5778"})
 class UserServiceTest {
 
   @Mock private UserRepositoryPort userRepository;

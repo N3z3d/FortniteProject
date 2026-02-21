@@ -3,6 +3,7 @@ package com.fortnite.pronos.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +35,7 @@ import com.fortnite.pronos.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TeamService - Domain Port Migration Tests")
+@SuppressWarnings({"java:S5778"})
 class TeamServiceTest {
 
   @Mock private TeamDomainRepositoryPort teamDomainRepository;
@@ -92,7 +94,6 @@ class TeamServiceTest {
     when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
         .thenReturn(Optional.empty());
     when(teamDomainRepository.save(any(Team.class))).thenReturn(toDomainTeam(testTeam));
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamService.createTeam(testUser.getId(), "New Team", 2025);
 
@@ -123,13 +124,12 @@ class TeamServiceTest {
     when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
         .thenReturn(Optional.of(domainTeam));
     when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamService.addPlayerToTeam(testUser.getId(), testPlayer.getId(), 1, 2025);
 
     assertThat(result).isNotNull();
     assertThat(result.getId()).isEqualTo(testTeam.getId());
-    verify(playerDomainRepository).findById(testPlayer.getId());
+    verify(playerDomainRepository, atLeastOnce()).findById(testPlayer.getId());
     verify(teamDomainRepository).save(any(Team.class));
   }
 
@@ -155,7 +155,6 @@ class TeamServiceTest {
     when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
         .thenReturn(Optional.of(domainTeam));
     when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamService.removePlayerFromTeam(testUser.getId(), testPlayer.getId(), 2025);
 
@@ -180,7 +179,6 @@ class TeamServiceTest {
     when(teamDomainRepository.findTeamByPlayerAndSeason(testPlayer2.getId(), 2025))
         .thenReturn(Optional.empty());
     when(teamDomainRepository.save(any(Team.class))).thenReturn(domainTeam);
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamService.makePlayerChanges(testUser.getId(), playerChanges, 2025);
 
@@ -195,7 +193,6 @@ class TeamServiceTest {
         .thenReturn(Optional.of(toDomainTeam(testTeam)));
     when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
     when(teamDomainRepository.save(any(Team.class))).thenReturn(toDomainTeam(testTeam));
-    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamService.updateTeam(testTeam.getId(), testTeamDto);
 

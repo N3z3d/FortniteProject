@@ -123,9 +123,11 @@ export class UserContextService {
   private generateBrowserFingerprint(): string {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    ctx!.textBaseline = 'top';
-    ctx!.font = '14px Arial';
-    ctx!.fillText('Browser fingerprint', 2, 2);
+    if (ctx) {
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('Browser fingerprint', 2, 2);
+    }
     
     const fingerprint = [
       navigator.userAgent,

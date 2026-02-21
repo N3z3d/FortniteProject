@@ -37,6 +37,7 @@ import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGeneratio
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InvitationCodeService - Security Critical TDD Tests")
+@SuppressWarnings({"java:S5853"})
 class InvitationCodeServiceTddTest {
 
   @Mock private InvitationCodeRepositoryPort invitationCodeRepository;
@@ -65,8 +66,7 @@ class InvitationCodeServiceTddTest {
 
       String result = invitationCodeService.generateUniqueCode();
 
-      assertThat(result).isNotNull();
-      assertThat(result).hasSize(8);
+      assertThat(result).isNotNull().hasSize(8);
       assertThat(result).matches("^[A-Z0-9]{8}$");
 
       verify(invitationCodeRepository).existsByInvitationCode(result);
@@ -83,8 +83,7 @@ class InvitationCodeServiceTddTest {
 
       String result = invitationCodeService.generateUniqueCode();
 
-      assertThat(result).isNotNull();
-      assertThat(result).hasSize(8);
+      assertThat(result).isNotNull().hasSize(8);
       assertThat(result).matches("^[A-Z0-9]{8}$");
 
       verify(invitationCodeRepository, times(3)).existsByInvitationCode(anyString());
@@ -114,8 +113,7 @@ class InvitationCodeServiceTddTest {
         String code = invitationCodeService.generateUniqueCode();
         generatedCodes.add(code);
 
-        assertThat(code).hasSize(8);
-        assertThat(code).matches("^[A-Z0-9]{8}$");
+        assertThat(code).hasSize(8).matches("^[A-Z0-9]{8}$");
         assertThat(code).doesNotContainPattern("[a-z]"); // No lowercase letters
         assertThat(code).doesNotContainPattern("[^A-Z0-9]"); // Only allowed characters
       }
@@ -149,7 +147,7 @@ class InvitationCodeServiceTddTest {
       }
 
       // Should generate at least 95% unique codes (allowing for some rare collisions)
-      assertThat(generatedCodes.size()).isGreaterThan(95);
+      assertThat(generatedCodes).hasSizeGreaterThan(95);
     }
 
     @Test
@@ -360,7 +358,7 @@ class InvitationCodeServiceTddTest {
       }
 
       // Should have high uniqueness rate with secure random
-      assertThat(generatedCodes.size()).isGreaterThan(990); // > 99% unique
+      assertThat(generatedCodes).hasSizeGreaterThan(990); // > 99% unique
     }
 
     @Test
@@ -391,7 +389,7 @@ class InvitationCodeServiceTddTest {
 
       assertThat(terminated).isTrue();
       assertThat(successCount.get()).isGreaterThan(95); // Most should succeed
-      assertThat(concurrentCodes.size()).isGreaterThan(95); // High uniqueness
+      assertThat(concurrentCodes).hasSizeGreaterThan(95); // High uniqueness
     }
 
     @Test
@@ -472,8 +470,7 @@ class InvitationCodeServiceTddTest {
         String code = invitationCodeService.generateUniqueCode();
 
         // Every generated code must meet security standards
-        assertThat(code).matches("^[A-Z0-9]{8}$");
-        assertThat(code).hasSize(8);
+        assertThat(code).matches("^[A-Z0-9]{8}$").hasSize(8);
         assertThat(invitationCodeService.isValidCodeFormat(code)).isTrue();
       }
     }

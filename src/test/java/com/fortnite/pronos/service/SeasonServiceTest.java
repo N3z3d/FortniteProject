@@ -14,6 +14,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Tests unitaires pour SeasonService */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5853"})
 class SeasonServiceTest {
 
   @InjectMocks private SeasonService seasonService;
@@ -227,8 +228,7 @@ class SeasonServiceTest {
     List<Integer> validSeasons = seasonService.getAllValidSeasons();
 
     // Then
-    assertThat(validSeasons).isNotEmpty();
-    assertThat(validSeasons.get(0)).isEqualTo(2024);
+    assertThat(validSeasons).isNotEmpty().containsEntry(0, 2024);
     assertThat(validSeasons.get(validSeasons.size() - 1))
         .isEqualTo(seasonService.getMaxValidSeason());
     assertThat(validSeasons).containsSequence(2024, 2025, 2026);
@@ -240,10 +240,10 @@ class SeasonServiceTest {
     List<Integer> availableSeasons = seasonService.getAvailableSeasons();
 
     // Then
-    assertThat(availableSeasons).isNotEmpty();
-    assertThat(availableSeasons.get(0)).isEqualTo(2024);
-    assertThat(availableSeasons.get(availableSeasons.size() - 1)).isEqualTo(2025);
-    assertThat(availableSeasons).containsSequence(2024, 2025);
+    assertThat(availableSeasons).isNotEmpty().containsEntry(0, 2024);
+    assertThat(availableSeasons)
+        .containsEntry(availableSeasons.size() - 1, 2025)
+        .containsSequence(2024, 2025);
   }
 
   @Test
@@ -295,7 +295,7 @@ class SeasonServiceTest {
     int yearsBetween = seasonService.getYearsBetweenSeasons(2025, 2025);
 
     // Then
-    assertThat(yearsBetween).isEqualTo(0);
+    assertThat(yearsBetween).isZero();
   }
 
   @Test
@@ -390,10 +390,8 @@ class SeasonServiceTest {
     String toString = info.toString();
 
     // Then
-    assertThat(toString).contains("SeasonInfo");
-    assertThat(toString).contains("season=2025");
-    assertThat(toString).contains("current=true");
-    assertThat(toString).contains("past=false");
+    assertThat(toString).contains("SeasonInfo").contains("season=2025");
+    assertThat(toString).contains("current=true").contains("past=false");
     assertThat(toString).contains("future=false");
   }
 
@@ -442,8 +440,7 @@ class SeasonServiceTest {
 
     // 5. Vérifier la liste des saisons disponibles
     List<Integer> availableSeasons = seasonService.getAvailableSeasons();
-    assertThat(availableSeasons).contains(currentSeason);
-    assertThat(availableSeasons).contains(2024);
+    assertThat(availableSeasons).contains(currentSeason).contains(2024);
 
     // 6. Vérifier le formatage
     assertThat(info.getFormattedName()).isEqualTo("Saison 2025");

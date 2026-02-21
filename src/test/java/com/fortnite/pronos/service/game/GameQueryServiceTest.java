@@ -18,16 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.repository.PlayerRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GameQueryServiceTest {
 
   @Mock private GameDomainRepositoryPort gameRepository;
-  @Mock private PlayerRepository playerRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
   @Mock private UserRepositoryPort userRepository;
   @InjectMocks private GameQueryService service;
 

@@ -1,6 +1,6 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { PremiumInteractionsDirective, TooltipDirective, RevealOnScrollDirective } from '../../shared/directives/premium-interactions.directive';
 import { PremiumInteractionsService } from '../../shared/services/premium-interactions.service';
 import { HttpClient } from '@angular/common/http';
@@ -23,9 +23,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { interval } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { LeaderboardEntryDTO } from '../../core/models/leaderboard.model';
 import { GameSelectionService } from '../../core/services/game-selection.service';
 import { GameService } from '../game/services/game.service';

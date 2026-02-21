@@ -1494,6 +1494,8 @@
       "health": "System Health",
       "recentActivity": "Recent Activity",
       "metrics": "System Metrics",
+      "alerts": "Active Alerts",
+      "visits": "Visit Tracking",
       "refresh": "Refresh",
       "loadError": "Failed to load dashboard data."
     },
@@ -1521,6 +1523,19 @@
       "totalRequests": "Total Requests",
       "errorRate": "Error Rate"
     },
+    "alerts": {
+      "none": "No active alerts.",
+      "threshold": "Threshold"
+    },
+    "visits": {
+      "pageViews": "Page views",
+      "uniqueVisitors": "Unique visitors",
+      "activeSessions": "Active sessions",
+      "averageDuration": "Average duration",
+      "topPages": "Top pages",
+      "bounceRate": "Bounce rate",
+      "topFlows": "Navigation flows"
+    },
     "errors": {
       "title": "Error Journal",
       "loadError": "Failed to load error journal data.",
@@ -1530,6 +1545,10 @@
         "uniqueTypes": "Unique Types",
         "serverErrors": "Server Errors (5xx)",
         "notFound": "Not Found (404)"
+      },
+      "trend": {
+        "title": "Error Trend",
+        "subtitle": "Distribution over the selected period"
       },
       "filter": {
         "status": "Status Code",

@@ -45,6 +45,7 @@ import com.fortnite.pronos.repository.UserRepository;
       "SET REFERENTIAL_INTEGRITY TRUE"
     })
 @DisplayName("DataInitializationService - TDD Tests")
+@SuppressWarnings({"java:S5833"})
 class DataInitializationServiceTddTest {
 
   @Autowired private DataInitializationService dataInitializationService;
@@ -143,7 +144,7 @@ class DataInitializationServiceTddTest {
 
     // ASSERT
     assertThat(basePlayersPerTeam).isEqualTo(49);
-    assertThat(remainingPlayers).isEqualTo(0);
+    assertThat(remainingPlayers).isZero();
 
     // Vérifier la distribution
     for (int i = 0; i < numberOfTeams; i++) {

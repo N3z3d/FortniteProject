@@ -245,10 +245,10 @@ class FortniteTrackerServiceTddTest {
       FortniteTrackerPlayerStats result =
           fortniteTrackerService.getPlayerStats(testEpicId, testPlatform);
 
-      assertThat(result.getLifeTimeStats()).isNotNull();
-      assertThat(result.getLifeTimeStats()).hasSize(2);
-      assertThat(result.getLifeTimeStats().get("Wins")).isEqualTo("150");
-      assertThat(result.getLifeTimeStats().get("Kills")).isEqualTo("2350");
+      assertThat(result.getLifeTimeStats()).isNotNull().hasSize(2);
+      assertThat(result.getLifeTimeStats())
+          .containsEntry("Wins", "150")
+          .containsEntry("Kills", "2350");
     }
   }
 

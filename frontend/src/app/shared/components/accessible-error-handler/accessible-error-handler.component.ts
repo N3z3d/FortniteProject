@@ -38,8 +38,8 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
 
   currentError: AccessibleErrorInfo | null = null;
   detailsExpanded = false;
-  errorTitleId = 'error-title-' + Math.random().toString(36).substr(2, 9);
-  errorDescriptionId = 'error-desc-' + Math.random().toString(36).substr(2, 9);
+  errorTitleId = 'error-title-' + Math.random().toString(36).slice(2, 11);
+  errorDescriptionId = 'error-desc-' + Math.random().toString(36).slice(2, 11);
 
   private destroy$ = new Subject<void>();
 

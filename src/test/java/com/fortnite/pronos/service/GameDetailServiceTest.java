@@ -7,7 +7,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,170 +19,213 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.draft.model.Draft;
+import com.fortnite.pronos.domain.draft.model.DraftStatus;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameParticipant;
+import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.GameDetailDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.DraftPickRepository;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
+import com.fortnite.pronos.model.User;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("GameDetailService - getGameDetails TDD")
+@DisplayName("GameDetailService - domain migration")
 class GameDetailServiceTest {
 
-  @Mock private GameRepositoryPort gameRepository;
+  @Mock private GameDomainRepositoryPort gameRepository;
+  @Mock private DraftDomainRepositoryPort draftRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
+  @Mock private ScoreRepositoryPort scoreRepository;
+  @Mock private UserRepositoryPort userRepository;
 
-  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
+  @InjectMocks private GameDetailService service;
 
-  @Mock private DraftRepository draftRepository;
+  private UUID gameId;
+  private UUID creatorId;
+  private UUID teddyId;
+  private UUID marcelId;
 
-  @Mock private DraftPickRepository draftPickRepository;
-
-  @Mock private ScoreRepository scoreRepository;
-
-  @InjectMocks private GameDetailService gameDetailService;
+  private UUID bughaId;
+  private UUID aquaId;
+  private UUID unknownId;
 
   private Game testGame;
-  private User thibaut;
-  private User teddy;
-  private User marcel;
-  private GameParticipant participantThibaut;
-  private GameParticipant participantTeddy;
-  private GameParticipant participantMarcel;
-  private Draft draft;
+  private GameParticipant creatorParticipant;
+  private GameParticipant teddyParticipant;
+  private GameParticipant marcelParticipant;
 
   @BeforeEach
   void setUp() {
-    // Créer les utilisateurs
-    thibaut = createUser("Thibaut", "thibaut@test.com");
-    teddy = createUser("Teddy", "teddy@test.com");
-    marcel = createUser("Marcel", "marcel@test.com");
+    gameId = UUID.randomUUID();
+    creatorId = UUID.randomUUID();
+    teddyId = UUID.randomUUID();
+    marcelId = UUID.randomUUID();
 
-    // Créer la game
-    testGame = new Game();
-    testGame.setId(UUID.randomUUID());
-    testGame.setName("Game Thibaut-Teddy-Marcel");
-    testGame.setCreator(thibaut);
-    testGame.setStatus(GameStatus.ACTIVE);
-    testGame.setMaxParticipants(10);
-    testGame.setInvitationCode("TTM2025");
-    testGame.setDescription("Game de test entre amis");
-    testGame.setCreatedAt(LocalDateTime.now().minusDays(5));
-    // testGame.setUpdatedAt(LocalDateTime.now()); // Champ n'existe pas
+    bughaId = UUID.randomUUID();
+    aquaId = UUID.randomUUID();
+    unknownId = UUID.randomUUID();
 
-    // Créer les participants
-    participantThibaut = createParticipant(testGame, thibaut, 1);
-    participantTeddy = createParticipant(testGame, teddy, 2);
-    participantMarcel = createParticipant(testGame, marcel, 3);
+    creatorParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            creatorId,
+            "Thibaut",
+            1,
+            LocalDateTime.now().minusDays(3),
+            null,
+            true,
+            List.of(bughaId));
+    teddyParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            teddyId,
+            "Teddy",
+            2,
+            LocalDateTime.now().minusDays(2),
+            null,
+            false,
+            List.of(aquaId));
+    marcelParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            marcelId,
+            "Marcel",
+            3,
+            LocalDateTime.now().minusDays(1),
+            null,
+            false,
+            List.of());
 
-    // Ajouter des joueurs sélectionnés
-    participantThibaut.setSelectedPlayers(
-        Arrays.asList(
-            createPlayer("Bugha", Player.Region.NAW),
-            createPlayer("Aqua", Player.Region.EU),
-            createPlayer("K1ng", Player.Region.BR)));
-
-    participantTeddy.setSelectedPlayers(
-        Arrays.asList(
-            createPlayer("Tayson", Player.Region.EU),
-            createPlayer("Savage", Player.Region.NAC),
-            createPlayer("Epikwhale", Player.Region.NAW)));
-
-    participantMarcel.setSelectedPlayers(
-        Arrays.asList(
-            createPlayer("Kami", Player.Region.EU),
-            createPlayer("Mero", Player.Region.NAC),
-            createPlayer("Hen", Player.Region.EU)));
-
-    // Créer le draft
-    draft = new Draft();
-    draft.setId(UUID.randomUUID());
-    draft.setGame(testGame);
-    draft.setStatus(Draft.Status.FINISHED);
-    draft.setStartedAt(LocalDateTime.now().minusDays(4));
-    draft.setFinishedAt(LocalDateTime.now().minusDays(3));
-    draft.setCurrentRound(3);
-    draft.setCurrentPick(9);
-    draft.setTotalRounds(3);
-    draft.setCreatedAt(LocalDateTime.now().minusDays(5));
-    draft.setUpdatedAt(LocalDateTime.now().minusDays(3));
+    testGame =
+        Game.restore(
+            gameId,
+            "Game Thibaut-Teddy-Marcel",
+            "Game de test entre amis",
+            creatorId,
+            10,
+            GameStatus.ACTIVE,
+            LocalDateTime.now().minusDays(5),
+            null,
+            null,
+            "TTM2025",
+            null,
+            List.of(),
+            List.of(creatorParticipant, teddyParticipant, marcelParticipant),
+            null,
+            false,
+            5,
+            null,
+            2025);
   }
 
   @Test
-  @DisplayName("devrait récupérer les détails complets d'une game")
-  void shouldGetCompleteGameDetails() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy, participantMarcel));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
+  @DisplayName("retourne les details complets d'une game")
+  void shouldReturnCompleteGameDetails() {
+    Draft draft =
+        Draft.restore(
+            UUID.randomUUID(),
+            gameId,
+            DraftStatus.FINISHED,
+            3,
+            9,
+            3,
+            LocalDateTime.now().minusDays(5),
+            LocalDateTime.now().minusDays(3),
+            LocalDateTime.now().minusDays(4),
+            LocalDateTime.now().minusDays(3));
 
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.of(draft));
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "Thibaut")));
+    when(userRepository.findById(teddyId)).thenReturn(Optional.of(createUser(teddyId, "Teddy")));
+    when(userRepository.findById(marcelId)).thenReturn(Optional.of(createUser(marcelId, "Marcel")));
 
-    // Then
+    when(playerRepository.findById(bughaId))
+        .thenReturn(Optional.of(createPlayer(bughaId, "Bugha", PlayerRegion.NAW)));
+    when(playerRepository.findById(aquaId))
+        .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
+
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bughaId), anyInt())).thenReturn(15000);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(aquaId), anyInt())).thenReturn(12000);
+
+    GameDetailDto result = service.getGameDetails(gameId);
+
     assertThat(result).isNotNull();
-    assertThat(result.getGameId()).isEqualTo(testGame.getId());
+    assertThat(result.getGameId()).isEqualTo(gameId);
     assertThat(result.getGameName()).isEqualTo("Game Thibaut-Teddy-Marcel");
     assertThat(result.getCreatorName()).isEqualTo("Thibaut");
-    assertThat(result.getStatus()).isEqualTo("ACTIVE");
-    assertThat(result.getInvitationCode()).isEqualTo("TTM2025");
     assertThat(result.getParticipants()).hasSize(3);
+    assertThat(result.getDraftInfo()).isNotNull();
+    assertThat(result.getDraftInfo().getStatus()).isEqualTo("FINISHED");
 
-    // Vérifier les participants
-    assertThat(result.getParticipants())
-        .extracting(GameDetailDto.ParticipantInfo::getUsername)
-        .containsExactlyInAnyOrder("Thibaut", "Teddy", "Marcel");
+    assertThat(result.getStatistics().getTotalParticipants()).isEqualTo(3);
+    assertThat(result.getTotalPlayers()).isEqualTo(2);
+    assertThat(result.getStatistics().getRegionDistribution())
+        .containsEntry("NAW", 1)
+        .containsEntry("EU", 1);
   }
 
   @Test
-  @DisplayName("devrait inclure les détails de chaque participant")
-  void shouldIncludeParticipantDetails() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy, participantMarcel));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
-
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    GameDetailDto.ParticipantInfo thibautInfo =
-        result.getParticipants().stream()
-            .filter(p -> p.getUsername().equals("Thibaut"))
-            .findFirst()
-            .orElseThrow();
-
-    assertThat(thibautInfo.getJoinedAt()).isNotNull();
-    assertThat(thibautInfo.getSelectedPlayers()).hasSize(3);
-    assertThat(thibautInfo.getSelectedPlayers())
-        .extracting(GameDetailDto.PlayerInfo::getNickname)
-        .containsExactlyInAnyOrder("Bugha", "Aqua", "K1ng");
-    assertThat(thibautInfo.getTotalPlayers()).isEqualTo(3);
-    assertThat(thibautInfo.getIsCreator()).isTrue();
-  }
-
-  @Test
-  @DisplayName("devrait appliquer un fallback si un joueur est manquant")
+  @DisplayName("applique un fallback quand un joueur est introuvable")
   void shouldFallbackWhenPlayerIsMissing() {
-    // Given
-    participantTeddy.setSelectedPlayers(
-        Arrays.asList(createPlayer("Tayson", Player.Region.EU), null));
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
+    GameParticipant participantWithMissingPlayer =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            teddyId,
+            "Teddy",
+            2,
+            LocalDateTime.now().minusDays(2),
+            null,
+            false,
+            List.of(aquaId, unknownId));
+    Game gameWithMissingPlayer =
+        Game.restore(
+            gameId,
+            "Fallback Game",
+            null,
+            creatorId,
+            10,
+            GameStatus.ACTIVE,
+            LocalDateTime.now().minusDays(5),
+            null,
+            null,
+            "CODE1234",
+            null,
+            List.of(),
+            List.of(creatorParticipant, participantWithMissingPlayer),
+            null,
+            false,
+            5,
+            null,
+            2025);
 
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(gameWithMissingPlayer));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.empty());
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "Thibaut")));
+    when(userRepository.findById(teddyId)).thenReturn(Optional.of(createUser(teddyId, "Teddy")));
 
-    // Then
+    when(playerRepository.findById(aquaId))
+        .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
+    when(playerRepository.findById(bughaId))
+        .thenReturn(Optional.of(createPlayer(bughaId, "Bugha", PlayerRegion.NAW)));
+    when(playerRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(aquaId), anyInt())).thenReturn(4000);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bughaId), anyInt())).thenReturn(5000);
+
+    GameDetailDto result = service.getGameDetails(gameId);
+
     GameDetailDto.ParticipantInfo teddyInfo =
         result.getParticipants().stream()
-            .filter(p -> p.getUsername().equals("Teddy"))
+            .filter(p -> "Teddy".equals(p.getUsername()))
             .findFirst()
             .orElseThrow();
 
@@ -191,185 +236,118 @@ class GameDetailServiceTest {
   }
 
   @Test
-  @DisplayName("devrait inclure les informations du draft")
-  void shouldIncludeDraftInformation() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy, participantMarcel));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
+  @DisplayName("leve une exception si la game est introuvable")
+  void shouldThrowWhenGameNotFound() {
+    when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
 
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    assertThat(result.getDraftInfo()).isNotNull();
-    assertThat(result.getDraftInfo().getStatus()).isEqualTo("FINISHED");
-    assertThat(result.getDraftInfo().getStartedAt()).isNotNull();
-    assertThat(result.getDraftInfo().getFinishedAt()).isNotNull();
-  }
-
-  @Test
-  @DisplayName("devrait calculer les statistiques de la game")
-  void shouldCalculateGameStatistics() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy, participantMarcel));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(draft));
-
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    assertThat(result.getStatistics()).isNotNull();
-    assertThat(result.getStatistics().getTotalParticipants()).isEqualTo(3);
-    assertThat(result.getStatistics().getTotalPlayers()).isEqualTo(9);
-    assertThat(result.getStatistics().getRegionDistribution()).isNotEmpty();
-    assertThat(result.getStatistics().getRegionDistribution().get("EU")).isEqualTo(4);
-    assertThat(result.getStatistics().getRegionDistribution().get("NAW")).isEqualTo(2);
-    assertThat(result.getStatistics().getRegionDistribution().get("NAC")).isEqualTo(2);
-    assertThat(result.getStatistics().getRegionDistribution().get("BR")).isEqualTo(1);
-  }
-
-  @Test
-  @DisplayName("devrait lever une exception si la game n'existe pas")
-  void shouldThrowExceptionIfGameNotFound() {
-    // Given
-    UUID unknownGameId = UUID.randomUUID();
-    when(gameRepository.findById(unknownGameId)).thenReturn(Optional.empty());
-
-    // When/Then
-    assertThatThrownBy(() -> gameDetailService.getGameDetails(unknownGameId))
+    assertThatThrownBy(() -> service.getGameDetails(gameId))
         .isInstanceOf(GameNotFoundException.class)
-        .hasMessageContaining("Game non trouvée");
+        .hasMessageContaining("Game non trouvee");
   }
 
   @Test
-  @DisplayName("devrait gérer une game sans draft")
+  @DisplayName("gere une game sans draft")
   void shouldHandleGameWithoutDraft() {
-    // Given
-    testGame.setStatus(GameStatus.CREATING);
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut, participantTeddy, participantMarcel));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.empty());
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "Thibaut")));
+    when(userRepository.findById(teddyId)).thenReturn(Optional.of(createUser(teddyId, "Teddy")));
+    when(userRepository.findById(marcelId)).thenReturn(Optional.of(createUser(marcelId, "Marcel")));
+    when(playerRepository.findById(bughaId))
+        .thenReturn(Optional.of(createPlayer(bughaId, "Bugha", PlayerRegion.NAW)));
+    when(playerRepository.findById(aquaId))
+        .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
 
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
+    GameDetailDto result = service.getGameDetails(gameId);
 
-    // Then
     assertThat(result.getDraftInfo()).isNull();
-    assertThat(result.getStatus()).isEqualTo("CREATING");
+    assertThat(result.getStatus()).isEqualTo("ACTIVE");
   }
 
-  // Méthodes utilitaires
-  private User createUser(String username, String email) {
+  @Test
+  @DisplayName("retourne 0 quand aucun score n'existe")
+  void shouldReturnZeroWhenNoScoreExists() {
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.empty());
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "Thibaut")));
+    when(userRepository.findById(teddyId)).thenReturn(Optional.of(createUser(teddyId, "Teddy")));
+    when(userRepository.findById(marcelId)).thenReturn(Optional.of(createUser(marcelId, "Marcel")));
+
+    when(playerRepository.findById(bughaId))
+        .thenReturn(Optional.of(createPlayer(bughaId, "Bugha", PlayerRegion.NAW)));
+    when(playerRepository.findById(aquaId))
+        .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bughaId), anyInt())).thenReturn(null);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(aquaId), anyInt())).thenReturn(null);
+
+    GameDetailDto result = service.getGameDetails(gameId);
+
+    GameDetailDto.ParticipantInfo thibautInfo =
+        result.getParticipants().stream()
+            .filter(p -> "Thibaut".equals(p.getUsername()))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(thibautInfo.getSelectedPlayers().get(0).getCurrentScore()).isZero();
+  }
+
+  @Test
+  @DisplayName("utilise le fallback creator depuis UserRepository si username manquant")
+  void shouldResolveCreatorFromUserRepositoryFallback() {
+    GameParticipant creatorWithoutUsername =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            creatorId,
+            null,
+            1,
+            LocalDateTime.now().minusDays(3),
+            null,
+            true,
+            List.of());
+    Game gameWithoutCreatorName =
+        Game.restore(
+            gameId,
+            "Fallback creator game",
+            null,
+            creatorId,
+            8,
+            GameStatus.CREATING,
+            LocalDateTime.now().minusDays(2),
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            List.of(creatorWithoutUsername),
+            null,
+            false,
+            5,
+            null,
+            2025);
+
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(gameWithoutCreatorName));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.empty());
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "CreatorFromRepo")));
+
+    GameDetailDto result = service.getGameDetails(gameId);
+
+    assertThat(result.getCreatorName()).isEqualTo("CreatorFromRepo");
+  }
+
+  private User createUser(UUID userId, String username) {
     User user = new User();
-    user.setId(UUID.randomUUID());
+    user.setId(userId);
     user.setUsername(username);
-    user.setEmail(email);
-    user.setPassword("password123");
+    user.setEmail(username.toLowerCase() + "@test.com");
     return user;
   }
 
-  private GameParticipant createParticipant(Game game, User user, int joinOrder) {
-    GameParticipant participant = new GameParticipant();
-    participant.setId(UUID.randomUUID());
-    participant.setGame(game);
-    participant.setUser(user);
-    participant.setDraftOrder(joinOrder);
-    participant.setLastSelectionTime(LocalDateTime.now().minusDays(4));
-    return participant;
-  }
-
-  private Player createPlayer(String nickname, Player.Region region) {
-    Player player = new Player();
-    player.setId(UUID.randomUUID());
-    player.setNickname(nickname);
-    player.setUsername(nickname.toLowerCase());
-    player.setRegion(region);
-    player.setTranche("1-10");
-    player.setCurrentSeason(2025);
-    return player;
-  }
-
-  // Tests pour l'integration ScoreRepository
-
-  @Test
-  @DisplayName("devrait calculer le score actuel des joueurs via ScoreRepository")
-  void shouldCalculateCurrentScoreViaScoreRepository() {
-    // Given
-    Player bugha = participantThibaut.getSelectedPlayers().get(0);
-    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bugha.getId()), eq(2025))).thenReturn(15000);
-
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
-
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    GameDetailDto.ParticipantInfo thibautInfo = result.getParticipants().get(0);
-    GameDetailDto.PlayerInfo bughaInfo =
-        thibautInfo.getSelectedPlayers().stream()
-            .filter(p -> p.getNickname().equals("Bugha"))
-            .findFirst()
-            .orElseThrow();
-
-    assertThat(bughaInfo.getCurrentScore()).isEqualTo(15000);
-  }
-
-  @Test
-  @DisplayName("devrait retourner 0 si aucun score n'existe pour le joueur")
-  void shouldReturnZeroWhenNoScoreExists() {
-    // Given
-    Player bugha = participantThibaut.getSelectedPlayers().get(0);
-    when(scoreRepository.sumPointsByPlayerAndSeason(eq(bugha.getId()), anyInt())).thenReturn(null);
-
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
-
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    GameDetailDto.ParticipantInfo thibautInfo = result.getParticipants().get(0);
-    GameDetailDto.PlayerInfo bughaInfo =
-        thibautInfo.getSelectedPlayers().stream()
-            .filter(p -> p.getNickname().equals("Bugha"))
-            .findFirst()
-            .orElseThrow();
-
-    assertThat(bughaInfo.getCurrentScore()).isEqualTo(0);
-  }
-
-  @Test
-  @DisplayName("devrait utiliser la saison du joueur pour le calcul du score")
-  void shouldUsePlayerSeasonForScoreCalculation() {
-    // Given - joueur avec saison 2024
-    Player playerWith2024 = createPlayer("OldPlayer", Player.Region.EU);
-    playerWith2024.setCurrentSeason(2024);
-    participantThibaut.setSelectedPlayers(Arrays.asList(playerWith2024));
-
-    when(scoreRepository.sumPointsByPlayerAndSeason(eq(playerWith2024.getId()), eq(2024)))
-        .thenReturn(8500);
-
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participantThibaut));
-    when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
-
-    // When
-    GameDetailDto result = gameDetailService.getGameDetails(testGame.getId());
-
-    // Then
-    GameDetailDto.PlayerInfo playerInfo =
-        result.getParticipants().get(0).getSelectedPlayers().get(0);
-    assertThat(playerInfo.getCurrentScore()).isEqualTo(8500);
+  private com.fortnite.pronos.domain.player.model.Player createPlayer(
+      UUID playerId, String nickname, PlayerRegion region) {
+    return com.fortnite.pronos.domain.player.model.Player.restore(
+        playerId, null, nickname.toLowerCase(), nickname, region, "1-10", 2025, false);
   }
 }

@@ -143,7 +143,7 @@ class DraftProgressionTest {
     @DisplayName("uses forward order in odd rounds with snake draft")
     void usesForwardInOddRoundsSnake() {
       int participant = DraftProgression.getParticipantForPick(1, 1, 3, true);
-      assertThat(participant).isEqualTo(0);
+      assertThat(participant).isZero();
     }
 
     @Test

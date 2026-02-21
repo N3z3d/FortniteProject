@@ -1,7 +1,6 @@
 package com.fortnite.pronos.service.leaderboard;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -9,8 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.dto.PlayerLeaderboardEntryDTO;
 import com.fortnite.pronos.dto.leaderboard.TeamInfoDto;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings({"java:S112"})
 public class PlayerLeaderboardService {
 
-  private final PlayerRepository playerRepository;
-  private final ScoreRepository scoreRepository;
-  private final TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
 
   /** Obtenir le classement des joueurs Fortnite */
   @Cacheable(value = "playerScores", key = "'players_' + #season")
@@ -37,26 +35,26 @@ public class PlayerLeaderboardService {
     log.info("[PLAYER] Recuperation du classement des joueurs - Saison: {}", season);
 
     try {
-      // 1. Récupérer tous les joueurs
-      List<Player> players = playerRepository.findAll();
+      // 1. RÃ©cupÃ©rer tous les joueurs
+      List<com.fortnite.pronos.model.Player> players = playerRepository.findAll();
       log.info("[DATA] {} joueurs trouves", players.size());
 
-      // 2. Récupérer tous les scores groupés par joueur
+      // 2. RÃ©cupÃ©rer tous les scores groupÃ©s par joueur
       Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
       log.info("[DATA] {} scores trouves pour la saison {}", playerPointsMap.size(), season);
 
-      // 3. Récupérer toutes les équipes avec leurs joueurs pour cette saison
-      List<Team> teams = teamRepository.findBySeasonWithFetch(season);
+      // 3. RÃ©cupÃ©rer toutes les Ã©quipes avec leurs joueurs pour cette saison
+      List<com.fortnite.pronos.model.Team> teams = teamRepository.findBySeasonWithFetch(season);
       Map<UUID, List<TeamInfoDto>> playerTeamsMap = new HashMap<>();
       Map<UUID, List<String>> playerPronostiqueurMap = new HashMap<>();
 
-      // Construire les maps des équipes et pronostiqueurs par joueur
-      for (Team team : teams) {
-        for (TeamPlayer teamPlayer : team.getPlayers()) {
+      // Construire les maps des Ã©quipes et pronostiqueurs par joueur
+      for (com.fortnite.pronos.model.Team team : teams) {
+        for (com.fortnite.pronos.model.TeamPlayer teamPlayer : team.getPlayers()) {
           if (teamPlayer.isActive()) {
             UUID playerId = teamPlayer.getPlayer().getId();
 
-            // Ajouter l'équipe
+            // Ajouter l'Ã©quipe
             playerTeamsMap
                 .computeIfAbsent(playerId, k -> new ArrayList<>())
                 .add(
@@ -71,10 +69,10 @@ public class PlayerLeaderboardService {
         }
       }
 
-      // 4. Créer les entrées pour chaque joueur
+      // 4. CrÃ©er les entrÃ©es pour chaque joueur
       List<PlayerLeaderboardEntryDTO> entries = new ArrayList<>();
 
-      for (Player player : players) {
+      for (com.fortnite.pronos.model.Player player : players) {
         UUID playerId = player.getId();
         int totalPoints = playerPointsMap.getOrDefault(playerId, 0);
 
@@ -83,7 +81,7 @@ public class PlayerLeaderboardService {
             totalPoints > 0 ? (double) totalPoints / Math.max(1, totalPoints / 1000) : 0.0;
         int bestScore = totalPoints; // Simplification : on utilise le total comme meilleur score
 
-        // Récupérer les équipes et pronostiqueurs
+        // RÃ©cupÃ©rer les Ã©quipes et pronostiqueurs
         List<TeamInfoDto> playerTeams = playerTeamsMap.getOrDefault(playerId, new ArrayList<>());
         List<String> playerPronostiqueurs =
             playerPronostiqueurMap.getOrDefault(playerId, new ArrayList<>());
@@ -99,54 +97,53 @@ public class PlayerLeaderboardService {
         entry.setBestScore(bestScore);
         entry.setTeamsCount(playerTeams.size());
         entry.setTeams(playerTeams);
-        entry.setPronostiqueurs(
-            playerPronostiqueurs.stream().distinct().collect(Collectors.toList()));
+        entry.setPronostiqueurs(playerPronostiqueurs.stream().distinct().toList());
 
         entries.add(entry);
       }
 
-      // 5. Trier par points décroissants et assigner les rangs
+      // 5. Trier par points dÃ©croissants et assigner les rangs
       entries.sort((a, b) -> Integer.compare(b.getTotalPoints(), a.getTotalPoints()));
 
       for (int i = 0; i < entries.size(); i++) {
         entries.get(i).setRank(i + 1);
       }
 
-      log.info("[OK] Classement joueurs généré avec {} joueurs", entries.size());
+      log.info("[OK] Classement joueurs gÃ©nÃ©rÃ© avec {} joueurs", entries.size());
       return entries;
 
     } catch (Exception e) {
-      log.error("[ERROR] Erreur lors de la génération du classement des joueurs", e);
-      throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
+      log.error("[ERROR] Erreur lors de la gÃ©nÃ©ration du classement des joueurs", e);
+      throw new RuntimeException("Erreur lors de la gÃ©nÃ©ration du classement des joueurs", e);
     }
   }
 
-  /** Obtenir le classement des joueurs Fortnite pour une game spécifique */
+  /** Obtenir le classement des joueurs Fortnite pour une game spÃ©cifique */
   public List<PlayerLeaderboardEntryDTO> getPlayerLeaderboardByGame(UUID gameId) {
     log.info("[PLAYER] Recuperation du classement des joueurs pour la game {}", gameId);
 
     try {
-      // 1. Récupérer les équipes de cette game avec leurs joueurs
-      List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+      // 1. RÃ©cupÃ©rer les Ã©quipes de cette game avec leurs joueurs
+      List<com.fortnite.pronos.model.Team> teams = teamRepository.findByGameIdWithFetch(gameId);
       log.info("[DATA] {} equipes trouvees pour la game {}", teams.size(), gameId);
 
       if (teams.isEmpty()) {
-        log.warn("[WARN] Aucune équipe trouvée pour la game {}", gameId);
+        log.warn("[WARN] Aucune Ã©quipe trouvÃ©e pour la game {}", gameId);
         return new ArrayList<>();
       }
 
-      // 2. Extraire tous les joueurs uniques des équipes
+      // 2. Extraire tous les joueurs uniques des Ã©quipes
       Set<UUID> playerIds = new HashSet<>();
       Map<UUID, List<TeamInfoDto>> playerTeamsMap = new HashMap<>();
       Map<UUID, List<String>> playerPronostiqueurMap = new HashMap<>();
 
-      for (Team team : teams) {
-        for (TeamPlayer teamPlayer : team.getPlayers()) {
+      for (com.fortnite.pronos.model.Team team : teams) {
+        for (com.fortnite.pronos.model.TeamPlayer teamPlayer : team.getPlayers()) {
           if (teamPlayer.isActive()) {
             UUID playerId = teamPlayer.getPlayer().getId();
             playerIds.add(playerId);
 
-            // Ajouter l'équipe
+            // Ajouter l'Ã©quipe
             playerTeamsMap
                 .computeIfAbsent(playerId, k -> new ArrayList<>())
                 .add(
@@ -163,16 +160,16 @@ public class PlayerLeaderboardService {
 
       log.info("[DATA] {} joueurs uniques trouves dans les equipes", playerIds.size());
 
-      // 3. Récupérer les informations des joueurs
-      List<Player> players = playerRepository.findAllById(playerIds);
+      // 3. RÃ©cupÃ©rer les informations des joueurs
+      List<com.fortnite.pronos.model.Player> players = playerRepository.findAllById(playerIds);
 
-      // 4. Récupérer les scores (saison 2025 par défaut)
+      // 4. RÃ©cupÃ©rer les scores (saison 2025 par dÃ©faut)
       Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
 
-      // 5. Créer les entrées pour chaque joueur
+      // 5. CrÃ©er les entrÃ©es pour chaque joueur
       List<PlayerLeaderboardEntryDTO> entries = new ArrayList<>();
 
-      for (Player player : players) {
+      for (com.fortnite.pronos.model.Player player : players) {
         UUID playerId = player.getId();
         int totalPoints = playerPointsMap.getOrDefault(playerId, 0);
 
@@ -200,7 +197,7 @@ public class PlayerLeaderboardService {
         entries.add(entry);
       }
 
-      // 6. Trier par points décroissants et assigner les rangs
+      // 6. Trier par points dÃ©croissants et assigner les rangs
       entries.sort((a, b) -> Integer.compare(b.getTotalPoints(), a.getTotalPoints()));
 
       for (int i = 0; i < entries.size(); i++) {
@@ -208,15 +205,15 @@ public class PlayerLeaderboardService {
       }
 
       log.info(
-          "[OK] Classement joueurs pour game {} généré avec {} joueurs", gameId, entries.size());
+          "[OK] Classement joueurs pour game {} gÃ©nÃ©rÃ© avec {} joueurs", gameId, entries.size());
       return entries;
 
     } catch (Exception e) {
       log.error(
-          "[ERROR] Erreur lors de la génération du classement des joueurs pour la game {}",
+          "[ERROR] Erreur lors de la gÃ©nÃ©ration du classement des joueurs pour la game {}",
           gameId,
           e);
-      throw new RuntimeException("Erreur lors de la génération du classement des joueurs", e);
+      throw new RuntimeException("Erreur lors de la gÃ©nÃ©ration du classement des joueurs", e);
     }
   }
 }

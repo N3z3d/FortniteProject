@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Exception de base pour l'application Fortnite Pronos. Fournit une traçabilité complète selon les
- * standards aerospace.
+ * Exception de base pour l'application Fortnite Pronos. Fournit une traÃ§abilitÃ© complÃ¨te selon
+ * les standards aerospace.
  *
- * <p>Chaque exception possède : - Un ID unique pour la traçabilité - Un code d'erreur standardisé -
- * Un timestamp précis - Un contexte métier - Des détails techniques optionnels
+ * <p>Chaque exception possÃ¨de : - Un ID unique pour la traÃ§abilitÃ© - Un code d'erreur
+ * standardisÃ© - Un timestamp prÃ©cis - Un contexte mÃ©tier - Des dÃ©tails techniques optionnels
  *
  * @author Fortnite Pronos Team
  * @version 1.0
@@ -21,17 +21,17 @@ public class FortnitePronosException extends RuntimeException {
   private final UUID exceptionId;
   private final ErrorCode errorCode;
   private final OffsetDateTime timestamp;
-  private final Map<String, Object> context;
+  private final transient Map<String, Object> context;
   private final String userMessage;
   private final String technicalDetails;
 
   /**
-   * Constructeur complet pour créer une exception avec tous les détails.
+   * Constructeur complet pour crÃ©er une exception avec tous les dÃ©tails.
    *
-   * @param errorCode le code d'erreur standardisé
+   * @param errorCode le code d'erreur standardisÃ©
    * @param userMessage message pour l'utilisateur final
-   * @param technicalDetails détails techniques pour le debug
-   * @param context contexte métier de l'erreur
+   * @param technicalDetails dÃ©tails techniques pour le debug
+   * @param context contexte mÃ©tier de l'erreur
    * @param cause exception racine (optionnel)
    */
   public FortnitePronosException(
@@ -50,9 +50,9 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Constructeur simplifié pour erreurs métier courantes.
+   * Constructeur simplifiÃ© pour erreurs mÃ©tier courantes.
    *
-   * @param errorCode le code d'erreur standardisé
+   * @param errorCode le code d'erreur standardisÃ©
    * @param userMessage message pour l'utilisateur final
    */
   public FortnitePronosException(ErrorCode errorCode, String userMessage) {
@@ -62,7 +62,7 @@ public class FortnitePronosException extends RuntimeException {
   /**
    * Constructeur pour erreurs avec cause.
    *
-   * @param errorCode le code d'erreur standardisé
+   * @param errorCode le code d'erreur standardisÃ©
    * @param userMessage message pour l'utilisateur final
    * @param cause exception racine
    */
@@ -71,10 +71,10 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Constructeur avec contexte métier.
+   * Constructeur avec contexte mÃ©tier.
    *
-   * @param errorCode le code d'erreur standardisé
-   * @param context contexte métier de l'erreur
+   * @param errorCode le code d'erreur standardisÃ©
+   * @param context contexte mÃ©tier de l'erreur
    */
   public FortnitePronosException(ErrorCode errorCode, Map<String, Object> context) {
     this(errorCode, null, null, context, null);
@@ -83,7 +83,7 @@ public class FortnitePronosException extends RuntimeException {
   /**
    * Constructeur minimal avec juste le code d'erreur.
    *
-   * @param errorCode le code d'erreur standardisé
+   * @param errorCode le code d'erreur standardisÃ©
    */
   public FortnitePronosException(ErrorCode errorCode) {
     this(errorCode, null, null, null, null);
@@ -101,18 +101,18 @@ public class FortnitePronosException extends RuntimeException {
     }
 
     if (technicalDetails != null) {
-      sb.append(" | Détails techniques: ").append(technicalDetails);
+      sb.append(" | DÃ©tails techniques: ").append(technicalDetails);
     }
 
     return sb.toString();
   }
 
   /**
-   * Ajoute un élément au contexte de l'erreur.
+   * Ajoute un Ã©lÃ©ment au contexte de l'erreur.
    *
-   * @param key clé du contexte
+   * @param key clÃ© du contexte
    * @param value valeur du contexte
-   * @return cette exception pour chaînage
+   * @return cette exception pour chaÃ®nage
    */
   public FortnitePronosException addContext(String key, Object value) {
     this.context.put(key, value);
@@ -120,10 +120,10 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Ajoute plusieurs éléments au contexte.
+   * Ajoute plusieurs Ã©lÃ©ments au contexte.
    *
-   * @param additionalContext contexte supplémentaire
-   * @return cette exception pour chaînage
+   * @param additionalContext contexte supplÃ©mentaire
+   * @return cette exception pour chaÃ®nage
    */
   public FortnitePronosException addContext(Map<String, Object> additionalContext) {
     this.context.putAll(additionalContext);
@@ -133,7 +133,7 @@ public class FortnitePronosException extends RuntimeException {
   // === FACTORY METHODS POUR LES ERREURS COURANTES ===
 
   /**
-   * Crée une exception de validation.
+   * CrÃ©e une exception de validation.
    *
    * @param errorCode code d'erreur de validation
    * @param fieldName nom du champ en erreur
@@ -152,13 +152,13 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Crée une exception métier.
+   * CrÃ©e une exception mÃ©tier.
    *
-   * @param errorCode code d'erreur métier
-   * @param entityType type d'entité concernée
-   * @param entityId ID de l'entité concernée
+   * @param errorCode code d'erreur mÃ©tier
+   * @param entityType type d'entitÃ© concernÃ©e
+   * @param entityId ID de l'entitÃ© concernÃ©e
    * @param userMessage message pour l'utilisateur
-   * @return nouvelle exception métier
+   * @return nouvelle exception mÃ©tier
    */
   public static FortnitePronosException business(
       ErrorCode errorCode, String entityType, Object entityId, String userMessage) {
@@ -171,12 +171,12 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Crée une exception système.
+   * CrÃ©e une exception systÃ¨me.
    *
-   * @param errorCode code d'erreur système
-   * @param technicalDetails détails techniques
+   * @param errorCode code d'erreur systÃ¨me
+   * @param technicalDetails dÃ©tails techniques
    * @param cause exception racine
-   * @return nouvelle exception système
+   * @return nouvelle exception systÃ¨me
    */
   public static FortnitePronosException system(
       ErrorCode errorCode, String technicalDetails, Throwable cause) {
@@ -215,9 +215,9 @@ public class FortnitePronosException extends RuntimeException {
   }
 
   /**
-   * Génère un rapport complet de l'erreur pour les logs.
+   * GÃ©nÃ¨re un rapport complet de l'erreur pour les logs.
    *
-   * @return rapport structuré de l'erreur
+   * @return rapport structurÃ© de l'erreur
    */
   public String generateErrorReport() {
     StringBuilder report = new StringBuilder();

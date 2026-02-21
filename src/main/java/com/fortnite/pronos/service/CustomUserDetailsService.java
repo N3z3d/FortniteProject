@@ -9,9 +9,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,14 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-  private final UserRepository userRepository;
+  private final com.fortnite.pronos.repository.UserRepository userRepository;
 
   @Override
   @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     log.debug("Chargement de l'utilisateur: {}", username);
 
-    User user =
+    com.fortnite.pronos.model.User user =
         userRepository
             .findByEmail(username)
             .or(() -> userRepository.findByUsername(username))

@@ -27,7 +27,7 @@ import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.exception.DraftIncompleteException;
 import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
@@ -36,13 +36,14 @@ import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.draft.DraftService;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5778"})
 class GameDraftServiceDomainMigrationTest {
 
   @Mock private DraftDomainRepositoryPort draftDomainRepository;
   @Mock private GameDomainRepositoryPort gameDomainRepository;
   @Mock private DraftRepositoryPort draftRepository;
   @Mock private DraftPickRepositoryPort draftPickRepository;
-  @Mock private PlayerRepositoryPort playerRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private DraftService draftService;
 

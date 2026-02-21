@@ -1,5 +1,8 @@
 package com.fortnite.pronos.service;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -15,11 +18,11 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @TestConfiguration
 @EnableWebSecurity
-public class JwtServiceTestConfigTest {
+class JwtServiceTestConfigTest {
 
   @Bean
   @Primary
-  public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+  SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     return http.csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
         .build();
@@ -28,7 +31,12 @@ public class JwtServiceTestConfigTest {
   /** PasswordEncoder pour les tests */
   @Bean
   @Primary
-  public PasswordEncoder testPasswordEncoder() {
+  PasswordEncoder testPasswordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  @Test
+  void shouldDeclareTestConfigurationAnnotation() {
+    assertTrue(JwtServiceTestConfigTest.class.isAnnotationPresent(TestConfiguration.class));
   }
 }

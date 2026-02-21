@@ -49,7 +49,7 @@ export class RenameGameDialogComponent {
   }
 
   cancel(): void {
-    this.dialogRef.close(undefined);
+    this.dialogRef.close();
   }
 
   confirm(): void {

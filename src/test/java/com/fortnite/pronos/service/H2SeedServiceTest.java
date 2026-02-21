@@ -107,8 +107,9 @@ class H2SeedServiceTest {
     verify(userRepository, times(3)).save(captor.capture());
 
     List<String> usernames = captor.getAllValues().stream().map(User::getUsername).toList();
-    assertThat(usernames).doesNotContain("thibaut");
-    assertThat(usernames).containsExactlyInAnyOrder("teddy", "marcel", "sarah");
+    assertThat(usernames)
+        .doesNotContain("thibaut")
+        .containsExactlyInAnyOrder("teddy", "marcel", "sarah");
   }
 
   @Test

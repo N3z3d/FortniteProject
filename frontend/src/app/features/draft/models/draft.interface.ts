@@ -3,6 +3,9 @@
  * Basé sur le modèle backend Draft.java
  */
 
+export type DateValue = Date | string;
+export type NullableDateValue = DateValue | null;
+
 export interface Draft {
   id: string;
   gameId: string;
@@ -12,11 +15,11 @@ export interface Draft {
   totalRounds?: number;
   timePerPick?: number; // en secondes
   currentPick?: number;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  startedAt?: Date | string;
-  completedAt?: Date | string | null;
-  finishedAt?: Date | string | null;
+  createdAt?: DateValue;
+  updatedAt?: DateValue;
+  startedAt?: DateValue;
+  completedAt?: NullableDateValue;
+  finishedAt?: NullableDateValue;
   rules?: DraftRules;
   participants?: DraftParticipant[];
   picks?: DraftPick[];

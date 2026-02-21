@@ -134,7 +134,7 @@ class AuthServiceSimpleTddTest {
       this.passwordEncoder = passwordEncoder;
     }
 
-    public LoginResponse login(LoginRequest request) {
+    LoginResponse login(LoginRequest request) {
       // Authentification directe sans Spring Security pour le mode dev
       User user =
           userRepository

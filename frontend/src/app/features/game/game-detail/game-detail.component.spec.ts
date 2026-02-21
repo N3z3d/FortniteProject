@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GameDetailComponent } from './game-detail.component';
 import { GameDataService } from '../services/game-data.service';
@@ -11,6 +11,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
 
 const mockGame: Game = {
   id: '1',
@@ -40,6 +41,8 @@ describe('GameDetailComponent', () => {
   let userGamesStoreSpy: jasmine.SpyObj<UserGamesStore>;
   let uiFeedbackSpy: jasmine.SpyObj<UiErrorFeedbackService>;
   let loggerSpy: jasmine.SpyObj<LoggerService>;
+  let gamesRealtimeServiceSpy: jasmine.SpyObj<GamesRealtimeService>;
+  let realtimeEventsSubject: Subject<any>;
   let activatedRouteStub: any;
 
   beforeEach(async () => {
@@ -105,6 +108,10 @@ describe('GameDetailComponent', () => {
     userGamesStoreSpy.refreshGames.and.returnValue(of([mockGame]));
     uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', ['showError']);
     loggerSpy = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    realtimeEventsSubject = new Subject<any>();
+    gamesRealtimeServiceSpy = jasmine.createSpyObj<GamesRealtimeService>('GamesRealtimeService', [], {
+      events$: realtimeEventsSubject.asObservable()
+    });
     activatedRouteStub = { params: of({ id: '1' }) };
 
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
@@ -136,6 +143,7 @@ describe('GameDetailComponent', () => {
         { provide: UserGamesStore, useValue: userGamesStoreSpy },
         { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
         { provide: LoggerService, useValue: loggerSpy },
+        { provide: GamesRealtimeService, useValue: gamesRealtimeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRouteStub }
       ],
@@ -163,6 +171,55 @@ describe('GameDetailComponent', () => {
     expect(component.participants).toEqual(mockParticipants);
     expect(gameDataServiceSpy.getGameById).toHaveBeenCalledWith('1');
     expect(gameDataServiceSpy.getGameParticipants).toHaveBeenCalledWith('1');
+  }));
+
+  it('should refresh game details when realtime event targets current game', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    gameDataServiceSpy.getGameById.calls.reset();
+    gameDataServiceSpy.getGameParticipants.calls.reset();
+    userGamesStoreSpy.refreshGames.calls.reset();
+
+    realtimeEventsSubject.next({ type: 'GAME_UPDATED', gameId: '1' });
+    tick();
+
+    expect(userGamesStoreSpy.refreshGames).toHaveBeenCalled();
+    expect(gameDataServiceSpy.getGameById).toHaveBeenCalledWith('1');
+    expect(gameDataServiceSpy.getGameParticipants).toHaveBeenCalledWith('1');
+  }));
+
+  it('should ignore realtime events for another game', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    gameDataServiceSpy.getGameById.calls.reset();
+    gameDataServiceSpy.getGameParticipants.calls.reset();
+    userGamesStoreSpy.refreshGames.calls.reset();
+
+    realtimeEventsSubject.next({ type: 'GAME_UPDATED', gameId: 'other-game' });
+    tick();
+
+    expect(userGamesStoreSpy.refreshGames).not.toHaveBeenCalled();
+    expect(gameDataServiceSpy.getGameById).not.toHaveBeenCalled();
+    expect(gameDataServiceSpy.getGameParticipants).not.toHaveBeenCalled();
+  }));
+
+  it('should redirect from detail when realtime delete event makes game unavailable', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    userGamesStoreSpy.refreshGames.and.returnValue(of([]));
+    userGamesStoreSpy.removeGame.calls.reset();
+    routerSpy.navigate.calls.reset();
+    uiFeedbackSpy.showError.calls.reset();
+
+    realtimeEventsSubject.next({ type: 'GAME_DELETED', gameId: '1' });
+    tick();
+
+    expect(userGamesStoreSpy.removeGame).toHaveBeenCalledWith('1');
+    expect(uiFeedbackSpy.showError).toHaveBeenCalledWith(null, 'games.detail.gameUnavailable', { duration: 5000 });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games']);
   }));
 
   it('should redirect when game is not present in refreshed user games', fakeAsync(() => {

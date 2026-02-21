@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
  * Encapsulates the fallback logic for detecting "already in game" errors that may not be thrown as
  * UserAlreadyInGameException directly (e.g., wrapped in RuntimeException).
  */
+@SuppressWarnings({"java:S1872", "java:S2259"})
 final class AlreadyInGameFallbackHelper {
 
   private AlreadyInGameFallbackHelper() {}

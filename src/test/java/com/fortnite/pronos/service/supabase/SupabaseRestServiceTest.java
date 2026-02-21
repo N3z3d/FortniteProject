@@ -28,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fortnite.pronos.config.SupabaseProperties;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5853"})
 class SupabaseRestServiceTest {
 
   @Mock private SupabaseProperties supabaseProperties;
@@ -95,8 +96,7 @@ class SupabaseRestServiceTest {
     supabaseRestService.fetch("players", "id,name", Map.of("region", "eq.EU"), TestDto[].class);
 
     String url = urlCaptor.getValue();
-    assertThat(url).contains("rest/v1/players");
-    assertThat(url).contains("select=id,name");
+    assertThat(url).contains("rest/v1/players").contains("select=id,name");
     assertThat(url).contains("region=eq.EU");
   }
 

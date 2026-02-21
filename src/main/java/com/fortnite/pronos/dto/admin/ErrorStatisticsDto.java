@@ -20,6 +20,8 @@ public class ErrorStatisticsDto {
   private Map<String, Long> errorsByType;
   private Map<Integer, Long> errorsByStatusCode;
   private List<TopErrorEntry> topErrors;
+  private String trendGranularity;
+  private List<TrendPoint> errorTrend;
 
   @Data
   @Builder
@@ -30,5 +32,14 @@ public class ErrorStatisticsDto {
     private String message;
     private int count;
     private LocalDateTime lastOccurrence;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class TrendPoint {
+    private LocalDateTime periodStart;
+    private int count;
   }
 }

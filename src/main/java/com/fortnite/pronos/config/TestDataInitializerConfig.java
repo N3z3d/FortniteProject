@@ -15,6 +15,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
@@ -126,7 +127,7 @@ public class TestDataInitializerConfig {
       player.setRegion(ALLOWED_REGIONS.get((i - 1) % ALLOWED_REGIONS.size()));
       player.setTranche("1-7");
       player.setCurrentSeason(2025);
-      players.add(playerRepository.save(player));
+      players.add(((PlayerRepositoryPort) playerRepository).save(player));
     }
     return players;
   }
@@ -154,7 +155,7 @@ public class TestDataInitializerConfig {
       teamPlayers.add(tp);
     }
     team.setPlayers(teamPlayers);
-    return teamRepository.save(team);
+    return ((TeamRepositoryPort) teamRepository).save(team);
   }
 
   private Game createPremiereSaisonGame(
@@ -200,7 +201,7 @@ public class TestDataInitializerConfig {
     teams.forEach(
         team -> {
           team.setGame(game);
-          teamRepository.save(team);
+          ((TeamRepositoryPort) teamRepository).save(team);
         });
     teamRepository.flush();
   }

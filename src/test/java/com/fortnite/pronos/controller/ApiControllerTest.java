@@ -24,7 +24,7 @@ import com.fortnite.pronos.service.UserService;
 import com.fortnite.pronos.service.team.TeamQueryService;
 
 @ExtendWith(MockitoExtension.class)
-public class ApiControllerTest {
+class ApiControllerTest {
 
   @Mock private UserService userService;
 

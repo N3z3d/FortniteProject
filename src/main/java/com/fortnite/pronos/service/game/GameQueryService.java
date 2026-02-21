@@ -3,7 +3,6 @@ package com.fortnite.pronos.service.game;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,11 +12,11 @@ import com.fortnite.pronos.application.usecase.GameQueryUseCase;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.mapper.GameDtoMapper;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings({"java:S3864"})
 public class GameQueryService implements GameQueryUseCase {
 
   private final GameDomainRepositoryPort gameRepository;
-  private final PlayerRepository playerRepository;
+  private final PlayerDomainRepositoryPort playerRepository;
   private final UserRepositoryPort userRepository;
 
   /** Gets all games with optimized fetch strategy */
@@ -41,7 +41,7 @@ public class GameQueryService implements GameQueryUseCase {
     return gameRepository.findAllByOrderByCreatedAtDesc().stream()
         .map(this::toDtoWithCreator)
         .peek(dto -> dto.setFortnitePlayerCount(playerCount))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets games with available slots */
@@ -52,7 +52,7 @@ public class GameQueryService implements GameQueryUseCase {
     return gameRepository.findGamesWithAvailableSlots().stream()
         .map(this::toDtoWithCreator)
         .peek(dto -> dto.setFortnitePlayerCount(playerCount))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets games by user ID */
@@ -63,7 +63,7 @@ public class GameQueryService implements GameQueryUseCase {
     return gameRepository.findGamesByUserId(userId).stream()
         .map(this::toDtoWithCreator)
         .peek(dto -> dto.setFortnitePlayerCount(playerCount))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets a game by ID with full details */
@@ -94,9 +94,7 @@ public class GameQueryService implements GameQueryUseCase {
   @Override
   public List<GameDto> getGamesByStatus(GameStatus status) {
     log.debug("Retrieving games with status {}", status);
-    return gameRepository.findByStatus(status).stream()
-        .map(this::toDtoWithCreator)
-        .collect(Collectors.toList());
+    return gameRepository.findByStatus(status).stream().map(this::toDtoWithCreator).toList();
   }
 
   /** Gets active games (games that are not finished) */
@@ -105,7 +103,7 @@ public class GameQueryService implements GameQueryUseCase {
     log.debug("Retrieving active games");
     return gameRepository.findByStatusNot(GameStatus.FINISHED).stream()
         .map(this::toDtoWithCreator)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets games with pagination */
@@ -121,9 +119,7 @@ public class GameQueryService implements GameQueryUseCase {
             pageable.getSort().iterator().hasNext()
                 ? pageable.getSort().iterator().next().getDirection().name()
                 : "DESC");
-    return gameRepository.findAllGames(pagination).stream()
-        .map(this::toDtoWithCreator)
-        .collect(Collectors.toList());
+    return gameRepository.findAllGames(pagination).stream().map(this::toDtoWithCreator).toList();
   }
 
   /** Searches games by name */
@@ -132,16 +128,14 @@ public class GameQueryService implements GameQueryUseCase {
     log.debug("Searching games by name: {}", name);
     return gameRepository.findByNameContainingIgnoreCase(name).stream()
         .map(this::toDtoWithCreator)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets games created by user */
   @Override
   public List<GameDto> getGamesCreatedByUser(UUID userId) {
     log.debug("Retrieving games created by user {}", userId);
-    return gameRepository.findByCreatorId(userId).stream()
-        .map(this::toDtoWithCreator)
-        .collect(Collectors.toList());
+    return gameRepository.findByCreatorId(userId).stream().map(this::toDtoWithCreator).toList();
   }
 
   /** Checks if game exists */
@@ -176,7 +170,7 @@ public class GameQueryService implements GameQueryUseCase {
     return gameRepository.findByCurrentSeasonWithFetch(season).stream()
         .map(this::toDtoWithCreator)
         .peek(dto -> dto.setFortnitePlayerCount(playerCount))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /** Gets the current season (based on current year) */

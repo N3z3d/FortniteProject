@@ -4,9 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
-import { takeUntil, map, startWith, debounceTime, switchMap, tap } from 'rxjs/operators';
-import { trigger, transition, style, animate, query, stagger, keyframes } from '@angular/animations';
+import { Observable, Subject, BehaviorSubject, combineLatest, firstValueFrom, of } from 'rxjs';
+import { takeUntil, map, startWith, debounceTime, switchMap } from 'rxjs/operators';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
 import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
@@ -343,6 +342,12 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const selectedTeam = state.selectedTeam;
+    if (!selectedTeam) {
+      this.showErrorMessage(this.t.t('trades.proposal.messages.completeProposal'));
+      return;
+    }
+
     this.isSubmitting.next(true);
 
     // Default expiration: 72 hours from now
@@ -350,8 +355,8 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
     expiresAt.setHours(expiresAt.getHours() + 72);
 
     const tradeOffer: Partial<TradeOffer> = {
-      toTeamId: state.selectedTeam!.id,
-      toUserId: state.selectedTeam!.ownerId,
+      toTeamId: selectedTeam.id,
+      toUserId: selectedTeam.ownerId,
       offeredPlayers: state.offeredPlayers,
       requestedPlayers: state.requestedPlayers,
       expiresAt,
@@ -359,7 +364,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
     };
 
     try {
-      const createdTrade = await this.tradingService.createTradeOffer(tradeOffer).toPromise();
+      await firstValueFrom(this.tradingService.createTradeOffer(tradeOffer));
       
       this.showSuccessMessage(this.t.t('trades.proposal.messages.offerSent'));
       this.triggerSuccessAnimation();

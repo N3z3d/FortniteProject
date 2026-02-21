@@ -20,8 +20,6 @@ import com.fortnite.pronos.dto.mapper.GameDtoMapper;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
 import com.fortnite.pronos.exception.UserNotFoundException;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.InvitationCodeService;
 import com.fortnite.pronos.service.ValidationService;
 
@@ -48,7 +46,7 @@ public class GameCreationService implements GameCreationUseCase {
   public GameDto createGame(UUID creatorId, CreateGameRequest request) {
     log.debug("Creating game by user {}", creatorId);
 
-    User creator = findUserOrThrow(creatorId);
+    com.fortnite.pronos.model.User creator = findUserOrThrow(creatorId);
     validateGameRequest(request);
 
     Game game = buildDomainGame(creator, request);
@@ -128,7 +126,7 @@ public class GameCreationService implements GameCreationUseCase {
     return GameDtoMapper.fromDomainGame(savedGame);
   }
 
-  private User findUserOrThrow(UUID userId) {
+  private com.fortnite.pronos.model.User findUserOrThrow(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new UserNotFoundException("User not found: " + userId));
@@ -156,7 +154,7 @@ public class GameCreationService implements GameCreationUseCase {
     }
   }
 
-  private Game buildDomainGame(User creator, CreateGameRequest request) {
+  private Game buildDomainGame(com.fortnite.pronos.model.User creator, CreateGameRequest request) {
     Game game = new Game(request.getName(), creator.getId(), request.getMaxParticipants());
     if (request.getDescription() != null) {
       game.setDescription(request.getDescription());
@@ -164,7 +162,8 @@ public class GameCreationService implements GameCreationUseCase {
     return game;
   }
 
-  private void addRegionRules(Game game, Map<Player.Region, Integer> regionRules) {
+  private void addRegionRules(
+      Game game, Map<com.fortnite.pronos.model.Player.Region, Integer> regionRules) {
     if (regionRules == null) {
       return;
     }
@@ -175,7 +174,7 @@ public class GameCreationService implements GameCreationUseCase {
         });
   }
 
-  private void addCreatorAsParticipant(Game game, User creator) {
+  private void addCreatorAsParticipant(Game game, com.fortnite.pronos.model.User creator) {
     GameParticipant participant = new GameParticipant(creator.getId(), creator.getUsername(), true);
     game.addParticipant(participant);
   }

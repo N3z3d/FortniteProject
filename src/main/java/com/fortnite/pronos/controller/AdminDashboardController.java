@@ -12,14 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fortnite.pronos.dto.admin.AdminAlertDto;
+import com.fortnite.pronos.dto.admin.AdminAlertThresholdsDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
+import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 import com.fortnite.pronos.dto.common.ApiResponse;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.service.admin.AdminAlertService;
 import com.fortnite.pronos.service.admin.AdminDashboardService;
+import com.fortnite.pronos.service.admin.AdminVisitAnalyticsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +38,14 @@ public class AdminDashboardController {
 
   private static final int MIN_RECENT_ACTIVITY_HOURS = 1;
   private static final int MAX_RECENT_ACTIVITY_HOURS = 168;
+  private static final int MIN_ALERT_HOURS = 1;
+  private static final int MAX_ALERT_HOURS = 168;
+  private static final int MIN_VISIT_ANALYTICS_HOURS = 1;
+  private static final int MAX_VISIT_ANALYTICS_HOURS = 168;
 
   private final AdminDashboardService adminDashboardService;
+  private final AdminAlertService adminAlertService;
+  private final AdminVisitAnalyticsService adminVisitAnalyticsService;
 
   @GetMapping("/dashboard/summary")
   public ResponseEntity<ApiResponse<DashboardSummaryDto>> getDashboardSummary() {
@@ -80,5 +91,47 @@ public class AdminDashboardController {
   public ResponseEntity<ApiResponse<SystemMetricsDto>> getSystemMetrics() {
     log.info("Admin: fetching system metrics");
     return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getSystemMetrics()));
+  }
+
+  @GetMapping("/dashboard/visits")
+  public ResponseEntity<ApiResponse<VisitAnalyticsDto>> getVisitAnalytics(
+      @RequestParam(defaultValue = "24") int hours) {
+    if (hours < MIN_VISIT_ANALYTICS_HOURS || hours > MAX_VISIT_ANALYTICS_HOURS) {
+      return ResponseEntity.badRequest()
+          .body(
+              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+    }
+    return ResponseEntity.ok(
+        ApiResponse.success(adminVisitAnalyticsService.getVisitAnalytics(hours)));
+  }
+
+  @GetMapping("/alerts")
+  public ResponseEntity<ApiResponse<List<AdminAlertDto>>> getAlerts(
+      @RequestParam(defaultValue = "24") int hours,
+      @RequestParam(defaultValue = "5") double httpErrorRateThreshold,
+      @RequestParam(defaultValue = "85") double heapUsageThreshold,
+      @RequestParam(defaultValue = "90") double diskUsageThreshold,
+      @RequestParam(defaultValue = "80") double dbPoolUsageThreshold,
+      @RequestParam(defaultValue = "10") int criticalErrorsThreshold) {
+    if (hours < MIN_ALERT_HOURS || hours > MAX_ALERT_HOURS) {
+      return ResponseEntity.badRequest()
+          .body(
+              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+    }
+    AdminAlertThresholdsDto thresholds =
+        AdminAlertThresholdsDto.builder()
+            .httpErrorRatePercent(httpErrorRateThreshold)
+            .heapUsagePercent(heapUsageThreshold)
+            .diskUsagePercent(diskUsageThreshold)
+            .databaseConnectionUsagePercent(dbPoolUsageThreshold)
+            .criticalErrorsLast24Hours(criticalErrorsThreshold)
+            .build();
+    return ResponseEntity.ok(
+        ApiResponse.success(adminAlertService.getActiveAlerts(hours, thresholds)));
+  }
+
+  @GetMapping("/alerts/thresholds")
+  public ResponseEntity<ApiResponse<AdminAlertThresholdsDto>> getAlertThresholdDefaults() {
+    return ResponseEntity.ok(ApiResponse.success(adminAlertService.getDefaultThresholds()));
   }
 }

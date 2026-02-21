@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 /** Tests TDD pour JoinGameRequest */
 @DisplayName("Tests TDD - JoinGameRequest")
+@SuppressWarnings({"java:S5853", "java:S5976"})
 class JoinGameRequestTest {
 
   private JoinGameRequest joinGameRequest;
@@ -338,8 +339,7 @@ class JoinGameRequestTest {
     request2.setJoinAsSpectator(false);
 
     // When & Then
-    assertThat(joinGameRequest).isEqualTo(request2);
-    assertThat(joinGameRequest.hashCode()).isEqualTo(request2.hashCode());
+    assertThat(joinGameRequest).isEqualTo(request2).hasSameHashCodeAs(request2);
   }
 
   @Test
@@ -362,8 +362,9 @@ class JoinGameRequestTest {
     String stringRepresentation = joinGameRequest.toString();
 
     // Then
-    assertThat(stringRepresentation).contains(testGameId.toString());
-    assertThat(stringRepresentation).contains(testUserId.toString());
+    assertThat(stringRepresentation)
+        .contains(testGameId.toString())
+        .contains(testUserId.toString());
     assertThat(stringRepresentation).contains("TEST123");
   }
 

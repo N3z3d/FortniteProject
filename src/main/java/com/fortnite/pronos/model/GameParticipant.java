@@ -92,4 +92,9 @@ public class GameParticipant {
   public String getUsername() {
     return user != null ? user.getUsername() : null;
   }
+
+  /** Retourne l'ID utilisateur du participant */
+  public UUID getUserId() {
+    return user != null ? user.getId() : null;
+  }
 }

@@ -35,7 +35,7 @@ public class PrIngestionController {
   @PostMapping(
       value = "/csv",
       consumes = {MediaType.TEXT_PLAIN_VALUE, "text/csv"})
-  public ResponseEntity<?> ingestCsv(
+  public ResponseEntity<Object> ingestCsv(
       @RequestBody(required = false) String csv,
       @RequestParam(defaultValue = "LOCAL_PR_CSV") String source,
       @RequestParam(defaultValue = "2025") int season,

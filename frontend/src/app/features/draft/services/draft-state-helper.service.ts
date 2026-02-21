@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DraftStatus, PlayerRegion } from '../models/draft.interface';
+import { DraftStatus } from '../models/draft.interface';
 import { REGION_LABELS, STATUS_LABELS } from '../constants/draft.constants';
 
 /**
@@ -39,7 +39,7 @@ export class DraftStateHelperService {
    * Gets i18n key for region label
    */
   getRegionLabelKey(region: string): string {
-    return REGION_LABELS[region as PlayerRegion] || region;
+    return REGION_LABELS[region] || region;
   }
 
   /**

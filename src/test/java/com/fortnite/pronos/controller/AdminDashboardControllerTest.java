@@ -14,24 +14,32 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import com.fortnite.pronos.dto.admin.AdminAlertDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
+import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.service.admin.AdminAlertService;
 import com.fortnite.pronos.service.admin.AdminDashboardService;
+import com.fortnite.pronos.service.admin.AdminVisitAnalyticsService;
 
 @ExtendWith(MockitoExtension.class)
 class AdminDashboardControllerTest {
 
   @Mock private AdminDashboardService adminDashboardService;
+  @Mock private AdminAlertService adminAlertService;
+  @Mock private AdminVisitAnalyticsService adminVisitAnalyticsService;
 
   private AdminDashboardController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new AdminDashboardController(adminDashboardService);
+    controller =
+        new AdminDashboardController(
+            adminDashboardService, adminAlertService, adminVisitAnalyticsService);
   }
 
   @Nested
@@ -176,6 +184,59 @@ class AdminDashboardControllerTest {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody().getData().getJvm().getHeapUsedBytes()).isEqualTo(1000);
+    }
+  }
+
+  @Nested
+  class GetVisitAnalytics {
+
+    @Test
+    void shouldReturnVisitAnalytics() {
+      var dto =
+          VisitAnalyticsDto.builder()
+              .pageViews(120)
+              .uniqueVisitors(14)
+              .activeSessions(10)
+              .averageSessionDurationSeconds(88.4)
+              .build();
+      when(adminVisitAnalyticsService.getVisitAnalytics(24)).thenReturn(dto);
+
+      var response = controller.getVisitAnalytics(24);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().getData().getPageViews()).isEqualTo(120);
+    }
+
+    @Test
+    void shouldRejectInvalidHoursForVisitAnalytics() {
+      var response = controller.getVisitAnalytics(0);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+      verify(adminVisitAnalyticsService, never()).getVisitAnalytics(anyInt());
+    }
+  }
+
+  @Nested
+  class GetAlerts {
+
+    @Test
+    void shouldReturnAlertList() {
+      var alert =
+          AdminAlertDto.builder()
+              .code("SYSTEM_DOWN")
+              .severity(AdminAlertDto.Severity.CRITICAL)
+              .title("System down")
+              .message("System status is DOWN")
+              .build();
+      when(adminAlertService.getActiveAlerts(eq(24), any())).thenReturn(List.of(alert));
+
+      var response = controller.getAlerts(24, 5, 85, 90, 80, 10);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().getData()).hasSize(1);
+      assertThat(response.getBody().getData().get(0).getCode()).isEqualTo("SYSTEM_DOWN");
     }
   }
 }

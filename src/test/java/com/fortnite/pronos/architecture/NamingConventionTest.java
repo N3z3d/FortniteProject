@@ -14,7 +14,7 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
  * Architecture tests to enforce naming conventions and annotation consistency across different
  * layers of the application.
  */
-public class NamingConventionTest {
+class NamingConventionTest {
 
   private final JavaClasses classes =
       new ClassFileImporter()

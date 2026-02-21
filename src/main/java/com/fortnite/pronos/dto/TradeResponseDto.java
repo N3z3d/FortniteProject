@@ -3,7 +3,6 @@ package com.fortnite.pronos.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -17,12 +16,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** DTO pour les réponses de trade */
+/** DTO pour les rÃ©ponses de trade */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@SuppressWarnings({"java:S1168"})
 public class TradeResponseDto {
 
   private UUID id;
@@ -38,9 +38,9 @@ public class TradeResponseDto {
   private UUID originalTradeId;
 
   /**
-   * Convertit une entité Trade en DTO
+   * Convertit une entitÃ© Trade en DTO
    *
-   * @param trade l'entité Trade
+   * @param trade l'entitÃ© Trade
    * @return TradeResponseDto
    */
   public static TradeResponseDto fromTrade(Trade trade) {
@@ -73,11 +73,11 @@ public class TradeResponseDto {
     if (players == null || players.isEmpty()) {
       return null;
     }
-    return players.stream().map(PlayerDto::fromEntity).collect(Collectors.toList());
+    return players.stream().map(PlayerDto::fromEntity).toList();
   }
 
   /**
-   * Vérifie si le trade est en cours (pending)
+   * VÃ©rifie si le trade est en cours (pending)
    *
    * @return true si le trade est en attente
    */
@@ -86,45 +86,45 @@ public class TradeResponseDto {
   }
 
   /**
-   * Vérifie si le trade est accepté
+   * VÃ©rifie si le trade est acceptÃ©
    *
-   * @return true si le trade est accepté
+   * @return true si le trade est acceptÃ©
    */
   public boolean isAccepted() {
     return status == Trade.Status.ACCEPTED;
   }
 
   /**
-   * Vérifie si le trade est rejeté
+   * VÃ©rifie si le trade est rejetÃ©
    *
-   * @return true si le trade est rejeté
+   * @return true si le trade est rejetÃ©
    */
   public boolean isRejected() {
     return status == Trade.Status.REJECTED;
   }
 
   /**
-   * Vérifie si le trade est annulé
+   * VÃ©rifie si le trade est annulÃ©
    *
-   * @return true si le trade est annulé
+   * @return true si le trade est annulÃ©
    */
   public boolean isCancelled() {
     return status == Trade.Status.CANCELLED;
   }
 
   /**
-   * Vérifie si le trade a été contré
+   * VÃ©rifie si le trade a Ã©tÃ© contrÃ©
    *
-   * @return true si le trade a été contré
+   * @return true si le trade a Ã©tÃ© contrÃ©
    */
   public boolean isCountered() {
     return status == Trade.Status.COUNTERED;
   }
 
   /**
-   * Vérifie si le trade est terminé (accepté, rejeté, ou annulé)
+   * VÃ©rifie si le trade est terminÃ© (acceptÃ©, rejetÃ©, ou annulÃ©)
    *
-   * @return true si le trade est terminé
+   * @return true si le trade est terminÃ©
    */
   public boolean isFinalized() {
     return status == Trade.Status.ACCEPTED
@@ -135,7 +135,7 @@ public class TradeResponseDto {
   /**
    * Obtient la date de finalisation du trade
    *
-   * @return date de finalisation ou null si non finalisé
+   * @return date de finalisation ou null si non finalisÃ©
    */
   public LocalDateTime getFinalizationDate() {
     if (acceptedAt != null) {
@@ -149,7 +149,7 @@ public class TradeResponseDto {
   }
 
   /**
-   * Vérifie si c'est une contre-proposition
+   * VÃ©rifie si c'est une contre-proposition
    *
    * @return true si c'est une contre-proposition
    */
@@ -158,7 +158,7 @@ public class TradeResponseDto {
   }
 
   /**
-   * Obtient le nombre total de joueurs impliqués
+   * Obtient le nombre total de joueurs impliquÃ©s
    *
    * @return nombre total de joueurs
    */
@@ -169,9 +169,9 @@ public class TradeResponseDto {
   }
 
   /**
-   * Vérifie si le trade est équilibré
+   * VÃ©rifie si le trade est Ã©quilibrÃ©
    *
-   * @return true si le nombre de joueurs offerts égale le nombre demandé
+   * @return true si le nombre de joueurs offerts Ã©gale le nombre demandÃ©
    */
   public boolean isBalanced() {
     int offered = offeredPlayers != null ? offeredPlayers.size() : 0;

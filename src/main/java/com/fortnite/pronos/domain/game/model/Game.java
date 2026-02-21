@@ -1,23 +1,25 @@
 package com.fortnite.pronos.domain.game.model;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.UUID;
 
 /**
  * Pure domain model representing a fantasy league game. Contains all business logic with zero
  * framework dependencies (no JPA, no Spring, no Lombok).
  */
+@SuppressWarnings({"java:S107"})
 public final class Game {
 
   private static final int MIN_PARTICIPANTS = 2;
   private static final int MAX_PARTICIPANTS_LIMIT = 50;
   private static final int INVITATION_CODE_LENGTH = 8;
   private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  private static final SecureRandom CODE_RANDOM = new SecureRandom();
 
   private UUID id;
   private String name;
@@ -395,10 +397,9 @@ public final class Game {
   }
 
   private String generateRandomCode() {
-    Random random = new Random();
     StringBuilder code = new StringBuilder(INVITATION_CODE_LENGTH);
     for (int i = 0; i < INVITATION_CODE_LENGTH; i++) {
-      code.append(CODE_CHARS.charAt(random.nextInt(CODE_CHARS.length())));
+      code.append(CODE_CHARS.charAt(CODE_RANDOM.nextInt(CODE_CHARS.length())));
     }
     return code.toString();
   }

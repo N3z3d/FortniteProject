@@ -29,6 +29,7 @@ import com.fortnite.pronos.model.User;
  * paramètre
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5976"})
 class UserContextServiceTddTest {
 
   @Mock private UserService userService;

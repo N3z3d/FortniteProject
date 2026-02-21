@@ -110,12 +110,17 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   private loadTeam(): void {
     this.loading = true;
+    const teamId = this.teamId;
+    if (!teamId) {
+      this.loading = false;
+      return;
+    }
 
     // Simuler le chargement d'une équipe
     setTimeout(() => {
       // Mock data
       const teamData: TeamEditData = {
-        id: this.teamId!,
+        id: teamId,
         name: 'Équipe Thibaut',
         season: 2025,
         ownerUsername: 'Thibaut',

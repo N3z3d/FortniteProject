@@ -11,6 +11,7 @@ import java.util.UUID;
  * Pure domain model for Trade. No JPA, Spring, Hibernate, or Lombok dependencies. Represents a
  * trade proposal between two teams exchanging players.
  */
+@SuppressWarnings({"java:S107", "java:S1488"})
 public final class Trade {
 
   private final UUID id;

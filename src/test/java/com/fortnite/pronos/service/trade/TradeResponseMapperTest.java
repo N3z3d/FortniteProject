@@ -15,20 +15,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.domain.trade.model.Trade;
 import com.fortnite.pronos.domain.trade.model.TradeStatus;
 import com.fortnite.pronos.dto.TradeResponseDto;
 import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TradeResponseMapper - Domain Trade to DTO mapping")
 class TradeResponseMapperTest {
 
-  @Mock private TeamRepository teamRepository;
-  @Mock private PlayerRepository playerRepository;
+  @Mock private TeamDomainRepositoryPort teamDomainRepository;
+  @Mock private PlayerDomainRepositoryPort playerDomainRepository;
+  @Mock private UserRepositoryPort userRepository;
+  @Mock private PlayerRepositoryPort playerRepository;
 
   @InjectMocks private TradeResponseMapper mapper;
 
@@ -56,13 +59,12 @@ class TradeResponseMapperTest {
             null,
             null);
 
-    Team fromTeam = new Team();
-    fromTeam.setId(fromTeamId);
-    fromTeam.setName("Team Alpha");
-
-    Team toTeam = new Team();
-    toTeam.setId(toTeamId);
-    toTeam.setName("Team Beta");
+    com.fortnite.pronos.domain.team.model.Team fromTeam =
+        com.fortnite.pronos.domain.team.model.Team.restore(
+            fromTeamId, "Team Alpha", UUID.randomUUID(), 2026, null, 0, List.of());
+    com.fortnite.pronos.domain.team.model.Team toTeam =
+        com.fortnite.pronos.domain.team.model.Team.restore(
+            toTeamId, "Team Beta", UUID.randomUUID(), 2026, null, 0, List.of());
 
     Player offeredPlayer = new Player();
     offeredPlayer.setId(offeredPlayerId);
@@ -72,11 +74,10 @@ class TradeResponseMapperTest {
     requestedPlayer.setId(requestedPlayerId);
     requestedPlayer.setNickname("PlayerB");
 
-    when(teamRepository.findById(fromTeamId)).thenReturn(Optional.of(fromTeam));
-    when(teamRepository.findById(toTeamId)).thenReturn(Optional.of(toTeam));
-    when(playerRepository.findAllById(List.of(offeredPlayerId))).thenReturn(List.of(offeredPlayer));
-    when(playerRepository.findAllById(List.of(requestedPlayerId)))
-        .thenReturn(List.of(requestedPlayer));
+    when(teamDomainRepository.findByIdWithFetch(fromTeamId)).thenReturn(Optional.of(fromTeam));
+    when(teamDomainRepository.findByIdWithFetch(toTeamId)).thenReturn(Optional.of(toTeam));
+    when(playerRepository.findById(offeredPlayerId)).thenReturn(Optional.of(offeredPlayer));
+    when(playerRepository.findById(requestedPlayerId)).thenReturn(Optional.of(requestedPlayer));
 
     TradeResponseDto dto = mapper.toDto(domainTrade);
 
@@ -118,10 +119,10 @@ class TradeResponseMapperTest {
             null,
             null);
 
-    when(teamRepository.findById(fromTeamId)).thenReturn(Optional.empty());
-    when(teamRepository.findById(toTeamId)).thenReturn(Optional.empty());
-    when(playerRepository.findAllById(domainTrade.getOfferedPlayerIds())).thenReturn(List.of());
-    when(playerRepository.findAllById(domainTrade.getRequestedPlayerIds())).thenReturn(List.of());
+    when(teamDomainRepository.findByIdWithFetch(fromTeamId)).thenReturn(Optional.empty());
+    when(teamDomainRepository.findByIdWithFetch(toTeamId)).thenReturn(Optional.empty());
+    when(playerRepository.findById(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(Optional.empty());
 
     TradeResponseDto dto = mapper.toDto(domainTrade);
 
@@ -165,8 +166,10 @@ class TradeResponseMapperTest {
             null,
             null);
 
-    when(teamRepository.findById(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.empty());
-    when(playerRepository.findAllById(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+    when(teamDomainRepository.findByIdWithFetch(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(Optional.empty());
+    when(playerRepository.findById(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(Optional.empty());
 
     List<TradeResponseDto> dtos = mapper.toDtos(List.of(trade1, trade2));
 
@@ -200,9 +203,10 @@ class TradeResponseMapperTest {
               null,
               null);
 
-      when(teamRepository.findById(org.mockito.ArgumentMatchers.any()))
+      when(teamDomainRepository.findByIdWithFetch(org.mockito.ArgumentMatchers.any()))
           .thenReturn(Optional.empty());
-      when(playerRepository.findAllById(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+      when(playerRepository.findById(org.mockito.ArgumentMatchers.any()))
+          .thenReturn(Optional.empty());
 
       TradeResponseDto dto = mapper.toDto(trade);
 
@@ -228,8 +232,10 @@ class TradeResponseMapperTest {
             null,
             originalId);
 
-    when(teamRepository.findById(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.empty());
-    when(playerRepository.findAllById(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+    when(teamDomainRepository.findByIdWithFetch(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(Optional.empty());
+    when(playerRepository.findById(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(Optional.empty());
 
     TradeResponseDto dto = mapper.toDto(trade);
 

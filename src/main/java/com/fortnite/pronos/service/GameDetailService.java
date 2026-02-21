@@ -1,204 +1,180 @@
 package com.fortnite.pronos.service;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
-import jakarta.persistence.EntityNotFoundException;
-
-import org.hibernate.ObjectNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.GameDetailUseCase;
-import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.draft.model.Draft;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameParticipant;
+import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.GameDetailDto;
-import com.fortnite.pronos.dto.GameDetailDto.*;
+import com.fortnite.pronos.dto.GameDetailDto.DraftInfo;
+import com.fortnite.pronos.dto.GameDetailDto.GameStatistics;
+import com.fortnite.pronos.dto.GameDetailDto.ParticipantInfo;
+import com.fortnite.pronos.dto.GameDetailDto.PlayerInfo;
 import com.fortnite.pronos.exception.GameNotFoundException;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Service pour récupérer les détails complets d'une game Clean Code : Service focalisé sur la
- * lecture des détails de game
- */
+/** Service pour recuperer les details complets d'une game. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings({"java:S1612"})
 public class GameDetailService implements GameDetailUseCase {
 
   private static final String MISSING_PLAYER_NICKNAME = "Joueur indisponible";
   private static final String MISSING_PLAYER_REGION = "UNKNOWN";
   private static final String MISSING_PLAYER_TRANCHE = "N/A";
   private static final String MISSING_USER_NAME = "Utilisateur indisponible";
-
   private static final int DEFAULT_SEASON = 2025;
 
-  private final GameRepositoryPort gameRepository;
-  private final GameParticipantRepositoryPort gameParticipantRepository;
-  private final DraftRepository draftRepository;
-  private final ScoreRepository scoreRepository;
+  private final GameDomainRepositoryPort gameRepository;
+  private final DraftDomainRepositoryPort draftRepository;
+  private final PlayerDomainRepositoryPort playerRepository;
+  private final ScoreRepositoryPort scoreRepository;
+  private final UserRepositoryPort userRepository;
 
-  /**
-   * Récupère les détails complets d'une game Clean Code : méthode principale qui orchestre la
-   * récupération
-   */
+  @Override
   public GameDetailDto getGameDetails(UUID gameId) {
-    log.debug("Récupération des détails de la game {}", gameId);
-
-    // Récupérer la game
+    log.debug("Recuperation des details de la game {}", gameId);
     Game game = findGameOrThrow(gameId);
-
-    // Récupérer les participants
-    List<GameParticipant> participants = gameParticipantRepository.findByGame(game);
-
-    // Récupérer le draft si présent
-    Optional<Draft> draft = draftRepository.findByGame(game);
-
-    // Construire le DTO
+    List<GameParticipant> participants = game.getParticipants();
+    Optional<Draft> draft = draftRepository.findByGameId(gameId);
     return buildGameDetailDto(game, participants, draft);
   }
 
-  /** Trouve une game ou lance une exception Clean Code : responsabilité unique */
   private Game findGameOrThrow(UUID gameId) {
     return gameRepository
         .findById(gameId)
-        .orElseThrow(() -> new GameNotFoundException("Game non trouvée : " + gameId));
+        .orElseThrow(() -> new GameNotFoundException("Game non trouvee : " + gameId));
   }
 
-  /** Construit le DTO complet Clean Code : méthode de construction isolée */
   private GameDetailDto buildGameDetailDto(
       Game game, List<GameParticipant> participants, Optional<Draft> draft) {
     return GameDetailDto.builder()
         .gameId(game.getId())
         .gameName(game.getName())
         .description(game.getDescription())
-        .creatorName(game.getCreator().getUsername())
+        .creatorName(resolveCreatorName(game, participants))
         .status(game.getStatus().name())
         .invitationCode(game.getInvitationCode())
         .maxParticipants(game.getMaxParticipants())
         .createdAt(game.getCreatedAt())
-        .updatedAt(game.getCreatedAt()) // Utiliser createdAt à défaut d'updatedAt
-        .participants(buildParticipantInfos(participants, game.getCreator(), game.getId()))
+        .updatedAt(game.getCreatedAt())
+        .participants(buildParticipantInfos(participants, game.getCreatorId()))
         .draftInfo(draft.map(this::buildDraftInfo).orElse(null))
-        .statistics(buildStatistics(participants, game, game.getId()))
+        .statistics(buildStatistics(participants, game))
         .build();
   }
 
-  /** Construit la liste des informations des participants Clean Code : méthode focalisée */
-  private List<ParticipantInfo> buildParticipantInfos(
-      List<GameParticipant> participants, User creator, UUID gameId) {
-    return participants.stream()
-        .map(participant -> buildParticipantInfo(participant, creator, gameId))
-        .collect(Collectors.toList());
+  private String resolveCreatorName(Game game, List<GameParticipant> participants) {
+    if (game.getCreatorId() == null) {
+      return MISSING_USER_NAME;
+    }
+
+    Optional<String> creatorFromParticipants =
+        participants.stream()
+            .filter(participant -> game.getCreatorId().equals(participant.getUserId()))
+            .map(GameParticipant::getUsername)
+            .filter(this::hasText)
+            .findFirst();
+    if (creatorFromParticipants.isPresent()) {
+      return creatorFromParticipants.get();
+    }
+
+    return userRepository
+        .findById(game.getCreatorId())
+        .map(com.fortnite.pronos.model.User::getUsername)
+        .filter(this::hasText)
+        .orElse(MISSING_USER_NAME);
   }
 
-  /** Construit l'information d'un participant Clean Code : transformation simple et claire */
-  private ParticipantInfo buildParticipantInfo(
-      GameParticipant participant, User creator, UUID gameId) {
-    User user = getParticipantUserSafe(participant, gameId);
+  private List<ParticipantInfo> buildParticipantInfos(
+      List<GameParticipant> participants, UUID creatorId) {
+    return participants.stream()
+        .map(participant -> buildParticipantInfo(participant, creatorId))
+        .toList();
+  }
 
-    List<PlayerInfo> selectedPlayers = buildPlayerInfosSafe(participant, gameId);
+  private ParticipantInfo buildParticipantInfo(GameParticipant participant, UUID creatorId) {
+    Optional<com.fortnite.pronos.model.User> user = findUser(participant.getUserId());
+    List<PlayerInfo> selectedPlayers = buildPlayerInfos(participant);
 
     return ParticipantInfo.builder()
         .participantId(participant.getId())
-        .username(user != null ? user.getUsername() : MISSING_USER_NAME)
-        .email(user != null ? user.getEmail() : null)
+        .username(resolveParticipantUsername(participant, user.orElse(null)))
+        .email(user.map(com.fortnite.pronos.model.User::getEmail).orElse(null))
         .joinedAt(resolveJoinedAt(participant))
         .joinOrder(participant.getDraftOrder() != null ? participant.getDraftOrder() : 0)
-        .isCreator(isCreator(user, creator))
+        .isCreator(isCreator(participant, creatorId))
         .totalPlayers(selectedPlayers.size())
         .selectedPlayers(selectedPlayers)
         .build();
+  }
+
+  private Optional<com.fortnite.pronos.model.User> findUser(UUID userId) {
+    if (userId == null) {
+      return Optional.empty();
+    }
+    return userRepository.findById(userId);
+  }
+
+  private String resolveParticipantUsername(
+      GameParticipant participant, com.fortnite.pronos.model.User user) {
+    if (hasText(participant.getUsername())) {
+      return participant.getUsername();
+    }
+    if (user != null && hasText(user.getUsername())) {
+      return user.getUsername();
+    }
+    return MISSING_USER_NAME;
   }
 
   private LocalDateTime resolveJoinedAt(GameParticipant participant) {
     return participant.getJoinedAt() != null ? participant.getJoinedAt() : LocalDateTime.now();
   }
 
-  private boolean isCreator(User user, User creator) {
-    return user != null
-        && creator != null
-        && user.getId() != null
-        && user.getId().equals(creator.getId());
+  private boolean isCreator(GameParticipant participant, UUID creatorId) {
+    return participant.isCreator()
+        || (creatorId != null
+            && participant.getUserId() != null
+            && creatorId.equals(participant.getUserId()));
   }
 
-  private User getParticipantUserSafe(GameParticipant participant, UUID gameId) {
-    try {
-      User user = participant.getUser();
-      if (user == null) {
-        log.warn(
-            "Participant sans utilisateur detecte (participantId={}, gameId={})",
-            participant.getId(),
-            gameId);
-      }
-      return user;
-    } catch (EntityNotFoundException | ObjectNotFoundException e) {
-      log.warn(
-          "Utilisateur introuvable (participantId={}, gameId={})", participant.getId(), gameId, e);
-      return null;
-    }
-  }
-
-  private List<PlayerInfo> buildPlayerInfosSafe(GameParticipant participant, UUID gameId) {
-    List<Player> players = getSelectedPlayersSafe(participant, gameId);
-    if (players.isEmpty()) {
+  private List<PlayerInfo> buildPlayerInfos(GameParticipant participant) {
+    List<UUID> selectedPlayerIds = participant.getSelectedPlayerIds();
+    if (selectedPlayerIds == null || selectedPlayerIds.isEmpty()) {
       return Collections.emptyList();
     }
 
-    List<PlayerInfo> infos = new ArrayList<>();
-    for (Player player : players) {
-      infos.add(buildPlayerInfoOrFallback(player, gameId, participant.getId()));
-    }
-    return infos;
+    return selectedPlayerIds.stream().map(this::buildPlayerInfoOrFallback).toList();
   }
 
-  private List<Player> getSelectedPlayersSafe(GameParticipant participant, UUID gameId) {
-    try {
-      List<Player> players = participant.getSelectedPlayers();
-      return players != null ? players : Collections.emptyList();
-    } catch (EntityNotFoundException | ObjectNotFoundException e) {
-      log.warn(
-          "Joueurs selectionnes introuvables (participantId={}, gameId={})",
-          participant.getId(),
-          gameId,
-          e);
-      return Collections.<Player>singletonList(null);
-    }
-  }
-
-  private PlayerInfo buildPlayerInfoOrFallback(Player player, UUID gameId, UUID participantId) {
-    if (player == null) {
-      log.warn(
-          "Joueur manquant (participantId={}, gameId={}) - fallback applique",
-          participantId,
-          gameId);
+  private PlayerInfo buildPlayerInfoOrFallback(UUID playerId) {
+    if (playerId == null) {
       return buildMissingPlayerInfo();
     }
 
-    try {
-      return buildPlayerInfo(player);
-    } catch (EntityNotFoundException | ObjectNotFoundException e) {
-      log.warn(
-          "Joueur introuvable en base (participantId={}, gameId={}) - fallback applique",
-          participantId,
-          gameId,
-          e);
-      return buildMissingPlayerInfo();
-    } catch (RuntimeException e) {
-      log.error(
-          "Erreur lors du mapping du joueur (participantId={}, gameId={})",
-          participantId,
-          gameId,
-          e);
-      return buildMissingPlayerInfo();
-    }
+    return playerRepository
+        .findById(playerId)
+        .map(this::buildPlayerInfo)
+        .orElseGet(this::buildMissingPlayerInfo);
   }
 
   private PlayerInfo buildMissingPlayerInfo() {
@@ -211,44 +187,39 @@ public class GameDetailService implements GameDetailUseCase {
         .build();
   }
 
-  /** Construit l'information d'un joueur Clean Code : methode simple et pure */
-  private PlayerInfo buildPlayerInfo(Player player) {
+  private PlayerInfo buildPlayerInfo(com.fortnite.pronos.domain.player.model.Player player) {
     String region = player.getRegion() != null ? player.getRegion().name() : MISSING_PLAYER_REGION;
-    String tranche = player.getTranche() != null ? player.getTranche() : MISSING_PLAYER_TRANCHE;
+    String tranche = hasText(player.getTranche()) ? player.getTranche() : MISSING_PLAYER_TRANCHE;
 
     return PlayerInfo.builder()
         .playerId(player.getId())
         .nickname(player.getNickname())
         .region(region)
         .tranche(tranche)
-        .currentScore(calculateCurrentScore(player)) // Calcul du score actuel
+        .currentScore(calculateCurrentScore(player.getId(), player.getCurrentSeason()))
         .build();
   }
 
-  /** Construit l'information du draft Clean Code : transformation isolée */
   private DraftInfo buildDraftInfo(Draft draft) {
     return DraftInfo.builder()
         .draftId(draft.getId())
         .status(draft.getStatus().name())
         .startedAt(draft.getStartedAt())
         .finishedAt(draft.getFinishedAt())
-        .pausedAt(null) // Champ non disponible
+        .pausedAt(null)
         .currentRound(draft.getCurrentRound())
         .currentPick(draft.getCurrentPick())
-        .currentPickerUsername(getCurrentPickerUsername(draft)) // Récupération du picker actuel
+        .currentPickerUsername(null)
         .build();
   }
 
-  /** Calcule les statistiques de la game Clean Code : calculs regroupés */
-  private GameStatistics buildStatistics(
-      List<GameParticipant> participants, Game game, UUID gameId) {
-    int totalParticipants = participants.size();
-    int totalPlayers = calculateTotalPlayers(participants, gameId);
-    Map<String, Integer> regionDistribution = calculateRegionDistribution(participants, gameId);
+  private GameStatistics buildStatistics(List<GameParticipant> participants, Game game) {
+    int totalParticipants = calculateTotalParticipants(participants, game.getCreatorId());
+    int totalPlayers = calculateTotalPlayers(participants);
+    Map<String, Integer> regionDistribution = calculateRegionDistribution(participants);
     double averagePlayersPerParticipant =
         totalParticipants > 0 ? (double) totalPlayers / totalParticipants : 0.0;
-    int maxParticipants = game.getMaxParticipants() != null ? game.getMaxParticipants() : 0;
-    int remainingSlots = Math.max(0, maxParticipants - totalParticipants);
+    int remainingSlots = Math.max(0, game.getMaxParticipants() - totalParticipants);
 
     return GameStatistics.builder()
         .totalParticipants(totalParticipants)
@@ -259,31 +230,36 @@ public class GameDetailService implements GameDetailUseCase {
         .build();
   }
 
-  /** Calcule le nombre total de joueurs Clean Code : méthode focalisée */
-  private int calculateTotalPlayers(List<GameParticipant> participants, UUID gameId) {
+  private int calculateTotalParticipants(List<GameParticipant> participants, UUID creatorId) {
+    int participantsCount = participants.size();
+    if (creatorId == null) {
+      return participantsCount;
+    }
+
+    boolean creatorAlreadyCounted =
+        participants.stream().anyMatch(participant -> creatorId.equals(participant.getUserId()));
+    return creatorAlreadyCounted ? participantsCount : participantsCount + 1;
+  }
+
+  private int calculateTotalPlayers(List<GameParticipant> participants) {
     return participants.stream()
-        .mapToInt(participant -> getSelectedPlayersSafe(participant, gameId).size())
+        .map(GameParticipant::getSelectedPlayerIds)
+        .filter(ids -> ids != null)
+        .mapToInt(List::size)
         .sum();
   }
 
-  /** Calcule la distribution par région Clean Code : calcul isolé avec stream */
-  private Map<String, Integer> calculateRegionDistribution(
-      List<GameParticipant> participants, UUID gameId) {
+  private Map<String, Integer> calculateRegionDistribution(List<GameParticipant> participants) {
     Map<String, Integer> distribution = new HashMap<>();
 
     for (GameParticipant participant : participants) {
-      List<Player> players = getSelectedPlayersSafe(participant, gameId);
-      for (Player player : players) {
-        if (player == null) {
-          log.warn(
-              "Joueur null dans les statistiques (participantId={}, gameId={})",
-              participant.getId(),
-              gameId);
-          distribution.merge(MISSING_PLAYER_REGION, 1, Integer::sum);
-          continue;
-        }
-        String region =
-            player.getRegion() != null ? player.getRegion().name() : MISSING_PLAYER_REGION;
+      List<UUID> selectedPlayerIds = participant.getSelectedPlayerIds();
+      if (selectedPlayerIds == null) {
+        continue;
+      }
+
+      for (UUID playerId : selectedPlayerIds) {
+        String region = resolvePlayerRegion(playerId);
         distribution.merge(region, 1, Integer::sum);
       }
     }
@@ -291,27 +267,30 @@ public class GameDetailService implements GameDetailUseCase {
     return distribution;
   }
 
-  /** Calcule le score actuel d'un joueur Clean Code : methode d'aide focalisee */
-  private int calculateCurrentScore(Player player) {
-    if (player == null || player.getId() == null) {
+  private String resolvePlayerRegion(UUID playerId) {
+    if (playerId == null) {
+      return MISSING_PLAYER_REGION;
+    }
+
+    return playerRepository
+        .findById(playerId)
+        .map(
+            player ->
+                player.getRegion() != null ? player.getRegion().name() : MISSING_PLAYER_REGION)
+        .orElse(MISSING_PLAYER_REGION);
+  }
+
+  private int calculateCurrentScore(UUID playerId, int season) {
+    if (playerId == null) {
       return 0;
     }
-    int season = player.getCurrentSeason() != null ? player.getCurrentSeason() : DEFAULT_SEASON;
-    Integer points = scoreRepository.sumPointsByPlayerAndSeason(player.getId(), season);
+
+    int effectiveSeason = season > 0 ? season : DEFAULT_SEASON;
+    Integer points = scoreRepository.sumPointsByPlayerAndSeason(playerId, effectiveSeason);
     return points != null ? points : 0;
   }
 
-  /**
-   * Récupère le nom d'utilisateur du picker actuel dans un draft Clean Code : méthode d'aide
-   * focalisée
-   */
-  private String getCurrentPickerUsername(Draft draft) {
-    if (draft.getStatus() != Draft.Status.IN_PROGRESS) {
-      return null;
-    }
-
-    // Note: La logique du draft devrait être dans DraftService
-    // Pour l'instant, on retourne null car cette info n'est pas facilement accessible
-    return null;
+  private boolean hasText(String value) {
+    return value != null && !value.trim().isEmpty();
   }
 }

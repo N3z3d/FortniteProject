@@ -9,33 +9,32 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.TeamPlayer;
-
+@SuppressWarnings({"java:S135"})
 public final class TeamRosterSanitizer {
   private static final Logger log = LoggerFactory.getLogger(TeamRosterSanitizer.class);
 
   private TeamRosterSanitizer() {}
 
-  public static List<TeamPlayer> sanitize(Team team, String source) {
+  public static List<com.fortnite.pronos.model.TeamPlayer> sanitize(
+      com.fortnite.pronos.model.Team team, String source) {
     if (team == null) {
       return List.of();
     }
     return sanitize(team.getPlayers(), team.getId(), source);
   }
 
-  public static List<TeamPlayer> sanitize(List<TeamPlayer> roster, UUID teamId, String source) {
-    List<TeamPlayer> safeRoster = roster == null ? List.of() : roster;
-    Map<UUID, TeamPlayer> uniquePlayers = new LinkedHashMap<>();
+  public static List<com.fortnite.pronos.model.TeamPlayer> sanitize(
+      List<com.fortnite.pronos.model.TeamPlayer> roster, UUID teamId, String source) {
+    List<com.fortnite.pronos.model.TeamPlayer> safeRoster = roster == null ? List.of() : roster;
+    Map<UUID, com.fortnite.pronos.model.TeamPlayer> uniquePlayers = new LinkedHashMap<>();
     int duplicates = 0;
     int missingPlayers = 0;
 
-    for (TeamPlayer teamPlayer : safeRoster) {
+    for (com.fortnite.pronos.model.TeamPlayer teamPlayer : safeRoster) {
       if (teamPlayer == null || !teamPlayer.isActive()) {
         continue;
       }
-      Player player = teamPlayer.getPlayer();
+      com.fortnite.pronos.model.Player player = teamPlayer.getPlayer();
       if (player == null || player.getId() == null) {
         missingPlayers++;
         continue;

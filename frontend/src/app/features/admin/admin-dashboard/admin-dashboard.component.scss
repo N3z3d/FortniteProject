@@ -1,4 +1,4 @@
-@import '../../../shared/styles/mixins';
+@use '../../../shared/styles/mixins' as mixins;
 
 :host {
   display: block;
@@ -6,7 +6,7 @@
 }
 
 .admin-dashboard {
-  @include responsive-container(1400px);
+  @include mixins.responsive-container(1400px);
 }
 
 .dashboard-header {
@@ -16,9 +16,9 @@
   margin-bottom: var(--space-xl);
 
   .dashboard-title {
-    @include gaming-title;
-    @include responsive-font(2rem, 1.5rem, 1.2rem);
     margin: 0;
+    @include mixins.gaming-title;
+    @include mixins.responsive-font(2rem, 1.5rem, 1.2rem);
   }
 
   button {
@@ -49,17 +49,19 @@
 }
 
 .dashboard-grid {
-  @include responsive-grid(2, 1, 1, var(--space-lg));
+  @include mixins.responsive-grid(2, 1, 1, var(--space-lg));
 }
 
 .dashboard-card {
-  @include glass-card-dark(0.85, 16px, 0.12);
+  @include mixins.glass-card-dark(0.85, 16px, 0.12);
   padding: var(--space-lg);
-  @include fade-in-up(0s, 0.5s);
+  @include mixins.fade-in-up(0s, 0.5s);
 
   &:nth-child(2) { animation-delay: 0.1s; }
   &:nth-child(3) { animation-delay: 0.2s; }
   &:nth-child(4) { animation-delay: 0.3s; }
+  &:nth-child(5) { animation-delay: 0.4s; }
+  &:nth-child(6) { animation-delay: 0.5s; }
 
   mat-card-header {
     margin-bottom: var(--space-md);
@@ -70,9 +72,9 @@
     }
 
     mat-card-title {
-      @include gaming-font;
-      @include responsive-font(1.1rem, 1rem, 0.9rem);
       color: var(--gaming-light, #fff);
+      @include mixins.gaming-font;
+      @include mixins.responsive-font(1.1rem, 1rem, 0.9rem);
     }
   }
 
@@ -100,8 +102,8 @@
     font-family: 'Orbitron', monospace;
     font-size: 2rem;
     font-weight: 700;
-    @include gaming-text-gradient;
     margin-bottom: var(--space-xs);
+    @include mixins.gaming-text-gradient;
   }
 
   .kpi-label {
@@ -114,7 +116,7 @@
 
 .games-by-status {
   h4 {
-    @include gaming-font;
+    @include mixins.gaming-font;
     font-size: 0.85rem;
     color: var(--gaming-light, #fff);
     margin-bottom: var(--space-sm);
@@ -243,7 +245,7 @@
 
 .recent-list {
   h4 {
-    @include gaming-font;
+    @include mixins.gaming-font;
     font-size: 0.85rem;
     color: var(--gaming-light, #fff);
     margin-bottom: var(--space-sm);
@@ -300,6 +302,167 @@
   }
 }
 
+// Alerts Card
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.alert-item {
+  border-radius: var(--radius-medium);
+  padding: var(--space-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+
+  &.severity-critical {
+    border-color: rgba(244, 67, 54, 0.45);
+    background: rgba(244, 67, 54, 0.12);
+  }
+
+  &.severity-warning {
+    border-color: rgba(255, 152, 0, 0.45);
+    background: rgba(255, 152, 0, 0.12);
+  }
+
+  &.severity-info {
+    border-color: rgba(33, 150, 243, 0.45);
+    background: rgba(33, 150, 243, 0.12);
+  }
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.alert-title {
+  flex: 1;
+  color: var(--gaming-light, #fff);
+  font-weight: 600;
+}
+
+.alert-severity {
+  font-size: 0.75rem;
+  color: var(--gaming-gray-light);
+}
+
+.alert-message {
+  margin: 0 0 var(--space-xs);
+  color: var(--gaming-gray-light);
+  font-size: 0.85rem;
+}
+
+.alert-threshold {
+  margin: 0;
+  color: var(--gaming-light, #fff);
+  font-size: 0.8rem;
+}
+
+.no-alerts {
+  color: var(--gaming-gray-light);
+  margin: 0;
+}
+
+// Visits Card
+.visit-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.visit-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-sm);
+  border-radius: var(--radius-small);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.visit-value {
+  color: var(--gaming-light, #fff);
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.visit-label {
+  color: var(--gaming-gray-light);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.visit-top-pages h4 {
+  color: var(--gaming-light, #fff);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-xs);
+}
+
+.visit-top-flows h4 {
+  color: var(--gaming-light, #fff);
+  font-size: 0.85rem;
+  margin: var(--space-sm) 0 var(--space-xs);
+}
+
+.visit-page-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.visit-page-row:last-child {
+  border-bottom: none;
+}
+
+.visit-flow-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.visit-flow-row:last-child {
+  border-bottom: none;
+}
+
+.visit-path {
+  color: var(--gaming-gray-light);
+  font-size: 0.8rem;
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visit-flow-path {
+  color: var(--gaming-gray-light);
+  font-size: 0.8rem;
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visit-count {
+  color: var(--gaming-light, #fff);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.8rem;
+}
+
 // Metrics Card
 .metric-section {
   margin-bottom: var(--space-md);
@@ -309,7 +472,7 @@
   }
 
   h4 {
-    @include gaming-font;
+    @include mixins.gaming-font;
     font-size: 0.85rem;
     color: var(--gaming-primary);
     margin-bottom: var(--space-sm);
@@ -343,9 +506,10 @@
   }
 }
 
-@include mobile {
+@include mixins.mobile {
   .kpi-grid,
-  .activity-stats {
+  .activity-stats,
+  .visit-kpis {
     grid-template-columns: 1fr;
   }
 }

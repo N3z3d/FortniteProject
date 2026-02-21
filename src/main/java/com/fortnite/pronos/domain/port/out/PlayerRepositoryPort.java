@@ -22,4 +22,8 @@ public interface PlayerRepositoryPort {
   List<Player> findActivePlayers();
 
   Optional<Player> findById(UUID id);
+
+  Optional<Player> findByNickname(String nickname);
+
+  Player save(Player player);
 }

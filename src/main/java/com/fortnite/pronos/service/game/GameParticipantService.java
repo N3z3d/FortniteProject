@@ -20,7 +20,6 @@ import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.exception.UserAlreadyInGameException;
 import com.fortnite.pronos.exception.UserNotFoundException;
-import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@SuppressWarnings({"java:S2789"})
 public class GameParticipantService {
 
   private final GameDomainRepositoryPort gameRepository;
@@ -44,7 +44,7 @@ public class GameParticipantService {
   public boolean joinGame(UUID userId, JoinGameRequest request) {
     log.debug("User {} attempting to join game with code {}", userId, request.getInvitationCode());
 
-    User user = findUserOrThrow(userId);
+    com.fortnite.pronos.model.User user = findUserOrThrow(userId);
     Game game = findGameFromRequest(request);
 
     validateUserCanJoinGame(user, game);
@@ -58,7 +58,7 @@ public class GameParticipantService {
   public void leaveGame(UUID userId, UUID gameId) {
     log.debug("User {} attempting to leave game {}", userId, gameId);
 
-    User user = findUserOrThrow(userId);
+    com.fortnite.pronos.model.User user = findUserOrThrow(userId);
     Game game = findGameOrThrow(gameId);
 
     validateUserCanLeaveGame(user, game);
@@ -87,7 +87,7 @@ public class GameParticipantService {
 
   // Private helper methods
 
-  private User findUserOrThrow(UUID userId) {
+  private com.fortnite.pronos.model.User findUserOrThrow(UUID userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new UserNotFoundException("User not found: " + userId));
@@ -111,7 +111,7 @@ public class GameParticipantService {
     return findGameOrThrow(request.getGameId());
   }
 
-  private void validateUserCanJoinGame(User user, Game game) {
+  private void validateUserCanJoinGame(com.fortnite.pronos.model.User user, Game game) {
     if (game.getCreatorId().equals(user.getId()) || game.isParticipant(user.getId())) {
       throw new UserAlreadyInGameException("User is already in this game");
     }
@@ -123,7 +123,7 @@ public class GameParticipantService {
     }
   }
 
-  private void validateUserCanLeaveGame(User user, Game game) {
+  private void validateUserCanLeaveGame(com.fortnite.pronos.model.User user, Game game) {
     if (!isUserAlreadyInGame(user, game)) {
       throw new IllegalStateException("User is not in this game");
     }
@@ -133,15 +133,15 @@ public class GameParticipantService {
     }
   }
 
-  private boolean isUserAlreadyInGame(User user, Game game) {
+  private boolean isUserAlreadyInGame(com.fortnite.pronos.model.User user, Game game) {
     return game.isParticipant(user.getId());
   }
 
-  private boolean isGameCreator(User user, Game game) {
+  private boolean isGameCreator(com.fortnite.pronos.model.User user, Game game) {
     return game.getCreatorId().equals(user.getId());
   }
 
-  private void addUserToGame(User user, Game game) {
+  private void addUserToGame(com.fortnite.pronos.model.User user, Game game) {
     GameParticipant participant =
         GameParticipant.restore(
             UUID.randomUUID(),
@@ -159,7 +159,7 @@ public class GameParticipantService {
     ensureCreatorParticipantPersisted(game);
   }
 
-  private void removeUserFromGame(User user, Game game) {
+  private void removeUserFromGame(com.fortnite.pronos.model.User user, Game game) {
     GameParticipant participant =
         game.getParticipants().stream()
             .filter(p -> p.getUserId().equals(user.getId()))
@@ -183,7 +183,8 @@ public class GameParticipantService {
       return;
     }
 
-    java.util.Optional<User> creatorOptional = userRepository.findById(creatorId);
+    java.util.Optional<com.fortnite.pronos.model.User> creatorOptional =
+        userRepository.findById(creatorId);
     if (creatorOptional == null || creatorOptional.isEmpty()) {
       return;
     }

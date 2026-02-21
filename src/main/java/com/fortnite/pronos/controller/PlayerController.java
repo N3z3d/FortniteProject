@@ -27,8 +27,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Player Management Controller - API-001 COMPLETE DOCUMENTATION
  *
- * <p>Contrôleur REST pour la gestion des joueurs Fortnite. Fournit des endpoints pour rechercher,
- * filtrer et récupérer les informations des joueurs avec pagination optimisée.
+ * <p>ContrÃ´leur REST pour la gestion des joueurs Fortnite. Fournit des endpoints pour rechercher,
+ * filtrer et rÃ©cupÃ©rer les informations des joueurs avec pagination optimisÃ©e.
  */
 @Tag(name = "Player Management", description = "Fortnite player data, search, and statistics")
 @RestController
@@ -158,7 +158,7 @@ public class PlayerController {
       description = "Retrieve aggregated statistics about all players")
   @ApiResponse(responseCode = "200", description = "Player statistics retrieved successfully")
   @GetMapping("/stats")
-  public ResponseEntity<?> getPlayersStats() {
+  public ResponseEntity<Object> getPlayersStats() {
     return ResponseEntity.ok(playerQueryUseCase.getPlayersStats());
   }
 }

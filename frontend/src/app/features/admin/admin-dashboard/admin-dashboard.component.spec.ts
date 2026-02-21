@@ -4,7 +4,14 @@ import { of, throwError } from 'rxjs';
 import { AdminDashboardComponent } from './admin-dashboard.component';
 import { AdminService } from '../services/admin.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { DashboardSummary, RecentActivity, SystemHealth, SystemMetrics } from '../models/admin.models';
+import {
+  AdminAlert,
+  DashboardSummary,
+  RecentActivity,
+  SystemHealth,
+  SystemMetrics,
+  VisitAnalytics
+} from '../models/admin.models';
 
 describe('AdminDashboardComponent', () => {
   let component: AdminDashboardComponent;
@@ -40,9 +47,36 @@ describe('AdminDashboardComponent', () => {
     http: { totalRequests: 1000, errorRate: 1.5 }
   };
 
+  const mockAlerts: AdminAlert[] = [
+    {
+      code: 'HTTP_ERROR_RATE_HIGH',
+      severity: 'WARNING',
+      title: 'High error rate',
+      message: 'Error rate exceeded threshold',
+      currentValue: 10,
+      thresholdValue: 5,
+      triggeredAt: '2026-02-21T08:00:00'
+    }
+  ];
+
+  const mockVisitAnalytics: VisitAnalytics = {
+    pageViews: 120,
+    uniqueVisitors: 32,
+    activeSessions: 18,
+    averageSessionDurationSeconds: 140,
+    bounceRatePercent: 42.5,
+    topPages: [{ path: '/api/games', views: 40 }],
+    topNavigationFlows: [{ fromPath: '/api/games', toPath: '/api/trades', transitions: 12 }]
+  };
+
   beforeEach(async () => {
     const adminSpy = jasmine.createSpyObj('AdminService', [
-      'getDashboardSummary', 'getSystemHealth', 'getRecentActivity', 'getSystemMetrics'
+      'getDashboardSummary',
+      'getSystemHealth',
+      'getRecentActivity',
+      'getSystemMetrics',
+      'getAlerts',
+      'getVisitAnalytics'
     ]);
 
     const translationSpy = jasmine.createSpyObj('TranslationService', ['t']);
@@ -64,6 +98,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemHealth.and.returnValue(of(mockHealth));
     adminService.getRecentActivity.and.returnValue(of(mockActivity));
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+    adminService.getAlerts.and.returnValue(of(mockAlerts));
+    adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -82,6 +118,8 @@ describe('AdminDashboardComponent', () => {
     expect(component.health).toEqual(mockHealth);
     expect(component.activity).toEqual(mockActivity);
     expect(component.metrics).toEqual(mockMetrics);
+    expect(component.alerts).toEqual(mockAlerts);
+    expect(component.visitAnalytics).toEqual(mockVisitAnalytics);
   });
 
   it('should set error flag when API fails', () => {
@@ -89,6 +127,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemHealth.and.returnValue(of(mockHealth));
     adminService.getRecentActivity.and.returnValue(of(mockActivity));
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+    adminService.getAlerts.and.returnValue(of(mockAlerts));
+    adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -103,6 +143,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemHealth.and.returnValue(of(mockHealth));
     adminService.getRecentActivity.and.returnValue(of(mockActivity));
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+    adminService.getAlerts.and.returnValue(of(mockAlerts));
+    adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -171,5 +213,35 @@ describe('AdminDashboardComponent', () => {
       component.summary = null;
       expect(component.getGameStatusEntries()).toEqual([]);
     });
+  });
+
+  describe('alert helpers', () => {
+    beforeEach(() => createComponent());
+
+    it('should map severity classes', () => {
+      expect(component.getAlertSeverityClass(mockAlerts[0])).toBe('severity-warning');
+    });
+
+    it('should map severity icons', () => {
+      expect(component.getAlertSeverityIcon(mockAlerts[0])).toBe('warning');
+      expect(component.getAlertSeverityIcon({ ...mockAlerts[0], severity: 'CRITICAL' })).toBe('error');
+      expect(component.getAlertSeverityIcon({ ...mockAlerts[0], severity: 'INFO' })).toBe('info');
+    });
+  });
+
+  describe('formatDuration', () => {
+    beforeEach(() => createComponent());
+
+    it('should convert seconds to rounded minutes', () => {
+      expect(component.formatDuration(0)).toBe('0m');
+      expect(component.formatDuration(30)).toBe('1m');
+      expect(component.formatDuration(120)).toBe('2m');
+    });
+  });
+
+  it('should load visit analytics with bounce and flows', () => {
+    createComponent();
+    expect(component.visitAnalytics?.bounceRatePercent).toBe(42.5);
+    expect(component.visitAnalytics?.topNavigationFlows.length).toBe(1);
   });
 });

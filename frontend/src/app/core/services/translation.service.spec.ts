@@ -20,10 +20,10 @@ describe('TranslationService', () => {
       common: { yes: 'Yes', no: 'No' }
     },
     es: {
-      common: { yes: 'SÌ', no: 'No' }
+      common: { yes: 'S√≠', no: 'No' }
     },
     pt: {
-      common: { yes: 'Sim', no: 'N„o' }
+      common: { yes: 'Sim', no: 'N√£o' }
     }
   };
 
@@ -117,77 +117,77 @@ describe('TranslationService', () => {
   it('does not expose mojibake sequences in i18n JSON files', () => {
     const translations = realI18nTranslations as Record<string, unknown>;
     const mojibakeMarkers = [
-      '\u00c3\u00a0', // ‡
-      '\u00c3\u00a1', // ·
-      '\u00c3\u00a2', // ‚
-      '\u00c3\u00a3', // „
-      '\u00c3\u00a8', // Ë
-      '\u00c3\u00a9', // È
-      '\u00c3\u00aa', // Í
-      '\u00c3\u00a7', // Á
-      '\u00c3\u00b4', // Ù
-      '\u00c3\u00b5', // ı
-      '\u00c3\u00bb', // ˚
-      '\u00c3\u00b9', // ˘
-      '\u00c3\u00ae', // Ó
-      '\u00c3\u0080', // √Ä
-      '\u00c3\u0089', // …
-      '\u00c3\u008a', // √ä
-      '\u00c3\u009a', // ⁄
-      '\u00c3\u00b3', // Û
-      '\u00c3\u00ad', // Ì
-      '\u00c3\u00ba', // ˙
-      '\u00c3\u00bc', // ¸
-      '\u00c3\u00b1', // Ò
-      '\u00c2\u00a9', // ©
-      '\u00c2\u00bf', // ø
-      '\u00c2\u00a1', // °
-      '\u00c2\u00a3', // £
-      '\u00c2\u00b1', // ±
-      '\u00c2\u00a7', // ß
-      '\u00c2\u00b5', // µ
-      '\u00c2\u00aa', // ™
-      '\u00c2\u00ba', // ∫
-      '\u00c2\u00b3', // ≥
-      '\u00c2\u00ad', // ≠
-      '\u00e2\u0080\u0099', // ‚Äô
-      '\u00e2\u0080\u009c', // ‚Äú
-      '\u00e2\u0080\u009d', // ‚Äù
-      '\u00e2\u0080\u0093', // ‚Äì
-      '\u00e2\u0080\u0094', // ‚ó
-      '\u00e2\u0080\u00a6', // ‚Ä¶
-      '\u00e2\u0080\u00a2', // ‚Ä¢
-      '\u00e2\u0080\u00b0', // ‚Ä∞
-      '\u00e2\u0086\u0092', // ?
-      '\u00e2\u0086\u0094', // ?
-      '\u00e2\u009a\u00a1', // ?
-      '\u00e2\u009a\u00a0', // ‚ö†
-      '\u00e2\u009c\u0093', // ‚úì
-      '\u00e2\u009c\u0085', // ‚úÖ
-      '\u00e2\u008f\u00b1', // ?
-      '\u00e2\u008f\u00b3', // ?
-      '\u00e2\u009d\u008c', // ‚ùå
-      '\u00e2\u009d\u0093', // ‚ùì
-      '\u00e2\u0096\u00b2', // ‚ñ≤
-      '\u00e2\u0096\u00bc', // ‚ñº
-      '\u00e2\u0096\u00b6', // ‚ñ∂
-      '\u00e2\u00ad\u0090', // ?
-      '\u00e2\u0099\u0082', // ‚ôÇ
-      '\u00e2\u009e\u00a1', // ‚û°
-      '\u00f0\u009f', // ü (emoji mojibake prefix)
-      '\u00d2', // “ (observed mojibake prefix in ES/PT files)
-      '\u008f', // control artifact observed in broken emoji sequences
-      '\ufffd', // replacement character (decode failure)
-      '\u001a', // control character from broken text conversions
-      '\u0481', // ? artifact observed in corrupted files
-      '\u04a0', // ? artifact observed in corrupted files
-      '\u04a1', // ? artifact observed in corrupted files
-      '\u04a3', // ? artifact observed in corrupted files
-      '\u04a7', // ? artifact observed in corrupted files
-      '\u04a9', // ? artifact observed in corrupted files
-      '\u2b1d', // ? artifact observed in corrupted files
-      '\u2b20', // ? artifact observed in corrupted files
-      '\u2b21', // ? artifact observed in corrupted files
+      '\u00c3\u00a0', // sample
+      '\u00c3\u00a1', // sample
+      '\u00c3\u00a2', // sample
+      '\u00c3\u00a3', // sample
+      '\u00c3\u00a8', // sample
+      '\u00c3\u00a9', // sample
+      '\u00c3\u00aa', // sample
+      '\u00c3\u00a7', // sample
+      '\u00c3\u00b4', // sample
+      '\u00c3\u00b5', // sample
+      '\u00c3\u00bb', // sample
+      '\u00c3\u00b9', // sample
+      '\u00c3\u00ae', // sample
+      '\u00c3\u0080', // sample
+      '\u00c3\u0089', // sample
+      '\u00c3\u008a', // sample
+      '\u00c3\u009a', // sample
+      '\u00c3\u00b3', // sample
+      '\u00c3\u00ad', // sample
+      '\u00c3\u00ba', // sample
+      '\u00c3\u00bc', // sample
+      '\u00c3\u00b1', // sample
+      '\u00c2\u00a9', // sample
+      '\u00c2\u00bf', // sample
+      '\u00c2\u00a1', // sample
+      '\u00c2\u00a3', // sample
+      '\u00c2\u00b1', // sample
+      '\u00c2\u00a7', // sample
+      '\u00c2\u00b5', // sample
+      '\u00c2\u00aa', // sample
+      '\u00c2\u00ba', // sample
+      '\u00c2\u00b3', // sample
+      '\u00c2\u00ad', // sample
+      '\u00e2\u0080\u0099', // sample
+      '\u00e2\u0080\u009c', // sample
+      '\u00e2\u0080\u009d', // sample
+      '\u00e2\u0080\u0093', // sample
+      '\u00e2\u0080\u0094', // sample
+      '\u00e2\u0080\u00a6', // sample
+      '\u00e2\u0080\u00a2', // sample
+      '\u00e2\u0080\u00b0', // sample
+      '\u00e2\u0086\u0092', // sample
+      '\u00e2\u0086\u0094', // sample
+      '\u00e2\u009a\u00a1', // sample
+      '\u00e2\u009a\u00a0', // sample
+      '\u00e2\u009c\u0093', // sample
+      '\u00e2\u009c\u0085', // sample
+      '\u00e2\u008f\u00b1', // sample
+      '\u00e2\u008f\u00b3', // sample
+      '\u00e2\u009d\u008c', // sample
+      '\u00e2\u009d\u0093', // sample
+      '\u00e2\u0096\u00b2', // sample
+      '\u00e2\u0096\u00bc', // sample
+      '\u00e2\u0096\u00b6', // sample
+      '\u00e2\u00ad\u0090', // sample
+      '\u00e2\u0099\u0082', // sample
+      '\u00e2\u009e\u00a1', // sample
+      '\u00f0\u009f', // sample
+      '\u00d2', // sample
+      '\u008f', // sample
+      '\ufffd', // sample
+      '\u001a', // sample
+      '\u0481', // sample
+      '\u04a0', // sample
+      '\u04a1', // sample
+      '\u04a3', // sample
+      '\u04a7', // sample
+      '\u04a9', // sample
+      '\u2b1d', // sample
+      '\u2b20', // sample
+      '\u2b21', // sample
       '\u2b30' // ? artifact observed in corrupted files
     ];
 

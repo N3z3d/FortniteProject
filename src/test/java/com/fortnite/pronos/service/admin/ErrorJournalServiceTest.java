@@ -114,8 +114,7 @@ class ErrorJournalServiceTest {
 
       List<ErrorEntry> results = service.getRecentErrors(10, 400, null);
 
-      assertThat(results).hasSize(2);
-      assertThat(results).allMatch(e -> e.getStatusCode() == 400);
+      assertThat(results).hasSize(2).allMatch(e -> e.getStatusCode() == 400);
     }
 
     @Test
@@ -152,7 +151,7 @@ class ErrorJournalServiceTest {
       Optional<ErrorEntry> result = service.findById(entry.getId());
 
       assertThat(result).isPresent();
-      assertThat(result.get().getExceptionType()).isEqualTo("TestEx");
+      assertThat(result.getExceptionType()).isEqualTo("TestEx");
     }
 
     @Test
@@ -174,6 +173,7 @@ class ErrorJournalServiceTest {
       assertThat(stats.getErrorsByType()).isEmpty();
       assertThat(stats.getErrorsByStatusCode()).isEmpty();
       assertThat(stats.getTopErrors()).isEmpty();
+      assertThat(stats.getErrorTrend()).isEmpty();
     }
 
     @Test
@@ -185,8 +185,9 @@ class ErrorJournalServiceTest {
       ErrorStatisticsDto stats = service.getErrorStatistics(24);
 
       assertThat(stats.getTotalErrors()).isEqualTo(3);
-      assertThat(stats.getErrorsByType()).containsEntry("GameNotFoundException", 2L);
-      assertThat(stats.getErrorsByType()).containsEntry("BusinessException", 1L);
+      assertThat(stats.getErrorsByType())
+          .containsEntry("GameNotFoundException", 2L)
+          .containsEntry("BusinessException", 1L);
     }
 
     @Test
@@ -197,8 +198,7 @@ class ErrorJournalServiceTest {
 
       ErrorStatisticsDto stats = service.getErrorStatistics(24);
 
-      assertThat(stats.getErrorsByStatusCode()).containsEntry(400, 2L);
-      assertThat(stats.getErrorsByStatusCode()).containsEntry(500, 1L);
+      assertThat(stats.getErrorsByStatusCode()).containsEntry(400, 2L).containsEntry(500, 1L);
     }
 
     @Test
@@ -213,6 +213,42 @@ class ErrorJournalServiceTest {
       assertThat(stats.getTopErrors()).isNotEmpty();
       assertThat(stats.getTopErrors().get(0).getType()).isEqualTo("FrequentEx");
       assertThat(stats.getTopErrors().get(0).getCount()).isEqualTo(5);
+    }
+
+    @Test
+    void shouldBuildHourlyTrendForShortWindow() {
+      LocalDateTime now = LocalDateTime.now();
+      service.recordError(buildEntryAt("HourlyEx", "h-2", 500, now.minusHours(2)));
+      service.recordError(buildEntryAt("HourlyEx", "h-1", 500, now.minusHours(1)));
+      service.recordError(
+          buildEntryAt("HourlyEx", "h-1-bis", 500, now.minusHours(1).plusMinutes(10)));
+
+      ErrorStatisticsDto stats = service.getErrorStatistics(6);
+
+      assertThat(stats.getTrendGranularity()).isEqualTo("HOUR");
+      assertThat(stats.getErrorTrend()).isNotEmpty();
+      assertThat(
+              stats.getErrorTrend().stream()
+                  .mapToInt(ErrorStatisticsDto.TrendPoint::getCount)
+                  .sum())
+          .isEqualTo(3);
+    }
+
+    @Test
+    void shouldBuildDailyTrendForLongWindow() {
+      LocalDateTime now = LocalDateTime.now();
+      service.recordError(buildEntryAt("DailyEx", "d-2", 500, now.minusDays(2)));
+      service.recordError(buildEntryAt("DailyEx", "d-1", 500, now.minusDays(1)));
+
+      ErrorStatisticsDto stats = service.getErrorStatistics(120);
+
+      assertThat(stats.getTrendGranularity()).isEqualTo("DAY");
+      assertThat(stats.getErrorTrend()).isNotEmpty();
+      assertThat(
+              stats.getErrorTrend().stream()
+                  .mapToInt(ErrorStatisticsDto.TrendPoint::getCount)
+                  .sum())
+          .isEqualTo(2);
     }
   }
 
@@ -264,9 +300,14 @@ class ErrorJournalServiceTest {
   }
 
   private ErrorEntry buildEntry(String type, String message, int statusCode) {
+    return buildEntryAt(type, message, statusCode, LocalDateTime.now());
+  }
+
+  private ErrorEntry buildEntryAt(
+      String type, String message, int statusCode, LocalDateTime timestamp) {
     return ErrorEntry.builder()
         .id(UUID.randomUUID())
-        .timestamp(LocalDateTime.now())
+        .timestamp(timestamp)
         .exceptionType(type)
         .message(message)
         .statusCode(statusCode)

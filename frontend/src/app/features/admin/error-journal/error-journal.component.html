@@ -66,6 +66,26 @@
       </mat-card>
     </div>
 
+    <mat-card class="trend-card" *ngIf="statistics && getTrendEntries().length > 0">
+      <mat-card-header>
+        <mat-card-title>{{ t.t('admin.errors.trend.title') }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ t.t('admin.errors.trend.subtitle') }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="trend-list">
+          <div class="trend-row" *ngFor="let point of getTrendEntries()">
+            <span class="trend-label">{{ formatTrendLabel(point.periodStart) }}</span>
+            <div class="trend-bar-track">
+              <div class="trend-bar-fill" [style.width]="getTrendBarWidth(point.count)"></div>
+            </div>
+            <span class="trend-count">{{ point.count }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Filters -->
     <div class="filters-bar">
       <mat-form-field appearance="outline" class="filter-field">
@@ -90,6 +110,7 @@
     <!-- Error Table -->
     <div class="table-container">
       <table mat-table [dataSource]="errors" class="error-table">
+        <caption class="sr-only">Journal des erreurs</caption>
         <ng-container matColumnDef="timestamp">
           <th mat-header-cell *matHeaderCellDef>{{ t.t('admin.errors.table.timestamp') }}</th>
           <td mat-cell *matCellDef="let entry">{{ formatTimestamp(entry.timestamp) }}</td>

@@ -28,6 +28,7 @@ import com.fortnite.pronos.service.UserContextService;
 import com.fortnite.pronos.service.trade.TradeResponseMapper;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S6068"})
 class TradeControllerTest {
 
   @Mock private TradingService tradingService;

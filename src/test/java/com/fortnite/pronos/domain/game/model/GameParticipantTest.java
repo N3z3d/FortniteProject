@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"java:S5778"})
 class GameParticipantTest {
 
   private static final UUID USER_ID = UUID.randomUUID();
@@ -71,8 +72,7 @@ class GameParticipantTest {
   @Test
   void equalityByUserId() {
     GameParticipant other = new GameParticipant(USER_ID, "different", true);
-    assertThat(participant).isEqualTo(other);
-    assertThat(participant.hashCode()).isEqualTo(other.hashCode());
+    assertThat(participant).isEqualTo(other).hasSameHashCodeAs(other);
   }
 
   @Test

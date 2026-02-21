@@ -13,6 +13,7 @@ import com.fortnite.pronos.model.Player;
 
 /** Tests TDD pour CreateGameRequest */
 @DisplayName("Tests TDD - CreateGameRequest")
+@SuppressWarnings({"java:S5853", "java:S5976"})
 class CreateGameRequestTest {
 
   private CreateGameRequest createGameRequest;
@@ -310,10 +311,12 @@ class CreateGameRequestTest {
     createGameRequest.setRegionRules(regionRules);
 
     // Then
-    assertThat(createGameRequest.getRegionRules()).isEqualTo(regionRules);
-    assertThat(createGameRequest.getRegionRules().get(Player.Region.EU)).isEqualTo(3);
-    assertThat(createGameRequest.getRegionRules().get(Player.Region.NAC)).isEqualTo(2);
-    assertThat(createGameRequest.getRegionRules().get(Player.Region.BR)).isEqualTo(1);
+    assertThat(createGameRequest.getRegionRules())
+        .isEqualTo(regionRules)
+        .containsEntry(Player.Region.EU, 3);
+    assertThat(createGameRequest.getRegionRules())
+        .containsEntry(Player.Region.NAC, 2)
+        .containsEntry(Player.Region.BR, 1);
   }
 
   @Test
@@ -390,7 +393,7 @@ class CreateGameRequestTest {
     int totalPlayers = createGameRequest.getTotalPlayersFromRegionRules();
 
     // Then
-    assertThat(totalPlayers).isEqualTo(0);
+    assertThat(totalPlayers).isZero();
   }
 
   @Test
@@ -465,8 +468,7 @@ class CreateGameRequestTest {
     request2.setCurrentSeason(2025);
 
     // When & Then
-    assertThat(createGameRequest).isEqualTo(request2);
-    assertThat(createGameRequest.hashCode()).isEqualTo(request2.hashCode());
+    assertThat(createGameRequest).isEqualTo(request2).hasSameHashCodeAs(request2);
   }
 
   @Test
@@ -489,8 +491,7 @@ class CreateGameRequestTest {
     String stringRepresentation = createGameRequest.toString();
 
     // Then
-    assertThat(stringRepresentation).contains("Test Game");
-    assertThat(stringRepresentation).contains("8");
+    assertThat(stringRepresentation).contains("Test Game").contains("8");
     assertThat(stringRepresentation).contains("2025");
   }
 

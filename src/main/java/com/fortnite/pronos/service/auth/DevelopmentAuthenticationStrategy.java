@@ -10,8 +10,6 @@ import org.springframework.stereotype.Component;
 
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.JwtService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,9 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S112"})
 public class DevelopmentAuthenticationStrategy implements AuthenticationStrategy {
 
-  private final UserRepository userRepository;
+  private final com.fortnite.pronos.repository.UserRepository userRepository;
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
@@ -42,7 +41,7 @@ public class DevelopmentAuthenticationStrategy implements AuthenticationStrategy
     log.info("Authentification dev pour: {}", request.getEmail());
 
     // Authentification directe sans Spring Security pour le mode dev
-    User user =
+    com.fortnite.pronos.model.User user =
         userRepository
             .findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
@@ -75,7 +74,7 @@ public class DevelopmentAuthenticationStrategy implements AuthenticationStrategy
         String newToken = jwtService.generateToken(userDetails);
         String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
-        User user =
+        com.fortnite.pronos.model.User user =
             userRepository
                 .findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));

@@ -35,6 +35,7 @@ import com.fortnite.pronos.repository.TeamRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S6068"})
 class FakeGameSeedServiceTest {
 
   @Mock private GameRepository gameRepository;

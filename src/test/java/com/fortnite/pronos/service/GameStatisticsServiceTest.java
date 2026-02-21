@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,162 +18,166 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.GameParticipant;
+import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
+import com.fortnite.pronos.domain.player.model.Player;
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"java:S5838", "java:S5853"})
 class GameStatisticsServiceTest {
 
-  @Mock private GameRepositoryPort gameRepository;
-
-  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
+  @Mock private GameDomainRepositoryPort gameRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
 
   @InjectMocks private GameStatisticsService gameStatisticsService;
 
-  private Game testGame;
-  private GameParticipant participant1;
-  private GameParticipant participant2;
-  private GameParticipant participant3;
+  private UUID gameId;
+  private UUID playerEu1;
+  private UUID playerEu2;
+  private UUID playerNaw1;
 
   @BeforeEach
   void setUp() {
-    // Créer une game de test
-    User creator = new User();
-    creator.setId(UUID.randomUUID());
-    creator.setUsername("Creator");
-
-    testGame = new Game();
-    testGame.setId(UUID.randomUUID());
-    testGame.setName("Test Game");
-    testGame.setCreator(creator);
-    testGame.setStatus(GameStatus.ACTIVE);
-    testGame.setMaxParticipants(10);
-
-    // Créer des participants avec des joueurs de différentes régions
-    participant1 =
-        createParticipantWithPlayers(
-            "User1",
-            createPlayer("Player1", Player.Region.EU),
-            createPlayer("Player2", Player.Region.EU),
-            createPlayer("Player3", Player.Region.NAW));
-
-    participant2 =
-        createParticipantWithPlayers(
-            "User2",
-            createPlayer("Player4", Player.Region.EU),
-            createPlayer("Player5", Player.Region.BR),
-            createPlayer("Player6", Player.Region.BR));
-
-    participant3 =
-        createParticipantWithPlayers(
-            "User3",
-            createPlayer("Player7", Player.Region.ASIA),
-            createPlayer("Player8", Player.Region.EU),
-            createPlayer("Player9", Player.Region.NAW));
+    gameId = UUID.randomUUID();
+    playerEu1 = UUID.randomUUID();
+    playerEu2 = UUID.randomUUID();
+    playerNaw1 = UUID.randomUUID();
   }
 
   @Test
-  @DisplayName("devrait calculer correctement la distribution des joueurs par région")
+  @DisplayName("devrait calculer correctement la distribution des joueurs par region")
   void shouldCalculateRegionDistributionCorrectly() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participant1, participant2, participant3));
+    Game game =
+        createGame(
+            gameId,
+            List.of(
+                createParticipant(UUID.randomUUID(), List.of(playerEu1, playerEu2)),
+                createParticipant(UUID.randomUUID(), List.of(playerNaw1))));
 
-    // When
-    Map<Player.Region, Integer> distribution =
-        gameStatisticsService.getPlayerDistributionByRegion(testGame.getId());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(playerRepository.findById(playerEu1))
+        .thenReturn(Optional.of(createPlayer(playerEu1, PlayerRegion.EU)));
+    when(playerRepository.findById(playerEu2))
+        .thenReturn(Optional.of(createPlayer(playerEu2, PlayerRegion.EU)));
+    when(playerRepository.findById(playerNaw1))
+        .thenReturn(Optional.of(createPlayer(playerNaw1, PlayerRegion.NAW)));
 
-    // Then
-    assertThat(distribution).isNotNull();
-    assertThat(distribution).hasSize(4); // EU, NAW, BR, ASIA
-    assertThat(distribution.get(Player.Region.EU)).isEqualTo(4); // Players 1, 2, 4, 8
-    assertThat(distribution.get(Player.Region.NAW)).isEqualTo(2); // Players 3, 9
-    assertThat(distribution.get(Player.Region.BR)).isEqualTo(2); // Players 5, 6
-    assertThat(distribution.get(Player.Region.ASIA)).isEqualTo(1); // Player 7
+    Map<com.fortnite.pronos.model.Player.Region, Integer> distribution =
+        gameStatisticsService.getPlayerDistributionByRegion(gameId);
+
+    assertThat(distribution)
+        .hasSize(2)
+        .containsEntry(com.fortnite.pronos.model.Player.Region.EU, 2);
+    assertThat(distribution).containsEntry(com.fortnite.pronos.model.Player.Region.NAW, 1);
   }
 
   @Test
   @DisplayName("devrait retourner une map vide si aucun participant")
   void shouldReturnEmptyMapIfNoParticipants() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame)).thenReturn(Arrays.asList());
+    Game game = createGame(gameId, List.of());
 
-    // When
-    Map<Player.Region, Integer> distribution =
-        gameStatisticsService.getPlayerDistributionByRegion(testGame.getId());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
 
-    // Then
+    Map<com.fortnite.pronos.model.Player.Region, Integer> distribution =
+        gameStatisticsService.getPlayerDistributionByRegion(gameId);
+
     assertThat(distribution).isEmpty();
   }
 
   @Test
   @DisplayName("devrait lever une exception si la game n'existe pas")
   void shouldThrowExceptionIfGameNotFound() {
-    // Given
     UUID unknownGameId = UUID.randomUUID();
     when(gameRepository.findById(unknownGameId)).thenReturn(Optional.empty());
 
-    // When/Then
     assertThatThrownBy(() -> gameStatisticsService.getPlayerDistributionByRegion(unknownGameId))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Game non trouvée");
+        .hasMessageContaining("Game non trouvee");
   }
 
   @Test
-  @DisplayName("devrait calculer le pourcentage de distribution par région")
+  @DisplayName("devrait calculer le pourcentage de distribution par region")
   void shouldCalculateRegionDistributionPercentage() {
-    // Given
-    when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
-    when(gameParticipantRepository.findByGame(testGame))
-        .thenReturn(Arrays.asList(participant1, participant2, participant3));
+    Game game =
+        createGame(
+            gameId,
+            List.of(
+                createParticipant(UUID.randomUUID(), List.of(playerEu1, playerEu2)),
+                createParticipant(UUID.randomUUID(), List.of(playerNaw1))));
 
-    // When
-    Map<Player.Region, Double> percentages =
-        gameStatisticsService.getPlayerDistributionByRegionPercentage(testGame.getId());
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(playerRepository.findById(playerEu1))
+        .thenReturn(Optional.of(createPlayer(playerEu1, PlayerRegion.EU)));
+    when(playerRepository.findById(playerEu2))
+        .thenReturn(Optional.of(createPlayer(playerEu2, PlayerRegion.EU)));
+    when(playerRepository.findById(playerNaw1))
+        .thenReturn(Optional.of(createPlayer(playerNaw1, PlayerRegion.NAW)));
 
-    // Then
-    assertThat(percentages).isNotNull();
-    assertThat(percentages).hasSize(4);
-    assertThat(percentages.get(Player.Region.EU))
-        .isCloseTo(44.4, org.assertj.core.api.Assertions.within(0.1)); // 4/9
-    assertThat(percentages.get(Player.Region.NAW))
-        .isCloseTo(22.2, org.assertj.core.api.Assertions.within(0.1)); // 2/9
-    assertThat(percentages.get(Player.Region.BR))
-        .isCloseTo(22.2, org.assertj.core.api.Assertions.within(0.1)); // 2/9
-    assertThat(percentages.get(Player.Region.ASIA))
-        .isCloseTo(11.1, org.assertj.core.api.Assertions.within(0.1)); // 1/9
+    Map<com.fortnite.pronos.model.Player.Region, Double> percentages =
+        gameStatisticsService.getPlayerDistributionByRegionPercentage(gameId);
+
+    assertThat(percentages).hasSize(2);
+    assertThat(percentages.get(com.fortnite.pronos.model.Player.Region.EU))
+        .isEqualTo(66.66666666666667);
+    assertThat(percentages.get(com.fortnite.pronos.model.Player.Region.NAW))
+        .isEqualTo(33.333333333333336);
   }
 
-  // Méthodes utilitaires pour créer des données de test
-  private GameParticipant createParticipantWithPlayers(String username, Player... players) {
-    User user = new User();
-    user.setId(UUID.randomUUID());
-    user.setUsername(username);
+  @Test
+  @DisplayName("devrait mapper les joueurs introuvables sur UNKNOWN")
+  void shouldMapMissingPlayersToUnknownRegion() {
+    UUID missingPlayerId = UUID.randomUUID();
+    Game game =
+        createGame(gameId, List.of(createParticipant(UUID.randomUUID(), List.of(missingPlayerId))));
 
-    GameParticipant participant = new GameParticipant();
-    participant.setId(UUID.randomUUID());
-    participant.setUser(user);
-    participant.setGame(testGame);
-    participant.setSelectedPlayers(Arrays.asList(players));
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(playerRepository.findById(missingPlayerId)).thenReturn(Optional.empty());
 
-    return participant;
+    Map<com.fortnite.pronos.model.Player.Region, Integer> distribution =
+        gameStatisticsService.getPlayerDistributionByRegion(gameId);
+
+    assertThat(distribution).containsEntry(com.fortnite.pronos.model.Player.Region.UNKNOWN, 1);
   }
 
-  private Player createPlayer(String nickname, Player.Region region) {
-    Player player = new Player();
-    player.setId(UUID.randomUUID());
-    player.setNickname(nickname);
-    player.setUsername(nickname);
-    player.setRegion(region);
-    player.setTranche("1-10");
-    player.setCurrentSeason(2025);
-    return player;
+  private Game createGame(UUID id, List<GameParticipant> participants) {
+    return Game.restore(
+        id,
+        "Test Game",
+        null,
+        UUID.randomUUID(),
+        10,
+        GameStatus.ACTIVE,
+        LocalDateTime.now().minusDays(1),
+        null,
+        null,
+        null,
+        null,
+        List.of(),
+        participants,
+        null,
+        false,
+        5,
+        null,
+        2025);
+  }
+
+  private GameParticipant createParticipant(UUID userId, List<UUID> selectedPlayerIds) {
+    return GameParticipant.restore(
+        UUID.randomUUID(),
+        userId,
+        "User-" + userId,
+        1,
+        LocalDateTime.now().minusHours(2),
+        null,
+        false,
+        selectedPlayerIds);
+  }
+
+  private Player createPlayer(UUID id, PlayerRegion region) {
+    return Player.restore(id, null, "user-" + id, "nick-" + id, region, "1-10", 2025, false);
   }
 }

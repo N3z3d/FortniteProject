@@ -156,32 +156,19 @@ public enum ErrorCode {
     }
 
     switch (this) {
-      case AUTH_BUS_001:
-      case AUTH_SEC_001:
-      case AUTH_SEC_002:
-      case AUTH_SEC_004:
-      case INVALID_TOKEN_FORMAT:
+      case AUTH_BUS_001, AUTH_SEC_001, AUTH_SEC_002, AUTH_SEC_004, INVALID_TOKEN_FORMAT:
         return 401; // UNAUTHORIZED
 
-      case AUTH_BUS_002:
-      case AUTH_BUS_003:
-      case AUTH_SEC_003:
+      case AUTH_BUS_002, AUTH_BUS_003, AUTH_SEC_003:
         return 403; // FORBIDDEN
 
-      case PLAYER_BUS_001:
-      case TEAM_BUS_001:
-      case SCORE_BUS_001:
-      case TRADE_BUS_001:
+      case PLAYER_BUS_001, TEAM_BUS_001, SCORE_BUS_001, TRADE_BUS_001:
         return 404; // NOT_FOUND
 
-      case PLAYER_BUS_002:
-      case TEAM_BUS_002:
-      case SCORE_BUS_002:
+      case PLAYER_BUS_002, TEAM_BUS_002, SCORE_BUS_002:
         return 409; // CONFLICT
 
-      case SYS_002:
-      case AUTH_SYS_001:
-      case AUTHENTICATION_SERVICE_UNAVAILABLE:
+      case SYS_002, AUTH_SYS_001, AUTHENTICATION_SERVICE_UNAVAILABLE:
         return 503; // SERVICE_UNAVAILABLE
 
       case SYS_004:

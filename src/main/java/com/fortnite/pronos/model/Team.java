@@ -89,8 +89,20 @@ public class Team {
     return owner;
   }
 
+  public UUID getUserId() {
+    return owner != null ? owner.getId() : null;
+  }
+
   public void setUser(User user) {
     this.owner = user;
+  }
+
+  public UUID getGameId() {
+    return game != null ? game.getId() : null;
+  }
+
+  public List<GameRegionRule> getGameRegionRules() {
+    return game != null ? game.getRegionRules() : List.of();
   }
 
   /**

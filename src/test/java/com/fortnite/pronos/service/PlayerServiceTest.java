@@ -32,6 +32,7 @@ import com.fortnite.pronos.repository.ScoreRepository;
 /** Tests TDD pour PlayerService */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests TDD - PlayerService")
+@SuppressWarnings({"java:S5778", "java:S5853"})
 class PlayerServiceTest {
 
   @Mock private PlayerRepository playerRepository;
@@ -486,22 +487,18 @@ class PlayerServiceTest {
     Map<String, Object> result = playerService.getPlayersStats();
 
     // Then
-    assertThat(result).isNotNull();
-    assertThat(result).containsKey("totalPlayers");
-    assertThat(result).containsKey("playersByRegion");
-    assertThat(result).containsKey("playersByTranche");
-    assertThat(result.get("totalPlayers")).isEqualTo(3);
+    assertThat(result).isNotNull().containsKey("totalPlayers");
+    assertThat(result).containsKey("playersByRegion").containsKey("playersByTranche");
+    assertThat(result).containsEntry("totalPlayers", 3);
 
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByRegion = (Map<String, Long>) result.get("playersByRegion");
-    assertThat(playersByRegion).containsEntry("EU", 1L);
-    assertThat(playersByRegion).containsEntry("NAW", 1L);
+    assertThat(playersByRegion).containsEntry("EU", 1L).containsEntry("NAW", 1L);
     assertThat(playersByRegion).containsEntry("BR", 1L);
 
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByTranche = (Map<String, Long>) result.get("playersByTranche");
-    assertThat(playersByTranche).containsEntry("S", 1L);
-    assertThat(playersByTranche).containsEntry("A", 1L);
+    assertThat(playersByTranche).containsEntry("S", 1L).containsEntry("A", 1L);
     assertThat(playersByTranche).containsEntry("B", 1L);
 
     verify(playerRepository).findAll();
@@ -518,7 +515,7 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result).isNotNull();
-    assertThat(result.get("totalPlayers")).isEqualTo(0);
+    assertThat(result.get("totalPlayers")).isZero();
 
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByRegion = (Map<String, Long>) result.get("playersByRegion");
@@ -550,7 +547,7 @@ class PlayerServiceTest {
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByRegion = (Map<String, Long>) result.get("playersByRegion");
     assertThat(playersByRegion).containsEntry("EU", 2L);
-    assertThat(result.get("totalPlayers")).isEqualTo(2);
+    assertThat(result).containsEntry("totalPlayers", 2);
   }
 
   @Test
@@ -572,6 +569,6 @@ class PlayerServiceTest {
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByTranche = (Map<String, Long>) result.get("playersByTranche");
     assertThat(playersByTranche).containsEntry("S", 2L);
-    assertThat(result.get("totalPlayers")).isEqualTo(2);
+    assertThat(result).containsEntry("totalPlayers", 2);
   }
 }

@@ -15,7 +15,7 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
  *
  * <p>This enforces the CLAUDE.md constraint: "Maximum 500 lines per class".
  */
-public class MaximumClassLinesCondition extends ArchCondition<JavaClass> {
+class MaximumClassLinesCondition extends ArchCondition<JavaClass> {
 
   private final int maxLines;
 
@@ -25,7 +25,7 @@ public class MaximumClassLinesCondition extends ArchCondition<JavaClass> {
   }
 
   @Override
-  public void check(JavaClass javaClass, ConditionEvents events) {
+  void check(JavaClass javaClass, ConditionEvents events) {
     try {
       int lineCount = countLines(javaClass);
 

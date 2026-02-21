@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.*;
 import com.fortnite.pronos.repository.*;
@@ -38,8 +40,8 @@ import com.fortnite.pronos.repository.*;
 class ScoreServiceTddTest {
 
   @Mock private ScoreRepository scoreRepository;
-  @Mock private PlayerRepository playerRepository;
-  @Mock private TeamRepository teamRepository;
+  @Mock private PlayerRepositoryPort playerRepository;
+  @Mock private TeamRepositoryPort teamRepository;
   @Mock private UserRepositoryPort userRepository;
 
   @InjectMocks private ScoreService scoreService;
@@ -58,6 +60,10 @@ class ScoreServiceTddTest {
   private UUID teamId1;
   private OffsetDateTime testTimestamp;
   private int testSeason = 2025;
+
+  private ScoreRepositoryPort scoreRepositoryPort() {
+    return scoreRepository;
+  }
 
   @BeforeEach
   void setUp() {
@@ -144,20 +150,19 @@ class ScoreServiceTddTest {
       OffsetDateTime dayStart = testTimestamp.withHour(0).withMinute(0).withSecond(0).withNano(0);
       OffsetDateTime dayEnd = dayStart.plusDays(1);
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(playerId1, dayStart, dayEnd))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(playerId1))
           .thenReturn(Arrays.asList(testTeam1));
 
       scoreService.updatePlayerScores(playerId1, newPoints, testTimestamp);
 
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
+      verify(playerRepository).findById(playerId1);
       verify(scoreRepository).findByPlayerIdAndTimestampBetween(playerId1, dayStart, dayEnd);
-      verify(scoreRepository)
+      verify(scoreRepositoryPort())
           .save(
               argThat(
                   score ->
@@ -175,11 +180,10 @@ class ScoreServiceTddTest {
       OffsetDateTime dayStart = testTimestamp.withHour(0).withMinute(0).withSecond(0).withNano(0);
       OffsetDateTime dayEnd = dayStart.plusDays(1);
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(playerId1, dayStart, dayEnd))
           .thenReturn(Arrays.asList(testScore1));
-      when(scoreRepository.save(testScore1)).thenReturn(testScore1);
+      when(scoreRepositoryPort().save(testScore1)).thenReturn(testScore1);
       when(teamRepository.findTeamsWithActivePlayer(playerId1))
           .thenReturn(Arrays.asList(testTeam1));
 
@@ -188,8 +192,8 @@ class ScoreServiceTddTest {
       assertThat(testScore1.getPoints()).isEqualTo(updatedPoints);
       assertThat(testScore1.getTimestamp()).isEqualTo(testTimestamp);
 
-      verify(scoreRepository).save(testScore1);
-      verify(scoreRepository, never()).save(argThat(score -> score != testScore1));
+      verify(scoreRepositoryPort()).save(testScore1);
+      verify(scoreRepositoryPort(), never()).save(argThat(score -> score != testScore1));
     }
 
     @Test
@@ -197,15 +201,14 @@ class ScoreServiceTddTest {
     void shouldThrowExceptionWhenPlayerNotFound() {
       // RED: Test player validation
       UUID nonExistentPlayerId = UUID.randomUUID();
-      when(((PlayerRepositoryPort) playerRepository).findById(nonExistentPlayerId))
-          .thenReturn(Optional.empty());
+      when(playerRepository.findById(nonExistentPlayerId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(
               () -> scoreService.updatePlayerScores(nonExistentPlayerId, 1000, testTimestamp))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Joueur non trouvé");
+          .hasMessageContaining("Joueur non trouv\u00e9");
 
-      verify(((PlayerRepositoryPort) playerRepository)).findById(nonExistentPlayerId);
+      verify(playerRepository).findById(nonExistentPlayerId);
       verifyNoInteractions(scoreRepository, teamRepository);
     }
 
@@ -213,11 +216,10 @@ class ScoreServiceTddTest {
     @DisplayName("Should handle team score updates after player score change")
     void shouldHandleTeamScoreUpdatesAfterPlayerScoreChange() {
       // RED: Test team score recalculation
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(any(), any(), any()))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(playerId1))
           .thenReturn(Arrays.asList(testTeam1));
@@ -246,21 +248,19 @@ class ScoreServiceTddTest {
               playerId1, 1800,
               playerId2, 1200);
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId2))
-          .thenReturn(Optional.of(testPlayer2));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId2)).thenReturn(Optional.of(testPlayer2));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(any(), any(), any()))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(any())).thenReturn(Arrays.asList(testTeam1));
 
       scoreService.updateBatchPlayerScores(playerScores, testTimestamp);
 
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId2);
-      verify(scoreRepository, times(2)).save(any(Score.class));
+      verify(playerRepository).findById(playerId1);
+      verify(playerRepository).findById(playerId2);
+      verify(scoreRepositoryPort(), times(2)).save(any(Score.class));
     }
 
     @Test
@@ -274,13 +274,11 @@ class ScoreServiceTddTest {
               invalidPlayerId, 1200 // This will fail
               );
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
-      when(((PlayerRepositoryPort) playerRepository).findById(invalidPlayerId))
-          .thenReturn(Optional.empty());
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(invalidPlayerId)).thenReturn(Optional.empty());
       when(scoreRepository.findByPlayerIdAndTimestampBetween(eq(playerId1), any(), any()))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(playerId1))
           .thenReturn(Arrays.asList(testTeam1));
@@ -290,11 +288,11 @@ class ScoreServiceTddTest {
           .doesNotThrowAnyException();
 
       // Verify successful update happened
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
-      verify(scoreRepository).save(any(Score.class));
+      verify(playerRepository).findById(playerId1);
+      verify(scoreRepositoryPort()).save(any(Score.class));
 
       // Verify failed update was attempted
-      verify(((PlayerRepositoryPort) playerRepository)).findById(invalidPlayerId);
+      verify(playerRepository).findById(invalidPlayerId);
     }
 
     @Test
@@ -413,8 +411,7 @@ class ScoreServiceTddTest {
 
       List<Score> result = scoreService.getUserLatestScores(userId1);
 
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactlyInAnyOrder(testScore1, testScore2);
+      assertThat(result).hasSize(2).containsExactlyInAnyOrder(testScore1, testScore2);
 
       verify(userRepository).findById(userId1);
       verify(teamRepository).findByOwnerAndSeason(testUser1, testSeason);
@@ -431,7 +428,7 @@ class ScoreServiceTddTest {
 
       assertThatThrownBy(() -> scoreService.getUserLatestScores(nonExistentUserId))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
+          .hasMessageContaining("Utilisateur non trouv\u00e9");
 
       verify(userRepository).findById(nonExistentUserId);
       verifyNoInteractions(teamRepository, scoreRepository);
@@ -443,18 +440,18 @@ class ScoreServiceTddTest {
       // RED: Test player history retrieval
       List<Score> historicalScores = Arrays.asList(testScore1, testScore2);
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(eq(playerId1), any(), any()))
           .thenReturn(historicalScores);
 
       Map<UUID, List<Score>> result = scoreService.getPlayerScoreHistory(playerId1);
 
       assertThat(result).containsKey(playerId1);
-      assertThat(result.get(playerId1)).hasSize(2);
-      assertThat(result.get(playerId1)).containsExactlyInAnyOrder(testScore1, testScore2);
+      assertThat(result.get(playerId1))
+          .hasSize(2)
+          .containsExactlyInAnyOrder(testScore1, testScore2);
 
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
+      verify(playerRepository).findById(playerId1);
       verify(scoreRepository).findByPlayerIdAndTimestampBetween(eq(playerId1), any(), any());
     }
 
@@ -467,8 +464,7 @@ class ScoreServiceTddTest {
 
       List<Score> result = scoreService.getAllScores();
 
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactlyInAnyOrder(testScore1, testScore2);
+      assertThat(result).hasSize(2).containsExactlyInAnyOrder(testScore1, testScore2);
       verify(scoreRepository).findAll();
     }
   }
@@ -486,12 +482,12 @@ class ScoreServiceTddTest {
       scoreWithoutTimestamp.setPoints(1000);
       // No timestamp set
 
-      when(scoreRepository.save(scoreWithoutTimestamp)).thenReturn(scoreWithoutTimestamp);
+      when(scoreRepositoryPort().save(scoreWithoutTimestamp)).thenReturn(scoreWithoutTimestamp);
 
       Score result = scoreService.saveScore(scoreWithoutTimestamp);
 
       assertThat(result.getTimestamp()).isNotNull();
-      verify(scoreRepository).save(scoreWithoutTimestamp);
+      verify(scoreRepositoryPort()).save(scoreWithoutTimestamp);
     }
 
     @Test
@@ -501,12 +497,12 @@ class ScoreServiceTddTest {
       OffsetDateTime existingTimestamp = OffsetDateTime.now().minusHours(2);
       testScore1.setTimestamp(existingTimestamp);
 
-      when(scoreRepository.save(testScore1)).thenReturn(testScore1);
+      when(scoreRepositoryPort().save(testScore1)).thenReturn(testScore1);
 
       Score result = scoreService.saveScore(testScore1);
 
       assertThat(result.getTimestamp()).isEqualTo(existingTimestamp);
-      verify(scoreRepository).save(testScore1);
+      verify(scoreRepositoryPort()).save(testScore1);
     }
 
     @Test
@@ -544,8 +540,7 @@ class ScoreServiceTddTest {
     @DisplayName("Should handle repository exceptions gracefully in score updates")
     void shouldHandleRepositoryExceptionsGracefullyInScoreUpdates() {
       // RED: Test repository exception handling
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(any(), any(), any()))
           .thenThrow(new RuntimeException("Database connection failed"));
 
@@ -553,7 +548,7 @@ class ScoreServiceTddTest {
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("Database connection failed");
 
-      verify(((PlayerRepositoryPort) playerRepository)).findById(playerId1);
+      verify(playerRepository).findById(playerId1);
     }
 
     @Test
@@ -565,7 +560,7 @@ class ScoreServiceTddTest {
 
       assertThatThrownBy(() -> scoreService.getUserLatestScores(userId1))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Équipe non trouvée");
+          .hasMessageContaining("\u00c9quipe non trouv\u00e9e");
 
       verify(userRepository).findById(userId1);
       verify(teamRepository).findByOwnerAndSeason(testUser1, testSeason);
@@ -592,22 +587,21 @@ class ScoreServiceTddTest {
         largePlayers.add(player);
         largeBatch.put(playerId, 1000 + i);
 
-        when(((PlayerRepositoryPort) playerRepository).findById(playerId))
-            .thenReturn(Optional.of(player));
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
         when(scoreRepository.findByPlayerIdAndTimestampBetween(eq(playerId), any(), any()))
             .thenReturn(Collections.emptyList());
         when(teamRepository.findTeamsWithActivePlayer(playerId))
             .thenReturn(Collections.emptyList());
       }
 
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       scoreService.updateBatchPlayerScores(largeBatch, testTimestamp);
 
       // Should make exactly 100 player lookups and saves
-      verify(((PlayerRepositoryPort) playerRepository), times(100)).findById(any());
-      verify(scoreRepository, times(100)).save(any(Score.class));
+      verify(playerRepository, times(100)).findById(any());
+      verify(scoreRepositoryPort(), times(100)).save(any(Score.class));
     }
   }
 
@@ -642,34 +636,33 @@ class ScoreServiceTddTest {
           preciseTimestamp.withHour(0).withMinute(0).withSecond(0).withNano(0);
       OffsetDateTime dayEnd = dayStart.plusDays(1);
 
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(playerId1, dayStart, dayEnd))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(playerId1)).thenReturn(Collections.emptyList());
 
       scoreService.updatePlayerScores(playerId1, 1000, preciseTimestamp);
 
-      verify(scoreRepository).save(argThat(score -> score.getTimestamp().equals(preciseTimestamp)));
+      verify(scoreRepositoryPort())
+          .save(argThat(score -> score.getTimestamp().equals(preciseTimestamp)));
     }
 
     @Test
     @DisplayName("Should validate score data integrity")
     void shouldValidateScoreDataIntegrity() {
       // RED: Test data consistency
-      when(((PlayerRepositoryPort) playerRepository).findById(playerId1))
-          .thenReturn(Optional.of(testPlayer1));
+      when(playerRepository.findById(playerId1)).thenReturn(Optional.of(testPlayer1));
       when(scoreRepository.findByPlayerIdAndTimestampBetween(any(), any(), any()))
           .thenReturn(Collections.emptyList());
-      when(scoreRepository.save(any(Score.class)))
+      when(scoreRepositoryPort().save(any(Score.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(teamRepository.findTeamsWithActivePlayer(playerId1)).thenReturn(Collections.emptyList());
 
       scoreService.updatePlayerScores(playerId1, 2500, testTimestamp);
 
-      verify(scoreRepository)
+      verify(scoreRepositoryPort())
           .save(
               argThat(
                   score ->

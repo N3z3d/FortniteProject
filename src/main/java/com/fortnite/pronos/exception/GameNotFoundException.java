@@ -3,6 +3,7 @@ package com.fortnite.pronos.exception;
 import java.util.UUID;
 
 /** Exception levée lorsqu'une game n'est pas trouvée */
+@SuppressWarnings({"java:S1172"})
 public class GameNotFoundException extends RuntimeException {
 
   public GameNotFoundException(String message) {

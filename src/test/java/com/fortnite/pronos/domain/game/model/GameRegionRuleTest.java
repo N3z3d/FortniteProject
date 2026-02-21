@@ -55,8 +55,7 @@ class GameRegionRuleTest {
   void equalityByRegion() {
     GameRegionRule a = new GameRegionRule(UUID.randomUUID(), PlayerRegion.EU, 3);
     GameRegionRule b = new GameRegionRule(UUID.randomUUID(), PlayerRegion.EU, 5);
-    assertThat(a).isEqualTo(b);
-    assertThat(a.hashCode()).isEqualTo(b.hashCode());
+    assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
   }
 
   @Test

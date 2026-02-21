@@ -10,7 +10,7 @@
     "confirm": "Confirmar",
     "loading": "Cargando...",
     "error": "Error",
-    "success": "Ã‰xito",
+    "success": "Éxito",
     "yes": "Sí",
     "no": "No",
     "back": "Volver",
@@ -429,9 +429,9 @@
         "customDesc": "Crea tu propia configuración"
       },
       "smartDesc": {
-        "quickPlay": "Partida r?pida creada el {date} a las {time}. ?Que gane el mejor!",
-        "championship": "Torneo oficial - {date}. ?Prep?rate para la competici?n!",
-        "casual": "Partida relajada con amigos - {date}. ?Diversi?n garantizada!",
+        "quickPlay": "Partida rápida creada el {date} a las {time}. ¡Que gane el mejor!",
+        "championship": "Torneo oficial - {date}. ¡Prepárate para la competición!",
+        "casual": "Partida relajada con amigos - {date}. ¡Diversión garantizada!",
         "custom": "Partida personalizada creada el {date} a las {time}"
       }
     },
@@ -1494,6 +1494,8 @@
       "health": "Salud del sistema",
       "recentActivity": "Actividad reciente",
       "metrics": "Métricas del sistema",
+      "alerts": "Alertas activas",
+      "visits": "Seguimiento de visitas",
       "refresh": "Actualizar",
       "loadError": "Error al cargar los datos."
     },
@@ -1512,7 +1514,7 @@
       "recentGames": "Partidas recientes",
       "recentTrades": "Intercambios recientes",
       "totalUsers": "Usuarios",
-      "latestGames": "?ltimas partidas"
+      "latestGames": "Últimas partidas"
     },
     "metrics": {
       "heapUsed": "Heap usado",
@@ -1520,6 +1522,19 @@
       "threads": "Hilos",
       "totalRequests": "Peticiones totales",
       "errorRate": "Tasa de error"
+    },
+    "alerts": {
+      "none": "No hay alertas activas.",
+      "threshold": "Umbral"
+    },
+    "visits": {
+      "pageViews": "Páginas vistas",
+      "uniqueVisitors": "Visitantes únicos",
+      "activeSessions": "Sesiones activas",
+      "averageDuration": "Duración media",
+      "topPages": "Páginas más vistas",
+      "bounceRate": "Tasa de rebote",
+      "topFlows": "Flujos de navegación"
     },
     "errors": {
       "title": "Registro de errores",
@@ -1530,6 +1545,10 @@
         "uniqueTypes": "Tipos únicos",
         "serverErrors": "Errores del servidor (5xx)",
         "notFound": "No encontrado (404)"
+      },
+      "trend": {
+        "title": "Tendencia de errores",
+        "subtitle": "Distribucion en el periodo seleccionado"
       },
       "filter": {
         "status": "Código HTTP",

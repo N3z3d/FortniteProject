@@ -23,6 +23,7 @@ import com.fortnite.pronos.model.TeamPlayer;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ValidationService - Team Composition TDD Tests")
+@SuppressWarnings({"java:S5778"})
 class ValidationServiceTeamCompositionTddTest {
 
   @InjectMocks private ValidationService validationService;

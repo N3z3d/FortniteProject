@@ -68,9 +68,10 @@ class GameRepositoryAdapterTest {
     Optional<com.fortnite.pronos.domain.game.model.Game> result = adapter.findById(gameId);
 
     assertThat(result).isPresent();
-    assertThat(result.orElseThrow().getId()).isEqualTo(gameId);
-    assertThat(result.orElseThrow().getCreatorId()).isEqualTo(creatorId);
-    assertThat(result.orElseThrow().getStatus()).isEqualTo(GameStatus.ACTIVE);
+    com.fortnite.pronos.domain.game.model.Game game = result.orElseThrow();
+    assertThat(game.getId()).isEqualTo(gameId);
+    assertThat(game.getCreatorId()).isEqualTo(creatorId);
+    assertThat(game.getStatus()).isEqualTo(GameStatus.ACTIVE);
   }
 
   @Test
@@ -172,8 +173,7 @@ class GameRepositoryAdapterTest {
     List<com.fortnite.pronos.domain.game.model.Game> games =
         adapter.findByStatus(GameStatus.ACTIVE);
 
-    assertThat(games).hasSize(2);
-    assertThat(games).allMatch(game -> game.getStatus() == GameStatus.ACTIVE);
+    assertThat(games).hasSize(2).allMatch(game -> game.getStatus() == GameStatus.ACTIVE);
   }
 
   @Test

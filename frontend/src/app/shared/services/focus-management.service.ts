@@ -7,8 +7,6 @@ export class FocusManagementService {
   private previousFocusElement: HTMLElement | null = null;
   private focusStack: HTMLElement[] = [];
 
-  constructor() {}
-
   /**
    * Sets focus to the specified element
    * @param element The element to focus
@@ -42,7 +40,7 @@ export class FocusManagementService {
    * @param options Focus options
    */
   setFocusBySelector(selector: string, options?: FocusOptions): void {
-    const element = document.querySelector(selector) as HTMLElement;
+    const element = document.querySelector<HTMLElement>(selector);
     this.setFocus(element, options);
   }
 
@@ -155,7 +153,7 @@ export class FocusManagementService {
       '[contenteditable="true"]'
     ].join(',');
 
-    const elements = Array.from(container.querySelectorAll(focusableSelectors)) as HTMLElement[];
+    const elements = Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors));
     
     return elements.filter(element => {
       return this.isElementVisible(element) && !this.isElementDisabled(element);

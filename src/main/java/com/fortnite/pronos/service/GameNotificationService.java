@@ -5,9 +5,6 @@ import java.util.UUID;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.User;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,35 +19,37 @@ public class GameNotificationService {
 
   private final SimpMessagingTemplate messagingTemplate;
 
-  public void notifyGameStatusChanged(Game game) {
+  public void notifyGameStatusChanged(com.fortnite.pronos.model.Game game) {
     log.info("Notifying game status changed: {} -> {}", game.getId(), game.getStatus());
 
     GameNotification notification = GameNotification.statusChanged(game);
     sendToTopic(game.getId(), notification);
   }
 
-  public void notifyPlayerJoined(Game game, User user) {
+  public void notifyPlayerJoined(
+      com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.User user) {
     log.info("Notifying player joined game {}: {}", game.getId(), user.getUsername());
 
     GameNotification notification = GameNotification.playerJoined(game, user);
     sendToTopic(game.getId(), notification);
   }
 
-  public void notifyPlayerLeft(Game game, User user) {
+  public void notifyPlayerLeft(
+      com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.User user) {
     log.info("Notifying player left game {}: {}", game.getId(), user.getUsername());
 
     GameNotification notification = GameNotification.playerLeft(game, user);
     sendToTopic(game.getId(), notification);
   }
 
-  public void notifyDraftStarted(Game game) {
+  public void notifyDraftStarted(com.fortnite.pronos.model.Game game) {
     log.info("Notifying draft started for game: {}", game.getId());
 
     GameNotification notification = GameNotification.draftStarted(game);
     sendToTopic(game.getId(), notification);
   }
 
-  public void notifyGameFinished(Game game) {
+  public void notifyGameFinished(com.fortnite.pronos.model.Game game) {
     log.info("Notifying game finished: {}", game.getId());
 
     GameNotification notification = GameNotification.gameFinished(game);
@@ -65,7 +64,7 @@ public class GameNotificationService {
   public record GameNotification(
       String type, UUID gameId, String gameName, String status, String username, String message) {
 
-    public static GameNotification statusChanged(Game game) {
+    public static GameNotification statusChanged(com.fortnite.pronos.model.Game game) {
       return new GameNotification(
           "GAME_STATUS_CHANGED",
           game.getId(),
@@ -75,7 +74,8 @@ public class GameNotificationService {
           "Game status changed to " + game.getStatus().name());
     }
 
-    public static GameNotification playerJoined(Game game, User user) {
+    public static GameNotification playerJoined(
+        com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.User user) {
       return new GameNotification(
           "PLAYER_JOINED",
           game.getId(),
@@ -85,7 +85,8 @@ public class GameNotificationService {
           user.getUsername() + " joined the game");
     }
 
-    public static GameNotification playerLeft(Game game, User user) {
+    public static GameNotification playerLeft(
+        com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.User user) {
       return new GameNotification(
           "PLAYER_LEFT",
           game.getId(),
@@ -95,7 +96,7 @@ public class GameNotificationService {
           user.getUsername() + " left the game");
     }
 
-    public static GameNotification draftStarted(Game game) {
+    public static GameNotification draftStarted(com.fortnite.pronos.model.Game game) {
       return new GameNotification(
           "DRAFT_STARTED",
           game.getId(),
@@ -105,7 +106,7 @@ public class GameNotificationService {
           "Draft has started for " + game.getName());
     }
 
-    public static GameNotification gameFinished(Game game) {
+    public static GameNotification gameFinished(com.fortnite.pronos.model.Game game) {
       return new GameNotification(
           "GAME_FINISHED",
           game.getId(),

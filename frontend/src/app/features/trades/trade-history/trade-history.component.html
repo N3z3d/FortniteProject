@@ -96,6 +96,7 @@
 
       <div class="history-table" *ngIf="!isLoading && filteredTrades.length > 0">
         <table mat-table [dataSource]="filteredTrades" class="full-width-table">
+          <caption class="sr-only">Historique des échanges</caption>
           <!-- Status Column -->
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>{{ t.t('trades.history.columns.status') }}</th>

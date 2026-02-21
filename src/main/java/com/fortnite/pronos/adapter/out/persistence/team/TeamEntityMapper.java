@@ -3,7 +3,6 @@ package com.fortnite.pronos.adapter.out.persistence.team;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -46,10 +45,7 @@ public class TeamEntityMapper {
     if (teamPlayers == null) {
       return Collections.emptyList();
     }
-    return teamPlayers.stream()
-        .map(this::toDomainMember)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return teamPlayers.stream().map(this::toDomainMember).filter(Objects::nonNull).toList();
   }
 
   private TeamMember toDomainMember(TeamPlayer entity) {
@@ -102,7 +98,7 @@ public class TeamEntityMapper {
     return members.stream()
         .map(m -> toEntityMember(m, parentEntity))
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private TeamPlayer toEntityMember(
@@ -128,7 +124,7 @@ public class TeamEntityMapper {
     if (entities == null) {
       return Collections.emptyList();
     }
-    return entities.stream().map(this::toDomain).collect(Collectors.toList());
+    return entities.stream().map(this::toDomain).toList();
   }
 
   // ===============================

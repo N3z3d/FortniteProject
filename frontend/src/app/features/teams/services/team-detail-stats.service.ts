@@ -169,8 +169,9 @@ export class TeamDetailStatsService {
    */
   getSortedRegionsByPoints(stats: TeamStats | null): string[] {
     if (!stats) return [];
+    const distribution = stats.regionPointsDistribution;
     return Object.keys(stats.regionPointsDistribution)
-      .sort((a, b) => (stats!.regionPointsDistribution[b] || 0) - (stats!.regionPointsDistribution[a] || 0));
+      .sort((a, b) => (distribution[b] || 0) - (distribution[a] || 0));
   }
 
   /**

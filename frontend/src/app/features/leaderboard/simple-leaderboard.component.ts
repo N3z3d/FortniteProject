@@ -8,6 +8,9 @@ import { LoggerService } from '../../core/services/logger.service';
 import { Subscription } from 'rxjs';
 import { LeaderboardService, PlayerLeaderboardEntry } from '../../core/services/leaderboard.service';
 
+type SortColumn = 'rank' | 'region' | 'points';
+type SortDirection = 'asc' | 'desc';
+
 @Component({
   selector: 'app-simple-leaderboard',
   standalone: true,
@@ -25,8 +28,8 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
   selectedRegion = '';
   currentPage = 1;
   itemsPerPage = 20;
-  currentSort = 'points';
-  sortDirection: 'asc' | 'desc' = 'desc';
+  currentSort: SortColumn = 'points';
+  sortDirection: SortDirection = 'desc';
   private gameSubscription?: Subscription;
   selectedGameId: string | null = null;
   private readonly logger = inject(LoggerService);
@@ -145,7 +148,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     return player.playerId || `player-${index}`;
   }
 
-  sortBy(column: 'rank' | 'region' | 'points'): void {
+  sortBy(column: SortColumn): void {
     if (this.currentSort === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -153,35 +156,8 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
       this.sortDirection = column === 'points' ? 'desc' : 'asc';
     }
 
-    this.filteredPlayers.sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      switch (column) {
-        case 'rank':
-          aVal = a.rank;
-          bVal = b.rank;
-          break;
-        case 'region':
-          aVal = a.region;
-          bVal = b.region;
-          break;
-        case 'points':
-          aVal = a.totalPoints;
-          bVal = b.totalPoints;
-          break;
-      }
-
-      if (this.sortDirection === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
-
-    this.filteredPlayers.forEach((player, index) => {
-      player.rank = index + 1;
-    });
+    this.filteredPlayers.sort((a, b) => this.comparePlayers(a, b, column, this.sortDirection));
+    this.reRankPlayers(this.filteredPlayers);
 
     const sortLabel = this.getSortLabel(column);
     const directionLabel = this.getSortDirectionLabel(this.sortDirection);
@@ -196,7 +172,40 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  private getSortLabel(column: 'rank' | 'region' | 'points'): string {
+  private comparePlayers(
+    left: PlayerLeaderboardEntry,
+    right: PlayerLeaderboardEntry,
+    column: SortColumn,
+    direction: SortDirection
+  ): number {
+    const leftValue = this.getPlayerSortValue(left, column);
+    const rightValue = this.getPlayerSortValue(right, column);
+    const comparison = leftValue > rightValue ? 1 : -1;
+    return direction === 'asc' ? comparison : -comparison;
+  }
+
+  private getPlayerSortValue(
+    player: PlayerLeaderboardEntry,
+    column: SortColumn
+  ): number | string {
+    switch (column) {
+      case 'rank':
+        return player.rank;
+      case 'region':
+        return player.region;
+      case 'points':
+      default:
+        return player.totalPoints;
+    }
+  }
+
+  private reRankPlayers(players: PlayerLeaderboardEntry[]): void {
+    players.forEach((player, index) => {
+      player.rank = index + 1;
+    });
+  }
+
+  private getSortLabel(column: SortColumn): string {
     switch (column) {
       case 'rank': return this.t.t('leaderboard.sort.rank');
       case 'region': return this.t.t('leaderboard.sort.region');
@@ -205,7 +214,7 @@ export class SimpleLeaderboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private getSortDirectionLabel(direction: 'asc' | 'desc'): string {
+  private getSortDirectionLabel(direction: SortDirection): string {
     return direction === 'asc'
       ? this.t.t('leaderboard.sort.ascending')
       : this.t.t('leaderboard.sort.descending');

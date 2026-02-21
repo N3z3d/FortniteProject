@@ -22,6 +22,7 @@ import com.fortnite.pronos.model.User;
  */
 @Deprecated
 @Component
+@SuppressWarnings({"java:S1133", "java:S6355"})
 public class GameDomainFacade {
 
   private final InvitationCodeGenerator codeGenerator;

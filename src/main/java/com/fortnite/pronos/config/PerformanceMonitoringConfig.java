@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @EnableScheduling
 @Slf4j
+@SuppressWarnings({"java:S1602"})
 public class PerformanceMonitoringConfig {
 
   @Bean

@@ -25,6 +25,7 @@ import com.fortnite.pronos.repository.*;
 @ActiveProfiles("test")
 @DisplayName("TDD - TradingService")
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@SuppressWarnings({"java:S5778"})
 class TradingServiceTddTest {
 
   @Mock private TradeRepository tradeRepository;

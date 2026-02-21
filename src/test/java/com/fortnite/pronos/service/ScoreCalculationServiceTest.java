@@ -15,21 +15,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamPlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.dto.TeamScoreDto;
 import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.ScoreRepository;
-import com.fortnite.pronos.repository.TeamPlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ScoreCalculationService - calculateScore TDD")
+@SuppressWarnings({"java:S5778"})
 class ScoreCalculationServiceTest {
 
-  @Mock private TeamRepository teamRepository;
+  @Mock private TeamRepositoryPort teamRepository;
 
-  @Mock private TeamPlayerRepository teamPlayerRepository;
+  @Mock private TeamPlayerRepositoryPort teamPlayerRepository;
 
-  @Mock private ScoreRepository scoreRepository;
+  @Mock private ScoreRepositoryPort scoreRepository;
 
   @InjectMocks private ScoreCalculationService scoreCalculationService;
 
@@ -43,7 +44,7 @@ class ScoreCalculationServiceTest {
 
   @BeforeEach
   void setUp() {
-    // Créer l'équipe
+    // CrÃ©er l'Ã©quipe
     User owner = new User();
     owner.setId(UUID.randomUUID());
     owner.setUsername("owner");
@@ -55,12 +56,12 @@ class ScoreCalculationServiceTest {
     testTeam.setOwner(owner);
     testTeam.setSeason(2025);
 
-    // Créer les joueurs
+    // CrÃ©er les joueurs
     player1 = createPlayer("Player1", Player.Region.EU);
     player2 = createPlayer("Player2", Player.Region.NAW);
     player3 = createPlayer("Player3", Player.Region.BR);
 
-    // Créer les scores
+    // CrÃ©er les scores
     scoresPlayer1 =
         Arrays.asList(
             createScore(player1, 100, LocalDate.now().minusDays(5)),
@@ -74,12 +75,12 @@ class ScoreCalculationServiceTest {
 
     scoresPlayer3 =
         Arrays.asList(
-            createScore(player3, 300, LocalDate.now().minusDays(10)), // Hors période
+            createScore(player3, 300, LocalDate.now().minusDays(10)), // Hors pÃ©riode
             createScore(player3, 90, LocalDate.now().minusDays(1)));
   }
 
   @Test
-  @DisplayName("devrait calculer le score total d'une équipe sur une période")
+  @DisplayName("devrait calculer le score total d'une Ã©quipe sur une pÃ©riode")
   void shouldCalculateTeamScoreForPeriod() {
     // Given
     LocalDate startDate = LocalDate.now().minusDays(7);
@@ -91,14 +92,14 @@ class ScoreCalculationServiceTest {
             createTeamPlayer(testTeam, player2),
             createTeamPlayer(testTeam, player3));
 
-    when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
     when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(teamPlayers);
     when(scoreRepository.findByPlayerAndDateBetween(player1, startDate, endDate))
         .thenReturn(scoresPlayer1);
     when(scoreRepository.findByPlayerAndDateBetween(player2, startDate, endDate))
         .thenReturn(scoresPlayer2);
     when(scoreRepository.findByPlayerAndDateBetween(player3, startDate, endDate))
-        .thenReturn(Arrays.asList(scoresPlayer3.get(1))); // Seulement le score dans la période
+        .thenReturn(Arrays.asList(scoresPlayer3.get(1))); // Seulement le score dans la pÃ©riode
 
     // When
     TeamScoreDto result =
@@ -115,7 +116,7 @@ class ScoreCalculationServiceTest {
   }
 
   @Test
-  @DisplayName("devrait calculer le score par joueur avec détails")
+  @DisplayName("devrait calculer le score par joueur avec dÃ©tails")
   void shouldCalculateScorePerPlayerWithDetails() {
     // Given
     LocalDate startDate = LocalDate.now().minusDays(7);
@@ -123,7 +124,7 @@ class ScoreCalculationServiceTest {
 
     List<TeamPlayer> teamPlayers = Arrays.asList(createTeamPlayer(testTeam, player1));
 
-    when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
     when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(teamPlayers);
     when(scoreRepository.findByPlayerAndDateBetween(player1, startDate, endDate))
         .thenReturn(scoresPlayer1);
@@ -144,7 +145,7 @@ class ScoreCalculationServiceTest {
   }
 
   @Test
-  @DisplayName("devrait retourner 0 si aucun score dans la période")
+  @DisplayName("devrait retourner 0 si aucun score dans la pÃ©riode")
   void shouldReturnZeroIfNoScoresInPeriod() {
     // Given
     LocalDate startDate = LocalDate.now().minusDays(30);
@@ -152,7 +153,7 @@ class ScoreCalculationServiceTest {
 
     List<TeamPlayer> teamPlayers = Arrays.asList(createTeamPlayer(testTeam, player1));
 
-    when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
     when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(teamPlayers);
     when(scoreRepository.findByPlayerAndDateBetween(player1, startDate, endDate))
         .thenReturn(Collections.emptyList());
@@ -162,44 +163,44 @@ class ScoreCalculationServiceTest {
         scoreCalculationService.calculateTeamScore(testTeam.getId(), startDate, endDate);
 
     // Then
-    assertThat(result.getTotalScore()).isEqualTo(0);
+    assertThat(result.getTotalScore()).isZero();
     assertThat(result.getPlayerScores()).hasSize(1);
-    assertThat(result.getPlayerScores().get(0).getTotalPoints()).isEqualTo(0);
+    assertThat(result.getPlayerScores().get(0).getTotalPoints()).isZero();
   }
 
   @Test
-  @DisplayName("devrait lever une exception si l'équipe n'existe pas")
+  @DisplayName("devrait lever une exception si l'Ã©quipe n'existe pas")
   void shouldThrowExceptionIfTeamNotFound() {
     // Given
     UUID unknownTeamId = UUID.randomUUID();
     LocalDate startDate = LocalDate.now().minusDays(7);
     LocalDate endDate = LocalDate.now();
 
-    when(teamRepository.findById(unknownTeamId)).thenReturn(Optional.empty());
+    when(teamRepository.findByIdWithFetch(unknownTeamId)).thenReturn(Optional.empty());
 
     // When/Then
     assertThatThrownBy(
             () -> scoreCalculationService.calculateTeamScore(unknownTeamId, startDate, endDate))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Équipe non trouvée");
+        .hasMessageContaining("\u00c9quipe non trouv\u00e9e");
   }
 
   @Test
-  @DisplayName("devrait valider que la date de fin est après la date de début")
+  @DisplayName("devrait valider que la date de fin est aprÃ¨s la date de dÃ©but")
   void shouldValidateEndDateAfterStartDate() {
     // Given
     LocalDate startDate = LocalDate.now();
-    LocalDate endDate = LocalDate.now().minusDays(7); // Date de fin avant début
+    LocalDate endDate = LocalDate.now().minusDays(7); // Date de fin avant dÃ©but
 
     // When/Then
     assertThatThrownBy(
             () -> scoreCalculationService.calculateTeamScore(testTeam.getId(), startDate, endDate))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("La date de fin doit être après la date de début");
+        .hasMessageContaining("La date de fin doit \u00eatre apr\u00e8s la date de d\u00e9but");
   }
 
   @Test
-  @DisplayName("devrait calculer les statistiques avancées (min, max, médiane)")
+  @DisplayName("devrait calculer les statistiques avancÃ©es (min, max, mÃ©diane)")
   void shouldCalculateAdvancedStatistics() {
     // Given
     LocalDate startDate = LocalDate.now().minusDays(7);
@@ -207,7 +208,7 @@ class ScoreCalculationServiceTest {
 
     List<TeamPlayer> teamPlayers = Arrays.asList(createTeamPlayer(testTeam, player1));
 
-    when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
+    when(teamRepository.findByIdWithFetch(testTeam.getId())).thenReturn(Optional.of(testTeam));
     when(teamPlayerRepository.findByTeam(testTeam)).thenReturn(teamPlayers);
     when(scoreRepository.findByPlayerAndDateBetween(player1, startDate, endDate))
         .thenReturn(scoresPlayer1);
@@ -223,7 +224,7 @@ class ScoreCalculationServiceTest {
     assertThat(playerScore.getMedianScore()).isEqualTo(150.0);
   }
 
-  // Méthodes utilitaires
+  // MÃ©thodes utilitaires
   private Player createPlayer(String nickname, Player.Region region) {
     Player player = new Player();
     player.setId(UUID.randomUUID());

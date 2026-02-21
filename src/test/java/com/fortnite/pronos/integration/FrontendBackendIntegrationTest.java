@@ -26,7 +26,8 @@ import com.fortnite.pronos.repository.UserRepository;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
-public class FrontendBackendIntegrationTest {
+@SuppressWarnings({"java:S5838"})
+class FrontendBackendIntegrationTest {
 
   @LocalServerPort private int port;
 
@@ -50,7 +51,7 @@ public class FrontendBackendIntegrationTest {
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().length).isGreaterThan(0);
+    assertThat(response.getBody().length).isPositive();
 
     // Vérifier que les joueurs ont des propriétés valides
     for (Player player : response.getBody()) {
@@ -70,7 +71,7 @@ public class FrontendBackendIntegrationTest {
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().length).isGreaterThan(0);
+    assertThat(response.getBody().length).isPositive();
 
     // Vérifier que les utilisateurs ont des propriétés valides
     for (User user : response.getBody()) {
@@ -90,7 +91,7 @@ public class FrontendBackendIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     // Les games peuvent être vides au début
-    assertThat(response.getBody().length).isGreaterThanOrEqualTo(0);
+    assertThat(response.getBody().length).isNotNegative();
   }
 
   @Test
@@ -110,7 +111,7 @@ public class FrontendBackendIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getId()).isEqualTo(firstPlayer.getId());
-    assertThat(response.getBody().getUsername()).isEqualTo(firstPlayer.getUsername());
+    assertThat(response.getUsername()).isEqualTo(firstPlayer.getUsername());
   }
 
   @Test

@@ -98,7 +98,7 @@
         "length": "Utilisez au moins 8 caractères",
         "case": "Incluez des majuscules et minuscules",
         "numbers": "Ajoutez des chiffres et caractères spéciaux",
-        "avoidCommon": "?vitez les mots de passe ?vidents"
+        "avoidCommon": "Évitez les mots de passe évidents"
       },
       "errors": {
         "formInvalid": "Veuillez corriger les erreurs du formulaire",
@@ -121,8 +121,8 @@
       "bestRank": "Meilleur classement",
       "winRate": "Taux de victoire",
       "activityTitle": "Activité",
-      "teamsCreated": "?quipes cr??es",
-      "tradesCompleted": "?changes r?alis?s",
+      "teamsCreated": "Équipes créées",
+      "tradesCompleted": "Échanges réalisés",
       "draftsParticipations": "Drafts participés",
       "preferencesTitle": "Préférences",
       "favoriteRegion": "Région favorite",
@@ -180,10 +180,10 @@
     "home": "Accueil",
     "dashboard": "Tableau de bord",
     "games": "Parties",
-    "teams": "Ã‰quipes",
+    "teams": "Équipes",
     "leaderboard": "Classement",
     "draft": "Draft",
-    "trades": "Ã‰changes",
+    "trades": "Échanges",
     "profile": "Profil",
     "settings": "Paramètres"
   },
@@ -199,9 +199,9 @@
       "navigationHint": "Accès rapide aux fonctionnalités"
     },
     "labels": {
-      "team": "?quipe",
-      "teams": "?quipes",
-      "activeTeams": "?quipes actives",
+      "team": "Équipe",
+      "teams": "Équipes",
+      "activeTeams": "Équipes actives",
       "players": "Joueurs",
       "proPlayers": "Joueurs draftés",
       "points": "Points",
@@ -215,7 +215,7 @@
       "noTeamsFound": "Aucune équipe trouvée",
       "viewFullLeaderboard": "Voir le classement complet",
       "lastUpdated": "Dernière mise à jour :",
-      "myTeams": "Mon ?quipe",
+      "myTeams": "Mon équipe",
       "participants": "Participants",
       "currentTop5": "Top 5 actuel",
       "rank": "Rang"
@@ -234,7 +234,7 @@
     "charts": {
       "regionTitle": "Répartition par région",
       "regionDesc": "Distribution des joueurs professionnels",
-      "top10Title": "Top 10 ?quipes",
+      "top10Title": "Top 10 équipes",
       "performanceByPoints": "Performance par points",
       "pointsAxis": "Points"
     },
@@ -270,9 +270,9 @@
       "teamsAria": "Aller à la gestion des équipes",
       "teamsDescription": "Construire et gérer vos équipes fantasy, recruter des joueurs et optimiser votre escouade",
       "tradesDesc": "Boutique d'objets",
-      "tradesTooltip": "?changer des joueurs",
+      "tradesTooltip": "Échanger des joueurs",
       "tradesAria": "Aller aux échanges",
-      "tradesDescription": "?changer des joueurs avec d'autres ?quipes, n?gocier et am?liorer votre effectif",
+      "tradesDescription": "Échanger des joueurs avec d'autres équipes, négocier et améliorer votre effectif",
       "draftDesc": "Passe de combat",
       "draftTooltip": "Participer au draft",
       "draftAria": "Aller au draft",
@@ -296,7 +296,7 @@
     },
     "fallback": {
       "noTeam": "Aucune équipe",
-      "unknownTeam": "?quipe inconnue"
+      "unknownTeam": "Équipe inconnue"
     }
   },
   "games": {
@@ -629,7 +629,7 @@
     }
   },
   "trades": {
-    "title": "Centre d'?changes",
+    "title": "Centre d'échanges",
     "subtitle": "Gérez vos échanges de joueurs et négociations",
     "createTrade": "Créer un échange",
     "refreshData": "Actualiser les données",
@@ -640,7 +640,7 @@
     "list": {
       "marketOpen": "MARCH? OUVERT",
       "marketTitle": "Trade Hub",
-      "marketSubtitle": "?changez vos joueurs pour maximiser votre score",
+      "marketSubtitle": "Échangez vos joueurs pour maximiser votre score",
       "totalOffers": "Offres totales",
       "active": "En cours",
       "all": "Tout",
@@ -666,12 +666,12 @@
       "offering": "Propose",
       "receiving": "Reçoit",
       "getsMoreValue": "gagne en valeur",
-      "balancedTrade": "?change équilibré",
+      "balancedTrade": "Échange équilibré",
       "tradeOverview": "Vue d'ensemble",
       "totalPlayers": "Total joueurs",
       "totalValue": "Valeur totale",
       "avgPerPlayer": "Moyenne par joueur",
-      "fairnessRating": "?quité",
+      "fairnessRating": "Équité",
       "excellent": "Excellent",
       "good": "Bon",
       "fair": "Correct",
@@ -680,10 +680,10 @@
       "requestedPlayers": "Joueurs demandés",
       "avgScore": "Score moy.",
       "games": "Parties",
-      "eliminations": "?liminations",
+      "eliminations": "Éliminations",
       "totalValueLabel": "Valeur totale",
       "timeline": "Chronologie",
-      "tradeCreated": "?change créé",
+      "tradeCreated": "Échange créé",
       "offerSent": "Offre envoyée",
       "underReview": "En examen",
       "tradeActions": "Actions",
@@ -706,16 +706,16 @@
       "tradeStatusLabel": "Statut de l'échange:",
       "by": "par",
       "system": "Système",
-      "timelineProposedAction": "?change proposé",
+      "timelineProposedAction": "Échange proposé",
       "timelineProposedDesc": "Offre envoyée",
       "timelineAwaitingAction": "En attente de réponse",
       "timelineAwaitingDesc": "En attente d'une réponse",
-      "timelineExpiresAction": "?change expire",
+      "timelineExpiresAction": "Échange expiré",
       "timelineExpiresDesc": "L'échange expirera automatiquement si aucune action n'est prise",
-      "timelineAcceptedDesc": "?change accepté",
-      "timelineRejectedDesc": "?change refusé",
-      "timelineWithdrawnDesc": "?change retiré",
-      "timelineExpiredDesc": "?change expiré",
+      "timelineAcceptedDesc": "Échange accepté",
+      "timelineRejectedDesc": "Échange refusé",
+      "timelineWithdrawnDesc": "Échange retiré",
+      "timelineExpiredDesc": "Échange expiré",
       "timelineStatusUpdatedDesc": "Statut de l'échange mis à jour"
     },
     "history": {
@@ -725,7 +725,7 @@
       "newTrade": "Nouvel échange",
       "filtersTitle": "Filtres",
       "statusLabel": "Statut",
-      "teamLabel": "?quipe",
+      "teamLabel": "Équipe",
       "playerLabel": "Joueur",
       "playerPlaceholder": "Nom du joueur",
       "clearFilters": "Effacer",
@@ -736,8 +736,8 @@
       "noResultsDesc": "Aucun échange ne correspond aux critères sélectionnés",
       "columns": {
         "status": "Statut",
-        "trade": "?change",
-        "team": "?quipe",
+        "trade": "Échange",
+        "team": "Équipe",
         "created": "Créé",
         "completed": "Finalisé",
         "actions": "Actions"
@@ -763,7 +763,7 @@
         "wins": "Victoires",
         "kd": "K/D"
       },
-      "teamSectionTitle": "?quipe concernée",
+      "teamSectionTitle": "Équipe concernée",
       "teamOwnerLabel": "Propriétaire",
       "timelineTitle": "Chronologie",
       "timelineCreated": "Trade créé",
@@ -779,7 +779,7 @@
       "titleNew": "Nouvel échange",
       "titleEdit": "Modifier l'échange",
       "subtitle": "Créez un échange de joueurs entre équipes",
-      "teamSectionTitle": "?quipe concernée",
+      "teamSectionTitle": "Équipe concernée",
       "teamSelectLabel": "Sélectionner l'équipe",
       "playerOutTitle": "Joueur sortant",
       "playerOutLabel": "Sélectionner le joueur sortant",
@@ -788,7 +788,7 @@
       "previewTitle": "Aperçu de l'échange",
       "previewOut": "Sortant",
       "previewIn": "Entrant",
-      "teamLabel": "?quipe",
+      "teamLabel": "Équipe",
       "ownerLabel": "Propriétaire",
       "validation": {
         "selectTeam": "Veuillez sélectionner une équipe",
@@ -798,7 +798,7 @@
       },
       "create": "Créer un échange",
       "creating": "Création...",
-      "createdSuccess": "?change créé avec succès !"
+      "createdSuccess": "Échange créé avec succès !"
     },
     "filters": {
       "all": "Tous les échanges",
@@ -838,7 +838,7 @@
       "expiresSoon": "Expire bientôt",
       "youGetMoreValue": "Vous gagnez en valeur",
       "youGiveMoreValue": "Vous perdez en valeur",
-      "balancedTrade": "?change équilibré"
+      "balancedTrade": "Échange équilibré"
     },
     "actions": {
       "accept": "Accepter",
@@ -856,24 +856,24 @@
       "cancelled": "Annulé"
     },
     "errors": {
-      "loadTrades": "?chec du chargement des échanges",
-      "loadTeams": "?chec du chargement des équipes",
-      "loadHistory": "?chec du chargement de l'historique",
-      "loadStats": "?chec du chargement des statistiques",
-      "createOffer": "?chec de la création de l'offre",
-      "acceptOffer": "?chec de l'acceptation de l'offre",
-      "rejectOffer": "?chec du refus de l'offre",
-      "withdrawOffer": "?chec du retrait de l'offre",
-      "counterOffer": "?chec de la contre-offre",
-      "refreshFailed": "?chec du rafraîchissement",
+      "loadTrades": "Échec du chargement des échanges",
+      "loadTeams": "Échec du chargement des équipes",
+      "loadHistory": "Échec du chargement de l'historique",
+      "loadStats": "Échec du chargement des statistiques",
+      "createOffer": "Échec de la création de l'offre",
+      "acceptOffer": "Échec de l'acceptation de l'offre",
+      "rejectOffer": "Échec du refus de l'offre",
+      "withdrawOffer": "Échec du retrait de l'offre",
+      "counterOffer": "Échec de la contre-offre",
+      "refreshFailed": "Échec du rafraîchissement",
       "actionFailed": "Action échouée. Veuillez réessayer."
     },
     "messages": {
       "refreshed": "Données actualisées",
       "newOffers": "Vous avez {count} nouvelle(s) offre(s) d'échange",
-      "tradeAccepted": "?change accepté avec succès !",
-      "tradeRejected": "?change refusé",
-      "tradeWithdrawn": "?change retiré",
+      "tradeAccepted": "Échange accepté avec succès !",
+      "tradeRejected": "Échange refusé",
+      "tradeWithdrawn": "Échange retiré",
       "counterOfferSent": "Contre-offre envoyée avec succès !"
     },
     "proposal": {
@@ -906,7 +906,7 @@
       "labels": {
         "ownerBy": "par",
         "score": "Score",
-        "teamSelected": "?quipe sélectionnée",
+        "teamSelected": "Équipe sélectionnée",
         "playersOffered": "Joueurs proposés",
         "playersRequested": "Joueurs demandés"
       },
@@ -922,7 +922,7 @@
         "moveNotAllowed": "Ce déplacement n'est pas autorisé",
         "completeProposal": "Veuillez compléter votre proposition",
         "offerSent": "Offre d'échange envoyée avec succès !",
-        "offerSendFailed": "?chec de l'envoi de l'offre"
+        "offerSendFailed": "Échec de l'envoi de l'offre"
       }
     },
     "dashboard": {
@@ -1040,7 +1040,7 @@
       "retry": "Réessayer",
       "goHome": "Retour à l'accueil",
       "close": "Fermer",
-      "escapeKey": "?chap"
+      "escapeKey": "Échap"
     }
   },
   "notifications": {
@@ -1083,7 +1083,7 @@
     "disconnected": "Déconnecté",
     "noNotifications": "Aucune notification",
     "time": {
-      "justNow": "Ã€ l'instant",
+      "justNow": "? l'instant",
       "minutesAgo": "Il y a {n} min",
       "hoursAgo": "Il y a {n}h",
       "daysAgo": "Il y a {n}j"
@@ -1160,7 +1160,7 @@
       "draftStarted": "Le draft a commencé",
       "draftCompleted": "Le draft est terminé",
       "turnUpdated": "C'est votre tour de drafter",
-      "teamUpdated": "?quipe mise ? jour",
+      "teamUpdated": "Équipe mise à jour",
       "draftPaused": "Le draft a été mis en pause",
       "draftResumed": "Le draft a repris",
       "playerSelectedWithName": "Joueur {player} sélectionné !",
@@ -1232,8 +1232,8 @@
   },
   "teams": {
     "common": {
-      "teams": "?quipes",
-      "team": "?quipe",
+      "teams": "Équipes",
+      "team": "Équipe",
       "players": "Joueurs",
       "points": "Points",
       "pointsShort": "pts",
@@ -1242,13 +1242,13 @@
       "season": "Saison",
       "loadingTeams": "Chargement des équipes...",
       "loadingTeam": "Chargement de l'équipe...",
-      "unnamedTeam": "?quipe sans nom",
+      "unnamedTeam": "Équipe sans nom",
       "unknownOwner": "Propriétaire inconnu",
       "unknownPlayer": "Joueur"
     },
     "list": {
-      "titleGame": "?quipes du jeu",
-      "titleMine": "Mes ?quipes",
+      "titleGame": "Équipes du jeu",
+      "titleMine": "Mes équipes",
       "subtitle": "Gérez vos équipes et optimisez votre roster pour dominer le classement",
       "searchPlaceholder": "Rechercher une équipe, un joueur...",
       "loading": "Chargement de vos équipes...",
@@ -1260,7 +1260,7 @@
       "createTeam": "Créer une équipe",
       "viewDetails": "Voir détails",
       "manage": "Gérer",
-      "seasonTitle": "?quipes Saison {season}",
+      "seasonTitle": "Équipes Saison {season}",
       "seasonSubtitle": "Toutes les équipes de la fantasy league",
       "noPlayers": "Aucun joueur dans cette équipe",
       "emptySeason": "Il n'y a pas encore d'équipe pour la saison {season}.",
@@ -1287,7 +1287,7 @@
       "saveChanges": "Enregistrer les modifications",
       "snackbar": {
         "formInvalid": "Veuillez corriger les erreurs du formulaire",
-        "updated": "?quipe mise à jour avec succès !",
+        "updated": "Équipe mise à jour avec succès !",
         "playerRemoved": "{player} retiré de l'équipe",
         "playerRestored": "Joueur restauré",
         "viewAction": "Voir"
@@ -1310,8 +1310,8 @@
       "bestPlayer": "Meilleur Joueur",
       "loadingTeamData": "Chargement des données de l'équipe...",
       "errorTitle": "Erreur",
-      "notFound": "?quipe non trouvée",
-      "notFoundForUser": "?quipe non trouvée pour cet utilisateur",
+      "notFound": "Équipe non trouvée",
+      "notFoundForUser": "Équipe non trouvée pour cet utilisateur",
       "dataUnavailable": "Données indisponibles (CSV non chargé)"
     }
   },
@@ -1327,7 +1327,7 @@
     },
     "legalNotice": {
       "title": "Mentions Légales",
-      "editorTitle": "Ã‰diteur",
+      "editorTitle": "Éditeur",
       "editorContent": "Ce site est édité à titre personnel dans le cadre d'un projet de développement.",
       "hostingTitle": "Hébergement",
       "hostingContent": "Ce site est hébergé sur une infrastructure cloud sécurisée.",
@@ -1358,7 +1358,7 @@
       "login": "Connexion"
     },
     "hero": {
-      "title": "B?TISSEZ VOTRE EMPIRE",
+      "title": "BÂTISSEZ VOTRE EMPIRE",
       "subtitle": "FORTNITE",
       "description": "Région par région, sélectionnez les meilleurs joueurs pro et dominez le classement mondial. La ligue fantasy ultime pour les vrais passionnés d'e-sport.",
       "createTeam": "Créer mon équipe",
@@ -1376,13 +1376,13 @@
       "subtitle": "Chaque région a ses légendes. Construisez votre dream team en naviguant à travers les continents.",
       "stats": {
         "players": "Joueurs",
-        "topTeams": "Top ?quipes"
+        "topTeams": "Top équipes"
       },
       "exploreTooltip": "Explorer la région {name}",
       "explore": "Explorer"
     },
     "features": {
-      "title": "FONCTIONNALIT?S AVANC?ES",
+      "title": "FONCTIONNALITÉS AVANCÉES",
       "subtitle": "Une expérience de ligue fantasy révolutionnaire avec des outils pro.",
       "realtime": {
         "title": "Suivi en Temps Réel",
@@ -1392,9 +1392,9 @@
         "stats": "Statistiques détaillées"
       },
       "trading": {
-        "title": "Syst?me d'?changes",
+        "title": "Système d'échanges",
         "description": "Négociez avec d'autres managers, remplacez vos joueurs et optimisez votre roster selon les règles.",
-        "trades": "?changes de joueurs",
+        "trades": "Échanges de joueurs",
         "windows": "Fenêtres de transfert",
         "tier": "Système de tiers"
       },
@@ -1414,8 +1414,8 @@
       }
     },
     "cta": {
-      "title": "PR?T ? CONQU?RIR LE MONDE ?",
-      "subtitle": "Rejoignez des milliers de managers et prouvez que vous avez l'?il pour rep?rer les futurs champions.",
+      "title": "PRÊT À CONQUÉRIR LE MONDE ?",
+      "subtitle": "Rejoignez des milliers de managers et prouvez que vous avez l'œil pour repérer les futurs champions.",
       "startNow": "Commencer maintenant",
       "startNowTooltip": "Lancez votre aventure maintenant !",
       "beginnersGuide": "Guide du débutant",
@@ -1441,7 +1441,7 @@
     "regions": {
       "eu": {
         "name": "Europe",
-        "description": "Le c?ur strat?gique du competitive. Des ?quipes disciplin?es et une m?canique impeccable."
+        "description": "Le cœur stratégique du competitive. Des équipes disciplinées et une mécanique impeccable."
       },
       "nac": {
         "name": "North America Central",
@@ -1494,13 +1494,15 @@
       "health": "Santé du système",
       "recentActivity": "Activité récente",
       "metrics": "Métriques système",
+      "alerts": "Alertes actives",
+      "visits": "Suivi des visites",
       "refresh": "Actualiser",
-      "loadError": "?chec du chargement des donn?es."
+      "loadError": "Échec du chargement des données."
     },
     "kpi": {
       "totalUsers": "Utilisateurs",
       "totalGames": "Parties",
-      "totalTrades": "Ã‰changes",
+      "totalTrades": "Échanges",
       "gamesByStatus": "Parties par statut"
     },
     "health": {
@@ -1510,7 +1512,7 @@
     },
     "activity": {
       "recentGames": "Parties récentes",
-      "recentTrades": "?changes r?cents",
+      "recentTrades": "Échanges récents",
       "totalUsers": "Utilisateurs",
       "latestGames": "Dernières parties"
     },
@@ -1521,6 +1523,19 @@
       "totalRequests": "Requêtes totales",
       "errorRate": "Taux d'erreur"
     },
+    "alerts": {
+      "none": "Aucune alerte active.",
+      "threshold": "Seuil"
+    },
+    "visits": {
+      "pageViews": "Pages vues",
+      "uniqueVisitors": "Visiteurs uniques",
+      "activeSessions": "Sessions actives",
+      "averageDuration": "Durée moyenne",
+      "topPages": "Pages les plus vues",
+      "bounceRate": "Taux de rebond",
+      "topFlows": "Flux de navigation"
+    },
     "errors": {
       "title": "Journal d'erreurs",
       "loadError": "Impossible de charger le journal d'erreurs.",
@@ -1530,6 +1545,10 @@
         "uniqueTypes": "Types uniques",
         "serverErrors": "Erreurs serveur (5xx)",
         "notFound": "Non trouvé (404)"
+      },
+      "trend": {
+        "title": "Tendance des erreurs",
+        "subtitle": "Repartition sur la periode selectionnee"
       },
       "filter": {
         "status": "Code HTTP",

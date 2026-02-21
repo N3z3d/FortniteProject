@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 /** Tests unitaires pour l'enum GameStatus */
 @DisplayName("Tests de l'enum GameStatus")
+@SuppressWarnings({"java:S5863"})
 class GameStatusTest {
 
   @Test

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,13 +28,12 @@ import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.InvalidDraftStateException;
 import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.draft.DraftService;
 
@@ -45,7 +45,7 @@ class GameDraftServiceTddTest {
   @Mock private GameDomainRepositoryPort gameDomainRepository;
   @Mock private DraftRepositoryPort draftRepository;
   @Mock private DraftPickRepositoryPort draftPickRepository;
-  @Mock private PlayerRepositoryPort playerRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private DraftService draftService;
 
@@ -59,7 +59,7 @@ class GameDraftServiceTddTest {
   private com.fortnite.pronos.domain.draft.model.Draft domainDraft;
   private com.fortnite.pronos.model.Game game;
   private Draft draft;
-  private Player player;
+  private com.fortnite.pronos.domain.player.model.Player player;
   private GameParticipant participant;
 
   @BeforeEach
@@ -112,13 +112,15 @@ class GameDraftServiceTddTest {
     draft.setCurrentPick(1);
 
     player =
-        Player.builder()
-            .id(playerId)
-            .nickname("Player-1")
-            .username("player1")
-            .region(Player.Region.EU)
-            .tranche("1-5")
-            .build();
+        com.fortnite.pronos.domain.player.model.Player.restore(
+            playerId,
+            null,
+            "player1",
+            "Player-1",
+            com.fortnite.pronos.domain.game.model.PlayerRegion.EU,
+            "1-5",
+            2026,
+            false);
 
     domainDraft =
         com.fortnite.pronos.domain.draft.model.Draft.restore(
@@ -141,7 +143,9 @@ class GameDraftServiceTddTest {
     when(draftDomainRepository.findActiveByGameId(gameId)).thenReturn(Optional.of(domainDraft));
     when(draftRepository.findById(draftId)).thenReturn(Optional.of(draft));
     when(draftService.isUserTurn(draft, userId)).thenReturn(true);
-    when(draftPickRepository.existsByDraftAndPlayer(draft, player)).thenReturn(false);
+    when(draftPickRepository.existsByDraftAndPlayer(
+            eq(draft), any(com.fortnite.pronos.model.Player.class)))
+        .thenReturn(false);
     when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
     when(gameParticipantRepository.findByUserIdAndGameId(userId, gameId))
         .thenReturn(Optional.of(participant));

@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/leaderboard")
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S1874"})
 public class LeaderboardController {
 
   private final TeamLeaderboardService teamLeaderboardService;

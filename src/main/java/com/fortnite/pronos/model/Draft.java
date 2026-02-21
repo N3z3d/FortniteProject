@@ -157,6 +157,10 @@ public class Draft {
     this.game = game;
   }
 
+  public UUID getGameId() {
+    return game != null ? game.getId() : null;
+  }
+
   public Status getStatus() {
     return status;
   }

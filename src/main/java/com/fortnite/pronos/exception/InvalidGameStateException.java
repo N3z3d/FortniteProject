@@ -3,6 +3,7 @@ package com.fortnite.pronos.exception;
 import com.fortnite.pronos.model.GameStatus;
 
 /** Exception levée lorsqu'une game n'est pas dans un état valide pour l'opération */
+@SuppressWarnings({"java:S1172"})
 public class InvalidGameStateException extends RuntimeException {
 
   public InvalidGameStateException(String message) {

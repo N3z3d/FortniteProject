@@ -126,6 +126,79 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Active Alerts Card -->
+    <mat-card class="dashboard-card alerts-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">notification_important</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.alerts') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="alert-list" *ngIf="alerts.length; else noAlerts">
+          <div class="alert-item" *ngFor="let alert of alerts" [ngClass]="getAlertSeverityClass(alert)">
+            <div class="alert-header">
+              <mat-icon>{{ getAlertSeverityIcon(alert) }}</mat-icon>
+              <span class="alert-title">{{ alert.title }}</span>
+              <span class="alert-severity">{{ alert.severity }}</span>
+            </div>
+            <p class="alert-message">{{ alert.message }}</p>
+            <p class="alert-threshold">
+              {{ t.t('admin.alerts.threshold') }}: {{ alert.currentValue | number:'1.0-1' }}
+              / {{ alert.thresholdValue | number:'1.0-1' }}
+            </p>
+          </div>
+        </div>
+        <ng-template #noAlerts>
+          <p class="no-alerts">{{ t.t('admin.alerts.none') }}</p>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Visit Analytics Card -->
+    <mat-card class="dashboard-card visits-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">insights</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.visits') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content *ngIf="visitAnalytics">
+        <div class="visit-kpis">
+          <div class="visit-kpi">
+            <span class="visit-value">{{ visitAnalytics.pageViews }}</span>
+            <span class="visit-label">{{ t.t('admin.visits.pageViews') }}</span>
+          </div>
+          <div class="visit-kpi">
+            <span class="visit-value">{{ visitAnalytics.uniqueVisitors }}</span>
+            <span class="visit-label">{{ t.t('admin.visits.uniqueVisitors') }}</span>
+          </div>
+          <div class="visit-kpi">
+            <span class="visit-value">{{ visitAnalytics.activeSessions }}</span>
+            <span class="visit-label">{{ t.t('admin.visits.activeSessions') }}</span>
+          </div>
+          <div class="visit-kpi">
+            <span class="visit-value">{{ formatDuration(visitAnalytics.averageSessionDurationSeconds) }}</span>
+            <span class="visit-label">{{ t.t('admin.visits.averageDuration') }}</span>
+          </div>
+          <div class="visit-kpi">
+            <span class="visit-value">{{ visitAnalytics.bounceRatePercent | number:'1.0-1' }}%</span>
+            <span class="visit-label">{{ t.t('admin.visits.bounceRate') }}</span>
+          </div>
+        </div>
+        <div class="visit-top-pages" *ngIf="visitAnalytics.topPages.length">
+          <h4>{{ t.t('admin.visits.topPages') }}</h4>
+          <div class="visit-page-row" *ngFor="let page of visitAnalytics.topPages">
+            <span class="visit-path">{{ page.path }}</span>
+            <span class="visit-count">{{ page.views }}</span>
+          </div>
+        </div>
+        <div class="visit-top-flows" *ngIf="visitAnalytics.topNavigationFlows.length">
+          <h4>{{ t.t('admin.visits.topFlows') }}</h4>
+          <div class="visit-flow-row" *ngFor="let flow of visitAnalytics.topNavigationFlows">
+            <span class="visit-flow-path">{{ flow.fromPath }} -> {{ flow.toPath }}</span>
+            <span class="visit-count">{{ flow.transitions }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- System Metrics Card -->
     <mat-card class="dashboard-card metrics-card">
       <mat-card-header>

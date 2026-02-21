@@ -1,6 +1,12 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, RouterModule, ChildrenOutletContexts } from '@angular/router';
+import {
+  Router,
+  RouterOutlet,
+  RouterModule,
+  ChildrenOutletContexts,
+  NavigationEnd
+} from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { fadeSlideAnimation } from '../../animations/route.animations';
 import { MatCardModule } from '@angular/material/card';
@@ -28,6 +34,8 @@ import { LoggerService } from '../../../core/services/logger.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
+import { NavigationTrackingService } from '../../../core/services/navigation-tracking.service';
 import { Game, GameStatus } from '../../../features/game/models/game.interface';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
@@ -89,6 +97,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   sidebarOpen = true; // Sidebar ouverte par défaut
 
   private readonly destroy$ = new Subject<void>();
+  private lastTrackedRoute: string | null = null;
 
   constructor(
     private readonly gameService: GameService,
@@ -102,6 +111,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     private readonly accessibilityService: AccessibilityAnnouncerService,
     private readonly focusManagementService: FocusManagementService,
     private readonly uiFeedback: UiErrorFeedbackService,
+    private readonly gamesRealtimeService: GamesRealtimeService,
+    private readonly navigationTrackingService: NavigationTrackingService,
     contexts: ChildrenOutletContexts
   ) {
     this.contexts = contexts;
@@ -122,15 +133,16 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.setupResponsive();
     this.subscribeToGameSelection();
     this.subscribeToRouteChanges();
+    this.trackNavigationEvent(this.router.url);
     this.setupVisibilityRefreshTriggers();
 
     this.subscribeToUserGamesState();
-    this.userGamesStore.startAutoRefresh(15000);
+    this.startRealtimeSync();
     this.userGamesStore.loadGames().subscribe({ error: () => undefined });
   }
 
   ngOnDestroy(): void {
-    this.userGamesStore.stopAutoRefresh();
+    this.gamesRealtimeService.stop();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -376,16 +388,18 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.router.events
       .pipe(takeUntil(this.destroy$))
       .subscribe(event => {
-        if (event.constructor.name === 'NavigationEnd') {
-          // Deselectionner la game si on navigue vers /games (liste)
-          if (this.router.url === '/games' || this.router.url === '/') {
-            this.selectedGame = null;
-            this.gameSelectionService.setSelectedGame(null);
-          } else {
-            // Restaurer selectedGame depuis l'URL si on est sur une page de game
-            this.restoreSelectedGameFromUrl();
-          }
+        if (!(event instanceof NavigationEnd)) {
+          return;
         }
+        // Deselectionner la game si on navigue vers /games (liste)
+        if (this.router.url === '/games' || this.router.url === '/') {
+          this.selectedGame = null;
+          this.gameSelectionService.setSelectedGame(null);
+        } else {
+          // Restaurer selectedGame depuis l'URL si on est sur une page de game
+          this.restoreSelectedGameFromUrl();
+        }
+        this.trackNavigationEvent(event.urlAfterRedirects);
       });
   }
 
@@ -469,6 +483,31 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
           this.restoreSelectedGameFromUrl();
         }
       });
+  }
+
+  private startRealtimeSync(): void {
+    this.gamesRealtimeService.events$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if (event.type === 'CONNECTED') {
+          return;
+        }
+        this.reloadUserGames();
+      });
+
+    this.gamesRealtimeService.start();
+  }
+
+  private trackNavigationEvent(url: string): void {
+    const routePath = url.split('#')[0].split('?')[0];
+    if (!routePath.startsWith('/') || routePath === this.lastTrackedRoute) {
+      return;
+    }
+    this.lastTrackedRoute = routePath;
+    this.navigationTrackingService
+      .trackNavigation(routePath)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ error: () => undefined });
   }
 
   // Compatibilité tests : action rapide pour rejoindre une game

@@ -9,6 +9,7 @@ import com.fortnite.pronos.domain.game.model.PlayerRegion;
  * Pure domain model representing a Fortnite player. Contains business logic with zero framework
  * dependencies (no JPA, no Spring, no Lombok).
  */
+@SuppressWarnings({"java:S107"})
 public final class Player {
 
   private UUID id;

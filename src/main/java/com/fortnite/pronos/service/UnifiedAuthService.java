@@ -7,52 +7,48 @@ import org.springframework.stereotype.Service;
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
 import com.fortnite.pronos.exception.UserNotFoundException;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Service d'authentification unifié pour le MVP */
+/** Service d'authentification unifie pour le MVP. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S112"})
 public class UnifiedAuthService {
 
-  private final UserRepository userRepository;
+  private static final String INVALID_REFRESH_TOKEN_MESSAGE = "Token de rafraichissement invalide";
+
+  private final com.fortnite.pronos.repository.UserRepository userRepository;
   private final JwtService jwtService;
 
-  /** Récupère un utilisateur par nom d'utilisateur */
-  public Optional<User> findUserByUsername(String username) {
+  /** Recupere un utilisateur par nom d'utilisateur. */
+  public Optional<com.fortnite.pronos.model.User> findUserByUsername(String username) {
     if (username == null || username.trim().isEmpty()) {
       return Optional.empty();
     }
     return userRepository.findByUsername(username);
   }
 
-  /** Authentifie un utilisateur (version simplifiée pour MVP) */
-  public Optional<User> authenticate(String username) {
+  /** Authentifie un utilisateur (version simplifiee pour MVP). */
+  public Optional<com.fortnite.pronos.model.User> authenticate(String username) {
     return findUserByUsername(username);
   }
 
-  /** Connexion utilisateur avec génération de token JWT */
+  /** Connexion utilisateur avec generation de token JWT. */
   public LoginResponse login(LoginRequest request) {
     log.info("Tentative de connexion pour l'utilisateur: {}", request.getUsername());
 
-    // Authentification simplifiée pour MVP
-    Optional<User> userOpt = findUserByUsername(request.getUsername());
-
+    Optional<com.fortnite.pronos.model.User> userOpt = findUserByUsername(request.getUsername());
     if (userOpt.isEmpty()) {
-      log.warn("Utilisateur non trouvé: {}", request.getUsername());
-      throw new UserNotFoundException("Utilisateur non trouvé: " + request.getUsername());
+      log.warn("Utilisateur non trouve: {}", request.getUsername());
+      throw new UserNotFoundException("Utilisateur non trouve: " + request.getUsername());
     }
 
-    User user = userOpt.get();
-
-    // Création d'un UserDetails pour JwtService
+    com.fortnite.pronos.model.User user = userOpt.get();
     CustomUserDetails userDetails = new CustomUserDetails(user);
 
-    // Génération des tokens
     String token = jwtService.generateToken(userDetails);
     String refreshToken = jwtService.generateRefreshToken(userDetails);
 
@@ -61,33 +57,31 @@ public class UnifiedAuthService {
     response.setRefreshToken(refreshToken);
     response.setUser(LoginResponse.UserDto.from(user));
 
-    log.info("Connexion réussie pour l'utilisateur: {}", user.getEmail());
+    log.info("Connexion reussie pour l'utilisateur: {}", user.getEmail());
     return response;
   }
 
-  /** Actualise le token avec le refresh token */
+  /** Actualise le token avec le refresh token. */
   public LoginResponse refreshToken(String refreshToken) {
-    log.info("Tentative de rafraîchissement de token");
+    log.info("Tentative de rafraichissement de token");
 
     try {
       String username = jwtService.extractUsername(refreshToken);
-      Optional<User> userOpt = userRepository.findByUsername(username);
+      Optional<com.fortnite.pronos.model.User> userOpt = userRepository.findByUsername(username);
 
       if (userOpt.isEmpty()) {
-        log.warn("Utilisateur non trouvé pour le token: {}", username);
-        throw new UserNotFoundException("Utilisateur non trouvé: " + username);
+        log.warn("Utilisateur non trouve pour le token: {}", username);
+        throw new UserNotFoundException("Utilisateur non trouve: " + username);
       }
 
-      User user = userOpt.get();
+      com.fortnite.pronos.model.User user = userOpt.get();
       CustomUserDetails userDetails = new CustomUserDetails(user);
 
-      // Vérifier si le token est encore valide
       if (!jwtService.isTokenValid(refreshToken, userDetails)) {
-        log.warn("Token de rafraîchissement invalide");
-        throw new RuntimeException("Token de rafraîchissement invalide");
+        log.warn(INVALID_REFRESH_TOKEN_MESSAGE);
+        throw new RuntimeException(INVALID_REFRESH_TOKEN_MESSAGE);
       }
 
-      // Génération de nouveaux tokens
       String newToken = jwtService.generateToken(userDetails);
       String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
@@ -96,46 +90,47 @@ public class UnifiedAuthService {
       response.setRefreshToken(newRefreshToken);
       response.setUser(LoginResponse.UserDto.from(user));
 
-      log.info("Token rafraîchi avec succès pour l'utilisateur: {}", user.getEmail());
+      log.info("Token rafraichi avec succes pour l'utilisateur: {}", user.getEmail());
       return response;
-
-    } catch (RuntimeException e) {
-      if (e instanceof UserNotFoundException) {
-        throw e;
+    } catch (RuntimeException exception) {
+      if (exception instanceof UserNotFoundException) {
+        throw exception;
       }
-      log.warn("Erreur lors du rafraîchissement du token: {}", e.getMessage());
-      throw new RuntimeException("Token de rafraîchissement invalide");
-    } catch (Exception e) {
-      log.warn("Erreur lors du rafraîchissement du token: {}", e.getMessage());
-      throw new RuntimeException("Token de rafraîchissement invalide");
+      log.warn("Erreur lors du rafraichissement du token: {}", exception.getMessage());
+      throw new RuntimeException(INVALID_REFRESH_TOKEN_MESSAGE);
+    } catch (Exception exception) {
+      log.warn("Erreur lors du rafraichissement du token: {}", exception.getMessage());
+      throw new RuntimeException(INVALID_REFRESH_TOKEN_MESSAGE);
     }
   }
 
-  /** Classe interne pour implémenter UserDetails */
+  /** Classe interne pour implementer UserDetails. */
   private static class CustomUserDetails
       implements org.springframework.security.core.userdetails.UserDetails {
-    private final User user;
 
-    public CustomUserDetails(User user) {
-      this.user = user;
+    private final String username;
+    private final String roleName;
+
+    CustomUserDetails(com.fortnite.pronos.model.User user) {
+      this.username = user.getUsername();
+      this.roleName = "ROLE_" + user.getRole().name();
     }
 
     @Override
     public String getUsername() {
-      return user.getUsername();
+      return username;
     }
 
     @Override
     public String getPassword() {
-      return ""; // Pas de mot de passe pour le MVP
+      return "";
     }
 
     @Override
     public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>
         getAuthorities() {
       return java.util.List.of(
-          new org.springframework.security.core.authority.SimpleGrantedAuthority(
-              "ROLE_" + user.getRole().name()));
+          new org.springframework.security.core.authority.SimpleGrantedAuthority(roleName));
     }
 
     @Override

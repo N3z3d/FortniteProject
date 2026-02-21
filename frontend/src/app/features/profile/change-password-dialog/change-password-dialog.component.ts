@@ -50,7 +50,7 @@ export class ChangePasswordDialogComponent {
 
     const hasUpperCase = /[A-Z]/.test(value);
     const hasLowerCase = /[a-z]/.test(value);
-    const hasNumeric = /[0-9]/.test(value);
+    const hasNumeric = /\d/.test(value);
 
     const valid = hasUpperCase && hasLowerCase && hasNumeric;
     return valid ? null : { weakPassword: true };
@@ -134,7 +134,7 @@ export class ChangePasswordDialogComponent {
     if (password.length >= 12) strength++;
     if (/[A-Z]/.test(password)) strength++;
     if (/[a-z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
 
     if (strength <= 2) {

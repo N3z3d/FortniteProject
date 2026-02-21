@@ -129,7 +129,8 @@ export class LeaderboardApiMapper {
 
     // Filtrage par nombre minimum de points
     if (options.minPoints && options.minPoints > 0) {
-      filteredEntries = filteredEntries.filter(entry => entry.totalPoints >= options.minPoints!);
+      const minPoints = options.minPoints;
+      filteredEntries = filteredEntries.filter(entry => entry.totalPoints >= minPoints);
     }
 
     // Filtrage par terme de recherche

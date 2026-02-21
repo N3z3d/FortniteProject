@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"java:S5778"})
 class TeamDomainModelTest {
 
   private static final UUID OWNER_ID = UUID.randomUUID();
@@ -305,7 +306,7 @@ class TeamDomainModelTest {
       Team t1 = Team.restore(id, "A", OWNER_ID, 2025, null, 0, null);
       Team t2 = Team.restore(id, "B", OWNER_ID, 2024, null, 3, null);
 
-      assertThat(t1.hashCode()).isEqualTo(t2.hashCode());
+      assertThat(t1).hasSameHashCodeAs(t2);
     }
   }
 

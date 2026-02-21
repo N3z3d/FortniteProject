@@ -1,12 +1,9 @@
 /* Nexus Fortnite UI - Global Styles */
 
-// Import Gaming Fonts
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 // Import Premium Gaming Mixins and Typography
-@import 'app/shared/styles/mixins';
-@import 'app/shared/styles/typography';
-@import 'app/shared/styles/accessibility-enhancements';
+@use 'app/shared/styles/mixins' as *;
+@use 'app/shared/styles/typography';
+@use 'app/shared/styles/accessibility-enhancements';
 
 // ============================================
 // NEXUS FORTNITE COLOR SYSTEM
@@ -491,11 +488,9 @@ a:focus-visible {
 }
 
 /* High contrast text on dark backgrounds */
-.mat-card {
-  .mat-mdc-card-subtitle,
-  .mat-body-2 {
-    color: var(--gaming-gray-lighter) !important;  /* Accessible on dark backgrounds */
-  }
+.mat-card .mat-mdc-card-subtitle,
+.mat-card .mat-body-2 {
+  color: var(--gaming-gray-lighter) !important;  /* Accessible on dark backgrounds */
 }
 
 /* Accessible link colors */
@@ -638,6 +633,14 @@ a:not(.mat-button):not(.nav-link) {
 
 /* Magnetic button states */
 .magnetic-active {
+  --magnetic-field: conic-gradient(
+    from 0deg,
+    transparent,
+    rgba(var(--gaming-primary-rgb), 0.1),
+    transparent,
+    rgba(var(--gaming-accent-rgb), 0.1),
+    transparent
+  );
   transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
@@ -721,11 +724,6 @@ a:not(.mat-button):not(.nav-link) {
 }
 
 /* Premium loading states */
-.premium-loading {
-  position: relative;
-  overflow: hidden;
-}
-
 .premium-loading::before {
   content: '';
   position: absolute;
@@ -1213,18 +1211,6 @@ a:not(.mat-button):not(.nav-link) {
 }
 
 /* ===== ENHANCED MAGNETIC EFFECTS ===== */
-
-.magnetic-active {
-  --magnetic-field: conic-gradient(
-    from 0deg,
-    transparent,
-    rgba(var(--gaming-primary-rgb), 0.1),
-    transparent,
-    rgba(var(--gaming-accent-rgb), 0.1),
-    transparent
-  );
-}
-
 .magnetic-hover {
   &::before {
     background: var(--magnetic-field, var(--gradient-gaming));

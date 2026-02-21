@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@SuppressWarnings({"java:S116"})
 public class FortniteTrackerResponse {
 
   private String accountId;

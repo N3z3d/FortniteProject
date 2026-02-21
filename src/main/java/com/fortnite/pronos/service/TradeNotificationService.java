@@ -5,8 +5,6 @@ import java.util.UUID;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.model.Trade;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,52 +15,73 @@ public class TradeNotificationService {
 
   private final SimpMessagingTemplate messagingTemplate;
 
-  public void notifyTradeProposed(Trade trade) {
+  public void notifyTradeProposed(com.fortnite.pronos.model.Trade trade) {
     log.info(
         "Notifying trade proposal: {} -> {}",
-        trade.getFromTeam().getName(),
-        trade.getToTeam().getName());
+        teamName(fromTeamOf(trade)),
+        teamName(toTeamOf(trade)));
 
     TradeNotification notification = TradeNotification.proposed(trade);
 
-    sendToUser(trade.getToTeam().getUser().getId(), notification);
-    sendToTopic(trade.getFromTeam().getGame().getId(), notification);
+    sendToUser(teamOwnerId(toTeamOf(trade)), notification);
+    sendToTopic(gameId(fromTeamOf(trade)), notification);
   }
 
-  public void notifyTradeAccepted(Trade trade) {
+  public void notifyTradeAccepted(com.fortnite.pronos.model.Trade trade) {
     log.info("Notifying trade accepted: {}", trade.getId());
 
     TradeNotification notification = TradeNotification.accepted(trade);
 
-    sendToUser(trade.getFromTeam().getUser().getId(), notification);
-    sendToTopic(trade.getFromTeam().getGame().getId(), notification);
+    sendToUser(teamOwnerId(fromTeamOf(trade)), notification);
+    sendToTopic(gameId(fromTeamOf(trade)), notification);
   }
 
-  public void notifyTradeRejected(Trade trade) {
+  public void notifyTradeRejected(com.fortnite.pronos.model.Trade trade) {
     log.info("Notifying trade rejected: {}", trade.getId());
 
     TradeNotification notification = TradeNotification.rejected(trade);
 
-    sendToUser(trade.getFromTeam().getUser().getId(), notification);
-    sendToTopic(trade.getFromTeam().getGame().getId(), notification);
+    sendToUser(teamOwnerId(fromTeamOf(trade)), notification);
+    sendToTopic(gameId(fromTeamOf(trade)), notification);
   }
 
-  public void notifyTradeCancelled(Trade trade) {
+  public void notifyTradeCancelled(com.fortnite.pronos.model.Trade trade) {
     log.info("Notifying trade cancelled: {}", trade.getId());
 
     TradeNotification notification = TradeNotification.cancelled(trade);
 
-    sendToUser(trade.getToTeam().getUser().getId(), notification);
-    sendToTopic(trade.getFromTeam().getGame().getId(), notification);
+    sendToUser(teamOwnerId(toTeamOf(trade)), notification);
+    sendToTopic(gameId(fromTeamOf(trade)), notification);
   }
 
-  public void notifyTradeCountered(Trade trade, Trade counterTrade) {
+  public void notifyTradeCountered(
+      com.fortnite.pronos.model.Trade trade, com.fortnite.pronos.model.Trade counterTrade) {
     log.info("Notifying trade countered: {} with counter {}", trade.getId(), counterTrade.getId());
 
     TradeNotification notification = TradeNotification.countered(trade, counterTrade);
 
-    sendToUser(trade.getFromTeam().getUser().getId(), notification);
-    sendToTopic(trade.getFromTeam().getGame().getId(), notification);
+    sendToUser(teamOwnerId(fromTeamOf(trade)), notification);
+    sendToTopic(gameId(fromTeamOf(trade)), notification);
+  }
+
+  private com.fortnite.pronos.model.Team fromTeamOf(com.fortnite.pronos.model.Trade trade) {
+    return trade.getFromTeam();
+  }
+
+  private com.fortnite.pronos.model.Team toTeamOf(com.fortnite.pronos.model.Trade trade) {
+    return trade.getToTeam();
+  }
+
+  private UUID gameId(com.fortnite.pronos.model.Team team) {
+    return team.getGameId();
+  }
+
+  private UUID teamOwnerId(com.fortnite.pronos.model.Team team) {
+    return team.getUserId();
+  }
+
+  private String teamName(com.fortnite.pronos.model.Team team) {
+    return team.getName();
   }
 
   private void sendToUser(UUID userId, TradeNotification notification) {
@@ -85,64 +104,96 @@ public class TradeNotificationService {
       String status,
       UUID counterTradeId) {
 
-    public static TradeNotification proposed(Trade trade) {
+    public static TradeNotification proposed(com.fortnite.pronos.model.Trade trade) {
+      com.fortnite.pronos.model.Team fromTeam = fromTeamOf(trade);
+      com.fortnite.pronos.model.Team toTeam = toTeamOf(trade);
       return new TradeNotification(
           "TRADE_PROPOSED",
           trade.getId(),
-          trade.getFromTeam().getId(),
-          trade.getFromTeam().getName(),
-          trade.getToTeam().getId(),
-          trade.getToTeam().getName(),
-          trade.getStatus().name(),
+          teamId(fromTeam),
+          teamName(fromTeam),
+          teamId(toTeam),
+          teamName(toTeam),
+          tradeStatus(trade),
           null);
     }
 
-    public static TradeNotification accepted(Trade trade) {
+    public static TradeNotification accepted(com.fortnite.pronos.model.Trade trade) {
+      com.fortnite.pronos.model.Team fromTeam = fromTeamOf(trade);
+      com.fortnite.pronos.model.Team toTeam = toTeamOf(trade);
       return new TradeNotification(
           "TRADE_ACCEPTED",
           trade.getId(),
-          trade.getFromTeam().getId(),
-          trade.getFromTeam().getName(),
-          trade.getToTeam().getId(),
-          trade.getToTeam().getName(),
-          trade.getStatus().name(),
+          teamId(fromTeam),
+          teamName(fromTeam),
+          teamId(toTeam),
+          teamName(toTeam),
+          tradeStatus(trade),
           null);
     }
 
-    public static TradeNotification rejected(Trade trade) {
+    public static TradeNotification rejected(com.fortnite.pronos.model.Trade trade) {
+      com.fortnite.pronos.model.Team fromTeam = fromTeamOf(trade);
+      com.fortnite.pronos.model.Team toTeam = toTeamOf(trade);
       return new TradeNotification(
           "TRADE_REJECTED",
           trade.getId(),
-          trade.getFromTeam().getId(),
-          trade.getFromTeam().getName(),
-          trade.getToTeam().getId(),
-          trade.getToTeam().getName(),
-          trade.getStatus().name(),
+          teamId(fromTeam),
+          teamName(fromTeam),
+          teamId(toTeam),
+          teamName(toTeam),
+          tradeStatus(trade),
           null);
     }
 
-    public static TradeNotification cancelled(Trade trade) {
+    public static TradeNotification cancelled(com.fortnite.pronos.model.Trade trade) {
+      com.fortnite.pronos.model.Team fromTeam = fromTeamOf(trade);
+      com.fortnite.pronos.model.Team toTeam = toTeamOf(trade);
       return new TradeNotification(
           "TRADE_CANCELLED",
           trade.getId(),
-          trade.getFromTeam().getId(),
-          trade.getFromTeam().getName(),
-          trade.getToTeam().getId(),
-          trade.getToTeam().getName(),
-          trade.getStatus().name(),
+          teamId(fromTeam),
+          teamName(fromTeam),
+          teamId(toTeam),
+          teamName(toTeam),
+          tradeStatus(trade),
           null);
     }
 
-    public static TradeNotification countered(Trade trade, Trade counterTrade) {
+    public static TradeNotification countered(
+        com.fortnite.pronos.model.Trade trade, com.fortnite.pronos.model.Trade counterTrade) {
+      com.fortnite.pronos.model.Team fromTeam = fromTeamOf(trade);
+      com.fortnite.pronos.model.Team toTeam = toTeamOf(trade);
       return new TradeNotification(
           "TRADE_COUNTERED",
           trade.getId(),
-          trade.getFromTeam().getId(),
-          trade.getFromTeam().getName(),
-          trade.getToTeam().getId(),
-          trade.getToTeam().getName(),
-          trade.getStatus().name(),
+          teamId(fromTeam),
+          teamName(fromTeam),
+          teamId(toTeam),
+          teamName(toTeam),
+          tradeStatus(trade),
           counterTrade.getId());
+    }
+
+    private static com.fortnite.pronos.model.Team fromTeamOf(
+        com.fortnite.pronos.model.Trade trade) {
+      return trade.getFromTeam();
+    }
+
+    private static com.fortnite.pronos.model.Team toTeamOf(com.fortnite.pronos.model.Trade trade) {
+      return trade.getToTeam();
+    }
+
+    private static UUID teamId(com.fortnite.pronos.model.Team team) {
+      return team.getId();
+    }
+
+    private static String teamName(com.fortnite.pronos.model.Team team) {
+      return team.getName();
+    }
+
+    private static String tradeStatus(com.fortnite.pronos.model.Trade trade) {
+      return trade.getStatus().name();
     }
   }
 }

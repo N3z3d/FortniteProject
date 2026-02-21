@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.util.AuditLogger;
 
 import io.jsonwebtoken.Claims;
@@ -36,12 +35,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S112"})
 public class ProductionAuthenticationStrategy implements AuthenticationStrategy {
 
   private static final String INVALID_CREDENTIALS_MESSAGE = "Email ou mot de passe incorrect";
   private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvé";
   private static final String INVALID_TOKEN_MESSAGE = "Token invalide";
   private static final String INVALID_REFRESH_TOKEN_MESSAGE = "Token de rafraîchissement invalide";
+  private static final String AUDIT_COMPONENT = "ProductionAuthStrategy";
 
   private final UserRepositoryPort userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -60,8 +61,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
       return Keys.hmacShaKeyFor(keyBytes);
     } catch (Exception e) {
       log.error("Erreur lors de la génération de la clé de signature JWT", e);
-      auditLogger.logSystemError(
-          "ProductionAuthStrategy", "JWT_KEY_GENERATION_ERROR", e.getMessage());
+      auditLogger.logSystemError(AUDIT_COMPONENT, "JWT_KEY_GENERATION_ERROR", e.getMessage());
       throw new IllegalStateException("Configuration JWT invalide");
     }
   }
@@ -72,7 +72,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
     log.info("Tentative de connexion pour l'email: {}", request.getEmail());
 
     try {
-      User user =
+      com.fortnite.pronos.model.User user =
           userRepository
               .findByEmail(request.getEmail())
               .orElseThrow(
@@ -108,8 +108,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
       throw e;
     } catch (Exception e) {
       log.error("Erreur inattendue lors de la connexion pour l'email: {}", request.getEmail(), e);
-      auditLogger.logSystemError(
-          "ProductionAuthStrategy", "LOGIN_UNEXPECTED_ERROR", e.getMessage());
+      auditLogger.logSystemError(AUDIT_COMPONENT, "LOGIN_UNEXPECTED_ERROR", e.getMessage());
       throw new RuntimeException("Erreur interne lors de la connexion");
     }
   }
@@ -123,7 +122,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
       Claims claims = validateToken(refreshToken);
       UUID userId = UUID.fromString(claims.getSubject());
 
-      User user =
+      com.fortnite.pronos.model.User user =
           userRepository
               .findById(userId)
               .orElseThrow(
@@ -131,9 +130,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
                     log.warn(
                         "Tentative de rafraîchissement avec un utilisateur inexistant: {}", userId);
                     auditLogger.logSystemError(
-                        "ProductionAuthStrategy",
-                        "REFRESH_TOKEN_USER_NOT_FOUND",
-                        userId.toString());
+                        AUDIT_COMPONENT, "REFRESH_TOKEN_USER_NOT_FOUND", userId.toString());
                     return new BadCredentialsException(USER_NOT_FOUND_MESSAGE);
                   });
 
@@ -153,13 +150,13 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
       throw e;
     } catch (Exception e) {
       log.warn("Échec du rafraîchissement de token: {}", e.getMessage());
-      auditLogger.logSystemError("ProductionAuthStrategy", "REFRESH_TOKEN_ERROR", e.getMessage());
+      auditLogger.logSystemError(AUDIT_COMPONENT, "REFRESH_TOKEN_ERROR", e.getMessage());
       throw new BadCredentialsException(INVALID_REFRESH_TOKEN_MESSAGE);
     }
   }
 
   /** Génère un token d'accès JWT pour un utilisateur */
-  private String generateToken(User user) {
+  private String generateToken(com.fortnite.pronos.model.User user) {
     try {
       Map<String, Object> claims = createUserClaims(user);
 
@@ -173,7 +170,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
     } catch (Exception e) {
       log.error("Erreur lors de la génération du token pour l'utilisateur: {}", user.getId(), e);
       auditLogger.logSystemError(
-          "ProductionAuthStrategy",
+          AUDIT_COMPONENT,
           "TOKEN_GENERATION_ERROR",
           String.format("UserId: %s, Error: %s", user.getId(), e.getMessage()));
       throw new RuntimeException("Erreur lors de la génération du token");
@@ -181,7 +178,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
   }
 
   /** Génère un refresh token JWT pour un utilisateur */
-  private String generateRefreshToken(User user) {
+  private String generateRefreshToken(com.fortnite.pronos.model.User user) {
     try {
       return Jwts.builder()
           .subject(user.getId().toString())
@@ -193,7 +190,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
       log.error(
           "Erreur lors de la génération du refresh token pour l'utilisateur: {}", user.getId(), e);
       auditLogger.logSystemError(
-          "ProductionAuthStrategy",
+          AUDIT_COMPONENT,
           "REFRESH_TOKEN_GENERATION_ERROR",
           String.format("UserId: %s, Error: %s", user.getId(), e.getMessage()));
       throw new RuntimeException("Erreur lors de la génération du refresh token");
@@ -201,7 +198,7 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
   }
 
   /** Crée les claims pour un token JWT */
-  private Map<String, Object> createUserClaims(User user) {
+  private Map<String, Object> createUserClaims(com.fortnite.pronos.model.User user) {
     Map<String, Object> claims = new HashMap<>();
     claims.put("role", user.getRole().name());
     claims.put("email", user.getEmail());

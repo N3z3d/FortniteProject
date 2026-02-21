@@ -33,11 +33,7 @@ export class GameDetailPermissionsService {
    * Vérifie si l'utilisateur peut archiver la game (host uniquement)
    */
   canArchiveGame(game: Game | null): boolean {
-    if (!game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.isHost(game, currentUser.id, currentUser.username);
+    return this.canCurrentUserManageGame(game);
   }
 
   /**
@@ -74,11 +70,7 @@ export class GameDetailPermissionsService {
    * On affiche l'action uniquement pour le host.
    */
   canSeeDeleteGameAction(game: Game | null): boolean {
-    if (!game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.isHost(game, currentUser.id, currentUser.username);
+    return this.canCurrentUserManageGame(game);
   }
 
   /**
@@ -115,21 +107,20 @@ export class GameDetailPermissionsService {
    * Vérifie si l'utilisateur peut régénérer le code (host uniquement)
    */
   canRegenerateCode(game: Game | null): boolean {
-    if (!game) return false;
-    const currentUser = this.userContextService.getCurrentUser();
-    if (!currentUser) return false;
-
-    return this.isHost(game, currentUser.id, currentUser.username);
+    return this.canCurrentUserManageGame(game);
   }
 
   /**
    * Vérifie si l'utilisateur peut renommer la partie (host uniquement)
    */
   canRenameGame(game: Game | null): boolean {
+    return this.canRegenerateCode(game);
+  }
+
+  private canCurrentUserManageGame(game: Game | null): boolean {
     if (!game) return false;
     const currentUser = this.userContextService.getCurrentUser();
     if (!currentUser) return false;
-
     return this.isHost(game, currentUser.id, currentUser.username);
   }
 

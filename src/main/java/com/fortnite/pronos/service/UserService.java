@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
-import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,19 +20,19 @@ public class UserService {
   private final UserRepositoryPort userRepository;
 
   @Transactional(readOnly = true)
-  public List<User> getAllUsers() {
-    List<User> users = userRepository.findAll();
+  public List<com.fortnite.pronos.model.User> getAllUsers() {
+    List<com.fortnite.pronos.model.User> users = userRepository.findAll();
     log.debug("Returning {} users", users.size());
     return users;
   }
 
   @Transactional(readOnly = true)
-  public Optional<User> findUserById(UUID id) {
+  public Optional<com.fortnite.pronos.model.User> findUserById(UUID id) {
     return userRepository.findById(id);
   }
 
   @Transactional(readOnly = true)
-  public Optional<User> findUserByEmailOrUsername(String identifier) {
+  public Optional<com.fortnite.pronos.model.User> findUserByEmailOrUsername(String identifier) {
     if (identifier == null) {
       return Optional.empty();
     }
@@ -49,7 +48,7 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public Optional<User> findUserByUsername(String username) {
+  public Optional<com.fortnite.pronos.model.User> findUserByUsername(String username) {
     if (username == null) {
       return Optional.empty();
     }
@@ -63,7 +62,7 @@ public class UserService {
   }
 
   @Transactional
-  public User saveUser(User user) {
+  public com.fortnite.pronos.model.User saveUser(com.fortnite.pronos.model.User user) {
     return userRepository.save(user);
   }
 }

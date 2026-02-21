@@ -101,8 +101,10 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   selectPlayer(player: Player): void {
     if (!this.canSelectPlayer()) return;
+    const gameId = this.gameId;
+    if (!gameId) return;
     this.isSelectingPlayer = true;
-    this.draftService.makePlayerSelection(this.gameId!, player.id)
+    this.draftService.makePlayerSelection(gameId, player.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -136,8 +138,9 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   handleTimeouts(): void {
-    if (!this.gameId) return;
-    this.draftService.handleTimeouts(this.gameId!)
+    const gameId = this.gameId;
+    if (!gameId) return;
+    this.draftService.handleTimeouts(gameId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (picks) => {
@@ -243,9 +246,11 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private executeDraftToggle(action: 'pause' | 'resume', successMsg: string, errorMsg: string): void {
+    const gameId = this.gameId;
+    if (!gameId) return;
     const action$ = action === 'pause'
-      ? this.draftService.pauseDraft(this.gameId!)
-      : this.draftService.resumeDraft(this.gameId!);
+      ? this.draftService.pauseDraft(gameId)
+      : this.draftService.resumeDraft(gameId);
     action$.pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (success) => { if (success) { this.showNotification(successMsg); this.loadDraftState(); } },
@@ -273,7 +278,9 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   private executeCancellation(): void {
-    this.draftService.cancelDraft(this.gameId!)
+    const gameId = this.gameId;
+    if (!gameId) return;
+    this.draftService.cancelDraft(gameId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (success) => {

@@ -171,7 +171,7 @@ export class StatsApiMapper {
     const averageTeamSize = totalTeams > 0 ? Math.round(totalPlayers / totalTeams) : 0;
 
     // Sort teams by points and take top 10
-    const topTeams = teams
+    const topTeams = [...teams]
       .sort((a, b) => b.points - a.points)
       .slice(0, 10)
       .map((team, index) => ({

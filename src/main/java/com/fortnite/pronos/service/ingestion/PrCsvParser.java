@@ -14,6 +14,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
+@SuppressWarnings({"java:S135"})
 public class PrCsvParser {
   private static final List<String> REQUIRED_HEADERS =
       List.of("nickname", "region", "points", "rank", "snapshot_date");

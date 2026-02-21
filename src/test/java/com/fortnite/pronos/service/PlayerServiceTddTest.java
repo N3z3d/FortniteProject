@@ -35,6 +35,7 @@ import com.fortnite.pronos.repository.ScoreRepository;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PlayerService - Performance Critical TDD Tests")
+@SuppressWarnings({"java:S5853"})
 class PlayerServiceTddTest {
 
   @Mock private PlayerRepository playerRepository;
@@ -104,7 +105,7 @@ class PlayerServiceTddTest {
       // Verify pagination working correctly
       assertThat(result.getContent()).hasSize(3);
       assertThat(result.getTotalElements()).isEqualTo(3);
-      assertThat(result.getNumber()).isEqualTo(0);
+      assertThat(result.getNumber()).isZero();
       assertThat(result.getSize()).isEqualTo(10);
 
       // Verify player data mapping
@@ -125,8 +126,8 @@ class PlayerServiceTddTest {
       Page<PlayerDto> result = playerService.getAllPlayers(testPageable);
 
       assertThat(result.getContent()).isEmpty();
-      assertThat(result.getTotalElements()).isEqualTo(0);
-      assertThat(result.getNumber()).isEqualTo(0);
+      assertThat(result.getTotalElements()).isZero();
+      assertThat(result.getNumber()).isZero();
     }
 
     @Test
@@ -223,7 +224,7 @@ class PlayerServiceTddTest {
 
       PlayerDto result = playerService.getPlayerById(playerId);
 
-      assertThat(result.getTotalPoints()).isEqualTo(0);
+      assertThat(result.getTotalPoints()).isZero();
       assertThat(result.getNickname()).isEqualTo("Pro Ninja");
     }
 
@@ -336,7 +337,7 @@ class PlayerServiceTddTest {
           playerService.searchPlayers(searchQuery, null, null, false, testPageable);
 
       assertThat(result.getContent()).isEmpty();
-      assertThat(result.getTotalElements()).isEqualTo(0);
+      assertThat(result.getTotalElements()).isZero();
     }
 
     @Test
@@ -369,21 +370,19 @@ class PlayerServiceTddTest {
       Map<String, Object> result = playerService.getPlayersStats();
 
       // Verify basic stats
-      assertThat(result.get("totalPlayers")).isEqualTo(3);
+      assertThat(result).containsEntry("totalPlayers", 3);
 
       // Verify region distribution
       @SuppressWarnings("unchecked")
       Map<String, Long> regionStats = (Map<String, Long>) result.get("playersByRegion");
-      assertThat(regionStats.get("EU")).isEqualTo(1L);
-      assertThat(regionStats.get("NAW")).isEqualTo(1L);
-      assertThat(regionStats.get("BR")).isEqualTo(1L);
+      assertThat(regionStats).containsEntry("EU", 1L).containsEntry("NAW", 1L);
+      assertThat(regionStats).containsEntry("BR", 1L);
 
       // Verify tranche distribution
       @SuppressWarnings("unchecked")
       Map<String, Long> trancheStats = (Map<String, Long>) result.get("playersByTranche");
-      assertThat(trancheStats.get("1-3")).isEqualTo(1L);
-      assertThat(trancheStats.get("4-7")).isEqualTo(1L);
-      assertThat(trancheStats.get("8-10")).isEqualTo(1L);
+      assertThat(trancheStats).containsEntry("1-3", 1L).containsEntry("4-7", 1L);
+      assertThat(trancheStats).containsEntry("8-10", 1L);
 
       verify(playerRepository).findAll();
     }
@@ -396,7 +395,7 @@ class PlayerServiceTddTest {
 
       Map<String, Object> result = playerService.getPlayersStats();
 
-      assertThat(result.get("totalPlayers")).isEqualTo(0);
+      assertThat(result.get("totalPlayers")).isZero();
 
       @SuppressWarnings("unchecked")
       Map<String, Long> regionStats = (Map<String, Long>) result.get("playersByRegion");
@@ -416,7 +415,7 @@ class PlayerServiceTddTest {
 
       Map<String, Object> result = playerService.getPlayersStats();
 
-      assertThat(result.get("totalPlayers")).isEqualTo(100);
+      assertThat(result).containsEntry("totalPlayers", 100);
 
       // Should group regions and tranches correctly
       @SuppressWarnings("unchecked")

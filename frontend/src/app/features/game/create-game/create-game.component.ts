@@ -119,7 +119,7 @@ export class CreateGameComponent implements OnInit {
   }
 
   private calculateTotalPlayers(regionRules: { [key: string]: number }): number {
-    return Object.values(regionRules).reduce((sum, count) => sum + (count as number), 0);
+    return Object.values(regionRules).reduce((sum, count) => sum + count, 0);
   }
 
   onSubmit(): void {

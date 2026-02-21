@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"java:S5778"})
 class GameDomainModelTest {
 
   private static final UUID CREATOR_ID = UUID.randomUUID();
@@ -242,8 +243,7 @@ class GameDomainModelTest {
     @Test
     void generatesCode() {
       String code = game.generateInvitationCode();
-      assertThat(code).hasSize(8);
-      assertThat(code).matches("[A-Z0-9]+");
+      assertThat(code).hasSize(8).matches("[A-Z0-9]+");
     }
 
     @Test

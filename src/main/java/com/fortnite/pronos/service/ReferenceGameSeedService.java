@@ -15,13 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameRegionRule;
-import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
 import com.fortnite.pronos.service.seed.TeamSeedService;
@@ -38,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S135"})
 public class ReferenceGameSeedService {
 
   private static final String REFERENCE_GAME_NAME = "Partie principale - 147 joueurs";
@@ -74,8 +68,9 @@ public class ReferenceGameSeedService {
       resetGameData();
     }
 
-    Map<String, User> users = referenceUserSeedService.ensureReferenceUsers();
-    User creator = users.get("Thibaut");
+    Map<String, com.fortnite.pronos.model.User> users =
+        referenceUserSeedService.ensureReferenceUsers();
+    com.fortnite.pronos.model.User creator = users.get("Thibaut");
     if (creator == null) {
       log.warn("Reference seed skipped: missing creator user");
       return;
@@ -91,17 +86,17 @@ public class ReferenceGameSeedService {
       return;
     }
 
-    Map<String, List<Player>> assignments = loadAssignments();
+    Map<String, List<com.fortnite.pronos.model.Player>> assignments = loadAssignments();
     if (assignments.isEmpty()) {
       log.warn("Reference seed skipped: no seed assignments loaded");
       return;
     }
 
-    Game game = buildReferenceGame(creator, assignments);
+    com.fortnite.pronos.model.Game game = buildReferenceGame(creator, assignments);
     attachParticipants(game, users);
-    Game savedGame = gameRepository.save(game);
+    com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
 
-    List<Team> teams = buildTeams(savedGame, users, assignments);
+    List<com.fortnite.pronos.model.Team> teams = buildTeams(savedGame, users, assignments);
     teamSeedService.getAllTeams(); // Trigger save via teamSeedService
     // Teams are built but saved via the game cascade
 
@@ -127,17 +122,18 @@ public class ReferenceGameSeedService {
     log.info("Reference seed reset: games cleared");
   }
 
-  private Map<String, List<Player>> loadAssignments() {
+  private Map<String, List<com.fortnite.pronos.model.Player>> loadAssignments() {
     String providerKey = environment.getProperty("fortnite.data.provider", "csv");
     if ("csv".equalsIgnoreCase(providerKey)) {
       csvDataLoaderService.loadAllCsvData();
-      Map<String, Player> playersByNickname = loadPlayersByNickname();
-      Map<String, List<Player>> result = new LinkedHashMap<>();
-      for (Map.Entry<String, List<Player>> entry :
+      Map<String, com.fortnite.pronos.model.Player> playersByNickname = loadPlayersByNickname();
+      Map<String, List<com.fortnite.pronos.model.Player>> result = new LinkedHashMap<>();
+      for (Map.Entry<String, List<com.fortnite.pronos.model.Player>> entry :
           csvDataLoaderService.getAllPlayerAssignments().entrySet()) {
-        List<Player> managedPlayers = new ArrayList<>();
-        for (Player p : entry.getValue()) {
-          Player managed = playersByNickname.get(normalizeNickname(p.getNickname()));
+        List<com.fortnite.pronos.model.Player> managedPlayers = new ArrayList<>();
+        for (com.fortnite.pronos.model.Player p : entry.getValue()) {
+          com.fortnite.pronos.model.Player managed =
+              playersByNickname.get(normalizeNickname(p.getNickname()));
           if (managed != null) {
             managedPlayers.add(managed);
           }
@@ -157,18 +153,18 @@ public class ReferenceGameSeedService {
     return resolveAssignments(seedData);
   }
 
-  private Map<String, List<Player>> resolveAssignments(
+  private Map<String, List<com.fortnite.pronos.model.Player>> resolveAssignments(
       MockDataGeneratorService.MockDataSet seedData) {
-    Map<String, Player> playersByNickname = loadPlayersByNickname();
-    Map<String, List<Player>> resolved = new LinkedHashMap<>();
+    Map<String, com.fortnite.pronos.model.Player> playersByNickname = loadPlayersByNickname();
+    Map<String, List<com.fortnite.pronos.model.Player>> resolved = new LinkedHashMap<>();
 
     for (Map.Entry<String, List<MockDataGeneratorService.PlayerWithScore>> entry :
         seedData.playersByPronosticator().entrySet()) {
-      List<Player> resolvedPlayers = new ArrayList<>();
+      List<com.fortnite.pronos.model.Player> resolvedPlayers = new ArrayList<>();
       for (MockDataGeneratorService.PlayerWithScore playerData : entry.getValue()) {
-        Player seedPlayer = playerData.player();
+        com.fortnite.pronos.model.Player seedPlayer = playerData.player();
         String key = normalizeNickname(seedPlayer.getNickname());
-        Player persisted = playersByNickname.get(key);
+        com.fortnite.pronos.model.Player persisted = playersByNickname.get(key);
         if (persisted != null) {
           resolvedPlayers.add(persisted);
         }
@@ -181,9 +177,9 @@ public class ReferenceGameSeedService {
     return resolved;
   }
 
-  private Map<String, Player> loadPlayersByNickname() {
-    Map<String, Player> playersByNickname = new LinkedHashMap<>();
-    for (Player player : playerSeedService.getAllPlayers()) {
+  private Map<String, com.fortnite.pronos.model.Player> loadPlayersByNickname() {
+    Map<String, com.fortnite.pronos.model.Player> playersByNickname = new LinkedHashMap<>();
+    for (com.fortnite.pronos.model.Player player : playerSeedService.getAllPlayers()) {
       String key = normalizeNickname(player.getNickname());
       if (!key.isEmpty()) {
         playersByNickname.putIfAbsent(key, player);
@@ -196,14 +192,16 @@ public class ReferenceGameSeedService {
     return nickname == null ? "" : nickname.trim().toLowerCase();
   }
 
-  private Game buildReferenceGame(User creator, Map<String, List<Player>> assignments) {
-    Game game =
-        Game.builder()
+  private com.fortnite.pronos.model.Game buildReferenceGame(
+      com.fortnite.pronos.model.User creator,
+      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
+    com.fortnite.pronos.model.Game game =
+        com.fortnite.pronos.model.Game.builder()
             .name(REFERENCE_GAME_NAME)
             .description(REFERENCE_GAME_DESCRIPTION)
             .creator(creator)
             .maxParticipants(REQUIRED_USERS.size())
-            .status(GameStatus.ACTIVE)
+            .status(com.fortnite.pronos.model.GameStatus.ACTIVE)
             .participants(new ArrayList<>())
             .regionRules(new ArrayList<>())
             .build();
@@ -213,15 +211,16 @@ public class ReferenceGameSeedService {
     return game;
   }
 
-  private void attachParticipants(Game game, Map<String, User> users) {
+  private void attachParticipants(
+      com.fortnite.pronos.model.Game game, Map<String, com.fortnite.pronos.model.User> users) {
     for (int i = 0; i < REQUIRED_USERS.size(); i++) {
       String username = REQUIRED_USERS.get(i);
-      User user = users.get(username);
+      com.fortnite.pronos.model.User user = users.get(username);
       if (user == null) {
         continue;
       }
-      GameParticipant participant =
-          GameParticipant.builder()
+      com.fortnite.pronos.model.GameParticipant participant =
+          com.fortnite.pronos.model.GameParticipant.builder()
               .game(game)
               .user(user)
               .draftOrder(i + 1)
@@ -233,32 +232,35 @@ public class ReferenceGameSeedService {
     }
   }
 
-  private List<Team> buildTeams(
-      Game game, Map<String, User> users, Map<String, List<Player>> assignments) {
-    List<Team> teams = new ArrayList<>();
+  private List<com.fortnite.pronos.model.Team> buildTeams(
+      com.fortnite.pronos.model.Game game,
+      Map<String, com.fortnite.pronos.model.User> users,
+      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
+    List<com.fortnite.pronos.model.Team> teams = new ArrayList<>();
 
     for (String username : REQUIRED_USERS) {
-      User owner = users.get(username);
+      com.fortnite.pronos.model.User owner = users.get(username);
       if (owner == null) {
         log.warn("Reference seed: missing user {}, team skipped", username);
         continue;
       }
 
-      List<Player> players = resolvePlayersFor(username, assignments);
+      List<com.fortnite.pronos.model.Player> players = resolvePlayersFor(username, assignments);
       if (players.isEmpty()) {
         log.warn("Reference seed: no players for {}, team skipped", username);
         continue;
       }
 
-      Team team = buildTeam(game, owner, players);
+      com.fortnite.pronos.model.Team team = buildTeam(game, owner, players);
       teams.add(team);
     }
 
     return teams;
   }
 
-  private List<Player> resolvePlayersFor(String username, Map<String, List<Player>> assignments) {
-    for (Map.Entry<String, List<Player>> entry : assignments.entrySet()) {
+  private List<com.fortnite.pronos.model.Player> resolvePlayersFor(
+      String username, Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
+    for (Map.Entry<String, List<com.fortnite.pronos.model.Player>> entry : assignments.entrySet()) {
       if (entry.getKey().equalsIgnoreCase(username)) {
         return entry.getValue();
       }
@@ -266,36 +268,47 @@ public class ReferenceGameSeedService {
     return List.of();
   }
 
-  private Team buildTeam(Game game, User owner, List<Player> players) {
-    Team team = new Team();
+  private com.fortnite.pronos.model.Team buildTeam(
+      com.fortnite.pronos.model.Game game,
+      com.fortnite.pronos.model.User owner,
+      List<com.fortnite.pronos.model.Player> players) {
+    com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
     team.setName("Equipe " + owner.getUsername());
     team.setOwner(owner);
     team.setSeason(CURRENT_SEASON);
     team.setGame(game);
 
     int position = 1;
-    for (Player player : players) {
+    for (com.fortnite.pronos.model.Player player : players) {
       team.addPlayer(player, position++);
     }
 
     return team;
   }
 
-  private void addRegionRules(Game game, Map<String, List<Player>> assignments) {
-    Map<Player.Region, Long> counts = countPlayersByRegion(assignments);
-    for (Player.Region region : Player.Region.values()) {
+  private void addRegionRules(
+      com.fortnite.pronos.model.Game game,
+      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
+    Map<com.fortnite.pronos.model.Player.Region, Long> counts = countPlayersByRegion(assignments);
+    for (com.fortnite.pronos.model.Player.Region region :
+        com.fortnite.pronos.model.Player.Region.values()) {
       long count = counts.getOrDefault(region, 0L);
       int maxPlayers = (int) Math.min(10, Math.max(1, count));
-      GameRegionRule rule =
-          GameRegionRule.builder().game(game).region(region).maxPlayers(maxPlayers).build();
+      com.fortnite.pronos.model.GameRegionRule rule =
+          com.fortnite.pronos.model.GameRegionRule.builder()
+              .game(game)
+              .region(region)
+              .maxPlayers(maxPlayers)
+              .build();
       game.addRegionRule(rule);
     }
   }
 
-  private Map<Player.Region, Long> countPlayersByRegion(Map<String, List<Player>> assignments) {
-    Map<Player.Region, Long> counts = new LinkedHashMap<>();
-    for (List<Player> players : assignments.values()) {
-      for (Player player : players) {
+  private Map<com.fortnite.pronos.model.Player.Region, Long> countPlayersByRegion(
+      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
+    Map<com.fortnite.pronos.model.Player.Region, Long> counts = new LinkedHashMap<>();
+    for (List<com.fortnite.pronos.model.Player> players : assignments.values()) {
+      for (com.fortnite.pronos.model.Player player : players) {
         if (player != null && player.getRegion() != null) {
           counts.merge(player.getRegion(), 1L, Long::sum);
         }

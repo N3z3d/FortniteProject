@@ -3,7 +3,6 @@ package com.fortnite.pronos.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -13,7 +12,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
@@ -32,6 +35,11 @@ import lombok.RequiredArgsConstructor;
 public class ApiController {
 
   private static final Logger log = LoggerFactory.getLogger(ApiController.class);
+  private static final String ERROR_KEY = "error";
+  private static final String AUTH_REQUIRED_MESSAGE = "Authentication required";
+  private static final String USER_NOT_FOUND_MESSAGE = "User not found";
+  private static final String NO_TEAM_FOUND_MESSAGE = "No team found for user";
+  private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
 
   private final TeamQueryService teamQueryService;
   private final PlayerService playerService;
@@ -41,7 +49,7 @@ public class ApiController {
   @GetMapping("/teams")
   public List<TeamDTO> allTeams(@RequestParam(defaultValue = "2025") int season) {
     List<Team> teams = teamQueryService.findTeamsBySeasonWithFetch(season);
-    return teams.stream().map(TeamDTO::fromTeam).collect(Collectors.toList());
+    return teams.stream().map(TeamDTO::fromTeam).toList();
   }
 
   @GetMapping("/teams/{teamId}")
@@ -60,7 +68,7 @@ public class ApiController {
   }
 
   @GetMapping("/players")
-  public ResponseEntity<?> players(@RequestParam(required = false) String region) {
+  public ResponseEntity<Object> players(@RequestParam(required = false) String region) {
     try {
       List<Player> players;
       if (region == null || region.isBlank()) {
@@ -70,8 +78,7 @@ public class ApiController {
         players = playerService.findPlayersByRegion(regionEnum);
       }
 
-      List<PlayerDTO> playerDTOs =
-          players.stream().map(PlayerDTO::fromPlayer).collect(Collectors.toList());
+      List<PlayerDTO> playerDTOs = players.stream().map(PlayerDTO::fromPlayer).toList();
 
       return ResponseEntity.ok(playerDTOs);
     } catch (IllegalArgumentException e) {
@@ -85,16 +92,13 @@ public class ApiController {
   }
 
   @GetMapping("/players/{id}")
-  public ResponseEntity<?> one(@PathVariable UUID id) {
-    return playerService
-        .findPlayerById(id)
-        .map(player -> ResponseEntity.ok(PlayerDTO.fromPlayer(player)))
-        .orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<PlayerDTO> one(@PathVariable UUID id) {
+    return ResponseEntity.of(playerService.findPlayerById(id).map(PlayerDTO::fromPlayer));
   }
 
   @GetMapping("/trade-form-data")
   @Transactional(readOnly = true)
-  public ResponseEntity<?> getTradeFormData(
+  public ResponseEntity<Object> getTradeFormData(
       @RequestParam(value = "user", required = false) String user,
       HttpServletRequest request,
       Authentication auth) {
@@ -105,90 +109,88 @@ public class ApiController {
     }
 
     try {
-      String username;
-
-      if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
-        username = auth.getName();
-        log.debug("Authenticated user: {}", username);
-      } else if (user != null && !user.isBlank()) {
-        username = user;
-      } else if (isTestProfile()) {
-        username = "Thibaut"; // fallback test
-      } else {
+      String username = resolveRequestUsername(user, auth);
+      if (username == null) {
         log.warn("Unauthorized access attempt to trade-form-data");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(Map.of("error", "Authentication required"));
+            .body(Map.of(ERROR_KEY, AUTH_REQUIRED_MESSAGE));
       }
 
       log.debug("Looking up user in database");
-      // Try to find by email first (auth principal uses email), then by username
       User currentUser = userService.findUserByEmailOrUsername(username).orElse(null);
 
       if (currentUser == null) {
         log.warn("User not found: {}", username);
-        if (user != null && !user.isBlank()) {
-          return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-              .body(Map.of("error", "User not found"));
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        HttpStatus status =
+            user != null && !user.isBlank() ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
+        return ResponseEntity.status(status).body(Map.of(ERROR_KEY, USER_NOT_FOUND_MESSAGE));
       }
       log.debug("User found: {}", currentUser.getUsername());
 
-      log.debug("Looking up user's team");
       List<Team> seasonTeams = teamQueryService.findTeamsBySeasonWithFetch(2025);
-      Team resolvedTeam = teamQueryService.findTeamByOwnerAndSeason(currentUser, 2025).orElse(null);
-
-      if (resolvedTeam == null) {
-        resolvedTeam =
-            seasonTeams.stream()
-                .filter(team -> team.getOwner() != null)
-                .filter(team -> team.getOwner().getId().equals(currentUser.getId()))
-                .findFirst()
-                .orElse(null);
-      }
-
-      if (resolvedTeam == null && isTestProfile()) {
-        // Fallback test : utiliser l'équipe Thibaut si présente
-        resolvedTeam =
-            seasonTeams.stream()
-                .filter(team -> "Team Thibaut".equalsIgnoreCase(team.getName()))
-                .findFirst()
-                .orElse(null);
-      }
+      Team resolvedTeam = resolveTeamForUser(currentUser, seasonTeams);
 
       if (resolvedTeam == null) {
         log.debug("No team found for user: {}", username);
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("error", "No team found for user"));
+            .body(Map.of(ERROR_KEY, NO_TEAM_FOUND_MESSAGE));
       }
 
-      final Team myTeam = resolvedTeam;
-      log.debug("Team found: {}", myTeam.getName());
-
-      log.debug("Preparing response data");
-      return ResponseEntity.ok(
-          Map.of(
-              "myTeam", TeamDTO.fromTeam(myTeam),
-              "myPlayers",
-                  myTeam.getPlayers().stream()
-                      .map(TeamPlayer::getPlayer)
-                      .map(PlayerDTO::fromPlayer)
-                      .collect(Collectors.toList()),
-              "otherTeams",
-                  seasonTeams.stream()
-                      .filter(team -> !team.equals(myTeam))
-                      .map(TeamDTO::fromTeam)
-                      .collect(Collectors.toList()),
-              "allPlayers",
-                  playerService.findAllPlayers().stream()
-                      .map(PlayerDTO::fromPlayer)
-                      .collect(Collectors.toList())));
-
+      log.debug("Team found: {}", resolvedTeam.getName());
+      return ResponseEntity.ok(buildTradeFormDataResponse(resolvedTeam, seasonTeams));
     } catch (Exception e) {
       log.error("Error in getTradeFormData: {}", e.getMessage());
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(Map.of("error", "Internal server error"));
+          .body(Map.of(ERROR_KEY, INTERNAL_SERVER_ERROR_MESSAGE));
     }
+  }
+
+  private String resolveRequestUsername(String user, Authentication auth) {
+    if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
+      log.debug("Authenticated user: {}", auth.getName());
+      return auth.getName();
+    }
+    if (user != null && !user.isBlank()) {
+      return user;
+    }
+    if (isTestProfile()) {
+      return "Thibaut";
+    }
+    return null;
+  }
+
+  private Team resolveTeamForUser(User currentUser, List<Team> seasonTeams) {
+    Team team = teamQueryService.findTeamByOwnerAndSeason(currentUser, 2025).orElse(null);
+    if (team != null) {
+      return team;
+    }
+
+    team =
+        seasonTeams.stream()
+            .filter(candidate -> candidate.getOwner() != null)
+            .filter(candidate -> candidate.getOwner().getId().equals(currentUser.getId()))
+            .findFirst()
+            .orElse(null);
+    if (team != null || !isTestProfile()) {
+      return team;
+    }
+
+    return seasonTeams.stream()
+        .filter(candidate -> "Team Thibaut".equalsIgnoreCase(candidate.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private Map<String, Object> buildTradeFormDataResponse(Team myTeam, List<Team> seasonTeams) {
+    return Map.of(
+        "myTeam",
+        TeamDTO.fromTeam(myTeam),
+        "myPlayers",
+        myTeam.getPlayers().stream().map(TeamPlayer::getPlayer).map(PlayerDTO::fromPlayer).toList(),
+        "otherTeams",
+        seasonTeams.stream().filter(team -> !team.equals(myTeam)).map(TeamDTO::fromTeam).toList(),
+        "allPlayers",
+        playerService.findAllPlayers().stream().map(PlayerDTO::fromPlayer).toList());
   }
 
   private boolean isTestProfile() {
@@ -211,10 +213,7 @@ public class ApiController {
       dto.id = team.getId();
       dto.name = team.getName();
       dto.season = team.getSeason();
-      dto.players =
-          team.getPlayers().stream()
-              .map(TeamPlayerDTO::fromTeamPlayer)
-              .collect(Collectors.toList());
+      dto.players = team.getPlayers().stream().map(TeamPlayerDTO::fromTeamPlayer).toList();
       return dto;
     }
   }

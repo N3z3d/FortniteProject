@@ -3,6 +3,7 @@ package com.fortnite.pronos.service.admin;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +64,7 @@ public class ErrorJournalService {
                 exceptionType == null
                     || e.getExceptionType().toLowerCase().contains(exceptionType.toLowerCase()))
         .limit(effectiveLimit)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   /**
@@ -83,10 +84,12 @@ public class ErrorJournalService {
    * @return aggregated error statistics
    */
   public ErrorStatisticsDto getErrorStatistics(int hours) {
-    LocalDateTime since = LocalDateTime.now().minusHours(Math.max(1, hours));
+    int effectiveHours = Math.max(1, hours);
+    LocalDateTime since = LocalDateTime.now().minusHours(effectiveHours);
+    String trendGranularity = resolveTrendGranularity(effectiveHours);
 
     List<ErrorEntry> recentEntries =
-        entries.stream().filter(e -> e.getTimestamp().isAfter(since)).collect(Collectors.toList());
+        entries.stream().filter(e -> e.getTimestamp().isAfter(since)).toList();
 
     Map<String, Long> byType =
         recentEntries.stream()
@@ -97,12 +100,16 @@ public class ErrorJournalService {
             .collect(Collectors.groupingBy(ErrorEntry::getStatusCode, Collectors.counting()));
 
     List<ErrorStatisticsDto.TopErrorEntry> topErrors = buildTopErrors(recentEntries);
+    List<ErrorStatisticsDto.TrendPoint> errorTrend =
+        buildErrorTrend(recentEntries, since, trendGranularity);
 
     return ErrorStatisticsDto.builder()
         .totalErrors(recentEntries.size())
         .errorsByType(byType)
         .errorsByStatusCode(byStatus)
         .topErrors(topErrors)
+        .trendGranularity(trendGranularity)
+        .errorTrend(errorTrend)
         .build();
   }
 
@@ -148,5 +155,62 @@ public class ErrorJournalService {
       return new ArrayList<>(topErrors.subList(0, DEFAULT_TOP_ERRORS_LIMIT));
     }
     return topErrors;
+  }
+
+  private String resolveTrendGranularity(int hours) {
+    return hours <= 48 ? "HOUR" : "DAY";
+  }
+
+  private List<ErrorStatisticsDto.TrendPoint> buildErrorTrend(
+      List<ErrorEntry> recentEntries, LocalDateTime since, String granularity) {
+    if (recentEntries.isEmpty()) {
+      return List.of();
+    }
+    LocalDateTime now = LocalDateTime.now();
+    Map<LocalDateTime, Integer> buckets = buildTrendBuckets(recentEntries, granularity);
+    return toTrendPoints(since, now, granularity, buckets);
+  }
+
+  private Map<LocalDateTime, Integer> buildTrendBuckets(
+      List<ErrorEntry> recentEntries, String granularity) {
+    Map<LocalDateTime, Integer> buckets = new LinkedHashMap<>();
+    for (ErrorEntry entry : recentEntries) {
+      LocalDateTime bucket = toBucketStart(entry.getTimestamp(), granularity);
+      buckets.merge(bucket, 1, Integer::sum);
+    }
+    return buckets;
+  }
+
+  private List<ErrorStatisticsDto.TrendPoint> toTrendPoints(
+      LocalDateTime since,
+      LocalDateTime now,
+      String granularity,
+      Map<LocalDateTime, Integer> buckets) {
+    List<ErrorStatisticsDto.TrendPoint> trendPoints = new ArrayList<>();
+    LocalDateTime cursor = toBucketStart(since, granularity);
+    LocalDateTime lastBucket = toBucketStart(now, granularity);
+    while (!cursor.isAfter(lastBucket)) {
+      trendPoints.add(
+          ErrorStatisticsDto.TrendPoint.builder()
+              .periodStart(cursor)
+              .count(buckets.getOrDefault(cursor, 0))
+              .build());
+      cursor = advanceBucket(cursor, granularity);
+    }
+    return trendPoints;
+  }
+
+  private LocalDateTime toBucketStart(LocalDateTime timestamp, String granularity) {
+    if ("DAY".equals(granularity)) {
+      return timestamp.toLocalDate().atStartOfDay();
+    }
+    return timestamp.withMinute(0).withSecond(0).withNano(0);
+  }
+
+  private LocalDateTime advanceBucket(LocalDateTime bucketStart, String granularity) {
+    if ("DAY".equals(granularity)) {
+      return bucketStart.plusDays(1);
+    }
+    return bucketStart.plusHours(1);
   }
 }

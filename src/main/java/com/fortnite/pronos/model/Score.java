@@ -21,7 +21,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "scores")
 @IdClass(Score.ScoreId.class)
-public class Score implements Serializable {
+public class Score {
 
   @Id
   @ManyToOne(fetch = FetchType.LAZY)
@@ -47,7 +47,7 @@ public class Score implements Serializable {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class ScoreId implements Serializable {
-    private UUID player; // UUID pour correspondre à l'entité Player
+    private UUID player; // UUID pour correspondre Ã  l'entitÃ© Player
     private Integer season;
 
     @Override
@@ -72,7 +72,7 @@ public class Score implements Serializable {
   @PreUpdate
   public void validateScore() {
     if (points < 0) {
-      throw new IllegalArgumentException("Les points ne peuvent pas être négatifs");
+      throw new IllegalArgumentException("Les points ne peuvent pas Ãªtre nÃ©gatifs");
     }
     if (timestamp == null) {
       timestamp = OffsetDateTime.now();
@@ -98,9 +98,9 @@ public class Score implements Serializable {
     this.points = points;
   }
 
-  // Méthode utilitaire pour les tests - simule un setId
+  // MÃ©thode utilitaire pour les tests - simule un setId
   public void setId(UUID id) {
-    // Pour les tests, on peut créer un nouveau Player avec cet ID
+    // Pour les tests, on peut crÃ©er un nouveau Player avec cet ID
     if (this.player == null) {
       this.player = new Player();
     }

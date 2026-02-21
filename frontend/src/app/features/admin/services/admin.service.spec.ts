@@ -2,7 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AdminService } from './admin.service';
 import { environment } from '../../../../environments/environment';
-import { DashboardSummary, SystemHealth, RecentActivity, SystemMetrics } from '../models/admin.models';
+import {
+  AdminAlert,
+  AlertThresholds,
+  DashboardSummary,
+  RecentActivity,
+  SystemHealth,
+  SystemMetrics,
+  VisitAnalytics
+} from '../models/admin.models';
 import { ErrorEntry, ErrorStatistics } from '../models/error-journal.models';
 
 describe('AdminService', () => {
@@ -126,6 +134,75 @@ describe('AdminService', () => {
     });
   });
 
+  describe('getVisitAnalytics', () => {
+    it('should fetch visit analytics', () => {
+      const mockAnalytics: VisitAnalytics = {
+        pageViews: 100,
+        uniqueVisitors: 25,
+        activeSessions: 14,
+        averageSessionDurationSeconds: 120,
+        bounceRatePercent: 35,
+        topPages: [{ path: '/api/games', views: 45 }],
+        topNavigationFlows: [{ fromPath: '/api/games', toPath: '/api/trades', transitions: 12 }]
+      };
+
+      service.getVisitAnalytics(12).subscribe(result => {
+        expect(result.pageViews).toBe(100);
+        expect(result.uniqueVisitors).toBe(25);
+      });
+
+      const req = httpMock.expectOne(r => r.url === `${baseUrl}/dashboard/visits`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('hours')).toBe('12');
+      req.flush({ success: true, data: mockAnalytics, message: 'OK', timestamp: '' });
+    });
+  });
+
+  describe('getAlerts', () => {
+    it('should fetch active alerts for dashboard', () => {
+      const mockAlerts: AdminAlert[] = [
+        {
+          code: 'HTTP_ERROR_RATE_HIGH',
+          severity: 'WARNING',
+          title: 'High error rate',
+          message: 'Error rate exceeded threshold',
+          currentValue: 12.5,
+          thresholdValue: 5,
+          triggeredAt: '2026-02-21T08:00:00'
+        }
+      ];
+
+      service.getAlerts().subscribe(result => {
+        expect(result).toEqual(mockAlerts);
+      });
+
+      const req = httpMock.expectOne(r => r.url === `${baseUrl}/alerts`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('hours')).toBe('24');
+      req.flush({ success: true, data: mockAlerts, message: 'OK', timestamp: '' });
+    });
+  });
+
+  describe('getAlertThresholds', () => {
+    it('should fetch default alert thresholds', () => {
+      const mockThresholds: AlertThresholds = {
+        httpErrorRatePercent: 5,
+        heapUsagePercent: 85,
+        diskUsagePercent: 90,
+        databaseConnectionUsagePercent: 80,
+        criticalErrorsLast24Hours: 10
+      };
+
+      service.getAlertThresholds().subscribe(result => {
+        expect(result).toEqual(mockThresholds);
+      });
+
+      const req = httpMock.expectOne(`${baseUrl}/alerts/thresholds`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ success: true, data: mockThresholds, message: 'OK', timestamp: '' });
+    });
+  });
+
   describe('getErrors', () => {
     const mockErrors: ErrorEntry[] = [
       {
@@ -169,12 +246,19 @@ describe('AdminService', () => {
         totalErrors: 15,
         errorsByType: { GameNotFoundException: 10, BusinessException: 5 },
         errorsByStatusCode: { 404: 10, 400: 5 },
+        trendGranularity: 'HOUR',
+        errorTrend: [
+          { periodStart: '2026-02-17T09:00:00', count: 3 },
+          { periodStart: '2026-02-17T10:00:00', count: 6 }
+        ],
         topErrors: [{ type: 'GameNotFoundException', message: 'not found', count: 10, lastOccurrence: '2026-02-17T10:00:00' }]
       };
 
       service.getErrorStatistics(48).subscribe(result => {
         expect(result.totalErrors).toBe(15);
         expect(result.topErrors.length).toBe(1);
+        expect(result.trendGranularity).toBe('HOUR');
+        expect(result.errorTrend?.length).toBe(2);
       });
 
       const req = httpMock.expectOne(r => r.url === `${baseUrl}/errors/stats`);

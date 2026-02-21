@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /** Domain model representing a participant in a game. Framework-free. */
+@SuppressWarnings({"java:S107"})
 public final class GameParticipant {
 
   private static final int TIMEOUT_HOURS = 12;

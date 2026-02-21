@@ -24,6 +24,7 @@ import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.dto.DraftActionResponse;
 import com.fortnite.pronos.dto.DraftAdvanceResponse;
 import com.fortnite.pronos.dto.DraftAvailablePlayerResponse;
@@ -38,10 +39,6 @@ import com.fortnite.pronos.model.GameRegionRule;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.DraftRepository;
-import com.fortnite.pronos.repository.GameParticipantRepository;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.PlayerRepository;
 
 /**
  * TDD Tests for DraftService - Business Critical Component
@@ -57,13 +54,14 @@ import com.fortnite.pronos.repository.PlayerRepository;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("DraftService - Complex Workflow TDD Tests")
+@SuppressWarnings({"java:S5778", "java:S5976"})
 class DraftServiceTddTest {
 
   @Mock private DraftDomainRepositoryPort draftDomainRepository;
-  @Mock private DraftRepository draftRepository;
-  @Mock private GameParticipantRepository gameParticipantRepository;
-  @Mock private GameRepository gameRepository;
-  @Mock private PlayerRepository playerRepository;
+  @Mock private DraftRepositoryPort draftRepository;
+  @Mock private GameParticipantRepositoryPort gameParticipantRepository;
+  @Mock private GameRepositoryPort gameRepository;
+  @Mock private PlayerDomainRepositoryPort playerRepository;
 
   @InjectMocks private DraftService draftService;
 
@@ -115,6 +113,25 @@ class DraftServiceTddTest {
     testPlayer.setTranche("1-7");
   }
 
+  @Nested
+  @DisplayName("Repository Boundary Contract")
+  class RepositoryBoundaryContractTests {
+
+    @Test
+    @DisplayName("Should declare draft repository dependency as port")
+    void shouldDeclareDraftRepositoryDependencyAsPort() throws NoSuchFieldException {
+      assertThat(DraftService.class.getDeclaredField("draftRepository").getType())
+          .isEqualTo(DraftRepositoryPort.class);
+    }
+
+    @Test
+    @DisplayName("Should declare player repository dependency as port")
+    void shouldDeclarePlayerRepositoryDependencyAsPort() throws NoSuchFieldException {
+      assertThat(DraftService.class.getDeclaredField("playerRepository").getType())
+          .isEqualTo(PlayerDomainRepositoryPort.class);
+    }
+  }
+
   private GameParticipant createParticipant(UUID userId, int draftOrder) {
     User user = new User();
     user.setId(userId);
@@ -134,7 +151,7 @@ class DraftServiceTddTest {
     @DisplayName("Should create draft with proper initial state")
     void shouldCreateDraftWithProperInitialState() {
       // RED: Define expected behavior for draft creation
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.createDraft(testGame, testParticipants);
@@ -147,7 +164,7 @@ class DraftServiceTddTest {
       assertThat(result.getStartedAt()).isNotNull();
       assertThat(result.getId()).isNotNull();
 
-      verify(((DraftRepositoryPort) draftRepository)).save(any(Draft.class));
+      verify(draftRepository).save(any(Draft.class));
       verify(draftDomainRepository).save(any(com.fortnite.pronos.domain.draft.model.Draft.class));
     }
 
@@ -155,7 +172,7 @@ class DraftServiceTddTest {
     @DisplayName("Should calculate total rounds from regional rules")
     void shouldCalculateTotalRoundsFromRegionalRules() {
       // RED: Test regional rules integration for rounds calculation
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.createDraft(testGame, testParticipants);
@@ -169,7 +186,7 @@ class DraftServiceTddTest {
     void shouldUseDefaultRoundsWhenNoRegionalRulesExist() {
       // RED: Test fallback behavior for games without regional rules
       testGame.setRegionRules(null);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.createDraft(testGame, testParticipants);
@@ -230,7 +247,7 @@ class DraftServiceTddTest {
 
       assertThatThrownBy(() -> draftService.getCurrentPicker(testDraft, testParticipants))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Aucun participant trouvÃƒÆ’Ã‚Â© pour l'ordre");
+          .hasMessageContaining("Aucun participant trouvÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© pour l'ordre");
     }
   }
 
@@ -244,7 +261,7 @@ class DraftServiceTddTest {
       // RED: Test pick advancement within a round
       testDraft.setCurrentPick(2);
       testDraft.setCurrentRound(1);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.nextPick(testDraft, testGame.getMaxParticipants());
@@ -260,7 +277,7 @@ class DraftServiceTddTest {
       // RED: Test round progression when picks are exhausted
       testDraft.setCurrentPick(4); // Last pick
       testDraft.setCurrentRound(1);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.nextPick(testDraft, testGame.getMaxParticipants());
@@ -277,7 +294,7 @@ class DraftServiceTddTest {
       testDraft.setCurrentPick(4); // Last pick
       testDraft.setCurrentRound(5); // Last round
       testDraft.setTotalRounds(5);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.nextPick(testDraft, testGame.getMaxParticipants());
@@ -296,28 +313,28 @@ class DraftServiceTddTest {
     @DisplayName("Should start draft and set active status")
     void shouldStartDraftAndSetActiveStatus() {
       // RED: Test draft starting functionality
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.startDraft(testGame);
 
       assertThat(result.getStatus()).isEqualTo(Draft.Status.ACTIVE);
       assertThat(result.getStartedAt()).isNotNull();
-      verify(((DraftRepositoryPort) draftRepository)).save(any(Draft.class));
+      verify(draftRepository).save(any(Draft.class));
     }
 
     @Test
     @DisplayName("Should pause active draft")
     void shouldPauseActiveDraft() {
       // RED: Test draft pausing functionality
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.pauseDraft(testDraft);
 
       assertThat(result.getStatus()).isEqualTo(Draft.Status.PAUSED);
       assertThat(result.getUpdatedAt()).isNotNull();
-      verify(((DraftRepositoryPort) draftRepository)).save(testDraft);
+      verify(draftRepository).save(testDraft);
     }
 
     @Test
@@ -325,28 +342,28 @@ class DraftServiceTddTest {
     void shouldResumePausedDraft() {
       // RED: Test draft resuming functionality
       testDraft.setStatus(Draft.Status.PAUSED);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.resumeDraft(testDraft);
 
       assertThat(result.getStatus()).isEqualTo(Draft.Status.ACTIVE);
       assertThat(result.getUpdatedAt()).isNotNull();
-      verify(((DraftRepositoryPort) draftRepository)).save(testDraft);
+      verify(draftRepository).save(testDraft);
     }
 
     @Test
     @DisplayName("Should finish draft and set completion time")
     void shouldFinishDraftAndSetCompletionTime() {
       // RED: Test draft finishing functionality
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       Draft result = draftService.finishDraft(testDraft);
 
       assertThat(result.getStatus()).isEqualTo(Draft.Status.FINISHED);
       assertThat(result.getFinishedAt()).isNotNull();
-      verify(((DraftRepositoryPort) draftRepository)).save(testDraft);
+      verify(draftRepository).save(testDraft);
     }
   }
 
@@ -412,7 +429,7 @@ class DraftServiceTddTest {
     @DisplayName("Should handle complete draft workflow from start to finish")
     void shouldHandleCompleteDraftWorkflowFromStartToFinish() {
       // RED: Integration test for complete draft workflow
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       // Create draft
@@ -441,7 +458,7 @@ class DraftServiceTddTest {
     @DisplayName("Should handle draft pause and resume workflow")
     void shouldHandleDraftPauseAndResumeWorkflow() {
       // RED: Integration test for pause/resume workflow
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       // Start with active draft
@@ -457,7 +474,7 @@ class DraftServiceTddTest {
       assertThat(resumedDraft.getStatus()).isEqualTo(Draft.Status.ACTIVE);
       assertThat(draftService.isUserTurn(resumedDraft, UUID.randomUUID())).isTrue();
 
-      verify(((DraftRepositoryPort) draftRepository), times(2)).save(any(Draft.class));
+      verify(draftRepository, times(2)).save(any(Draft.class));
     }
 
     @Test
@@ -465,7 +482,7 @@ class DraftServiceTddTest {
     void shouldMaintainDataConsistencyAcrossStateTransitions() {
       // RED: Test data consistency during state changes
       ArgumentCaptor<Draft> draftCaptor = ArgumentCaptor.forClass(Draft.class);
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       // Multiple state transitions
@@ -475,7 +492,7 @@ class DraftServiceTddTest {
       Draft draft4 = draftService.finishDraft(draft3);
 
       // Verify all transitions saved to repository
-      verify(((DraftRepositoryPort) draftRepository), times(4)).save(draftCaptor.capture());
+      verify(draftRepository, times(4)).save(draftCaptor.capture());
 
       List<Draft> savedDrafts = draftCaptor.getAllValues();
       assertThat(savedDrafts).hasSize(4);
@@ -550,7 +567,7 @@ class DraftServiceTddTest {
       GameParticipant expected = testParticipants.get(0);
       assertThat(response.id()).isEqualTo(expected.getId());
       assertThat(response.draftOrder()).isEqualTo(expected.getDraftOrder());
-      assertThat(response.currentPick()).isEqualTo(0);
+      assertThat(response.currentPick()).isZero();
       assertThat(response.currentRound()).isEqualTo(2);
     }
 
@@ -610,8 +627,7 @@ class DraftServiceTddTest {
       when(((GameParticipantRepositoryPort) gameParticipantRepository)
               .findByGameIdOrderByDraftOrderAsc(testGame.getId()))
           .thenReturn(testParticipants);
-      when(((GameRepositoryPort) gameRepository).findById(testGame.getId()))
-          .thenReturn(Optional.of(testGame));
+      when(gameRepository.findById(testGame.getId())).thenReturn(Optional.of(testGame));
       when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
 
       boolean result = draftService.isUserTurnForGame(testGame.getId(), userId);
@@ -670,7 +686,7 @@ class DraftServiceTddTest {
       testDraft.setCurrentPick(1);
       testDraft.setCurrentRound(1);
       when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(((GameParticipantRepositoryPort) gameParticipantRepository)
               .findByGameIdOrderByDraftOrderAsc(testGame.getId()))
@@ -690,7 +706,7 @@ class DraftServiceTddTest {
     @DisplayName("Should create draft when none exists")
     void shouldCreateDraftWhenNoneExists() {
       when(draftRepository.findByGame(testGame)).thenReturn(Optional.empty());
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(((GameParticipantRepositoryPort) gameParticipantRepository)
               .findByGameIdOrderByDraftOrderAsc(testGame.getId()))
@@ -710,7 +726,7 @@ class DraftServiceTddTest {
       testDraft.setCurrentPick(testParticipants.size()); // Pick 3 (last of round 1)
       testDraft.setCurrentRound(1);
       when(draftRepository.findByGame(testGame)).thenReturn(Optional.of(testDraft));
-      when(((DraftRepositoryPort) draftRepository).save(any(Draft.class)))
+      when(draftRepository.save(any(Draft.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
       when(((GameParticipantRepositoryPort) gameParticipantRepository)
               .findByGameIdOrderByDraftOrderAsc(testGame.getId()))
@@ -719,7 +735,7 @@ class DraftServiceTddTest {
       DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(testGame);
 
       // After advancing: round becomes 2, pick becomes 1
-      // In snake draft round 2 (even), pick 1 → snakePosition = 3 - 1 + 1 = 3
+      // In snake draft round 2 (even), pick 1 â†’ snakePosition = 3 - 1 + 1 = 3
       assertThat(response.currentPick()).isEqualTo(1);
       assertThat(response.currentRound()).isEqualTo(2);
       // Snake draft: round 2 starts with last participant (position 3)
@@ -736,11 +752,18 @@ class DraftServiceTddTest {
     @Test
     @DisplayName("Should build available players response")
     void shouldBuildAvailablePlayersResponse() {
-      Player player = new Player();
-      player.setId(UUID.randomUUID());
-      player.setNickname("PlayerOne");
-      player.setRegion(Player.Region.EU);
-      when(playerRepository.findByRegion(Player.Region.EU)).thenReturn(List.of(player));
+      com.fortnite.pronos.domain.player.model.Player player =
+          com.fortnite.pronos.domain.player.model.Player.restore(
+              UUID.randomUUID(),
+              null,
+              "playerone",
+              "PlayerOne",
+              com.fortnite.pronos.domain.game.model.PlayerRegion.EU,
+              "1-10",
+              2026,
+              false);
+      when(playerRepository.findByRegion(com.fortnite.pronos.domain.game.model.PlayerRegion.EU))
+          .thenReturn(List.of(player));
 
       List<DraftAvailablePlayerResponse> response =
           draftService.buildAvailablePlayersResponse(Player.Region.EU);
@@ -748,13 +771,14 @@ class DraftServiceTddTest {
       assertThat(response).hasSize(1);
       assertThat(response.get(0).id()).isEqualTo(player.getId());
       assertThat(response.get(0).nickname()).isEqualTo(player.getNickname());
-      assertThat(response.get(0).region()).isEqualTo(player.getRegion().name());
+      assertThat(response.get(0).region()).isEqualTo("EU");
     }
 
     @Test
     @DisplayName("Should return empty list when no players available")
     void shouldReturnEmptyListWhenNoPlayersAvailable() {
-      when(playerRepository.findByRegion(Player.Region.NAW)).thenReturn(List.of());
+      when(playerRepository.findByRegion(com.fortnite.pronos.domain.game.model.PlayerRegion.NAW))
+          .thenReturn(List.of());
 
       List<DraftAvailablePlayerResponse> response =
           draftService.buildAvailablePlayersResponse(Player.Region.NAW);
@@ -797,7 +821,7 @@ class DraftServiceTddTest {
     void shouldBuildDefaultTimeoutResponse() {
       DraftTimeoutResponse response = draftService.buildTimeoutResponse();
 
-      assertThat(response.timeoutCount()).isEqualTo(0);
+      assertThat(response.timeoutCount()).isZero();
       assertThat(response.message()).isEqualTo("Timeouts geres avec succes");
     }
   }
@@ -810,7 +834,7 @@ class DraftServiceTddTest {
     @DisplayName("Should finish draft and return response")
     void shouldFinishDraftAndReturnResponse() {
       testGame.setStatus(GameStatus.DRAFTING);
-      when(((GameRepositoryPort) gameRepository).save(any(Game.class)))
+      when(gameRepository.save(any(Game.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       DraftActionResponse response = draftService.finishDraft(testGame);
@@ -818,7 +842,7 @@ class DraftServiceTddTest {
       assertThat(response.success()).isTrue();
       assertThat(response.message()).isEqualTo("Draft termine avec succes");
       assertThat(testGame.getStatus()).isEqualTo(GameStatus.ACTIVE);
-      verify(((GameRepositoryPort) gameRepository)).save(testGame);
+      verify(gameRepository).save(testGame);
     }
   }
 }

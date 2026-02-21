@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameParticipant;
@@ -96,7 +97,7 @@ class DraftWorkflowIntegrationTest {
     player.setRegion(region);
     player.setTranche("3");
     player.setCurrentSeason(2025);
-    return playerRepository.save(player);
+    return ((PlayerRepositoryPort) playerRepository).save(player);
   }
 
   private Game createTestGame(String name, User creator, int maxParticipants) {

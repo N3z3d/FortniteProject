@@ -9,7 +9,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { AdminService } from '../services/admin.service';
 import { TranslationService } from '../../../core/services/translation.service';
-import { DashboardSummary, RecentActivity, SystemHealth, SystemMetrics } from '../models/admin.models';
+import {
+  AdminAlert,
+  DashboardSummary,
+  RecentActivity,
+  SystemHealth,
+  SystemMetrics,
+  VisitAnalytics
+} from '../models/admin.models';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -38,6 +45,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   health: SystemHealth | null = null;
   activity: RecentActivity | null = null;
   metrics: SystemMetrics | null = null;
+  alerts: AdminAlert[] = [];
+  visitAnalytics: VisitAnalytics | null = null;
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -56,7 +65,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       summary: this.adminService.getDashboardSummary(),
       health: this.adminService.getSystemHealth(),
       activity: this.adminService.getRecentActivity(),
-      metrics: this.adminService.getSystemMetrics()
+      metrics: this.adminService.getSystemMetrics(),
+      alerts: this.adminService.getAlerts(),
+      visitAnalytics: this.adminService.getVisitAnalytics()
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -65,6 +76,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.health = data.health;
           this.activity = data.activity;
           this.metrics = data.metrics;
+          this.alerts = data.alerts;
+          this.visitAnalytics = data.visitAnalytics;
           this.loading = false;
         },
         error: () => {
@@ -99,5 +112,27 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   getGameStatusEntries(): { key: string; value: number }[] {
     if (!this.summary?.gamesByStatus) return [];
     return Object.entries(this.summary.gamesByStatus).map(([key, value]) => ({ key, value }));
+  }
+
+  getAlertSeverityClass(alert: AdminAlert): string {
+    return `severity-${alert.severity.toLowerCase()}`;
+  }
+
+  getAlertSeverityIcon(alert: AdminAlert): string {
+    if (alert.severity === 'CRITICAL') {
+      return 'error';
+    }
+    if (alert.severity === 'WARNING') {
+      return 'warning';
+    }
+    return 'info';
+  }
+
+  formatDuration(seconds: number): string {
+    if (seconds <= 0) {
+      return '0m';
+    }
+    const minutes = Math.round(seconds / 60);
+    return `${minutes}m`;
   }
 }

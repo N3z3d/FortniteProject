@@ -28,6 +28,7 @@ const suspiciousMarkers = [
   '\u00C2\u00A9',
   '\uFFFD'
 ];
+const suspiciousRegexes = [/\u00C3[\u0080-\u00BF]/, /\u00C2[\u0080-\u00BF]/];
 
 const keyRegexes = [
   /\bt\.t\(\s*(['"`])([^'"`]+)\1/g,
@@ -110,11 +111,17 @@ const findSuspiciousValues = flattenedByLang => {
   const issues = [];
   for (const lang of LANGUAGES) {
     for (const [key, value] of Object.entries(flattenedByLang[lang])) {
+      let hasMarkerMatch = false;
       for (const marker of suspiciousMarkers) {
         if (value.includes(marker)) {
           issues.push(`${lang}.${key} -> ${value}`);
+          hasMarkerMatch = true;
           break;
         }
+      }
+
+      if (!hasMarkerMatch && suspiciousRegexes.some(pattern => pattern.test(value))) {
+        issues.push(`${lang}.${key} -> ${value}`);
       }
     }
   }

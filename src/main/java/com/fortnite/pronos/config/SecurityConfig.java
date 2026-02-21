@@ -35,6 +35,7 @@ import lombok.RequiredArgsConstructor;
     havingValue = "true",
     matchIfMissing = true)
 @org.springframework.context.annotation.Profile("!test")
+@SuppressWarnings({"java:S1874", "java:S5738"})
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;

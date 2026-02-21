@@ -64,8 +64,9 @@ class DraftRepositoryAdapterTest {
     Optional<Draft> result = adapter.findById(draftId);
 
     assertThat(result).isPresent();
-    assertThat(result.orElseThrow().getId()).isEqualTo(draftId);
-    assertThat(result.orElseThrow().getGameId()).isEqualTo(gameId);
+    Draft draft = result.orElseThrow();
+    assertThat(draft.getId()).isEqualTo(draftId);
+    assertThat(draft.getGameId()).isEqualTo(gameId);
   }
 
   @Test

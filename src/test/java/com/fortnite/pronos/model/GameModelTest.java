@@ -72,7 +72,7 @@ class GameModelTest {
   @DisplayName("Devrait retourner le bon nombre de participants")
   void shouldReturnCorrectParticipantCount() {
     // Given: Game sans participants
-    assertThat(game.getParticipantCount()).isEqualTo(0);
+    assertThat(game.getParticipantCount()).isZero();
 
     // When: Ajout de participants
     game.addParticipant(participant1);
@@ -156,7 +156,7 @@ class GameModelTest {
   @DisplayName("Devrait gérer correctement l'ajout et suppression de participants")
   void shouldHandleParticipantAdditionAndRemoval() {
     // Given: Game vide
-    assertThat(game.getParticipantCount()).isEqualTo(0);
+    assertThat(game.getParticipantCount()).isZero();
 
     // When: Ajout d'un participant
     game.addParticipant(participant1);
@@ -169,7 +169,7 @@ class GameModelTest {
     game.removeParticipant(participant1);
 
     // Then: Participant supprimé
-    assertThat(game.getParticipantCount()).isEqualTo(0);
+    assertThat(game.getParticipantCount()).isZero();
     assertThat(game.getParticipants()).doesNotContain(participant1);
   }
 
@@ -188,8 +188,7 @@ class GameModelTest {
     game.addRegionRule(rule);
 
     // Then: Règle ajoutée
-    assertThat(game.getRegionRules()).hasSize(1);
-    assertThat(game.getRegionRules()).contains(rule);
+    assertThat(game.getRegionRules()).hasSize(1).contains(rule);
     assertThat(rule.getGame()).isEqualTo(game);
 
     // When: Suppression de la règle

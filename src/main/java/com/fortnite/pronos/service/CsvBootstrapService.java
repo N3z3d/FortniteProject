@@ -7,9 +7,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,8 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CsvBootstrapService {
 
   private final CsvDataLoaderService csvDataLoaderService;
-  private final PlayerRepository playerRepository;
-  private final ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
 
   @EventListener(ApplicationReadyEvent.class)
   @Order(1)

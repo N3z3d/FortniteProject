@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.dto.LeaderboardStatsDTO;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class LeaderboardStatsService {
 
-  private final TeamRepository teamRepository;
-  private final ScoreRepository scoreRepository;
-  private final PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
 
   /** Obtenir les statistiques du leaderboard - VERSION OPTIMISÉE SANS N+1 */
   @Cacheable(value = "gameStats", key = "'stats_default'")
@@ -40,11 +38,11 @@ public class LeaderboardStatsService {
   public LeaderboardStatsDTO getLeaderboardStats(int season) {
     log.info("[STATS] Calcul des statistiques pour la saison {}", season);
 
-    List<Team> teams = teamRepository.findBySeason(season);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findBySeason(season);
     log.info("[DATA] Equipes trouvees: {}", teams.size());
 
     // OPTIMISATION: Une seule requête pour tous les joueurs
-    List<Player> allPlayers = playerRepository.findAll();
+    List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
     int totalPlayers = allPlayers.size();
     log.info("[DATA] Total joueurs trouves: {}", totalPlayers);
 
@@ -57,7 +55,7 @@ public class LeaderboardStatsService {
     Map<String, Long> regionPoints = new HashMap<>();
 
     // Calculer les points totaux et les stats régionales EN MÉMOIRE
-    for (Player player : allPlayers) {
+    for (com.fortnite.pronos.model.Player player : allPlayers) {
       String region = player.getRegion().name();
       Integer playerPoints = playerPointsMap.getOrDefault(player.getId(), 0);
       long points = playerPoints != null ? playerPoints.longValue() : 0L;
@@ -89,7 +87,7 @@ public class LeaderboardStatsService {
   public LeaderboardStatsDTO getLeaderboardStatsByGame(UUID gameId) {
     log.info("[STATS] Calcul des statistiques pour la game {}", gameId);
 
-    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findByGameIdWithFetch(gameId);
     log.info("[DATA] Equipes trouvees pour la game: {}", teams.size());
 
     if (teams.isEmpty()) {
@@ -104,15 +102,15 @@ public class LeaderboardStatsService {
 
     // Extraire les joueurs des équipes de cette game
     Set<UUID> playerIds = new HashSet<>();
-    for (Team team : teams) {
-      for (TeamPlayer tp : team.getPlayers()) {
+    for (com.fortnite.pronos.model.Team team : teams) {
+      for (com.fortnite.pronos.model.TeamPlayer tp : team.getPlayers()) {
         if (tp.isActive()) {
           playerIds.add(tp.getPlayer().getId());
         }
       }
     }
 
-    List<Player> gamePlayers = playerRepository.findAllById(playerIds);
+    List<com.fortnite.pronos.model.Player> gamePlayers = playerRepository.findAllById(playerIds);
     int totalPlayers = gamePlayers.size();
 
     Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
@@ -121,7 +119,7 @@ public class LeaderboardStatsService {
     long totalPoints = 0;
     Map<String, Long> regionPoints = new HashMap<>();
 
-    for (Player player : gamePlayers) {
+    for (com.fortnite.pronos.model.Player player : gamePlayers) {
       String region = player.getRegion().name();
       Integer playerPoints = playerPointsMap.getOrDefault(player.getId(), 0);
       long points = playerPoints != null ? playerPoints.longValue() : 0L;
@@ -151,10 +149,10 @@ public class LeaderboardStatsService {
   /** Obtenir la répartition par région de tous les joueurs */
   @Cacheable(value = "regionDistribution", key = "'all_regions'")
   public Map<String, Integer> getRegionDistribution() {
-    List<Player> allPlayers = playerRepository.findAll();
+    List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
     Map<String, Integer> regionCounts = new HashMap<>();
 
-    for (Player player : allPlayers) {
+    for (com.fortnite.pronos.model.Player player : allPlayers) {
       String region = player.getRegion().name();
       regionCounts.merge(region, 1, Integer::sum);
     }
@@ -165,21 +163,21 @@ public class LeaderboardStatsService {
 
   /** Obtenir la répartition par région pour une game spécifique */
   public Map<String, Integer> getRegionDistributionByGame(UUID gameId) {
-    List<Team> teams = teamRepository.findByGameIdWithFetch(gameId);
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findByGameIdWithFetch(gameId);
 
     Set<UUID> playerIds = new HashSet<>();
-    for (Team team : teams) {
-      for (TeamPlayer tp : team.getPlayers()) {
+    for (com.fortnite.pronos.model.Team team : teams) {
+      for (com.fortnite.pronos.model.TeamPlayer tp : team.getPlayers()) {
         if (tp.isActive()) {
           playerIds.add(tp.getPlayer().getId());
         }
       }
     }
 
-    List<Player> gamePlayers = playerRepository.findAllById(playerIds);
+    List<com.fortnite.pronos.model.Player> gamePlayers = playerRepository.findAllById(playerIds);
     Map<String, Integer> regionCounts = new HashMap<>();
 
-    for (Player player : gamePlayers) {
+    for (com.fortnite.pronos.model.Player player : gamePlayers) {
       String region = player.getRegion().name();
       regionCounts.merge(region, 1, Integer::sum);
     }
@@ -191,10 +189,10 @@ public class LeaderboardStatsService {
   /** Obtenir la répartition par tranche de tous les joueurs */
   @Cacheable(value = "regionDistribution", key = "'all_tranches'")
   public Map<String, Integer> getTrancheDistribution() {
-    List<Player> allPlayers = playerRepository.findAll();
+    List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
     Map<String, Integer> trancheCounts = new HashMap<>();
 
-    for (Player player : allPlayers) {
+    for (com.fortnite.pronos.model.Player player : allPlayers) {
       String tranche = "Tranche " + player.getTranche();
       trancheCounts.merge(tranche, 1, Integer::sum);
     }

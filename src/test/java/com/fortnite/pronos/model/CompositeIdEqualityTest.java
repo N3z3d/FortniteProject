@@ -1,6 +1,7 @@
 package com.fortnite.pronos.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Composite ID equality")
+@SuppressWarnings({"java:S3415", "java:S5785"})
 class CompositeIdEqualityTest {
 
   @Test
@@ -34,7 +36,7 @@ class CompositeIdEqualityTest {
     PrSnapshot.PrSnapshotId id = new PrSnapshot.PrSnapshotId(playerId, PrRegion.EU, date);
 
     assertNotEquals(id, null);
-    assertNotEquals(id, "id");
+    assertFalse(id.equals("id"));
     assertNotEquals(id, new PrSnapshot.PrSnapshotId(UUID.randomUUID(), PrRegion.EU, date));
     assertNotEquals(id, new PrSnapshot.PrSnapshotId(playerId, PrRegion.NAC, date));
     assertNotEquals(id, new PrSnapshot.PrSnapshotId(playerId, PrRegion.EU, date.plusDays(1)));
@@ -60,7 +62,7 @@ class CompositeIdEqualityTest {
     Score.ScoreId id = new Score.ScoreId(playerId, 1);
 
     assertNotEquals(id, null);
-    assertNotEquals(id, "id");
+    assertFalse(id.equals("id"));
     assertNotEquals(id, new Score.ScoreId(UUID.randomUUID(), 1));
     assertNotEquals(id, new Score.ScoreId(playerId, 2));
   }
@@ -87,7 +89,7 @@ class CompositeIdEqualityTest {
     TeamPlayer.TeamPlayerId id = new TeamPlayer.TeamPlayerId(teamId, playerId);
 
     assertNotEquals(id, null);
-    assertNotEquals(id, "id");
+    assertFalse(id.equals("id"));
     assertNotEquals(id, new TeamPlayer.TeamPlayerId(UUID.randomUUID(), playerId));
     assertNotEquals(id, new TeamPlayer.TeamPlayerId(teamId, UUID.randomUUID()));
   }

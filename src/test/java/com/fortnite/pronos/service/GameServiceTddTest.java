@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.domain.game.model.GameStatus;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
+import com.fortnite.pronos.domain.team.model.Team;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.GameDto;
@@ -35,6 +37,7 @@ import com.fortnite.pronos.service.game.GameQueryService;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameService Facade - TDD Tests")
+@SuppressWarnings({"java:S5838", "java:S5853"})
 class GameServiceTddTest {
 
   @Mock private GameCreationService gameCreationService;
@@ -44,6 +47,10 @@ class GameServiceTddTest {
   @Mock private GameParticipantService gameParticipantService;
 
   @Mock private GameDraftService gameDraftService;
+
+  @Mock private GameRealtimeEventService gameRealtimeEventService;
+
+  @Mock private TeamDomainRepositoryPort teamDomainRepository;
 
   @InjectMocks private GameService gameService;
 
@@ -142,8 +149,7 @@ class GameServiceTddTest {
       List<GameDto> result = gameService.getAllGames();
 
       // Then
-      assertThat(result).isEqualTo(expectedGames);
-      assertThat(result).hasSize(1);
+      assertThat(result).isEqualTo(expectedGames).hasSize(1);
       verify(gameQueryService).getAllGames();
     }
 
@@ -173,8 +179,7 @@ class GameServiceTddTest {
       List<GameDto> result = gameService.getGamesByUser(creatorId);
 
       // Then
-      assertThat(result).isEqualTo(expectedGames);
-      assertThat(result).hasSize(1);
+      assertThat(result).isEqualTo(expectedGames).hasSize(1);
       verify(gameQueryService).getGamesByUser(creatorId);
     }
 
@@ -299,6 +304,56 @@ class GameServiceTddTest {
       assertThatThrownBy(() -> gameService.startDraft(gameId, creatorId))
           .isInstanceOf(RuntimeException.class)
           .hasMessage("Draft start failed");
+    }
+  }
+
+  @Nested
+  @DisplayName("Game Team Operations")
+  class GameTeamOperations {
+
+    @Test
+    @DisplayName("Should load game teams via TeamDomainRepositoryPort")
+    void shouldLoadGameTeamsViaDomainPort() {
+      // RED: teams should be loaded from domain repository after game existence check
+      List<Team> expectedTeams =
+          List.of(
+              new Team("Team One", UUID.randomUUID(), 2026),
+              new Team("Team Two", UUID.randomUUID(), 2026));
+      when(gameQueryService.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+      when(teamDomainRepository.findByGameIdWithFetch(gameId)).thenReturn(expectedTeams);
+
+      List<?> result = gameService.getGameTeams(gameId);
+
+      assertThat(result).hasSize(expectedTeams.size()).containsEntry(0, expectedTeams.get(0));
+      assertThat(result).containsEntry(1, expectedTeams.get(1));
+      verify(gameQueryService).getGameByIdOrThrow(gameId);
+      verify(teamDomainRepository).findByGameIdWithFetch(gameId);
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no teams are found for game")
+    void shouldReturnEmptyTeamsWhenNoneFound() {
+      when(gameQueryService.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+      when(teamDomainRepository.findByGameIdWithFetch(gameId)).thenReturn(List.of());
+
+      List<?> result = gameService.getGameTeams(gameId);
+
+      assertThat(result).isEmpty();
+      verify(teamDomainRepository).findByGameIdWithFetch(gameId);
+    }
+
+    @Test
+    @DisplayName("Should fail fast when game does not exist before loading teams")
+    void shouldFailFastWhenGameDoesNotExist() {
+      RuntimeException expectedException = new RuntimeException("Game not found");
+      when(gameQueryService.getGameByIdOrThrow(gameId)).thenThrow(expectedException);
+
+      assertThatThrownBy(() -> gameService.getGameTeams(gameId))
+          .isInstanceOf(RuntimeException.class)
+          .hasMessage("Game not found");
+
+      verify(gameQueryService).getGameByIdOrThrow(gameId);
+      verifyNoInteractions(teamDomainRepository);
     }
   }
 

@@ -9,8 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.fortnite.pronos.model.User;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,13 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S112"})
 public class FlexibleAuthenticationService {
 
   private final UnifiedAuthService unifiedAuthService;
   private final Environment environment;
 
   /** Authentifie un utilisateur de maniere flexible */
-  public Optional<User> authenticate(String username) {
+  public Optional<com.fortnite.pronos.model.User> authenticate(String username) {
     return unifiedAuthService.authenticate(username);
   }
 
@@ -34,7 +33,7 @@ public class FlexibleAuthenticationService {
   }
 
   /** Recupere l'utilisateur actuel depuis le contexte de securite */
-  public User getCurrentUser() {
+  public com.fortnite.pronos.model.User getCurrentUser() {
     log.info("Recuperation de l'utilisateur actuel");
 
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -58,14 +57,15 @@ public class FlexibleAuthenticationService {
       return createDefaultUser();
     }
 
-    Optional<User> userOpt = unifiedAuthService.findUserByUsername(username);
+    Optional<com.fortnite.pronos.model.User> userOpt =
+        unifiedAuthService.findUserByUsername(username);
 
     if (userOpt.isEmpty()) {
       log.warn("Utilisateur authentifie mais non trouve en base: {}", username);
       return createTemporaryUser(username);
     }
 
-    User user = userOpt.get();
+    com.fortnite.pronos.model.User user = userOpt.get();
     log.info("Utilisateur actuel recupere: {} ({})", user.getEmail(), user.getRole());
 
     return user;
@@ -129,14 +129,14 @@ public class FlexibleAuthenticationService {
   }
 
   /** Cree un utilisateur par defaut pour le MVP */
-  private User createDefaultUser() {
-    User defaultUser = new User();
+  private com.fortnite.pronos.model.User createDefaultUser() {
+    com.fortnite.pronos.model.User defaultUser = new com.fortnite.pronos.model.User();
     defaultUser.setId(java.util.UUID.nameUUIDFromBytes("dev-user".getBytes()));
     defaultUser.setEmail("dev@fortnite-pronos.com");
     defaultUser.setUsername("dev-user");
     defaultUser.setPassword("password");
     defaultUser.setCurrentSeason(2025);
-    defaultUser.setRole(User.UserRole.ADMIN);
+    defaultUser.setRole(com.fortnite.pronos.model.User.UserRole.ADMIN);
 
     log.info("Utilisateur par defaut cree: {}", defaultUser.getEmail());
 
@@ -144,11 +144,11 @@ public class FlexibleAuthenticationService {
   }
 
   /** Cree un utilisateur temporaire pour le MVP */
-  private User createTemporaryUser(String username) {
-    User tempUser = new User();
+  private com.fortnite.pronos.model.User createTemporaryUser(String username) {
+    com.fortnite.pronos.model.User tempUser = new com.fortnite.pronos.model.User();
     tempUser.setEmail(username + "@temp.com");
     tempUser.setUsername(username);
-    tempUser.setRole(User.UserRole.USER);
+    tempUser.setRole(com.fortnite.pronos.model.User.UserRole.USER);
 
     log.info("Utilisateur temporaire cree: {}", tempUser.getEmail());
 

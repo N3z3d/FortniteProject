@@ -13,12 +13,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "fortnite.data.provider", havingValue = "csv", matchIfMissing = true)
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S2676"})
 public class TeamInitializationService {
 
   private static final int CURRENT_SEASON = 2025;
@@ -35,8 +32,8 @@ public class TeamInitializationService {
   private final CsvDataLoaderService csvDataLoaderService;
   private final Environment environment;
   private final UserRepositoryPort userRepository;
-  private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
 
   /** Initialize teams after CSV load. Runs after CsvBootstrapService. */
   @EventListener(ApplicationReadyEvent.class)
@@ -53,7 +50,8 @@ public class TeamInitializationService {
 
   @Transactional
   public void createTeamsFromCsvData() {
-    Map<String, List<Player>> playerAssignments = csvDataLoaderService.getAllPlayerAssignments();
+    Map<String, List<com.fortnite.pronos.model.Player>> playerAssignments =
+        csvDataLoaderService.getAllPlayerAssignments();
     if (playerAssignments.isEmpty()) {
       log.warn("Team initialization: no assignments found in memory, loading CSV");
       csvDataLoaderService.loadAllCsvData();
@@ -68,7 +66,8 @@ public class TeamInitializationService {
         buildExistingOwners(teamRepository.findBySeason(CURRENT_SEASON));
     TeamInitializationStats stats = new TeamInitializationStats();
 
-    for (Map.Entry<String, List<Player>> entry : playerAssignments.entrySet()) {
+    for (Map.Entry<String, List<com.fortnite.pronos.model.Player>> entry :
+        playerAssignments.entrySet()) {
       createTeamIfMissing(entry, existingOwners, stats);
     }
 
@@ -79,9 +78,10 @@ public class TeamInitializationService {
     return Arrays.asList(environment.getActiveProfiles()).contains("test");
   }
 
-  private Map<String, Boolean> buildExistingOwners(List<Team> existingTeams) {
+  private Map<String, Boolean> buildExistingOwners(
+      List<com.fortnite.pronos.model.Team> existingTeams) {
     Map<String, Boolean> existingOwners = new HashMap<>();
-    for (Team team : existingTeams) {
+    for (com.fortnite.pronos.model.Team team : existingTeams) {
       if (team.getOwner() != null && team.getOwner().getUsername() != null) {
         existingOwners.put(team.getOwner().getUsername().toLowerCase(), true);
       }
@@ -90,11 +90,11 @@ public class TeamInitializationService {
   }
 
   private void createTeamIfMissing(
-      Map.Entry<String, List<Player>> entry,
+      Map.Entry<String, List<com.fortnite.pronos.model.Player>> entry,
       Map<String, Boolean> existingOwners,
       TeamInitializationStats stats) {
     String pronostiqueurName = entry.getKey();
-    List<Player> assignedPlayers = entry.getValue();
+    List<com.fortnite.pronos.model.Player> assignedPlayers = entry.getValue();
 
     if (assignedPlayers.isEmpty()) {
       log.warn("Team initialization: no players assigned to {}", pronostiqueurName);
@@ -104,9 +104,9 @@ public class TeamInitializationService {
       return;
     }
 
-    User user = findOrCreateUser(pronostiqueurName);
-    Team team = buildTeam(pronostiqueurName, user, assignedPlayers);
-    teamRepository.save(team);
+    com.fortnite.pronos.model.User user = findOrCreateUser(pronostiqueurName);
+    com.fortnite.pronos.model.Team team = buildTeam(pronostiqueurName, user, assignedPlayers);
+    ((TeamRepositoryPort) teamRepository).save(team);
     existingOwners.put(pronostiqueurName.toLowerCase(), true);
 
     stats.teamsCreated++;
@@ -118,22 +118,26 @@ public class TeamInitializationService {
         assignedPlayers.size());
   }
 
-  private User findOrCreateUser(String pronostiqueurName) {
+  private com.fortnite.pronos.model.User findOrCreateUser(String pronostiqueurName) {
     return userRepository
         .findByUsernameIgnoreCase(pronostiqueurName)
         .orElseGet(() -> createUserForPronostiqueur(pronostiqueurName));
   }
 
-  private Team buildTeam(String pronostiqueurName, User owner, List<Player> assignedPlayers) {
-    Team team = new Team();
+  private com.fortnite.pronos.model.Team buildTeam(
+      String pronostiqueurName,
+      com.fortnite.pronos.model.User owner,
+      List<com.fortnite.pronos.model.Player> assignedPlayers) {
+    com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
     team.setName("Equipe de " + pronostiqueurName);
     team.setOwner(owner);
     team.setSeason(CURRENT_SEASON);
     team.setCompletedTradesCount(0);
 
     int position = 1;
-    for (Player player : assignedPlayers) {
-      Player managedPlayer = playerRepository.getReferenceById(player.getId());
+    for (com.fortnite.pronos.model.Player player : assignedPlayers) {
+      com.fortnite.pronos.model.Player managedPlayer =
+          playerRepository.getReferenceById(player.getId());
       team.addPlayer(managedPlayer, position++);
     }
 
@@ -148,7 +152,7 @@ public class TeamInitializationService {
   }
 
   /** Create a basic user for a pronosticator. */
-  private User createUserForPronostiqueur(String pronostiqueurName) {
+  private com.fortnite.pronos.model.User createUserForPronostiqueur(String pronostiqueurName) {
     String cleanUsername = pronostiqueurName.toLowerCase().replaceAll("[^a-z0-9]", "");
     if (cleanUsername.isEmpty()) {
       cleanUsername = "pronostiqueur" + Math.abs(pronostiqueurName.hashCode());
@@ -156,12 +160,12 @@ public class TeamInitializationService {
 
     String email = cleanUsername + "@fortnite-pronos.local";
 
-    User user = new User();
+    com.fortnite.pronos.model.User user = new com.fortnite.pronos.model.User();
     user.setUsername(cleanUsername);
     user.setEmail(email);
     user.setPassword("$2a$10$DummyHashForInitialUsers");
 
-    User savedUser = userRepository.save(user);
+    com.fortnite.pronos.model.User savedUser = userRepository.save(user);
     log.debug(
         "Team initialization: user created username={}, email={}",
         savedUser.getUsername(),

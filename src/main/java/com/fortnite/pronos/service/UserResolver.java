@@ -9,8 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import com.fortnite.pronos.model.User;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,52 +37,26 @@ public class UserResolver {
    * @param httpRequest The HTTP request
    * @return The resolved User, or null if not found
    */
-  public User resolve(String username, HttpServletRequest httpRequest) {
-    User user = null;
-
+  public com.fortnite.pronos.model.User resolve(String username, HttpServletRequest httpRequest) {
     if (allowNonAuthenticatedIdentitySources()) {
-      // 1. Check username parameter
-      if (username != null && !username.isBlank()) {
-        user = userService.findUserByUsername(username).orElse(null);
-        if (user != null) {
-          return user;
-        }
+      com.fortnite.pronos.model.User userFromParameter = resolveByUsername(username);
+      if (userFromParameter != null) {
+        return userFromParameter;
       }
 
-      // 2. Check X-Test-User header
-      if (httpRequest != null) {
-        String headerUser = httpRequest.getHeader("X-Test-User");
-        if (headerUser != null && !headerUser.isBlank()) {
-          user = userService.findUserByUsername(headerUser).orElse(null);
-          if (user != null) {
-            return user;
-          }
-        }
+      com.fortnite.pronos.model.User userFromHeader = resolveFromTestHeader(httpRequest);
+      if (userFromHeader != null) {
+        return userFromHeader;
       }
     }
 
-    // 3. Check Authorization Bearer token
-    String bearerUser = extractUserFromAuthorization(httpRequest);
-    if (bearerUser != null) {
-      user = userService.findUserByUsername(bearerUser).orElse(null);
-      if (user != null) {
-        return user;
-      }
+    com.fortnite.pronos.model.User userFromBearer =
+        resolveByUsername(extractUserFromAuthorization(httpRequest));
+    if (userFromBearer != null) {
+      return userFromBearer;
     }
 
-    // 4. Check SecurityContext
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null
-        && authentication.isAuthenticated()
-        && !"anonymousUser".equals(authentication.getName())) {
-      user = userService.findUserByUsername(authentication.getName()).orElse(null);
-      if (user != null) {
-        return user;
-      }
-    }
-
-    // No automatic test user creation - callers should handle null
-    return null;
+    return resolveFromSecurityContext();
   }
 
   /**
@@ -95,8 +67,9 @@ public class UserResolver {
    * @param httpRequest The HTTP request
    * @return The resolved User, or null if not found and required
    */
-  public User resolveOrNull(String username, boolean required, HttpServletRequest httpRequest) {
-    User user = resolve(username, httpRequest);
+  public com.fortnite.pronos.model.User resolveOrNull(
+      String username, boolean required, HttpServletRequest httpRequest) {
+    com.fortnite.pronos.model.User user = resolve(username, httpRequest);
     if (required && user == null) {
       return null;
     }
@@ -118,6 +91,30 @@ public class UserResolver {
       log.warn("Impossible d'extraire l'utilisateur du token JWT: {}", e.getMessage());
       return null;
     }
+  }
+
+  private com.fortnite.pronos.model.User resolveByUsername(String username) {
+    if (username == null || username.isBlank()) {
+      return null;
+    }
+    return userService.findUserByUsername(username).orElse(null);
+  }
+
+  private com.fortnite.pronos.model.User resolveFromTestHeader(HttpServletRequest request) {
+    if (request == null) {
+      return null;
+    }
+    return resolveByUsername(request.getHeader("X-Test-User"));
+  }
+
+  private com.fortnite.pronos.model.User resolveFromSecurityContext() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null
+        || !authentication.isAuthenticated()
+        || "anonymousUser".equals(authentication.getName())) {
+      return null;
+    }
+    return resolveByUsername(authentication.getName());
   }
 
   private boolean allowNonAuthenticatedIdentitySources() {

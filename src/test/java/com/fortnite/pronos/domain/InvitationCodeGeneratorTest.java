@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for InvitationCodeGenerator. Pure domain tests - no Spring context required. */
 @DisplayName("InvitationCodeGenerator")
+@SuppressWarnings({"java:S5778"})
 class InvitationCodeGeneratorTest {
 
   @Nested

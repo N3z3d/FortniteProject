@@ -18,22 +18,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
+import com.fortnite.pronos.domain.team.model.Team;
 import com.fortnite.pronos.dto.team.TeamDto;
-import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TeamQueryService - TDD Tests")
 class TeamQueryServiceTddTest {
 
+  @Mock private TeamDomainRepositoryPort teamDomainRepository;
+  @Mock private PlayerDomainRepositoryPort playerDomainRepository;
+  @Mock private UserRepositoryPort userRepository;
   @Mock private TeamRepository teamRepository;
-  @Mock private PlayerRepository playerRepository;
-  @Mock private UserRepository userRepository;
 
   @InjectMocks private TeamQueryService teamQueryService;
 
@@ -45,20 +45,17 @@ class TeamQueryServiceTddTest {
     testUser = new User();
     testUser.setId(UUID.randomUUID());
     testUser.setUsername("testuser");
+    testUser.setEmail("testuser@example.com");
 
-    testTeam = new Team();
-    testTeam.setId(UUID.randomUUID());
-    testTeam.setName("Test Team");
-    testTeam.setOwner(testUser);
-    testTeam.setSeason(2025);
+    testTeam =
+        Team.restore(UUID.randomUUID(), "Test Team", testUser.getId(), 2025, null, 0, List.of());
   }
 
   @Test
   @DisplayName("getTeam returns team for user and season")
   void getTeamReturnsTeamForUserAndSeason() {
-    when(((UserRepositoryPort) userRepository).findById(testUser.getId()))
-        .thenReturn(Optional.of(testUser));
-    when(((TeamRepositoryPort) teamRepository).findByOwnerAndSeason(testUser, 2025))
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+    when(teamDomainRepository.findByOwnerIdAndSeason(testUser.getId(), 2025))
         .thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamQueryService.getTeam(testUser.getId(), 2025);
@@ -71,8 +68,7 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeam throws exception when user not found")
   void getTeamThrowsExceptionWhenUserNotFound() {
     UUID unknownUserId = UUID.randomUUID();
-    when(((UserRepositoryPort) userRepository).findById(unknownUserId))
-        .thenReturn(Optional.empty());
+    when(userRepository.findById(unknownUserId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> teamQueryService.getTeam(unknownUserId, 2025))
         .isInstanceOf(EntityNotFoundException.class);
@@ -81,7 +77,7 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getTeamById returns team when found")
   void getTeamByIdReturnsTeamWhenFound() {
-    when(((TeamRepositoryPort) teamRepository).findByIdWithFetch(testTeam.getId()))
+    when(teamDomainRepository.findByIdWithFetch(testTeam.getId()))
         .thenReturn(Optional.of(testTeam));
 
     TeamDto result = teamQueryService.getTeamById(testTeam.getId());
@@ -94,8 +90,7 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeamById throws exception when not found")
   void getTeamByIdThrowsExceptionWhenNotFound() {
     UUID unknownTeamId = UUID.randomUUID();
-    when(((TeamRepositoryPort) teamRepository).findByIdWithFetch(unknownTeamId))
-        .thenReturn(Optional.empty());
+    when(teamDomainRepository.findByIdWithFetch(unknownTeamId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> teamQueryService.getTeamById(unknownTeamId))
         .isInstanceOf(EntityNotFoundException.class);
@@ -104,13 +99,10 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getAllTeams returns all teams for season")
   void getAllTeamsReturnsAllTeamsForSeason() {
-    Team team2 = new Team();
-    team2.setId(UUID.randomUUID());
-    team2.setName("Team 2");
-    team2.setOwner(testUser);
+    Team team2 =
+        Team.restore(UUID.randomUUID(), "Team 2", testUser.getId(), 2025, null, 0, List.of());
 
-    when(((TeamRepositoryPort) teamRepository).findBySeasonWithFetch(2025))
-        .thenReturn(List.of(testTeam, team2));
+    when(teamDomainRepository.findBySeasonWithFetch(2025)).thenReturn(List.of(testTeam, team2));
 
     List<TeamDto> result = teamQueryService.getAllTeams(2025);
 
@@ -121,8 +113,7 @@ class TeamQueryServiceTddTest {
   @DisplayName("getTeamsByGame returns teams for game")
   void getTeamsByGameReturnsTeamsForGame() {
     UUID gameId = UUID.randomUUID();
-    when(((TeamRepositoryPort) teamRepository).findByGameIdWithFetch(gameId))
-        .thenReturn(List.of(testTeam));
+    when(teamDomainRepository.findByGameIdWithFetch(gameId)).thenReturn(List.of(testTeam));
 
     List<TeamDto> result = teamQueryService.getTeamsByGame(gameId);
 
@@ -141,8 +132,7 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getTeamsBySeason returns teams for season")
   void getTeamsBySeasonReturnsTeamsForSeason() {
-    when(((TeamRepositoryPort) teamRepository).findBySeasonWithFetch(2025))
-        .thenReturn(List.of(testTeam));
+    when(teamDomainRepository.findBySeasonWithFetch(2025)).thenReturn(List.of(testTeam));
 
     List<TeamDto> result = teamQueryService.getTeamsBySeason(2025);
 
@@ -152,8 +142,8 @@ class TeamQueryServiceTddTest {
   @Test
   @DisplayName("getParticipantTeams returns participant teams")
   void getParticipantTeamsReturnsParticipantTeams() {
-    when(((TeamRepositoryPort) teamRepository).findParticipantTeamsWithFetch(2025))
-        .thenReturn(List.of(testTeam));
+    when(teamDomainRepository.findBySeasonWithFetch(2025)).thenReturn(List.of(testTeam));
+    when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
 
     List<TeamDto> result = teamQueryService.getParticipantTeams(2025);
 

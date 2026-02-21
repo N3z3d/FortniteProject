@@ -46,7 +46,7 @@ class ErrorJournalControllerTest {
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody()).isNotNull();
       assertThat(response.getBody().isSuccess()).isTrue();
-      assertThat(response.getBody().getData()).hasSize(1);
+      assertThat(response.getData()).hasSize(1);
     }
 
     @Test
@@ -88,6 +88,13 @@ class ErrorJournalControllerTest {
               .totalErrors(5)
               .errorsByType(Map.of("TestEx", 3L, "OtherEx", 2L))
               .errorsByStatusCode(Map.of(400, 2L, 500, 3L))
+              .trendGranularity("HOUR")
+              .errorTrend(
+                  List.of(
+                      ErrorStatisticsDto.TrendPoint.builder()
+                          .periodStart(LocalDateTime.now().minusHours(1))
+                          .count(2)
+                          .build()))
               .topErrors(List.of())
               .build();
       when(errorJournalService.getErrorStatistics(24)).thenReturn(stats);
@@ -96,6 +103,8 @@ class ErrorJournalControllerTest {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody().getData().getTotalErrors()).isEqualTo(5);
+      assertThat(response.getTrendGranularity()).isEqualTo("HOUR");
+      assertThat(response.getBody().getData().getErrorTrend()).hasSize(1);
     }
 
     @Test

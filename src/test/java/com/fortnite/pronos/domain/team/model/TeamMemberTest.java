@@ -119,7 +119,7 @@ class TeamMemberTest {
       TeamMember m1 = new TeamMember(PLAYER_ID, 1);
       TeamMember m2 = new TeamMember(PLAYER_ID, 5);
 
-      assertThat(m1.hashCode()).isEqualTo(m2.hashCode());
+      assertThat(m1).hasSameHashCodeAs(m2);
     }
   }
 }

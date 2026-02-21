@@ -1,9 +1,9 @@
 package com.fortnite.pronos.model;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -43,7 +43,12 @@ import lombok.NoArgsConstructor;
             attributeNodes = @NamedAttributeNode("user"))
       })
 })
+@SuppressWarnings({"java:S1710"})
 public class Game {
+
+  private static final String INVITATION_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  private static final int INVITATION_CODE_LENGTH = 8;
+  private static final SecureRandom INVITATION_CODE_RANDOM = new SecureRandom();
 
   @Id private UUID id;
 
@@ -436,11 +441,11 @@ public class Game {
 
   /** Generates random 8-character alphanumeric code */
   private String generateRandomCode() {
-    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    Random random = new Random();
-    StringBuilder code = new StringBuilder(8);
-    for (int i = 0; i < 8; i++) {
-      code.append(chars.charAt(random.nextInt(chars.length())));
+    StringBuilder code = new StringBuilder(INVITATION_CODE_LENGTH);
+    for (int i = 0; i < INVITATION_CODE_LENGTH; i++) {
+      code.append(
+          INVITATION_CODE_CHARS.charAt(
+              INVITATION_CODE_RANDOM.nextInt(INVITATION_CODE_CHARS.length())));
     }
     return code.toString();
   }

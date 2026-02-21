@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TradeRepositoryPort;
 import com.fortnite.pronos.exception.BusinessException;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class TradingService {
 
-  private final TradeRepository tradeRepository;
-  private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
-  private final GameRepository gameRepository;
+  private static final String TRADE_NOT_FOUND_MESSAGE = "Trade not found";
+  private static final String TRADE_NOT_PENDING_MESSAGE = "Trade is not in pending status";
+
+  private final TradeRepositoryPort tradeRepository;
+  private final TeamRepositoryPort teamRepository;
+  private final PlayerRepositoryPort playerRepository;
   private final ValidationService validationService;
   private final TradeNotificationService tradeNotificationService;
 
@@ -38,26 +40,26 @@ public class TradingService {
    * @param requestedPlayerIds IDs of players being requested
    * @return The created trade proposal
    */
-  public Trade proposeTradeWithPlayerIds(
+  public com.fortnite.pronos.model.Trade proposeTradeWithPlayerIds(
       UUID fromTeamId, UUID toTeamId, List<UUID> offeredPlayerIds, List<UUID> requestedPlayerIds) {
     log.info("Proposing trade from team {} to team {}", fromTeamId, toTeamId);
 
     // Convert UUIDs to Player entities
-    List<Player> offeredPlayers =
+    List<com.fortnite.pronos.model.Player> offeredPlayers =
         offeredPlayerIds.stream()
             .map(
                 id ->
-                    ((PlayerRepositoryPort) playerRepository)
+                    playerRepository
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Offered player not found: " + id)))
             .toList();
 
-    List<Player> requestedPlayers =
+    List<com.fortnite.pronos.model.Player> requestedPlayers =
         requestedPlayerIds.stream()
             .map(
                 id ->
-                    ((PlayerRepositoryPort) playerRepository)
+                    playerRepository
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Requested player not found: " + id)))
@@ -75,12 +77,15 @@ public class TradingService {
    * @param requestedPlayers Players being requested
    * @return The created trade proposal
    */
-  public Trade proposeTrade(
-      UUID fromTeamId, UUID toTeamId, List<Player> offeredPlayers, List<Player> requestedPlayers) {
+  public com.fortnite.pronos.model.Trade proposeTrade(
+      UUID fromTeamId,
+      UUID toTeamId,
+      List<com.fortnite.pronos.model.Player> offeredPlayers,
+      List<com.fortnite.pronos.model.Player> requestedPlayers) {
     log.info("Proposing trade from team {} to team {}", fromTeamId, toTeamId);
 
-    Team fromTeam = findTeamOrThrow(fromTeamId, "From team not found");
-    Team toTeam = findTeamOrThrow(toTeamId, "To team not found");
+    com.fortnite.pronos.model.Team fromTeam = findTeamOrThrow(fromTeamId, "From team not found");
+    com.fortnite.pronos.model.Team toTeam = findTeamOrThrow(toTeamId, "To team not found");
 
     validateGameTradingRules(fromTeam, toTeam);
     validatePlayerOwnershipAndLocks(fromTeam, offeredPlayers, "Team does not own offered player: ");
@@ -88,7 +93,8 @@ public class TradingService {
         toTeam, requestedPlayers, "Target team does not own requested player: ");
     validateTradeSize(offeredPlayers, requestedPlayers);
 
-    Trade trade = buildPendingTrade(fromTeam, toTeam, offeredPlayers, requestedPlayers);
+    com.fortnite.pronos.model.Trade trade =
+        buildPendingTrade(fromTeam, toTeam, offeredPlayers, requestedPlayers);
     return saveAndNotifyTradeProposed(trade);
   }
 
@@ -99,10 +105,10 @@ public class TradingService {
    * @param userId ID of the user accepting the trade
    * @return The accepted trade
    */
-  public Trade acceptTrade(UUID tradeId, UUID userId) {
+  public com.fortnite.pronos.model.Trade acceptTrade(UUID tradeId, UUID userId) {
     log.info("Accepting trade {} by user {}", tradeId, userId);
 
-    Trade trade = loadTradeOrThrow(tradeId);
+    com.fortnite.pronos.model.Trade trade = loadTradeOrThrow(tradeId);
     validateTradeAcceptanceRights(trade, userId);
 
     validatePostTradeComposition(trade);
@@ -118,28 +124,28 @@ public class TradingService {
    * @param userId ID of the user rejecting the trade
    * @return The rejected trade
    */
-  public Trade rejectTrade(UUID tradeId, UUID userId) {
+  public com.fortnite.pronos.model.Trade rejectTrade(UUID tradeId, UUID userId) {
     log.info("Rejecting trade {} by user {}", tradeId, userId);
 
-    Trade trade =
-        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+    com.fortnite.pronos.model.Trade trade =
+        tradeRepository
             .findById(tradeId)
-            .orElseThrow(() -> new BusinessException("Trade not found"));
+            .orElseThrow(() -> new BusinessException(TRADE_NOT_FOUND_MESSAGE));
 
     // Validate user can reject this trade
-    if (!trade.getToTeam().getUser().getId().equals(userId)) {
+    if (!teamOwnerId(toTeamOf(trade)).equals(userId)) {
       throw new BusinessException("Only the target team owner can reject this trade");
     }
 
     // Validate trade is pending
-    if (trade.getStatus() != Trade.Status.PENDING) {
-      throw new BusinessException("Trade is not in pending status");
+    if (trade.getStatus() != com.fortnite.pronos.model.Trade.Status.PENDING) {
+      throw new BusinessException(TRADE_NOT_PENDING_MESSAGE);
     }
 
-    trade.setStatus(Trade.Status.REJECTED);
+    trade.setStatus(com.fortnite.pronos.model.Trade.Status.REJECTED);
     trade.setRejectedAt(LocalDateTime.now());
 
-    Trade savedTrade = tradeRepository.save(trade);
+    com.fortnite.pronos.model.Trade savedTrade = tradeRepository.save(trade);
     tradeNotificationService.notifyTradeRejected(savedTrade);
     return savedTrade;
   }
@@ -151,28 +157,28 @@ public class TradingService {
    * @param userId ID of the user canceling the trade
    * @return The canceled trade
    */
-  public Trade cancelTrade(UUID tradeId, UUID userId) {
+  public com.fortnite.pronos.model.Trade cancelTrade(UUID tradeId, UUID userId) {
     log.info("Canceling trade {} by user {}", tradeId, userId);
 
-    Trade trade =
-        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+    com.fortnite.pronos.model.Trade trade =
+        tradeRepository
             .findById(tradeId)
-            .orElseThrow(() -> new BusinessException("Trade not found"));
+            .orElseThrow(() -> new BusinessException(TRADE_NOT_FOUND_MESSAGE));
 
     // Validate user can cancel this trade
-    if (!trade.getFromTeam().getUser().getId().equals(userId)) {
+    if (!teamOwnerId(fromTeamOf(trade)).equals(userId)) {
       throw new BusinessException("Only the initiating team owner can cancel this trade");
     }
 
     // Validate trade is pending
-    if (trade.getStatus() != Trade.Status.PENDING) {
-      throw new BusinessException("Trade is not in pending status");
+    if (trade.getStatus() != com.fortnite.pronos.model.Trade.Status.PENDING) {
+      throw new BusinessException(TRADE_NOT_PENDING_MESSAGE);
     }
 
-    trade.setStatus(Trade.Status.CANCELLED);
+    trade.setStatus(com.fortnite.pronos.model.Trade.Status.CANCELLED);
     trade.setCancelledAt(LocalDateTime.now());
 
-    Trade savedTrade = tradeRepository.save(trade);
+    com.fortnite.pronos.model.Trade savedTrade = tradeRepository.save(trade);
     tradeNotificationService.notifyTradeCancelled(savedTrade);
     return savedTrade;
   }
@@ -186,27 +192,27 @@ public class TradingService {
    * @param requestedPlayerIds IDs of players being requested in the counter
    * @return The counter trade proposal
    */
-  public Trade counterTradeWithPlayerIds(
+  public com.fortnite.pronos.model.Trade counterTradeWithPlayerIds(
       UUID originalTradeId,
       UUID userId,
       List<UUID> offeredPlayerIds,
       List<UUID> requestedPlayerIds) {
     // Convert UUIDs to Player entities
-    List<Player> offeredPlayers =
+    List<com.fortnite.pronos.model.Player> offeredPlayers =
         offeredPlayerIds.stream()
             .map(
                 id ->
-                    ((PlayerRepositoryPort) playerRepository)
+                    playerRepository
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Offered player not found: " + id)))
             .toList();
 
-    List<Player> requestedPlayers =
+    List<com.fortnite.pronos.model.Player> requestedPlayers =
         requestedPlayerIds.stream()
             .map(
                 id ->
-                    ((PlayerRepositoryPort) playerRepository)
+                    playerRepository
                         .findById(id)
                         .orElseThrow(
                             () -> new BusinessException("Requested player not found: " + id)))
@@ -224,51 +230,52 @@ public class TradingService {
    * @param requestedPlayers Players being requested in the counter
    * @return The counter trade proposal
    */
-  public Trade counterTrade(
+  public com.fortnite.pronos.model.Trade counterTrade(
       UUID originalTradeId,
       UUID userId,
-      List<Player> offeredPlayers,
-      List<Player> requestedPlayers) {
+      List<com.fortnite.pronos.model.Player> offeredPlayers,
+      List<com.fortnite.pronos.model.Player> requestedPlayers) {
     log.info("Creating counter-offer for trade {} by user {}", originalTradeId, userId);
 
-    Trade originalTrade =
-        ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+    com.fortnite.pronos.model.Trade originalTrade =
+        tradeRepository
             .findById(originalTradeId)
             .orElseThrow(() -> new BusinessException("Original trade not found"));
 
     // Validate user can counter this trade
-    if (!originalTrade.getToTeam().getUser().getId().equals(userId)) {
+    if (!teamOwnerId(toTeamOf(originalTrade)).equals(userId)) {
       throw new BusinessException("Only the target team owner can counter this trade");
     }
 
     // Validate original trade is pending
-    if (originalTrade.getStatus() != Trade.Status.PENDING) {
+    if (originalTrade.getStatus() != com.fortnite.pronos.model.Trade.Status.PENDING) {
       throw new BusinessException("Original trade is not in pending status");
     }
 
     // Mark original trade as countered
-    originalTrade.setStatus(Trade.Status.COUNTERED);
-    Trade savedOriginal = tradeRepository.save(originalTrade);
+    originalTrade.setStatus(com.fortnite.pronos.model.Trade.Status.COUNTERED);
+    com.fortnite.pronos.model.Trade savedOriginal = tradeRepository.save(originalTrade);
 
     // Create counter-offer (roles are swapped)
-    Trade counterTrade =
+    com.fortnite.pronos.model.Trade counterTrade =
         proposeTrade(
-            originalTrade.getToTeam().getId(),
-            originalTrade.getFromTeam().getId(),
+            toTeamOf(originalTrade).getId(),
+            fromTeamOf(originalTrade).getId(),
             offeredPlayers,
             requestedPlayers);
 
     counterTrade.setOriginalTradeId(originalTradeId);
-    Trade savedCounter = tradeRepository.save(counterTrade);
+    com.fortnite.pronos.model.Trade savedCounter = tradeRepository.save(counterTrade);
     tradeNotificationService.notifyTradeCountered(savedOriginal, savedCounter);
     return savedCounter;
   }
 
-  private void validateGameTradingRules(Team fromTeam, Team toTeam) {
-    if (!fromTeam.getGame().getId().equals(toTeam.getGame().getId())) {
+  private void validateGameTradingRules(
+      com.fortnite.pronos.model.Team fromTeam, com.fortnite.pronos.model.Team toTeam) {
+    if (!gameId(fromTeam).equals(gameId(toTeam))) {
       throw new BusinessException("Teams must be in the same game");
     }
-    Game game = fromTeam.getGame();
+    com.fortnite.pronos.model.Game game = teamGame(fromTeam);
     if (!Boolean.TRUE.equals(game.getTradingEnabled())) {
       throw new BusinessException("Trading is disabled for this game");
     }
@@ -284,8 +291,10 @@ public class TradingService {
   }
 
   private void validatePlayerOwnershipAndLocks(
-      Team team, List<Player> players, String ownershipErrorPrefix) {
-    for (Player player : players) {
+      com.fortnite.pronos.model.Team team,
+      List<com.fortnite.pronos.model.Player> players,
+      String ownershipErrorPrefix) {
+    for (com.fortnite.pronos.model.Player player : players) {
       if (!teamOwnsPlayer(team, player)) {
         throw new BusinessException(ownershipErrorPrefix + player.getName());
       }
@@ -295,115 +304,152 @@ public class TradingService {
     }
   }
 
-  private void validatePostTradeComposition(Trade trade) {
-    Team fromTeam = trade.getFromTeam();
-    Team toTeam = trade.getToTeam();
+  private void validatePostTradeComposition(com.fortnite.pronos.model.Trade trade) {
+    com.fortnite.pronos.model.Team fromTeam = trade.getFromTeam();
+    com.fortnite.pronos.model.Team toTeam = trade.getToTeam();
 
-    List<Player> fromPlayersAfter =
+    List<com.fortnite.pronos.model.Player> fromPlayersAfter =
         simulatePlayersAfterTrade(fromTeam, trade.getOfferedPlayers(), trade.getRequestedPlayers());
-    List<Player> toPlayersAfter =
+    List<com.fortnite.pronos.model.Player> toPlayersAfter =
         simulatePlayersAfterTrade(toTeam, trade.getRequestedPlayers(), trade.getOfferedPlayers());
 
-    Team tempFromTeam = new Team();
+    com.fortnite.pronos.model.Team tempFromTeam = new com.fortnite.pronos.model.Team();
     tempFromTeam.setName(fromTeam.getName());
     tempFromTeam.setPlayers(asTeamPlayers(tempFromTeam, fromPlayersAfter));
 
-    Team tempToTeam = new Team();
+    com.fortnite.pronos.model.Team tempToTeam = new com.fortnite.pronos.model.Team();
     tempToTeam.setName(toTeam.getName());
     tempToTeam.setPlayers(asTeamPlayers(tempToTeam, toPlayersAfter));
 
-    validationService.validateTeamComposition(tempFromTeam, fromTeam.getGame().getRegionRules());
-    validationService.validateTeamComposition(tempToTeam, toTeam.getGame().getRegionRules());
+    validationService.validateTeamComposition(tempFromTeam, regionRules(fromTeam));
+    validationService.validateTeamComposition(tempToTeam, regionRules(toTeam));
   }
 
-  private Team findTeamOrThrow(UUID teamId, String errorMessage) {
+  private com.fortnite.pronos.model.Team findTeamOrThrow(UUID teamId, String errorMessage) {
     return teamRepository.findById(teamId).orElseThrow(() -> new BusinessException(errorMessage));
   }
 
-  private void validateTradeSize(List<Player> offeredPlayers, List<Player> requestedPlayers) {
+  private void validateTradeSize(
+      List<com.fortnite.pronos.model.Player> offeredPlayers,
+      List<com.fortnite.pronos.model.Player> requestedPlayers) {
     if (offeredPlayers.size() > 5 || requestedPlayers.size() > 5) {
       throw new BusinessException("Too many players in trade (maximum 5 per side)");
     }
   }
 
-  private Trade buildPendingTrade(
-      Team fromTeam, Team toTeam, List<Player> offeredPlayers, List<Player> requestedPlayers) {
-    return Trade.builder()
+  private com.fortnite.pronos.model.Trade buildPendingTrade(
+      com.fortnite.pronos.model.Team fromTeam,
+      com.fortnite.pronos.model.Team toTeam,
+      List<com.fortnite.pronos.model.Player> offeredPlayers,
+      List<com.fortnite.pronos.model.Player> requestedPlayers) {
+    return com.fortnite.pronos.model.Trade.builder()
         .fromTeam(fromTeam)
         .toTeam(toTeam)
         .offeredPlayers(offeredPlayers)
         .requestedPlayers(requestedPlayers)
-        .status(Trade.Status.PENDING)
+        .status(com.fortnite.pronos.model.Trade.Status.PENDING)
         .proposedAt(LocalDateTime.now())
         .build();
   }
 
-  private Trade saveAndNotifyTradeProposed(Trade trade) {
-    Trade savedTrade = tradeRepository.save(trade);
+  private com.fortnite.pronos.model.Trade saveAndNotifyTradeProposed(
+      com.fortnite.pronos.model.Trade trade) {
+    com.fortnite.pronos.model.Trade savedTrade = tradeRepository.save(trade);
     tradeNotificationService.notifyTradeProposed(savedTrade);
     return savedTrade;
   }
 
-  private Trade loadTradeOrThrow(UUID tradeId) {
-    return ((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
+  private com.fortnite.pronos.model.Trade loadTradeOrThrow(UUID tradeId) {
+    return tradeRepository
         .findById(tradeId)
-        .orElseThrow(() -> new BusinessException("Trade not found"));
+        .orElseThrow(() -> new BusinessException(TRADE_NOT_FOUND_MESSAGE));
   }
 
-  private void validateTradeAcceptanceRights(Trade trade, UUID userId) {
-    if (!trade.getToTeam().getUser().getId().equals(userId)) {
+  private void validateTradeAcceptanceRights(com.fortnite.pronos.model.Trade trade, UUID userId) {
+    if (!teamOwnerId(toTeamOf(trade)).equals(userId)) {
       throw new BusinessException("Only the target team owner can accept this trade");
     }
-    if (trade.getStatus() != Trade.Status.PENDING) {
-      throw new BusinessException("Trade is not in pending status");
+    if (trade.getStatus() != com.fortnite.pronos.model.Trade.Status.PENDING) {
+      throw new BusinessException(TRADE_NOT_PENDING_MESSAGE);
     }
   }
 
-  private List<Player> simulatePlayersAfterTrade(
-      Team team, List<Player> playersToRemove, List<Player> playersToAdd) {
-    List<Player> playersAfterTrade = new ArrayList<>(getActivePlayers(team));
+  private com.fortnite.pronos.model.Team fromTeamOf(com.fortnite.pronos.model.Trade trade) {
+    return trade.getFromTeam();
+  }
+
+  private com.fortnite.pronos.model.Team toTeamOf(com.fortnite.pronos.model.Trade trade) {
+    return trade.getToTeam();
+  }
+
+  private com.fortnite.pronos.model.Game teamGame(com.fortnite.pronos.model.Team team) {
+    return team.getGame();
+  }
+
+  private UUID gameId(com.fortnite.pronos.model.Team team) {
+    return team.getGameId();
+  }
+
+  private UUID teamOwnerId(com.fortnite.pronos.model.Team team) {
+    return team.getUserId();
+  }
+
+  private List<com.fortnite.pronos.model.GameRegionRule> regionRules(
+      com.fortnite.pronos.model.Team team) {
+    return team.getGameRegionRules();
+  }
+
+  private List<com.fortnite.pronos.model.Player> simulatePlayersAfterTrade(
+      com.fortnite.pronos.model.Team team,
+      List<com.fortnite.pronos.model.Player> playersToRemove,
+      List<com.fortnite.pronos.model.Player> playersToAdd) {
+    List<com.fortnite.pronos.model.Player> playersAfterTrade =
+        new ArrayList<>(getActivePlayers(team));
     playersAfterTrade.removeAll(playersToRemove);
     playersAfterTrade.addAll(playersToAdd);
     return playersAfterTrade;
   }
 
-  private void executePlayerSwap(Trade trade) {
-    Team fromTeam = trade.getFromTeam();
-    Team toTeam = trade.getToTeam();
+  private void executePlayerSwap(com.fortnite.pronos.model.Trade trade) {
+    com.fortnite.pronos.model.Team fromTeam = trade.getFromTeam();
+    com.fortnite.pronos.model.Team toTeam = trade.getToTeam();
     trade.getOfferedPlayers().forEach(p -> removePlayerFromTeam(fromTeam, p));
     trade.getRequestedPlayers().forEach(p -> removePlayerFromTeam(toTeam, p));
     trade.getRequestedPlayers().forEach(p -> addPlayerToTeam(fromTeam, p));
     trade.getOfferedPlayers().forEach(p -> addPlayerToTeam(toTeam, p));
   }
 
-  private void finalizeAcceptedTrade(Trade trade) {
-    trade.setStatus(Trade.Status.ACCEPTED);
+  private void finalizeAcceptedTrade(com.fortnite.pronos.model.Trade trade) {
+    trade.setStatus(com.fortnite.pronos.model.Trade.Status.ACCEPTED);
     trade.setAcceptedAt(LocalDateTime.now());
 
-    Team fromTeam = trade.getFromTeam();
-    Team toTeam = trade.getToTeam();
+    com.fortnite.pronos.model.Team fromTeam = trade.getFromTeam();
+    com.fortnite.pronos.model.Team toTeam = trade.getToTeam();
     fromTeam.setCompletedTradesCount(fromTeam.getCompletedTradesCount() + 1);
     toTeam.setCompletedTradesCount(toTeam.getCompletedTradesCount() + 1);
   }
 
-  private Trade saveTeamsAndTradeAndNotifyAccepted(Trade trade) {
+  private com.fortnite.pronos.model.Trade saveTeamsAndTradeAndNotifyAccepted(
+      com.fortnite.pronos.model.Trade trade) {
     teamRepository.save(trade.getFromTeam());
     teamRepository.save(trade.getToTeam());
-    Trade savedTrade = tradeRepository.save(trade);
+    com.fortnite.pronos.model.Trade savedTrade = tradeRepository.save(trade);
     tradeNotificationService.notifyTradeAccepted(savedTrade);
     return savedTrade;
   }
 
   // Helpers to work with TeamPlayer mapping
-  private List<Player> getActivePlayers(Team team) {
+  private List<com.fortnite.pronos.model.Player> getActivePlayers(
+      com.fortnite.pronos.model.Team team) {
     return team.getPlayers().stream()
         .filter(
             tp -> tp != null && tp.getPlayer() != null && (tp.getUntil() == null || tp.isActive()))
-        .map(TeamPlayer::getPlayer)
+        .map(com.fortnite.pronos.model.TeamPlayer::getPlayer)
         .toList();
   }
 
-  private boolean teamOwnsPlayer(Team team, Player player) {
+  private boolean teamOwnsPlayer(
+      com.fortnite.pronos.model.Team team, com.fortnite.pronos.model.Player player) {
     return team.getPlayers().stream()
         .anyMatch(
             tp ->
@@ -413,11 +459,12 @@ public class TradingService {
                     && (tp.getUntil() == null || tp.isActive()));
   }
 
-  private List<TeamPlayer> asTeamPlayers(Team team, List<Player> players) {
-    List<TeamPlayer> result = new ArrayList<>();
+  private List<com.fortnite.pronos.model.TeamPlayer> asTeamPlayers(
+      com.fortnite.pronos.model.Team team, List<com.fortnite.pronos.model.Player> players) {
+    List<com.fortnite.pronos.model.TeamPlayer> result = new ArrayList<>();
     int position = 1;
-    for (Player p : players) {
-      TeamPlayer tp = new TeamPlayer();
+    for (com.fortnite.pronos.model.Player p : players) {
+      com.fortnite.pronos.model.TeamPlayer tp = new com.fortnite.pronos.model.TeamPlayer();
       tp.setTeam(team);
       tp.setPlayer(p);
       tp.setPosition(position++);
@@ -426,13 +473,15 @@ public class TradingService {
     return result;
   }
 
-  private void removePlayerFromTeam(Team team, Player player) {
+  private void removePlayerFromTeam(
+      com.fortnite.pronos.model.Team team, com.fortnite.pronos.model.Player player) {
     team.getPlayers()
         .removeIf(tp -> tp != null && tp.getPlayer() != null && tp.getPlayer().equals(player));
   }
 
-  private void addPlayerToTeam(Team team, Player player) {
-    TeamPlayer tp = new TeamPlayer();
+  private void addPlayerToTeam(
+      com.fortnite.pronos.model.Team team, com.fortnite.pronos.model.Player player) {
+    com.fortnite.pronos.model.TeamPlayer tp = new com.fortnite.pronos.model.TeamPlayer();
     tp.setTeam(team);
     tp.setPlayer(player);
     tp.setPosition(team.getPlayers().size() + 1);

@@ -2,7 +2,7 @@
  * Shared Team models for the Fortnite Pronos application
  */
 
-import { Player, TeamPlayer } from './player.model';
+import { TeamPlayer } from './player.model';
 
 /** Team owner information */
 export interface TeamOwner {

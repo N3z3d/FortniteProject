@@ -81,10 +81,12 @@ class AdminDashboardServiceTest {
 
       DashboardSummaryDto result = service.getDashboardSummary();
 
-      assertThat(result.getGamesByStatus()).containsEntry("CREATING", 3L);
-      assertThat(result.getGamesByStatus()).containsEntry("DRAFTING", 2L);
-      assertThat(result.getGamesByStatus()).containsEntry("ACTIVE", 4L);
-      assertThat(result.getGamesByStatus()).containsEntry("FINISHED", 1L);
+      assertThat(result.getGamesByStatus())
+          .containsEntry("CREATING", 3L)
+          .containsEntry("DRAFTING", 2L);
+      assertThat(result.getGamesByStatus())
+          .containsEntry("ACTIVE", 4L)
+          .containsEntry("FINISHED", 1L);
       assertThat(result.getGamesByStatus()).containsEntry("CANCELLED", 0L);
     }
 
@@ -126,9 +128,9 @@ class AdminDashboardServiceTest {
       assertThat(result.getStatus()).isEqualTo("UP");
       assertThat(result.getUptimeMillis()).isPositive();
       assertThat(result.getDatabasePool().getActiveConnections()).isEqualTo(2);
-      assertThat(result.getDatabasePool().getIdleConnections()).isEqualTo(8);
+      assertThat(result.getIdleConnections()).isEqualTo(8);
       assertThat(result.getDatabasePool().getTotalConnections()).isEqualTo(10);
-      assertThat(result.getDatabasePool().getMaxConnections()).isEqualTo(20);
+      assertThat(result.getMaxConnections()).isEqualTo(20);
     }
 
     @Test
@@ -286,7 +288,7 @@ class AdminDashboardServiceTest {
 
       assertThat(result.getJvm()).isNotNull();
       assertThat(result.getJvm().getHeapMaxBytes()).isPositive();
-      assertThat(result.getJvm().getThreadCount()).isPositive();
+      assertThat(result.getThreadCount()).isPositive();
     }
 
     @Test

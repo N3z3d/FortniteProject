@@ -20,7 +20,7 @@ export class TradeValidationService {
   }
 
   canMovePlayer(
-    player: Player,
+    _player: Player,
     fromList: string,
     toList: string,
     listTypes: {
@@ -30,34 +30,39 @@ export class TradeValidationService {
       TARGET_LIST: string;
     }
   ): boolean {
-    if (
-      (fromList === listTypes.AVAILABLE_LIST || fromList === listTypes.OFFERED_LIST) &&
-      (toList === listTypes.AVAILABLE_LIST || toList === listTypes.OFFERED_LIST)
-    ) {
+    const sourceGroup = this.resolveListGroup(fromList, listTypes);
+    const targetGroup = this.resolveListGroup(toList, listTypes);
+
+    if (sourceGroup === 'offered' && targetGroup === 'offered') {
       return fromList !== toList;
     }
 
-    if (
-      (fromList === listTypes.TARGET_LIST || fromList === listTypes.REQUESTED_LIST) &&
-      (toList === listTypes.TARGET_LIST || toList === listTypes.REQUESTED_LIST)
-    ) {
+    if (sourceGroup === 'requested' && targetGroup === 'requested') {
       return fromList !== toList;
     }
 
-    if (
-      (fromList === listTypes.AVAILABLE_LIST || fromList === listTypes.OFFERED_LIST) &&
-      (toList === listTypes.TARGET_LIST || toList === listTypes.REQUESTED_LIST)
-    ) {
-      return false;
-    }
-
-    if (
-      (fromList === listTypes.TARGET_LIST || fromList === listTypes.REQUESTED_LIST) &&
-      (toList === listTypes.AVAILABLE_LIST || toList === listTypes.OFFERED_LIST)
-    ) {
+    if (sourceGroup !== null && targetGroup !== null && sourceGroup !== targetGroup) {
       return false;
     }
 
     return true;
+  }
+
+  private resolveListGroup(
+    listName: string,
+    listTypes: {
+      OFFERED_LIST: string;
+      REQUESTED_LIST: string;
+      AVAILABLE_LIST: string;
+      TARGET_LIST: string;
+    }
+  ): 'offered' | 'requested' | null {
+    if (listName === listTypes.AVAILABLE_LIST || listName === listTypes.OFFERED_LIST) {
+      return 'offered';
+    }
+    if (listName === listTypes.TARGET_LIST || listName === listTypes.REQUESTED_LIST) {
+      return 'requested';
+    }
+    return null;
   }
 }

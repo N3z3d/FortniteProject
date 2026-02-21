@@ -1,4 +1,4 @@
-﻿# Accessibility Audit Report
+# Accessibility Audit Report
 
 **Date**: 2026-02-17
 **Ticket**: JIRA-AUDIT-014

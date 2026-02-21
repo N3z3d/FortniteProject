@@ -39,6 +39,7 @@ import com.fortnite.pronos.model.User;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GameParticipantService")
+@SuppressWarnings({"java:S5778"})
 class GameParticipantServiceTest {
 
   @Mock private GameDomainRepositoryPort gameRepository;

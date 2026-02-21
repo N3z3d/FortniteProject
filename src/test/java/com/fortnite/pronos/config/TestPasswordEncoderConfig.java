@@ -13,11 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @Configuration
 @Profile("test")
-public class TestPasswordEncoderConfig {
+class TestPasswordEncoderConfig {
 
   @Bean
   @ConditionalOnMissingBean(PasswordEncoder.class)
-  public PasswordEncoder passwordEncoder() {
+  PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 }

@@ -5,10 +5,13 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   ApiResponse,
+  AdminAlert,
+  AlertThresholds,
   DashboardSummary,
   RecentActivity,
   SystemHealth,
-  SystemMetrics
+  SystemMetrics,
+  VisitAnalytics
 } from '../models/admin.models';
 import { ErrorEntry, ErrorStatistics } from '../models/error-journal.models';
 
@@ -43,6 +46,28 @@ export class AdminService {
   getSystemMetrics(): Observable<SystemMetrics> {
     return this.http
       .get<ApiResponse<SystemMetrics>>(`${this.baseUrl}/system/metrics`)
+      .pipe(map(r => r.data));
+  }
+
+  getVisitAnalytics(hours: number = 24): Observable<VisitAnalytics> {
+    return this.http
+      .get<ApiResponse<VisitAnalytics>>(`${this.baseUrl}/dashboard/visits`, {
+        params: { hours: hours.toString() }
+      })
+      .pipe(map(r => r.data));
+  }
+
+  getAlerts(hours: number = 24): Observable<AdminAlert[]> {
+    return this.http
+      .get<ApiResponse<AdminAlert[]>>(`${this.baseUrl}/alerts`, {
+        params: { hours: hours.toString() }
+      })
+      .pipe(map(r => r.data));
+  }
+
+  getAlertThresholds(): Observable<AlertThresholds> {
+    return this.http
+      .get<ApiResponse<AlertThresholds>>(`${this.baseUrl}/alerts/thresholds`)
       .pipe(map(r => r.data));
   }
 

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S1874"})
 public class WebConfig implements WebMvcConfigurer {
 
   private final LoggingInterceptor loggingInterceptor;

@@ -42,13 +42,14 @@ import lombok.extern.slf4j.Slf4j;
 @Order(2)
 @Slf4j
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S2589"})
 public class GlobalExceptionHandler {
 
   private final ErrorJournalService errorJournalService;
 
   /**
-   * Gestion des exceptions mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©tier
-   * personnalisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©es
+   * Gestion des exceptions mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©tier personnalisÃƒÆ’Ã†â€™Ãƒâ€
+   * Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©es
    */
   @ExceptionHandler(FortnitePronosException.class)
   public ResponseEntity<ErrorResponse> handleFortnitePronosException(
@@ -88,8 +89,7 @@ public class GlobalExceptionHandler {
             .message("Authentication required")
             .path(request.getRequestURI())
             .accessibilityHint("Utilisez Tab pour naviguer vers le formulaire de connexion")
-            .keyboardAction(
-                "Appuyez sur EntrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e pour vous connecter")
+            .keyboardAction("Appuyez sur Entree pour vous connecter")
             .requiresUserAction(true)
             .build();
 
@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
   }
 
-  /** Gestion des erreurs utilisateur non trouvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© (login) */
+  /** Gestion des erreurs utilisateur non trouvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© (login) */
   @ExceptionHandler(UserNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleUserNotFoundException(
       UserNotFoundException ex, HttpServletRequest request) {
@@ -112,8 +112,7 @@ public class GlobalExceptionHandler {
             .message(ex.getMessage())
             .path(request.getRequestURI())
             .code("USER_NOT_FOUND")
-            .accessibilityHint(
-                "VÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rifiez votre nom d'utilisateur ou crÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ez un compte")
+            .accessibilityHint("Verifiez votre nom d\'utilisateur ou creez un compte")
             .requiresUserAction(true)
             .build();
 
@@ -190,7 +189,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().body(errorResponse);
   }
 
-  /** Gestion des erreurs de type de paramÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨tre */
+  /** Gestion des erreurs de type de paramÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨tre */
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<ErrorResponse> handleTypeMismatchException(
       MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
@@ -229,7 +228,7 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Gestion des 404 (routes ou ressources non trouvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©es)
+   * Gestion des 404 (routes ou ressources non trouvÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©es)
    */
   @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
   public ResponseEntity<ErrorResponse> handleNotFound(Exception ex, HttpServletRequest request) {
@@ -261,8 +260,7 @@ public class GlobalExceptionHandler {
             .error("Conflict")
             .message("Operation not allowed in current state")
             .path(request.getRequestURI())
-            .accessibilityHint(
-                "VÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rifiez l'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©tat actuel avant de recommencer")
+            .accessibilityHint("Verifiez l\'etat actuel avant de recommencer")
             .build();
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
@@ -393,8 +391,8 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Gestion des erreurs
-   * gÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©riques
+   * Gestion des erreurs gÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©nÃƒÆ’Ã†â€™Ãƒâ€
+   * Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©riques
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGlobalException(
@@ -453,11 +451,11 @@ public class GlobalExceptionHandler {
     private Map<String, String> validationErrors;
     private String requestId;
 
-    // Champs spÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©cifiques pour l'accessibilitÃƒÆ’Ã†â€™Ãƒâ€
-    //  Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©
+    // Champs spÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©cifiques pour l'accessibilitÃƒÆ’Ã†â€™Ãƒâ€
+    //  Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©
     private String accessibilityHint; // Conseil pour les technologies d'assistance
     private String
-        keyboardAction; // Action recommandÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e au clavier
+        keyboardAction; // Action recommandÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e au clavier
     private Boolean requiresUserAction; // Indique si une action utilisateur est requise
   }
 }

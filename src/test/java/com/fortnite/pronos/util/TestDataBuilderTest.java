@@ -1,8 +1,13 @@
 package com.fortnite.pronos.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
 
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.model.*;
@@ -11,9 +16,9 @@ import com.fortnite.pronos.model.*;
  * Builder pour créer facilement des données de test valides Respecte toutes les contraintes de
  * validation
  */
-public class TestDataBuilderTest {
+class TestDataBuilderTest {
 
-  public static User createValidUser(String username) {
+  static User createValidUser(String username) {
     User user = new User();
     user.setUsername(username);
     user.setEmail(username.toLowerCase() + "@test.com");
@@ -23,31 +28,31 @@ public class TestDataBuilderTest {
     return user;
   }
 
-  public static User createThibaut() {
+  static User createThibaut() {
     User user = createValidUser("Thibaut");
     user.setEmail("thibaut@test.com");
     return user;
   }
 
-  public static User createTeddy() {
+  static User createTeddy() {
     User user = createValidUser("Teddy");
     user.setEmail("teddy@test.com");
     return user;
   }
 
-  public static User createMarcel() {
+  static User createMarcel() {
     User user = createValidUser("Marcel");
     user.setEmail("marcel@test.com");
     return user;
   }
 
-  public static User createSarah() {
+  static User createSarah() {
     User user = createValidUser("Sarah");
     user.setEmail("sarah@test.com");
     return user;
   }
 
-  public static Player createValidPlayer(String nickname, Player.Region region) {
+  static Player createValidPlayer(String nickname, Player.Region region) {
     Player player = new Player();
     player.setNickname(nickname);
     player.setUsername(nickname + "_fn");
@@ -58,7 +63,7 @@ public class TestDataBuilderTest {
     return player;
   }
 
-  public static Team createValidTeam(User owner, String name) {
+  static Team createValidTeam(User owner, String name) {
     Team team = new Team();
     team.setName(name);
     team.setOwner(owner);
@@ -66,7 +71,7 @@ public class TestDataBuilderTest {
     return team;
   }
 
-  public static Game createValidGame(User creator, String name) {
+  static Game createValidGame(User creator, String name) {
     Game game = new Game();
     game.setName(name);
     game.setCreator(creator);
@@ -75,7 +80,7 @@ public class TestDataBuilderTest {
     return game;
   }
 
-  public static CreateGameRequest createValidGameRequest() {
+  static CreateGameRequest createValidGameRequest() {
     CreateGameRequest request = new CreateGameRequest();
     request.setName("Game de test");
     request.setMaxParticipants(10);
@@ -95,11 +100,30 @@ public class TestDataBuilderTest {
     return request;
   }
 
-  public static GameParticipant createValidParticipant(Game game, User user, int draftOrder) {
+  static GameParticipant createValidParticipant(Game game, User user, int draftOrder) {
     GameParticipant participant = new GameParticipant();
     participant.setGame(game);
     participant.setUser(user);
     participant.setDraftOrder(draftOrder);
     return participant;
+  }
+
+  @Test
+  void shouldCreateValidUserWithExpectedFields() {
+    User user = createValidUser("Alpha");
+
+    assertNotNull(user);
+    assertEquals("Alpha", user.getUsername());
+    assertEquals("alpha@test.com", user.getEmail());
+    assertEquals(User.UserRole.USER, user.getRole());
+  }
+
+  @Test
+  void shouldCreateValidGameRequestWithRegionRules() {
+    CreateGameRequest request = createValidGameRequest();
+
+    assertNotNull(request);
+    assertEquals("Game de test", request.getName());
+    assertEquals(2, request.getRegionRules().size());
   }
 }

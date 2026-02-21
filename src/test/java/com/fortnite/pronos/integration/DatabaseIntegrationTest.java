@@ -28,7 +28,8 @@ import com.fortnite.pronos.repository.UserRepository;
     })
 @ActiveProfiles("test")
 @Transactional
-public class DatabaseIntegrationTest {
+@SuppressWarnings({"java:S5853"})
+class DatabaseIntegrationTest {
 
   @Autowired private UserRepository userRepository;
 
@@ -45,8 +46,10 @@ public class DatabaseIntegrationTest {
     List<User> users = userRepository.findAll();
 
     // Then
-    assertThat(users).hasSizeGreaterThanOrEqualTo(4);
-    assertThat(users).extracting("username").contains("Thibaut", "Marcel", "Teddy", "Sarah");
+    assertThat(users)
+        .hasSizeGreaterThanOrEqualTo(4)
+        .extracting("username")
+        .contains("Thibaut", "Marcel", "Teddy", "Sarah");
   }
 
   @Test
@@ -81,7 +84,7 @@ public class DatabaseIntegrationTest {
             game -> {
               assertThat(game.getName()).isNotNull();
               assertThat(game.getStatus()).isNotNull();
-              assertThat(game.getMaxParticipants()).isGreaterThan(0);
+              assertThat(game.getMaxParticipants()).isPositive();
             });
   }
 
@@ -93,8 +96,8 @@ public class DatabaseIntegrationTest {
 
     // Then
     assertThat(thibaut).isPresent();
-    assertThat(thibaut.get().getUsername()).isEqualTo("Thibaut");
-    assertThat(thibaut.get().getRole()).isEqualTo(User.UserRole.USER);
+    assertThat(thibaut.getUsername()).isEqualTo("Thibaut");
+    assertThat(thibaut.getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test

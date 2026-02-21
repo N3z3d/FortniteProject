@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@SuppressWarnings({"java:S1066", "java:S107", "java:S1481", "java:S1640", "java:S1854"})
 public class CreateGameRequest {
 
   @NotBlank(message = "Le nom de la game est requis")

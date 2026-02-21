@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.config.SeedProperties;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.seed.GameSeedService;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.TeamSeedService;
@@ -29,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S1155"})
 public class DataInitializationService {
 
   private static final String SEED_RESET_PROPERTY = "fortnite.seed.reset";
@@ -56,9 +54,9 @@ public class DataInitializationService {
     }
 
     try {
-      List<User> allUsers = initializeUsers();
-      List<Player> savedPlayers = playerSeedService.initializePlayers();
-      List<Team> savedTeams = initializeTeams(allUsers);
+      List<com.fortnite.pronos.model.User> allUsers = initializeUsers();
+      List<com.fortnite.pronos.model.Player> savedPlayers = playerSeedService.initializePlayers();
+      List<com.fortnite.pronos.model.Team> savedTeams = initializeTeams(allUsers);
 
       log.info("Creating test games with real teams...");
       gameSeedService.createTestGamesWithRealTeams(allUsers, savedTeams);
@@ -100,22 +98,26 @@ public class DataInitializationService {
     return true;
   }
 
-  private List<User> initializeUsers() {
-    List<User> usersToCreate = userSeedService.createDefaultUsers();
+  private List<com.fortnite.pronos.model.User> initializeUsers() {
+    List<com.fortnite.pronos.model.User> usersToCreate = userSeedService.createDefaultUsers();
     userSeedService.saveUsers(usersToCreate);
 
-    List<User> allUsers = userSeedService.getAllUsers();
+    List<com.fortnite.pronos.model.User> allUsers = userSeedService.getAllUsers();
     log.info("Total users in database: {}", allUsers.size());
     return allUsers;
   }
 
-  private List<Team> initializeTeams(List<User> allUsers) {
+  private List<com.fortnite.pronos.model.Team> initializeTeams(
+      List<com.fortnite.pronos.model.User> allUsers) {
     log.info("Creating teams with real players from CSV assignments...");
     MockDataGeneratorService.MockDataSet mockData = playerSeedService.loadSeedData();
     return teamSeedService.createTeamsFromCsvAssignments(allUsers, mockData);
   }
 
-  private void logSummary(List<User> allUsers, List<Player> savedPlayers, List<Team> savedTeams) {
+  private void logSummary(
+      List<com.fortnite.pronos.model.User> allUsers,
+      List<com.fortnite.pronos.model.Player> savedPlayers,
+      List<com.fortnite.pronos.model.Team> savedTeams) {
     long scoreCount = playerSeedService.getScoreCount();
     log.info("Real data initialized successfully from CSV");
     log.info("   Users: {}", allUsers.size());

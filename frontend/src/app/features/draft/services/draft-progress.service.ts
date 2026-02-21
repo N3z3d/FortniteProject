@@ -74,7 +74,7 @@ export class DraftProgressService {
     if (!state) return null;
 
     const entry = state.participants.find((p: any) =>
-      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
+      p.isCurrentTurn || p.participant?.isCurrentTurn
     );
 
     return this.normalizeParticipant(entry) || null;
@@ -87,7 +87,7 @@ export class DraftProgressService {
     if (!state || !currentUserId) return false;
 
     const currentParticipant = state.participants.find((p: any) =>
-      (p as any).isCurrentTurn || (p as any).participant?.isCurrentTurn
+      p.isCurrentTurn || p.participant?.isCurrentTurn
     );
 
     const participant = this.normalizeParticipant(currentParticipant);
@@ -99,6 +99,6 @@ export class DraftProgressService {
    */
   private normalizeParticipant(entry: any): GameParticipant | null {
     if (!entry) return null;
-    return (entry as any).participant ? (entry as any).participant : (entry as GameParticipant);
+    return entry.participant ? entry.participant : (entry as GameParticipant);
   }
 }

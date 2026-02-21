@@ -72,7 +72,7 @@ export class InvitationCodeDurationDialogComponent {
   }
 
   onCancel(): void {
-    this.dialogRef.close(undefined);
+    this.dialogRef.close();
   }
 
   getTitleKey(): string {

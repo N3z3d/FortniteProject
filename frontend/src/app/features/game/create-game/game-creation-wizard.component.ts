@@ -253,7 +253,7 @@ export class GameCreationWizardComponent implements OnInit {
     const minutes = Math.floor((seconds % 3600) / 60);
     
     if (hours > 0) {
-      return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
+      return this.formatHoursAndMinutes(hours, minutes);
     }
     return `${minutes} minutes`;
   }
@@ -289,9 +289,14 @@ export class GameCreationWizardComponent implements OnInit {
     if (estimatedMinutes > 60) {
       const hours = Math.floor(estimatedMinutes / 60);
       const minutes = estimatedMinutes % 60;
-      return `~${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
+      return this.formatHoursAndMinutes(hours, minutes, '~');
     }
     return `~${estimatedMinutes} minutes`;
+  }
+
+  private formatHoursAndMinutes(hours: number, minutes: number, prefix = ''): string {
+    const minuteSuffix = minutes > 0 ? ` ${minutes}m` : '';
+    return `${prefix}${hours}h${minuteSuffix}`;
   }
 
   onSubmit(): void {

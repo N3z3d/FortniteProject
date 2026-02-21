@@ -1,14 +1,10 @@
 package com.fortnite.pronos.service.leaderboard;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class LeaderboardDebugService {
 
-  private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
-  private final ScoreRepository scoreRepository;
+  private static final String SEASON_KEY = "season";
+
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
 
   /** Obtenir les statistiques de debug pour une saison */
   public Map<String, Object> getDebugStats(int season) {
@@ -38,7 +36,7 @@ public class LeaderboardDebugService {
 
     long teamCount = teamRepository.findBySeason(season).size();
     debug.put("totalTeams", teamCount);
-    debug.put("season", season);
+    debug.put(SEASON_KEY, season);
 
     long playerCount = playerRepository.count();
     debug.put("totalPlayers", playerCount);
@@ -53,7 +51,7 @@ public class LeaderboardDebugService {
         rawScores.stream()
             .limit(3)
             .map(row -> Map.of("playerId", row[0], "totalPoints", row[1]))
-            .collect(Collectors.toList()));
+            .toList());
 
     Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
     debug.put("playerPointsMapSize", playerPointsMap.size());
@@ -63,7 +61,7 @@ public class LeaderboardDebugService {
     return debug;
   }
 
-  /** Obtenir des statistiques de debug simplifiées */
+  /** Obtenir des statistiques de debug simplifiÃ©es */
   public Map<String, Object> getDebugSimple() {
     Map<String, Object> debug = new HashMap<>();
 
@@ -84,9 +82,9 @@ public class LeaderboardDebugService {
                         player.getNickname(),
                         "region",
                         player.getRegion().name(),
-                        "season",
+                        SEASON_KEY,
                         player.getCurrentSeason()))
-            .collect(Collectors.toList()));
+            .toList());
 
     debug.put(
         "scoresSample",
@@ -97,11 +95,11 @@ public class LeaderboardDebugService {
                     Map.of(
                         "playerNickname",
                         score.getPlayer().getNickname(),
-                        "season",
+                        SEASON_KEY,
                         score.getSeason(),
                         "points",
                         score.getPoints()))
-            .collect(Collectors.toList()));
+            .toList());
 
     return debug;
   }

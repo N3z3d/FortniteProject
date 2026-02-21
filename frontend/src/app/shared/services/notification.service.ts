@@ -17,10 +17,12 @@ interface SnackBarConfig {
   verticalPosition?: 'top' | 'bottom';
 }
 
+type NotificationType = 'success' | 'error' | 'warning' | 'info';
+
 export interface NotificationMessage {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: NotificationType;
   timestamp: Date;
   duration?: number;
   action?: string;
@@ -92,7 +94,7 @@ export class NotificationService {
    * @param type The notification type
    * @param action Optional action button text
    */
-  showPersistent(message: string, type: 'success' | 'error' | 'warning' | 'info', action?: string): string {
+  showPersistent(message: string, type: NotificationType, action?: string): string {
     return this.show(message, type, action, 0, true);
   }
 
@@ -106,7 +108,7 @@ export class NotificationService {
    */
   private show(
     message: string, 
-    type: 'success' | 'error' | 'warning' | 'info', 
+    type: NotificationType, 
     action?: string, 
     duration: number = 4000,
     persistent: boolean = false
@@ -202,7 +204,7 @@ export class NotificationService {
    * Gets notifications by type
    * @param type The notification type to filter by
    */
-  getNotificationsByType(type: 'success' | 'error' | 'warning' | 'info'): NotificationMessage[] {
+  getNotificationsByType(type: NotificationType): NotificationMessage[] {
     return this.notificationsSubject.value.filter(notification => notification.type === type);
   }
 
@@ -378,7 +380,7 @@ export class NotificationService {
 
   private tryShowThroughUiFeedback(
     message: string,
-    type: 'success' | 'error' | 'warning' | 'info',
+    type: NotificationType,
     action: string | undefined,
     persistent: boolean,
     duration: number
@@ -407,7 +409,7 @@ export class NotificationService {
    * Generates a unique ID for notifications
    */
   private generateId(): string {
-    return `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `notification_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**

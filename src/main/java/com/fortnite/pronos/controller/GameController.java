@@ -53,6 +53,11 @@ public class GameController {
   private static final String UUID_PATH_PATTERN =
       "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
 
+  private static final String ERROR_KEY = "error";
+  private static final String MESSAGE_KEY = "message";
+  private static final String SUCCESS_KEY = "success";
+  private static final String USER_REQUIRED_MESSAGE = "Utilisateur requis";
+
   private final GameService gameService;
   private final GameQueryUseCase gameQueryUseCase;
   private final ValidationService validationService;
@@ -140,7 +145,7 @@ public class GameController {
           username != null ? username : "-",
           httpRequest.getRemoteAddr());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(Map.of("error", "Utilisateur requis"));
+          .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
     }
 
     UUID userId = user.getId();
@@ -152,7 +157,7 @@ public class GameController {
         "GameController: joinGame succeeded - gameId={}, userId={}", request.getGameId(), userId);
 
     return ResponseEntity.ok(
-        Map.of("success", true, "message", "Utilisateur rejoint la game avec succes"));
+        Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Utilisateur rejoint la game avec succes"));
   }
 
   @Operation(
@@ -245,13 +250,13 @@ public class GameController {
           username != null ? username : "-",
           httpRequest.getRemoteAddr());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(Map.of("error", "Utilisateur requis"));
+          .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
     }
 
     gameService.leaveGame(user.getId(), id);
     log.info("GameController: leaveGame succeeded - gameId={}, userId={}", id, user.getId());
     return ResponseEntity.ok(
-        Map.of("success", true, "message", "Utilisateur a quitte la game avec succes"));
+        Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Utilisateur a quitte la game avec succes"));
   }
 
   @Operation(summary = "Start draft", description = "Starts the draft phase for a game")
@@ -280,14 +285,14 @@ public class GameController {
           username != null ? username : "-",
           httpRequest.getRemoteAddr());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(Map.of("error", "Utilisateur requis"));
+          .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
     }
 
     GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (gameDto.getCreatorId() == null) {
       log.warn("GameController: startDraft invalidState - gameId={}, creatorId=null", id);
       return ResponseEntity.status(HttpStatus.CONFLICT)
-          .body(Map.of("error", "Createur de la partie introuvable"));
+          .body(Map.of(ERROR_KEY, "Createur de la partie introuvable"));
     }
     if (!user.getId().equals(gameDto.getCreatorId())) {
       log.warn(
@@ -296,7 +301,7 @@ public class GameController {
           user.getId(),
           gameDto.getCreatorId());
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
-          .body(Map.of("error", "Utilisateur non autorise pour ce draft"));
+          .body(Map.of(ERROR_KEY, "Utilisateur non autorise pour ce draft"));
     }
 
     DraftDto draft = gameService.startDraft(id, user.getId());
@@ -306,7 +311,7 @@ public class GameController {
         user.getId(),
         draft.getId());
     return ResponseEntity.ok(
-        Map.of("success", true, "message", "Draft demarree avec succes", "draft", draft));
+        Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Draft demarree avec succes", "draft", draft));
   }
 
   @Operation(
@@ -337,7 +342,7 @@ public class GameController {
           username != null ? username : "-",
           httpRequest.getRemoteAddr());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(Map.of("error", "Utilisateur requis"));
+          .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
     }
 
     GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
@@ -348,12 +353,12 @@ public class GameController {
           user.getId(),
           gameDto.getCreatorId());
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
-          .body(Map.of("error", "Seul le createur peut supprimer cette partie"));
+          .body(Map.of(ERROR_KEY, "Seul le createur peut supprimer cette partie"));
     }
 
     gameService.deleteGame(id);
     log.info("GameController: deleteGame succeeded - gameId={}, userId={}", id, user.getId());
-    return ResponseEntity.ok(Map.of("success", true, "message", "Game supprimee avec succes"));
+    return ResponseEntity.ok(Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Game supprimee avec succes"));
   }
 
   @Operation(

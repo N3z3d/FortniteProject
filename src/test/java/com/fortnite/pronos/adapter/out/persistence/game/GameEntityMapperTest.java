@@ -18,6 +18,7 @@ import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 
+@SuppressWarnings({"java:S5961"})
 class GameEntityMapperTest {
 
   private GameEntityMapper mapper;

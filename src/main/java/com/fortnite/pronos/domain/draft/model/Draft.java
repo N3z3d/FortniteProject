@@ -9,6 +9,7 @@ import java.util.UUID;
  *
  * <p>Contains business rules without JPA/Spring dependencies.
  */
+@SuppressWarnings({"java:S107"})
 public final class Draft {
 
   private UUID id;

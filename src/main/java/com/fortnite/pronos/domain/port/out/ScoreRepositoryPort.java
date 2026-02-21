@@ -51,4 +51,6 @@ public interface ScoreRepositoryPort {
   Integer findTotalPointsByTeam(UUID teamId, int season);
 
   List<Score> findByPlayerAndDateBetween(Player player, LocalDate startDate, LocalDate endDate);
+
+  Score save(Score score);
 }

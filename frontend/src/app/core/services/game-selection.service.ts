@@ -9,8 +9,6 @@ export class GameSelectionService {
   private selectedGameSubject = new BehaviorSubject<Game | null>(null);
   public selectedGame$: Observable<Game | null> = this.selectedGameSubject.asObservable();
 
-  constructor() {}
-
   /**
    * Définit la game actuellement sélectionnée
    */

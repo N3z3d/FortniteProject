@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -145,7 +144,7 @@ public class GameQueryController {
                   participant.put("username", entry.getValue());
                   return participant;
                 })
-            .collect(Collectors.toList());
+            .toList();
 
     return ResponseEntity.ok(participants);
   }

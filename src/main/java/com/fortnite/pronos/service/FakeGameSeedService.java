@@ -16,16 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameRegionRule;
-import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,9 +37,9 @@ public class FakeGameSeedService {
   private static final int FAKE_PLAYER_COUNT = 4;
 
   private final GameRepositoryPort gameRepository;
-  private final UserRepository userRepository;
-  private final PlayerRepository playerRepository;
-  private final TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.UserRepository userRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final Environment environment;
   private final SeedProperties seedProperties;
 
@@ -65,31 +55,32 @@ public class FakeGameSeedService {
       return;
     }
 
-    Optional<User> creatorOption = userRepository.findByUsername("Thibaut");
+    Optional<com.fortnite.pronos.model.User> creatorOption =
+        userRepository.findByUsername("Thibaut");
     if (creatorOption.isEmpty()) {
       log.info("Fake game seed skipped: creator user not found");
       return;
     }
 
-    User creator = creatorOption.get();
+    com.fortnite.pronos.model.User creator = creatorOption.get();
     if (gameRepository.existsByNameAndCreator(FAKE_GAME_NAME, creator)) {
       log.info("Fake game already seeded: {}", FAKE_GAME_NAME);
       return;
     }
 
-    List<User> participants = buildParticipants(creator);
-    List<Player> players = pickPlayers();
+    List<com.fortnite.pronos.model.User> participants = buildParticipants(creator);
+    List<com.fortnite.pronos.model.Player> players = pickPlayers();
     if (players.size() < FAKE_PLAYER_COUNT) {
       log.warn(
           "Fake game seed skipped: need {} players, found {}", FAKE_PLAYER_COUNT, players.size());
       return;
     }
 
-    Game game = buildGame(creator);
+    com.fortnite.pronos.model.Game game = buildGame(creator);
     attachParticipants(game, participants);
-    Game savedGame = gameRepository.save(game);
+    com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
 
-    List<Team> teams = buildTeams(savedGame, participants, players);
+    List<com.fortnite.pronos.model.Team> teams = buildTeams(savedGame, participants, players);
     teamRepository.saveAll(teams);
 
     log.info(
@@ -108,28 +99,29 @@ public class FakeGameSeedService {
     return false;
   }
 
-  private List<User> buildParticipants(User creator) {
-    List<User> participants = new ArrayList<>();
+  private List<com.fortnite.pronos.model.User> buildParticipants(
+      com.fortnite.pronos.model.User creator) {
+    List<com.fortnite.pronos.model.User> participants = new ArrayList<>();
     participants.add(creator);
     userRepository.findByUsername("Teddy").ifPresent(participants::add);
     userRepository.findByUsername("Marcel").ifPresent(participants::add);
     return participants;
   }
 
-  private List<Player> pickPlayers() {
+  private List<com.fortnite.pronos.model.Player> pickPlayers() {
     return playerRepository
         .findAll(PageRequest.of(0, FAKE_PLAYER_COUNT, Sort.by("nickname").ascending()))
         .getContent();
   }
 
-  private Game buildGame(User creator) {
-    Game game =
-        Game.builder()
+  private com.fortnite.pronos.model.Game buildGame(com.fortnite.pronos.model.User creator) {
+    com.fortnite.pronos.model.Game game =
+        com.fortnite.pronos.model.Game.builder()
             .name(FAKE_GAME_NAME)
             .description(FAKE_GAME_DESCRIPTION)
             .creator(creator)
             .maxParticipants(FAKE_MAX_PARTICIPANTS)
-            .status(GameStatus.CREATING)
+            .status(com.fortnite.pronos.model.GameStatus.CREATING)
             .participants(new ArrayList<>())
             .regionRules(new ArrayList<>())
             .build();
@@ -138,17 +130,27 @@ public class FakeGameSeedService {
     return game;
   }
 
-  private void addRegionRules(Game game) {
+  private void addRegionRules(com.fortnite.pronos.model.Game game) {
     game.addRegionRule(
-        GameRegionRule.builder().game(game).region(Player.Region.EU).maxPlayers(2).build());
+        com.fortnite.pronos.model.GameRegionRule.builder()
+            .game(game)
+            .region(com.fortnite.pronos.model.Player.Region.EU)
+            .maxPlayers(2)
+            .build());
     game.addRegionRule(
-        GameRegionRule.builder().game(game).region(Player.Region.NAC).maxPlayers(2).build());
+        com.fortnite.pronos.model.GameRegionRule.builder()
+            .game(game)
+            .region(com.fortnite.pronos.model.Player.Region.NAC)
+            .maxPlayers(2)
+            .build());
   }
 
-  private void attachParticipants(Game game, List<User> participants) {
+  private void attachParticipants(
+      com.fortnite.pronos.model.Game game, List<com.fortnite.pronos.model.User> participants) {
     for (int i = 0; i < participants.size(); i++) {
-      User user = participants.get(i);
-      GameParticipant participant = new GameParticipant();
+      com.fortnite.pronos.model.User user = participants.get(i);
+      com.fortnite.pronos.model.GameParticipant participant =
+          new com.fortnite.pronos.model.GameParticipant();
       participant.setGame(game);
       participant.setUser(user);
       participant.setDraftOrder(i + 1);
@@ -158,16 +160,20 @@ public class FakeGameSeedService {
     }
   }
 
-  private List<Team> buildTeams(Game game, List<User> participants, List<Player> players) {
-    List<Team> teams = new ArrayList<>();
+  private List<com.fortnite.pronos.model.Team> buildTeams(
+      com.fortnite.pronos.model.Game game,
+      List<com.fortnite.pronos.model.User> participants,
+      List<com.fortnite.pronos.model.Player> players) {
+    List<com.fortnite.pronos.model.Team> teams = new ArrayList<>();
     int index = 0;
     int baseCount = players.size() / participants.size();
     int remainder = players.size() % participants.size();
 
     for (int i = 0; i < participants.size(); i++) {
       int count = baseCount + (i < remainder ? 1 : 0);
-      List<Player> assigned = players.subList(index, Math.min(index + count, players.size()));
-      Team team = buildTeam(game, participants.get(i), assigned, i + 1);
+      List<com.fortnite.pronos.model.Player> assigned =
+          players.subList(index, Math.min(index + count, players.size()));
+      com.fortnite.pronos.model.Team team = buildTeam(game, participants.get(i), assigned, i + 1);
       teams.add(team);
       index += count;
     }
@@ -175,8 +181,12 @@ public class FakeGameSeedService {
     return teams;
   }
 
-  private Team buildTeam(Game game, User owner, List<Player> players, int order) {
-    Team team = new Team();
+  private com.fortnite.pronos.model.Team buildTeam(
+      com.fortnite.pronos.model.Game game,
+      com.fortnite.pronos.model.User owner,
+      List<com.fortnite.pronos.model.Player> players,
+      int order) {
+    com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
     team.setName("Fake Team " + order + " - " + owner.getUsername());
     team.setOwner(owner);
     team.setSeason(owner.getCurrentSeason() != null ? owner.getCurrentSeason() : 2025);

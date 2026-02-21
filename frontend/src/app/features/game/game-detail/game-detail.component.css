@@ -375,6 +375,7 @@
 .participant-item:hover {
   background: var(--nexus-bg-elevated, #242424) !important;
   border-color: var(--nexus-gold-muted, rgba(201, 169, 98, 0.3));
+  transform: translateX(4px);
 }
 
 .creator-item mat-icon,
@@ -610,6 +611,8 @@
   background: linear-gradient(135deg, var(--nexus-gold-dark, #a08040) 0%, var(--nexus-gold, #c9a962) 100%) !important;
   color: #000;
   box-shadow: 0 8px 32px rgba(201, 169, 98, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .draft-card mat-card-header {
@@ -743,7 +746,7 @@
   border-color: var(--nexus-gold-muted, rgba(201, 169, 98, 0.3)) !important;
 }
 
-.participants-progress {
+.participants-progress-section .participants-progress {
   transition: all 0.3s ease;
 }
 
@@ -755,22 +758,12 @@
   transform: translateY(-1px);
 }
 
-.status-badge mat-chip {
+.status-card .status-badge mat-chip {
   transition: all 0.2s ease;
 }
 
 .status-badge mat-chip:hover {
   transform: scale(1.05);
-}
-
-.creator-item,
-.participant-item {
-  transition: all 0.2s ease;
-}
-
-.creator-item:hover,
-.participant-item:hover {
-  transform: translateX(4px);
 }
 
 .loading-container mat-spinner {
@@ -820,23 +813,18 @@
    CREATOR HIGHLIGHT
    ============================================ */
 
-.creator-item {
+.creator-section .creator-item {
   background: linear-gradient(135deg, var(--nexus-bg-tertiary, #2a2a2a) 0%, rgba(201, 169, 98, 0.1) 100%) !important;
   border-left: 4px solid var(--nexus-gold, #c9a962);
 }
 
-.creator-item:hover {
+.creator-section .creator-item:hover {
   background: linear-gradient(135deg, var(--nexus-bg-elevated, #242424) 0%, rgba(201, 169, 98, 0.15) 100%) !important;
 }
 
 /* ============================================
    DRAFT SECTION SPECIAL STYLING
    ============================================ */
-
-.draft-card {
-  position: relative;
-  overflow: hidden;
-}
 
 .draft-card::before {
   content: '';

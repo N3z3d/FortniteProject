@@ -13,16 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
-import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.GameRegionRule;
-import com.fortnite.pronos.model.GameStatus;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Team;
-import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +32,9 @@ public class H2SeedService {
   private static final int PLAYERS_PER_USER = 5;
 
   private final UserRepositoryPort userRepository;
-  private final PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
   private final GameRepositoryPort gameRepository;
-  private final TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final Environment environment;
 
   @EventListener(ApplicationReadyEvent.class)
@@ -56,10 +48,18 @@ public class H2SeedService {
     log.info("H2 Seed: creating test data for H2 profile");
 
     // Create users
-    User thibaut = createUserIfNotExists("thibaut", "thibaut@test.com", User.UserRole.ADMIN);
-    User teddy = createUserIfNotExists("teddy", "teddy@test.com", User.UserRole.USER);
-    User marcel = createUserIfNotExists("marcel", "marcel@test.com", User.UserRole.USER);
-    User sarah = createUserIfNotExists("sarah", "sarah@test.com", User.UserRole.USER);
+    com.fortnite.pronos.model.User thibaut =
+        createUserIfNotExists(
+            "thibaut", "thibaut@test.com", com.fortnite.pronos.model.User.UserRole.ADMIN);
+    com.fortnite.pronos.model.User teddy =
+        createUserIfNotExists(
+            "teddy", "teddy@test.com", com.fortnite.pronos.model.User.UserRole.USER);
+    com.fortnite.pronos.model.User marcel =
+        createUserIfNotExists(
+            "marcel", "marcel@test.com", com.fortnite.pronos.model.User.UserRole.USER);
+    com.fortnite.pronos.model.User sarah =
+        createUserIfNotExists(
+            "sarah", "sarah@test.com", com.fortnite.pronos.model.User.UserRole.USER);
 
     log.info("H2 Seed: {} users in database", userRepository.count());
 
@@ -84,31 +84,33 @@ public class H2SeedService {
     return Arrays.asList(environment.getActiveProfiles()).contains("h2");
   }
 
-  private User createUserIfNotExists(String username, String email, User.UserRole role) {
+  private com.fortnite.pronos.model.User createUserIfNotExists(
+      String username, String email, com.fortnite.pronos.model.User.UserRole role) {
     return userRepository
         .findByUsername(username)
         .orElseGet(
             () -> {
-              User user = new User();
+              com.fortnite.pronos.model.User user = new com.fortnite.pronos.model.User();
               user.setUsername(username);
               user.setEmail(email);
               user.setPassword("$2a$10$DummyHashForTestUsers");
               user.setRole(role);
-              User saved = userRepository.save(user);
+              com.fortnite.pronos.model.User saved = userRepository.save(user);
               log.info("H2 Seed: created user {} ({})", username, role);
               return saved;
             });
   }
 
   private void createTestPlayers() {
-    List<Player> players = new ArrayList<>();
+    List<com.fortnite.pronos.model.Player> players = new ArrayList<>();
     String[] regions = {"EU", "NAC", "BR", "ASIA"};
 
     for (int i = 1; i <= 20; i++) {
-      Player player = new Player();
+      com.fortnite.pronos.model.Player player = new com.fortnite.pronos.model.Player();
       player.setNickname("Player" + i);
       player.setUsername("player" + i);
-      player.setRegion(Player.Region.valueOf(regions[i % regions.length]));
+      player.setRegion(
+          com.fortnite.pronos.model.Player.Region.valueOf(regions[i % regions.length]));
       player.setTranche("1-5");
       player.setCurrentSeason(2025);
       players.add(player);
@@ -118,22 +120,28 @@ public class H2SeedService {
     log.info("H2 Seed: created {} test players", players.size());
   }
 
-  private void createTestGame(User creator, List<User> participants) {
-    Game game =
-        Game.builder()
+  private void createTestGame(
+      com.fortnite.pronos.model.User creator, List<com.fortnite.pronos.model.User> participants) {
+    com.fortnite.pronos.model.Game game =
+        com.fortnite.pronos.model.Game.builder()
             .name(H2_GAME_NAME)
             .description("Test game for H2 development")
             .creator(creator)
             .maxParticipants(participants.size())
-            .status(GameStatus.ACTIVE)
+            .status(com.fortnite.pronos.model.GameStatus.ACTIVE)
             .participants(new ArrayList<>())
             .regionRules(new ArrayList<>())
             .build();
 
     // Add region rules
-    for (Player.Region region : Player.Region.values()) {
-      GameRegionRule rule =
-          GameRegionRule.builder().game(game).region(region).maxPlayers(5).build();
+    for (com.fortnite.pronos.model.Player.Region region :
+        com.fortnite.pronos.model.Player.Region.values()) {
+      com.fortnite.pronos.model.GameRegionRule rule =
+          com.fortnite.pronos.model.GameRegionRule.builder()
+              .game(game)
+              .region(region)
+              .maxPlayers(5)
+              .build();
       game.addRegionRule(rule);
     }
 
@@ -141,10 +149,10 @@ public class H2SeedService {
 
     // Add participants
     int order = 1;
-    for (User user : participants) {
+    for (com.fortnite.pronos.model.User user : participants) {
       if (user != null) {
-        GameParticipant participant =
-            GameParticipant.builder()
+        com.fortnite.pronos.model.GameParticipant participant =
+            com.fortnite.pronos.model.GameParticipant.builder()
                 .game(game)
                 .user(user)
                 .draftOrder(order++)
@@ -156,16 +164,16 @@ public class H2SeedService {
       }
     }
 
-    Game savedGame = gameRepository.save(game);
+    com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
     log.info("H2 Seed: created game '{}' with {} participants", H2_GAME_NAME, participants.size());
 
     // Create teams with players
-    List<Player> allPlayers = playerRepository.findAll();
+    List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
     int playerIndex = 0;
 
-    for (User user : participants) {
+    for (com.fortnite.pronos.model.User user : participants) {
       if (user != null && playerIndex < allPlayers.size()) {
-        Team team = new Team();
+        com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
         team.setName("Team " + user.getUsername());
         team.setOwner(user);
         team.setSeason(2025);
@@ -175,7 +183,7 @@ public class H2SeedService {
           team.addPlayer(allPlayers.get(playerIndex++), pos);
         }
 
-        teamRepository.save(team);
+        ((TeamRepositoryPort) teamRepository).save(team);
       }
     }
     log.info("H2 Seed: created {} teams", participants.size());

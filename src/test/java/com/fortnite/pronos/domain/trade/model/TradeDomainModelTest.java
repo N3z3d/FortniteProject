@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"java:S5778"})
 class TradeDomainModelTest {
 
   private static final UUID TEAM_A = UUID.randomUUID();
@@ -386,8 +387,7 @@ class TradeDomainModelTest {
               null,
               null);
 
-      assertThat(t1).isEqualTo(t2);
-      assertThat(t1.hashCode()).isEqualTo(t2.hashCode());
+      assertThat(t1).isEqualTo(t2).hasSameHashCodeAs(t2);
     }
 
     @Test

@@ -13,7 +13,7 @@ import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.domain.port.out.DraftRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.DraftIncompleteException;
@@ -23,10 +23,6 @@ import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.NotYourTurnException;
 import com.fortnite.pronos.exception.PlayerAlreadySelectedException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
-import com.fortnite.pronos.model.Draft;
-import com.fortnite.pronos.model.DraftPick;
-import com.fortnite.pronos.model.GameParticipant;
-import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.service.draft.DraftService;
 
 import lombok.RequiredArgsConstructor;
@@ -43,7 +39,7 @@ public class GameDraftService {
   private final DraftDomainRepositoryPort draftDomainRepository;
   private final DraftRepositoryPort draftRepository;
   private final DraftPickRepositoryPort draftPickRepository;
-  private final PlayerRepositoryPort playerRepository;
+  private final PlayerDomainRepositoryPort playerRepository;
   private final GameParticipantRepositoryPort gameParticipantRepository;
   private final DraftService draftService;
 
@@ -60,7 +56,7 @@ public class GameDraftService {
     }
     gameDomainRepository.save(domainGame);
 
-    Draft draft = draftService.startDraftForGame(gameId);
+    com.fortnite.pronos.model.Draft draft = draftService.startDraftForGame(gameId);
 
     log.info("Draft started for game {}", domainGame.getName());
     return DraftDto.fromDraft(draft);
@@ -73,7 +69,7 @@ public class GameDraftService {
     Game domainGame = findDomainGameOrThrow(gameId);
     validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
     draftService.pauseDraft(draft);
 
     log.info("Draft paused for game {}", domainGame.getName());
@@ -89,7 +85,7 @@ public class GameDraftService {
     Game domainGame = findDomainGameOrThrow(gameId);
     validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
     draftService.resumeDraft(draft);
 
     log.info("Draft resumed for game {}", domainGame.getName());
@@ -105,7 +101,7 @@ public class GameDraftService {
     Game domainGame = findDomainGameOrThrow(gameId);
     validateUserCanManageDraft(domainGame, userId);
 
-    Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
     validateDraftCanBeFinished(draft);
 
     draftService.finishDraft(draft);
@@ -125,21 +121,22 @@ public class GameDraftService {
     log.debug("User {} selecting player {} in game {}", userId, playerId, gameId);
 
     Game domainGame = findDomainGameOrThrow(gameId);
-    Draft draft = findActiveDraftEntity(gameId);
-    Player player = findPlayerOrThrow(playerId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Player player = findPlayerOrThrow(playerId);
 
     validatePlayerSelection(draft, userId, player);
 
     // Persistance explicite du pick
-    GameParticipant participant =
+    com.fortnite.pronos.model.GameParticipant participant =
         gameParticipantRepository
             .findByUserIdAndGameId(userId, gameId)
             .orElseThrow(() -> new IllegalArgumentException("Participant not found for user"));
 
-    DraftPick newPick =
-        new DraftPick(draft, participant, player, draft.getCurrentRound(), draft.getCurrentPick());
+    com.fortnite.pronos.model.DraftPick newPick =
+        new com.fortnite.pronos.model.DraftPick(
+            draft, participant, player, draft.getCurrentRound(), draft.getCurrentPick());
 
-    DraftPick savedPick = draftPickRepository.save(newPick);
+    com.fortnite.pronos.model.DraftPick savedPick = draftPickRepository.save(newPick);
 
     // Avancer le draft (pas de parallélisme, avance séquentielle)
     draftService.nextPick(draft, domainGame.getMaxParticipants());
@@ -152,14 +149,14 @@ public class GameDraftService {
   /** Gets draft for a game */
   @Transactional(readOnly = true)
   public DraftDto getDraftByGame(UUID gameId) {
-    Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
     return DraftDto.fromDraft(draft);
   }
 
   /** Gets draft picks for a game */
   @Transactional(readOnly = true)
   public List<DraftPickDto> getDraftPicks(UUID gameId) {
-    Draft draft = findActiveDraftEntity(gameId);
+    com.fortnite.pronos.model.Draft draft = findActiveDraftEntity(gameId);
 
     return draftPickRepository.findByDraftOrderByPickNumber(draft).stream()
         .map(DraftPickDto::fromDraftPick)
@@ -174,13 +171,14 @@ public class GameDraftService {
         .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
   }
 
-  private Player findPlayerOrThrow(UUID playerId) {
+  private com.fortnite.pronos.model.Player findPlayerOrThrow(UUID playerId) {
     return playerRepository
         .findById(playerId)
+        .map(this::toLegacyPlayer)
         .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
   }
 
-  private Draft findActiveDraftEntity(UUID gameId) {
+  private com.fortnite.pronos.model.Draft findActiveDraftEntity(UUID gameId) {
     com.fortnite.pronos.domain.draft.model.Draft domainDraft =
         draftDomainRepository
             .findActiveByGameId(gameId)
@@ -219,13 +217,14 @@ public class GameDraftService {
     }
   }
 
-  private void validateDraftCanBeFinished(Draft draft) {
+  private void validateDraftCanBeFinished(com.fortnite.pronos.model.Draft draft) {
     if (!draftService.isDraftComplete(draft)) {
       throw new DraftIncompleteException("Draft is not complete yet");
     }
   }
 
-  private void validatePlayerSelection(Draft draft, UUID userId, Player player) {
+  private void validatePlayerSelection(
+      com.fortnite.pronos.model.Draft draft, UUID userId, com.fortnite.pronos.model.Player player) {
     // Check if it's user's turn
     if (!draftService.isUserTurn(draft, userId)) {
       throw new NotYourTurnException("It's not your turn to pick");
@@ -240,14 +239,41 @@ public class GameDraftService {
     validateRegionLimits(userId, player);
   }
 
-  private boolean isPlayerAlreadySelected(Draft draft, Player player) {
+  private boolean isPlayerAlreadySelected(
+      com.fortnite.pronos.model.Draft draft, com.fortnite.pronos.model.Player player) {
     return draftPickRepository.existsByDraftAndPlayer(draft, player);
   }
 
-  private void validateRegionLimits(UUID userId, Player player) {
+  private void validateRegionLimits(UUID userId, com.fortnite.pronos.model.Player player) {
     // This would need to check if selecting this player would exceed region limits
     // Implementation depends on your business rules
     log.debug(
         "Validating region limits for player {} selection by user {}", player.getId(), userId);
+  }
+
+  private com.fortnite.pronos.model.Player toLegacyPlayer(
+      com.fortnite.pronos.domain.player.model.Player domainPlayer) {
+    com.fortnite.pronos.model.Player legacyPlayer = new com.fortnite.pronos.model.Player();
+    legacyPlayer.setId(domainPlayer.getId());
+    legacyPlayer.setFortniteId(domainPlayer.getFortniteId());
+    legacyPlayer.setUsername(domainPlayer.getUsername());
+    legacyPlayer.setNickname(domainPlayer.getNickname());
+    legacyPlayer.setRegion(toLegacyRegion(domainPlayer.getRegion()));
+    legacyPlayer.setTranche(domainPlayer.getTranche());
+    legacyPlayer.setCurrentSeason(domainPlayer.getCurrentSeason());
+    legacyPlayer.setLocked(domainPlayer.isLocked());
+    return legacyPlayer;
+  }
+
+  private com.fortnite.pronos.model.Player.Region toLegacyRegion(
+      com.fortnite.pronos.domain.game.model.PlayerRegion region) {
+    if (region == null) {
+      return com.fortnite.pronos.model.Player.Region.UNKNOWN;
+    }
+    try {
+      return com.fortnite.pronos.model.Player.Region.valueOf(region.name());
+    } catch (IllegalArgumentException ex) {
+      return com.fortnite.pronos.model.Player.Region.UNKNOWN;
+    }
   }
 }

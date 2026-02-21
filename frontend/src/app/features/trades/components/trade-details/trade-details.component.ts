@@ -2,9 +2,8 @@ import { Component, Inject, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDe
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
-import { takeUntil, map } from 'rxjs/operators';
-import { trigger, transition, style, animate, keyframes, query, stagger } from '@angular/animations';
+import { Observable, Subject, BehaviorSubject, firstValueFrom } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
 import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
@@ -236,7 +235,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   private async acceptTrade(): Promise<void> {
-    const updatedTrade = await this.tradingService.acceptTradeOffer(this.trade.id).toPromise();
+    const updatedTrade = await firstValueFrom(this.tradingService.acceptTradeOffer(this.trade.id));
     this.trade = updatedTrade!;
     this.showSuccessMessage(this.t.t('trades.messages.tradeAccepted'));
     this.triggerConfetti();
@@ -244,14 +243,15 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
   }
 
   private async rejectTrade(): Promise<void> {
-    const updatedTrade = await this.tradingService.rejectTradeOffer(this.trade.id).toPromise();
+    const updatedTrade = await firstValueFrom(this.tradingService.rejectTradeOffer(this.trade.id));
     this.trade = updatedTrade!;
     this.showSuccessMessage(this.t.t('trades.messages.tradeRejected'));
     this.closeDialogWithResult('rejected');
   }
 
   private async withdrawTrade(): Promise<void> {
-    const updatedTrade = await this.tradingService.withdrawTradeOffer(this.trade.id).toPromise();
+    const updatedTrade =
+      await firstValueFrom(this.tradingService.withdrawTradeOffer(this.trade.id));
     this.trade = updatedTrade!;
     this.showSuccessMessage(this.t.t('trades.messages.tradeWithdrawn'));
     this.closeDialogWithResult('withdrawn');
@@ -280,7 +280,7 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
         expiresAt
       };
 
-      await this.tradingService.createCounterOffer(this.trade.id, counterOffer).toPromise();
+      await firstValueFrom(this.tradingService.createCounterOffer(this.trade.id, counterOffer));
       this.showSuccessMessage(this.t.t('trades.messages.counterOfferSent'));
       this.closeDialogWithResult('counter');
     } catch (error) {

@@ -24,49 +24,23 @@ export class DashboardStatsCalculatorService {
     const totalPoints = entries.reduce((sum, entry) => sum + (entry.totalPoints || 0), 0);
     const averagePointsPerTeam = totalTeams > 0 ? Math.round(totalPoints / totalTeams) : 0;
     const seasonProgress = this.calculateSeasonProgress(now);
-
-    const regionCounts: Record<string, number> = {};
-    const trancheCounts: Record<string, number> = {};
-    let totalPlayers = 0;
-
-    entries.forEach(entry => {
-      entry.players?.forEach(player => {
-        totalPlayers += 1;
-        const region = this.resolveRegion(player?.region);
-        regionCounts[region] = (regionCounts[region] || 0) + 1;
-
-        const trancheLabel = `Tranche ${player?.tranche || 'Unknown'}`;
-        trancheCounts[trancheLabel] = (trancheCounts[trancheLabel] || 0) + 1;
-      });
-    });
-
-    const mostActiveTeam = entries.length > 0
-      ? entries.reduce((prev, current) =>
-          (current.totalPoints || 0) > (prev.totalPoints || 0) ? current : prev
-        ).teamName
-      : 'N/A';
+    const composition = this.calculateTeamComposition(entries);
+    const mostActiveTeam = this.resolveMostActiveTeam(entries);
 
     const stats: DashboardStats = {
       totalTeams,
-      totalPlayers,
+      totalPlayers: composition.totalPlayers,
       totalPoints,
       averagePointsPerTeam,
       mostActiveTeam: mostActiveTeam || '',
       seasonProgress,
       teamComposition: {
-        regions: regionCounts,
-        tranches: trancheCounts
+        regions: composition.regionCounts,
+        tranches: composition.trancheCounts
       } as TeamComposition
     };
 
-    const premium: PremiumStats = {
-      totalScore: totalPoints,
-      activeGames: gamesCount,
-      weeklyBest: entries.length > 0
-        ? Math.max(...entries.map(entry => entry.totalPoints || 0))
-        : 0,
-      ranking: entries.length
-    };
+    const premium = this.buildPremiumStats(entries, totalPoints, gamesCount);
 
     return { stats, premium };
   }
@@ -154,5 +128,51 @@ export class DashboardStatsCalculatorService {
       }
     }
     return 'Unknown';
+  }
+
+  private calculateTeamComposition(entries: LeaderboardEntryDTO[]): {
+    totalPlayers: number;
+    regionCounts: Record<string, number>;
+    trancheCounts: Record<string, number>;
+  } {
+    const regionCounts: Record<string, number> = {};
+    const trancheCounts: Record<string, number> = {};
+    let totalPlayers = 0;
+
+    entries.forEach(entry => {
+      entry.players?.forEach(player => {
+        totalPlayers += 1;
+        const region = this.resolveRegion(player?.region);
+        regionCounts[region] = (regionCounts[region] || 0) + 1;
+        const trancheLabel = `Tranche ${player?.tranche || 'Unknown'}`;
+        trancheCounts[trancheLabel] = (trancheCounts[trancheLabel] || 0) + 1;
+      });
+    });
+
+    return { totalPlayers, regionCounts, trancheCounts };
+  }
+
+  private resolveMostActiveTeam(entries: LeaderboardEntryDTO[]): string {
+    if (entries.length === 0) {
+      return 'N/A';
+    }
+    return (
+      entries.reduce((prev, current) =>
+        (current.totalPoints || 0) > (prev.totalPoints || 0) ? current : prev
+      ).teamName || 'N/A'
+    );
+  }
+
+  private buildPremiumStats(
+    entries: LeaderboardEntryDTO[],
+    totalPoints: number,
+    gamesCount: number
+  ): PremiumStats {
+    return {
+      totalScore: totalPoints,
+      activeGames: gamesCount,
+      weeklyBest: entries.length > 0 ? Math.max(...entries.map(entry => entry.totalPoints || 0)) : 0,
+      ranking: entries.length
+    };
   }
 }

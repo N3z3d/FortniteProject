@@ -5,14 +5,16 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TeamDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.domain.trade.model.Trade;
 import com.fortnite.pronos.domain.trade.model.TradeStatus;
 import com.fortnite.pronos.dto.TradeResponseDto;
+import com.fortnite.pronos.dto.mapper.TeamDomainDtoMapper;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.dto.team.TeamDto;
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.TeamRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,10 +25,14 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings({"java:S1168", "java:S1612"})
 public class TradeResponseMapper {
 
-  private final TeamRepository teamRepository;
-  private final PlayerRepository playerRepository;
+  private final TeamDomainRepositoryPort teamDomainRepository;
+  private final PlayerDomainRepositoryPort playerDomainRepository;
+  private final UserRepositoryPort userRepository;
+  private final PlayerRepositoryPort playerRepository;
+  private final TeamDomainDtoMapper teamDomainDtoMapper = new TeamDomainDtoMapper();
 
   /** Maps a domain Trade to a TradeResponseDto with hydrated Team and Player data. */
   public TradeResponseDto toDto(Trade trade) {
@@ -66,15 +72,24 @@ public class TradeResponseMapper {
     if (teamId == null) {
       return null;
     }
-    return teamRepository.findById(teamId).map(TeamDto::from).orElse(null);
+    return teamDomainRepository
+        .findByIdWithFetch(teamId)
+        .map(
+            team ->
+                teamDomainDtoMapper.fromDomainTeam(
+                    team, userRepository::findById, playerDomainRepository::findById))
+        .orElse(null);
   }
 
   private List<PlayerDto> resolvePlayerDtos(List<UUID> playerIds) {
     if (playerIds == null || playerIds.isEmpty()) {
       return null;
     }
-    List<Player> players = playerRepository.findAllById(playerIds);
-    return players.stream().map(PlayerDto::fromEntity).toList();
+    return playerIds.stream()
+        .map(playerRepository::findById)
+        .flatMap(optional -> optional.stream())
+        .map(PlayerDto::fromEntity)
+        .toList();
   }
 
   private com.fortnite.pronos.model.Trade.Status toLegacyStatus(TradeStatus status) {

@@ -2,12 +2,12 @@ package com.fortnite.pronos.service.seed;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
-import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReferenceUserSeedService {
 
-  private static final String DEFAULT_PASSWORD = "password";
   private static final int CURRENT_SEASON = 2025;
 
   private final UserRepositoryPort userRepository;
@@ -32,8 +31,8 @@ public class ReferenceUserSeedService {
    *
    * @return map of username to User
    */
-  public Map<String, User> ensureReferenceUsers() {
-    Map<String, User> users = new LinkedHashMap<>();
+  public Map<String, com.fortnite.pronos.model.User> ensureReferenceUsers() {
+    Map<String, com.fortnite.pronos.model.User> users = new LinkedHashMap<>();
     users.put("Thibaut", ensureUser("Thibaut", "thibaut@test.com"));
     users.put("Teddy", ensureUser("Teddy", "teddy@test.com"));
     users.put("Marcel", ensureUser("Marcel", "marcel@test.com"));
@@ -48,19 +47,23 @@ public class ReferenceUserSeedService {
    * @param email the email
    * @return the user (existing or newly created)
    */
-  public User ensureUser(String username, String email) {
+  public com.fortnite.pronos.model.User ensureUser(String username, String email) {
     return userRepository
         .findByUsernameIgnoreCase(username)
         .orElseGet(() -> createUser(username, email));
   }
 
-  private User createUser(String username, String email) {
-    User user = new User();
+  private com.fortnite.pronos.model.User createUser(String username, String email) {
+    com.fortnite.pronos.model.User user = new com.fortnite.pronos.model.User();
     user.setUsername(username);
     user.setEmail(email);
-    user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
-    user.setRole(User.UserRole.USER);
+    user.setPassword(passwordEncoder.encode(generateSeedPassword(username)));
+    user.setRole(com.fortnite.pronos.model.User.UserRole.USER);
     user.setCurrentSeason(CURRENT_SEASON);
     return userRepository.save(user);
+  }
+
+  private String generateSeedPassword(String username) {
+    return "seed-" + username + "-" + UUID.randomUUID();
   }
 }

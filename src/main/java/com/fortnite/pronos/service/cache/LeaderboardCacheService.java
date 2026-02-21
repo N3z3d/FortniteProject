@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 /** Service de cache pour le leaderboard - MVP basique */
 @Service
 @Slf4j
+@SuppressWarnings({"java:S1104", "java:S3400"})
 public class LeaderboardCacheService {
 
   // Cache simple en mémoire pour le MVP

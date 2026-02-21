@@ -54,8 +54,9 @@ class PlayerRepositoryAdapterTest {
     Optional<com.fortnite.pronos.domain.player.model.Player> result = adapter.findById(id);
 
     assertThat(result).isPresent();
-    assertThat(result.orElseThrow().getId()).isEqualTo(id);
-    assertThat(result.orElseThrow().getUsername()).isEqualTo("user1");
+    com.fortnite.pronos.domain.player.model.Player player = result.orElseThrow();
+    assertThat(player.getId()).isEqualTo(id);
+    assertThat(player.getUsername()).isEqualTo("user1");
   }
 
   @Test

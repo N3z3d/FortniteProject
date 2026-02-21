@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 /** Utilitaire pour les logs structurés et professionnels */
 @Component
 @Slf4j
+@SuppressWarnings({"java:S1118", "java:S1488", "java:S2629"})
 public class LoggingUtils {
 
   private static final Logger PERFORMANCE_LOGGER =
@@ -25,6 +26,8 @@ public class LoggingUtils {
   private static final String ACTION_KEY = "action";
   private static final String DURATION_KEY = "duration";
   private static final String STATUS_KEY = "status";
+  private static final String SUCCESS_STATUS = "SUCCESS";
+  private static final String FAILURE_STATUS = "FAILURE";
 
   /** Initialise un contexte de trace pour une requête */
   public static String initTraceContext() {
@@ -110,7 +113,7 @@ public class LoggingUtils {
       String transactionType, String entityId, String action, String userId, boolean success) {
     MDC.put(ACTION_KEY, transactionType + "_" + action);
     MDC.put(USER_ID_KEY, userId);
-    MDC.put(STATUS_KEY, success ? "SUCCESS" : "FAILURE");
+    MDC.put(STATUS_KEY, success ? SUCCESS_STATUS : FAILURE_STATUS);
 
     log.info(
         "BUSINESS_TRANSACTION: {} {} on entity {} by user {} - Status: {}",
@@ -118,7 +121,7 @@ public class LoggingUtils {
         action,
         entityId,
         userId,
-        success ? "SUCCESS" : "FAILURE");
+        success ? SUCCESS_STATUS : FAILURE_STATUS);
   }
 
   /** Log des métriques système */
@@ -129,7 +132,7 @@ public class LoggingUtils {
   /** Wrapper pour mesurer et logger le temps d'exécution */
   public static <T> T measureAndLog(String operation, java.util.function.Supplier<T> supplier) {
     long startTime = System.currentTimeMillis();
-    String status = "SUCCESS";
+    String status = SUCCESS_STATUS;
 
     try {
       T result = supplier.get();

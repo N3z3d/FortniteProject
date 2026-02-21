@@ -14,6 +14,10 @@ import com.fortnite.pronos.model.User;
  */
 public interface TeamRepositoryPort {
 
+  Optional<Team> findById(UUID id);
+
+  Team save(Team team);
+
   Optional<Team> findByOwnerAndSeason(User owner, int season);
 
   List<Team> findBySeason(int season);

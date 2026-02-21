@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, timer, throwError } from 'rxjs';
-import { map, catchError, tap, switchMap, shareReplay, retry } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { map, catchError, tap, shareReplay, retry } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { LoggerService } from '../../../core/services/logger.service';
 
@@ -146,7 +146,7 @@ export class TradingService {
       retry(2),
       catchError(error => {
         this.errorSubject.next('Failed to load trades');
-        return throwError(error);
+        return throwError(() => error);
       }),
       shareReplay(1)
     );
@@ -162,7 +162,7 @@ export class TradingService {
       tap(() => this.loadingSubject.next(false)),
       catchError(error => {
         this.loadingSubject.next(false);
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -189,7 +189,7 @@ export class TradingService {
       retry(2),
       catchError(error => {
         this.errorSubject.next('Failed to load teams');
-        return throwError(error);
+        return throwError(() => error);
       }),
       shareReplay(1)
     );
@@ -220,7 +220,7 @@ export class TradingService {
       catchError(error => {
         this.loadingSubject.next(false);
         this.errorSubject.next('Failed to create trade offer');
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -240,7 +240,7 @@ export class TradingService {
       catchError(error => {
         this.loadingSubject.next(false);
         this.errorSubject.next('Failed to accept trade offer');
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -260,7 +260,7 @@ export class TradingService {
       catchError(error => {
         this.loadingSubject.next(false);
         this.errorSubject.next('Failed to reject trade offer');
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -280,7 +280,7 @@ export class TradingService {
       catchError(error => {
         this.loadingSubject.next(false);
         this.errorSubject.next('Failed to withdraw trade offer');
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -307,7 +307,7 @@ export class TradingService {
       catchError(error => {
         this.loadingSubject.next(false);
         this.errorSubject.next('Failed to create counter offer');
-        return throwError(error);
+        return throwError(() => error);
       })
     );
   }
@@ -337,7 +337,7 @@ export class TradingService {
       retry(2),
       catchError(error => {
         this.errorSubject.next('Failed to load trade history');
-        return throwError(error);
+        return throwError(() => error);
       }),
       shareReplay(1)
     );
@@ -367,7 +367,7 @@ export class TradingService {
       retry(2),
       catchError(error => {
         this.errorSubject.next('Failed to load trading statistics');
-        return throwError(error);
+        return throwError(() => error);
       }),
       shareReplay(1)
     );

@@ -21,7 +21,7 @@
   z-index: 10;
 }
 
-.player-stats {
+.selection-stats {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -60,7 +60,7 @@
 }
 
 .filter-field .mat-mdc-form-field-subscript-wrapper {
-  display: none; /* Cache les messages d'aide pour économiser l'espace */
+  display: none; /* Cache les messages d'aide pour Ã©conomiser l'espace */
 }
 
 /* ===== VIRTUAL SCROLLING LIST (PERFORMANCE CRITICAL) ===== */
@@ -74,6 +74,8 @@
   height: 100%;
   min-height: 400px;
   max-height: 500px; /* Limite la hauteur pour éviter les problèmes de scroll */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 /* Optimisation pour éviter le reflow lors du scroll */
@@ -87,10 +89,12 @@
   align-items: center;
   padding: 12px 20px;
   border-bottom: 1px solid #f0f0f0;
-  transition: all 0.2s ease;
   cursor: pointer;
   min-height: 80px; /* Hauteur fixe pour virtual scrolling */
   position: relative;
+  contain: layout style paint;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .player-item:hover {
@@ -316,23 +320,6 @@
 .player-avatar,
 .player-actions mat-icon {
   will-change: transform;
-}
-
-/* Optimisation du scrolling */
-.players-viewport {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* Prévention du layout shift */
-.player-item {
-  contain: layout style paint;
-}
-
-/* Optimisation des transitions */
-.player-item {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ===== ACCESSIBILITY ===== */

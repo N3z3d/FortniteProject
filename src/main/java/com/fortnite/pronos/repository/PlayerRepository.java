@@ -16,6 +16,7 @@ import com.fortnite.pronos.model.Player;
 
 /** Repository pour la gestion des joueurs Fortnite */
 @Repository
+@SuppressWarnings({"java:S125"})
 public interface PlayerRepository extends JpaRepository<Player, UUID>, PlayerRepositoryPort {
 
   /** Trouver un joueur par son nickname */

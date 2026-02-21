@@ -46,6 +46,7 @@ import com.fortnite.pronos.service.ValidationService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings({"java:S5778"})
 class GameControllerSimpleTest {
 
   @Mock private GameService gameService;

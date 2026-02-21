@@ -1,6 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +23,7 @@ import { TranslationService } from '../../../core/services/translation.service';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
 
 @Component({
   selector: 'app-game-detail',
@@ -42,7 +45,7 @@ import { LoggerService } from '../../../core/services/logger.service';
   templateUrl: './game-detail.component.html',
   styleUrls: ['./game-detail.component.css']
 })
-export class GameDetailComponent implements OnInit {
+export class GameDetailComponent implements OnInit, OnDestroy {
   public readonly t = inject(TranslationService);
 
   game: Game | null = null;
@@ -52,6 +55,7 @@ export class GameDetailComponent implements OnInit {
   participantsError: string | null = null;
   gameId: string = '';
   isStartingDraft = false;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly gameDataService: GameDataService,
@@ -61,17 +65,24 @@ export class GameDetailComponent implements OnInit {
     private readonly userGamesStore: UserGamesStore,
     private readonly uiFeedback: UiErrorFeedbackService,
     private readonly logger: LoggerService,
+    private readonly gamesRealtimeService: GamesRealtimeService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
-    this.route.params.subscribe(params => {
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
       this.gameId = params['id'];
       if (this.gameId) {
         this.loadGameDetails();
       }
     });
+    this.subscribeToRealtimeUpdates();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadGameDetails(): void {
@@ -387,5 +398,21 @@ export class GameDetailComponent implements OnInit {
     this.userGamesStore.removeGame(this.gameId);
     this.uiFeedback.showError(null, 'games.detail.gameUnavailable', { duration: 5000 });
     this.router.navigate(['/games']);
+  }
+
+  private subscribeToRealtimeUpdates(): void {
+    this.gamesRealtimeService.events$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        if (event.type === 'CONNECTED' || !this.gameId) {
+          return;
+        }
+
+        if (event.gameId && event.gameId !== this.gameId) {
+          return;
+        }
+
+        this.loadGameDetails();
+      });
   }
 }

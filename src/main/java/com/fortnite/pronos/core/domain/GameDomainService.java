@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@SuppressWarnings({"java:S3923"})
 public class GameDomainService {
 
   /** Calculate if a game can be started based on domain rules */

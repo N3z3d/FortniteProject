@@ -1,8 +1,8 @@
-@import '../../../shared/styles/mixins';
+@use '../../../shared/styles/mixins' as mixins;
 
 .error-journal-container {
-  @include responsive-container(1400px);
   padding: var(--space-lg);
+  @include mixins.responsive-container(1400px);
 }
 
 .page-header {
@@ -12,11 +12,11 @@
   margin-bottom: var(--space-xl);
 
   .page-title {
-    @include gaming-title;
     display: flex;
     align-items: center;
     gap: var(--space-sm);
     font-size: 1.8rem;
+    @include mixins.gaming-title;
 
     mat-icon {
       font-size: 2rem;
@@ -33,9 +33,9 @@
 }
 
 .error-container {
-  @include glass-card-dark();
   padding: var(--space-xl);
   text-align: center;
+  @include mixins.glass-card-dark();
 
   mat-icon {
     font-size: 3rem;
@@ -47,15 +47,15 @@
 
 // Stats Cards Grid
 .stats-grid {
-  @include responsive-grid(4, 2, 1, var(--space-md));
   margin-bottom: var(--space-lg);
+  @include mixins.responsive-grid(4, 2, 1, var(--space-md));
 }
 
 .stat-card {
-  @include glass-card-dark();
   padding: var(--space-lg);
   text-align: center;
   transition: transform 0.2s ease;
+  @include mixins.glass-card-dark();
 
   &:hover {
     transform: translateY(-2px);
@@ -72,10 +72,10 @@
   }
 
   .stat-value {
-    @include gaming-font;
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: var(--space-xs, 4px);
+    @include mixins.gaming-font;
   }
 
   .stat-label {
@@ -114,6 +114,49 @@
   }
 }
 
+.trend-card {
+  margin-bottom: var(--space-lg);
+  @include mixins.glass-card-dark();
+
+  .trend-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .trend-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 30px;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .trend-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+  }
+
+  .trend-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .trend-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff9800, #f44336);
+    min-width: 3px;
+  }
+
+  .trend-count {
+    color: rgba(255, 255, 255, 0.85);
+    text-align: right;
+    @include mixins.gaming-font;
+  }
+}
+
 // Filters
 .filters-bar {
   display: flex;
@@ -133,9 +176,9 @@
 
 // Table
 .table-container {
-  @include glass-card-dark();
   overflow-x: auto;
   border-radius: var(--radius-large);
+  @include mixins.glass-card-dark();
 }
 
 .error-table {
@@ -214,7 +257,7 @@
 }
 
 // Responsive
-@include mobile {
+@include mixins.mobile {
   .page-header {
     flex-direction: column;
     gap: var(--space-md);

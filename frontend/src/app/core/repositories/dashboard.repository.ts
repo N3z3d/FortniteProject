@@ -1,9 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of, forkJoin } from 'rxjs';
 import { catchError, map, timeout } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../services/logger.service';
+
+function calculateSeasonProgressPercentage(): number {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const endOfYear = new Date(now.getFullYear(), 11, 31);
+  const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
+  const daysElapsed = (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
+  return Math.round((daysElapsed / totalDays) * 100 * 10) / 10;
+}
 
 /**
  * Dashboard data interfaces
@@ -135,7 +144,7 @@ export class HttpDashboardRepository extends DashboardRepository {
       totalPoints: apiResponse.totalPoints || 0,
       averagePointsPerTeam: apiResponse.averagePointsPerTeam || 0,
       mostActiveTeam: apiResponse.mostActiveTeam || '',
-      seasonProgress: this.calculateSeasonProgress()
+      seasonProgress: calculateSeasonProgressPercentage()
     };
   }
 
@@ -150,16 +159,6 @@ export class HttpDashboardRepository extends DashboardRepository {
     return normalized;
   }
 
-  private calculateSeasonProgress(): number {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const endOfYear = new Date(now.getFullYear(), 11, 31);
-
-    const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
-    const daysElapsed = (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
-
-    return Math.round((daysElapsed / totalDays) * 100 * 10) / 10;
-  }
 }
 
 /**
@@ -207,7 +206,7 @@ export class MockDashboardRepository extends DashboardRepository {
       totalPoints: 0,
       averagePointsPerTeam: 0,
       mostActiveTeam: '',
-      seasonProgress: this.calculateSeasonProgress()
+      seasonProgress: calculateSeasonProgressPercentage()
     };
   }
 
@@ -223,14 +222,4 @@ export class MockDashboardRepository extends DashboardRepository {
     };
   }
 
-  private calculateSeasonProgress(): number {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const endOfYear = new Date(now.getFullYear(), 11, 31);
-
-    const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
-    const daysElapsed = (now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24);
-
-    return Math.round((daysElapsed / totalDays) * 100 * 10) / 10;
-  }
 }

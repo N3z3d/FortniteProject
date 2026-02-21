@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { catchError, delay, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from './logger.service';
@@ -186,11 +186,6 @@ export class AuthSwitchService {
     };
 
     this.logger.debug('AuthSwitchService: activity', logEntry);
-
-    // In production, you might want to send this to a logging service
-    if (environment.production) {
-      // this.sendToLoggingService(logEntry);
-    }
   }
 
   /**
@@ -205,7 +200,7 @@ export class AuthSwitchService {
       'Teddy': '3',
       'Sarah': '4'
     };
-    return userMap[username] || Math.random().toString(36).substr(2, 9);
+    return userMap[username] || Math.random().toString(36).slice(2, 11);
   }
 
   /**

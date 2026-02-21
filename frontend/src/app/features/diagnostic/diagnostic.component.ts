@@ -8,6 +8,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 interface DiagnosticInfo {
@@ -246,7 +247,7 @@ export class DiagnosticComponent implements OnInit {
 
   private async testBackendConnectivity(): Promise<DiagnosticInfo> {
     try {
-      const response = await this.http.get(`${environment.apiBaseUrl}/actuator/health`).toPromise();
+      await firstValueFrom(this.http.get(`${environment.apiBaseUrl}/actuator/health`));
       
       return {
         label: 'Connectivité Backend',

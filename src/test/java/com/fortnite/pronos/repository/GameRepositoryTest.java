@@ -27,6 +27,7 @@ import com.fortnite.pronos.model.User;
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 @ActiveProfiles("test")
 @DisplayName("Tests TDD - GameRepository")
+@SuppressWarnings({"java:S5853"})
 class GameRepositoryTest {
 
   @Autowired private TestEntityManager entityManager;
@@ -75,8 +76,8 @@ class GameRepositoryTest {
 
     // Then
     assertThat(foundGame).isPresent();
-    assertThat(foundGame.get().getName()).isEqualTo("Test Game 1");
-    assertThat(foundGame.get().getCreator()).isEqualTo(testCreator);
+    assertThat(foundGame.getName()).isEqualTo("Test Game 1");
+    assertThat(foundGame.getCreator()).isEqualTo(testCreator);
   }
 
   @Test
@@ -136,8 +137,10 @@ class GameRepositoryTest {
     List<Game> allGames = gameRepository.findAll();
 
     // Then
-    assertThat(allGames).hasSize(2);
-    assertThat(allGames).extracting("name").containsExactlyInAnyOrder("Test Game 1", "Test Game 2");
+    assertThat(allGames)
+        .hasSize(2)
+        .extracting("name")
+        .containsExactlyInAnyOrder("Test Game 1", "Test Game 2");
   }
 
   @Test
@@ -161,8 +164,7 @@ class GameRepositoryTest {
     List<Game> creatorGames = gameRepository.findByCreator(testCreator);
 
     // Then
-    assertThat(creatorGames).hasSize(2);
-    assertThat(creatorGames).allMatch(game -> game.getCreator().equals(testCreator));
+    assertThat(creatorGames).hasSize(2).allMatch(game -> game.getCreator().equals(testCreator));
   }
 
   @Test
@@ -292,8 +294,9 @@ class GameRepositoryTest {
 
     // Then
     assertThat(activeGames).hasSize(1);
-    assertThat(activeGames.get(0).getStatus()).isNotEqualTo(GameStatus.FINISHED);
-    assertThat(activeGames.get(0).getStatus()).isNotEqualTo(GameStatus.CANCELLED);
+    assertThat(activeGames.get(0).getStatus())
+        .isNotEqualTo(GameStatus.FINISHED)
+        .isNotEqualTo(GameStatus.CANCELLED);
   }
 
   @Test
@@ -303,8 +306,9 @@ class GameRepositoryTest {
     List<Game> gamesWithTest = gameRepository.findByNameContainingIgnoreCase("test");
 
     // Then
-    assertThat(gamesWithTest).hasSize(2);
-    assertThat(gamesWithTest).allMatch(game -> game.getName().toLowerCase().contains("test"));
+    assertThat(gamesWithTest)
+        .hasSize(2)
+        .allMatch(game -> game.getName().toLowerCase().contains("test"));
   }
 
   @Test

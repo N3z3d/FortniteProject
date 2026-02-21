@@ -36,7 +36,6 @@ class ApplicationStartupTest {
   void shouldStartApplicationSuccessfully() {
     // Given - Application démarrée
     // When & Then - Vérification que l'application répond
-    assertNotNull(port);
     assertTrue(port > 0, "Le port doit être assigné");
   }
 

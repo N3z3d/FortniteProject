@@ -1463,7 +1463,7 @@
 }
 
 // Premium Stats Overview (Redesigned)
-.stats-overview {
+.dashboard-container .stats-overview {
   display: grid;
   grid-template-columns: repeat(3, 1fr); // 3 primary metrics
   gap: var(--space-xl);

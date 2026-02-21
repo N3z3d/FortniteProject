@@ -19,46 +19,43 @@ import com.fortnite.pronos.config.TestSecurityConfig;
 @Transactional
 @ActiveProfiles("test")
 @Import(TestSecurityConfig.class)
-public class ApiControllerRealTest {
+class ApiControllerRealTest {
 
   @LocalServerPort private int port;
 
   @Autowired private TestRestTemplate restTemplate;
 
   @Test
-  public void testGetTradeFormDataWithUserTeddy() throws Exception {
+  void testGetTradeFormDataWithUserTeddy() throws Exception {
     String url = "http://localhost:" + port + "/api/trade-form-data?user=Teddy";
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).contains("myTeam");
-    assertThat(response.getBody()).contains("Team Teddy");
+    assertThat(response.getBody()).contains("myTeam").contains("Team Teddy");
     assertThat(response.getBody()).contains("myPlayers");
   }
 
   @Test
-  public void testGetTradeFormDataWithUserMarcel() throws Exception {
+  void testGetTradeFormDataWithUserMarcel() throws Exception {
     String url = "http://localhost:" + port + "/api/trade-form-data?user=Marcel";
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).contains("myTeam");
-    assertThat(response.getBody()).contains("Team Marcel");
+    assertThat(response.getBody()).contains("myTeam").contains("Team Marcel");
     assertThat(response.getBody()).contains("myPlayers");
   }
 
   @Test
-  public void testGetTradeFormDataWithoutUser() throws Exception {
+  void testGetTradeFormDataWithoutUser() throws Exception {
     String url = "http://localhost:" + port + "/api/trade-form-data";
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).contains("myTeam");
-    assertThat(response.getBody()).contains("Team Thibaut");
+    assertThat(response.getBody()).contains("myTeam").contains("Team Thibaut");
   }
 
   @Test
-  public void testGetTradeFormDataWithInvalidUser() throws Exception {
+  void testGetTradeFormDataWithInvalidUser() throws Exception {
     String url = "http://localhost:" + port + "/api/trade-form-data?user=UserInexistant";
     ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 

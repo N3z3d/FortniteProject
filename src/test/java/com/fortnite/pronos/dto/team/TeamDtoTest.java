@@ -134,8 +134,9 @@ class TeamDtoTest {
     TeamDto result = TeamDto.from(testTeam);
 
     // Then
-    assertThat(result.getPlayers()).hasSize(2);
-    assertThat(result.getPlayers()).anyMatch(p -> p.getPlayerId().equals(testPlayer1.getId()));
+    assertThat(result.getPlayers())
+        .hasSize(2)
+        .anyMatch(p -> p.getPlayerId().equals(testPlayer1.getId()));
     assertThat(result.getPlayers()).anyMatch(p -> p.getPlayerId().equals(testPlayer2.getId()));
   }
 
@@ -193,7 +194,7 @@ class TeamDtoTest {
     TeamDto result = TeamDto.from(testTeam);
 
     // Then
-    assertThat(result.getTotalScore()).isEqualTo(0);
+    assertThat(result.getTotalScore()).isZero();
     assertThat(result.getPlayers()).isEmpty();
   }
 
@@ -208,7 +209,7 @@ class TeamDtoTest {
     TeamDto result = TeamDto.from(testTeam);
 
     // Then
-    assertThat(result.getTotalScore()).isEqualTo(0);
+    assertThat(result.getTotalScore()).isZero();
     assertThat(result.getPlayers()).hasSize(2);
   }
 
@@ -254,7 +255,7 @@ class TeamDtoTest {
     assertThat(result.getName()).isEqualTo(emptyTeam.getName());
     assertThat(result.getSeason()).isEqualTo(emptyTeam.getSeason());
     assertThat(result.getOwnerUsername()).isEqualTo(testUser.getUsername());
-    assertThat(result.getTotalScore()).isEqualTo(0);
+    assertThat(result.getTotalScore()).isZero();
     assertThat(result.getPlayers()).isEmpty();
   }
 

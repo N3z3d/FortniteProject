@@ -49,6 +49,7 @@ import com.fortnite.pronos.repository.UserRepository;
       "SET REFERENTIAL_INTEGRITY TRUE"
     })
 @DisplayName("CsvDataLoaderService - TDD Tests")
+@SuppressWarnings({"java:S5833"})
 class CsvDataLoaderServiceTddTest {
 
   @Autowired private CsvDataLoaderService csvDataLoaderService;
@@ -80,8 +81,8 @@ class CsvDataLoaderServiceTddTest {
     long initialPlayerCount = playerRepository.count();
     long initialScoreCount = scoreRepository.count();
 
-    assertThat(initialPlayerCount).isEqualTo(0);
-    assertThat(initialScoreCount).isEqualTo(0);
+    assertThat(initialPlayerCount).isZero();
+    assertThat(initialScoreCount).isZero();
 
     // ACT
     csvDataLoaderService.loadAllCsvData();
@@ -250,7 +251,8 @@ class CsvDataLoaderServiceTddTest {
       System.out.println("[OK] SUCCESS: " + allPlayers.size() + " joueurs chargés du CSV");
     }
 
-    // Ce test ne fait qu'afficher le diagnostic, pas d'assertion
+    // Assertion minimale pour garantir une verification explicite
+    assertThat(allPlayers).isNotEmpty();
   }
 
   private User buildUser(String username) {

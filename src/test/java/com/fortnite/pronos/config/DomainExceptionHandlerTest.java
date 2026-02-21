@@ -38,7 +38,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(400);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("BUSINESS_RULE_VIOLATION");
-    assertThat(response.getBody().getMessage()).isEqualTo("Trade value exceeds cap");
+    assertThat(response.getMessage()).isEqualTo("Trade value exceeds cap");
     assertThat(response.getBody().getError()).isEqualTo("Business Rule Violation");
   }
 
@@ -52,7 +52,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(403);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("UNAUTHORIZED_ACCESS");
-    assertThat(response.getBody().getMessage()).isEqualTo("Not allowed to access game");
+    assertThat(response.getMessage()).isEqualTo("Not allowed to access game");
   }
 
   @Test
@@ -65,7 +65,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(404);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("TEAM_NOT_FOUND");
-    assertThat(response.getBody().getMessage()).contains("abc-123");
+    assertThat(response.getMessage()).contains("abc-123");
   }
 
   @Test
@@ -78,7 +78,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("DRAFT_INCOMPLETE");
-    assertThat(response.getBody().getMessage()).isEqualTo("Draft is not complete");
+    assertThat(response.getMessage()).isEqualTo("Draft is not complete");
   }
 
   @Test
@@ -91,7 +91,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("NOT_YOUR_TURN");
-    assertThat(response.getBody().getMessage()).contains("not your turn");
+    assertThat(response.getMessage()).contains("not your turn");
   }
 
   @Test
@@ -105,7 +105,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("PLAYER_ALREADY_SELECTED");
-    assertThat(response.getBody().getMessage()).contains("already drafted");
+    assertThat(response.getMessage()).contains("already drafted");
   }
 
   @Test
@@ -118,7 +118,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(400);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("INVALID_SWAP");
-    assertThat(response.getBody().getMessage()).contains("Cannot swap");
+    assertThat(response.getMessage()).contains("Cannot swap");
   }
 
   @Test

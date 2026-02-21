@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Player, DraftBoardState } from './draft.service';
+import { Player } from './draft.service';
 import { PlayerRegion } from '../models/draft.interface';
 
 /**

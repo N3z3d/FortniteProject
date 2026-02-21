@@ -15,11 +15,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fortnite.pronos.model.Player;
-import com.fortnite.pronos.model.Score;
-import com.fortnite.pronos.repository.PlayerRepository;
-import com.fortnite.pronos.repository.ScoreRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"java:S135", "java:S2676", "java:S3824"})
 public class CsvDataLoaderService {
 
   private static final String CSV_RESOURCE_PATH = "data/fortnite_data.csv";
@@ -34,11 +30,12 @@ public class CsvDataLoaderService {
   private static final int EXPECTED_COLUMNS = 6;
   private static final int CURRENT_SEASON = 2025;
 
-  private final PlayerRepository playerRepository;
-  private final ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
 
   // Map to store player assignments by pronosticator.
-  private final Map<String, List<Player>> playersByPronosticator = new HashMap<>();
+  private final Map<String, List<com.fortnite.pronos.model.Player>> playersByPronosticator =
+      new HashMap<>();
 
   /** Load all players and scores from the CSV file. */
   @Transactional
@@ -67,7 +64,7 @@ public class CsvDataLoaderService {
   }
 
   /** Return players assigned to a specific pronosticator. */
-  public List<Player> getPlayersByPronosticator(String pronostiqueur) {
+  public List<com.fortnite.pronos.model.Player> getPlayersByPronosticator(String pronostiqueur) {
     return playersByPronosticator.getOrDefault(pronostiqueur, new ArrayList<>());
   }
 
@@ -77,7 +74,7 @@ public class CsvDataLoaderService {
   }
 
   /** Return a copy of all assignments. */
-  public Map<String, List<Player>> getAllPlayerAssignments() {
+  public Map<String, List<com.fortnite.pronos.model.Player>> getAllPlayerAssignments() {
     return new HashMap<>(playersByPronosticator);
   }
 
@@ -156,86 +153,112 @@ public class CsvDataLoaderService {
 
     int points = parseIntSafely(pointsStr, 0);
     int classement = parseIntSafely(classementStr, 0);
-    Player.Region playerRegion = parseRegion(region);
+    com.fortnite.pronos.model.Player.Region playerRegion = parseRegion(region);
 
     String resolvedTranche = tranche.isEmpty() ? "1-5" : tranche;
     return new CsvRow(pronostiqueur, nickname, playerRegion, points, classement, resolvedTranche);
   }
 
   private CsvSaveResult saveCsvRows(List<CsvRow> rows) {
-    Map<String, Player> playersByNickname = loadPlayersByNickname();
-    List<Player> newPlayers = new ArrayList<>();
-    int updatedPlayers = 0;
+    Map<String, com.fortnite.pronos.model.Player> playersByNickname = loadPlayersByNickname();
+    List<com.fortnite.pronos.model.Player> newPlayers = new ArrayList<>();
+    int updatedPlayers = upsertPlayers(rows, playersByNickname, newPlayers);
 
+    persistNewPlayers(newPlayers, playersByNickname);
+    buildPronosticatorAssignments(rows, playersByNickname);
+
+    ScoreSyncResult scoreSync = upsertScores(rows, playersByNickname, loadScoresByPlayerId());
+
+    return new CsvSaveResult(
+        newPlayers.size(), updatedPlayers, scoreSync.newScores(), scoreSync.updatedScores());
+  }
+
+  private int upsertPlayers(
+      List<CsvRow> rows,
+      Map<String, com.fortnite.pronos.model.Player> playersByNickname,
+      List<com.fortnite.pronos.model.Player> newPlayers) {
+    int updatedPlayers = 0;
     for (CsvRow row : rows) {
       String key = normalizeNickname(row.nickname());
-      Player player = playersByNickname.get(key);
+      com.fortnite.pronos.model.Player player = playersByNickname.get(key);
       if (player == null) {
         player = buildPlayer(row);
         newPlayers.add(player);
         playersByNickname.put(key, player);
-      } else if (updatePlayerFromRow(player, row)) {
+        continue;
+      }
+      if (updatePlayerFromRow(player, row)) {
         updatedPlayers++;
       }
     }
+    return updatedPlayers;
+  }
 
-    // Save new players first to get IDs before building assignments
-    if (!newPlayers.isEmpty()) {
-      List<Player> savedPlayers = playerRepository.saveAll(newPlayers);
-      // Update references in playersByNickname with persisted entities
-      for (Player saved : savedPlayers) {
-        playersByNickname.put(normalizeNickname(saved.getNickname()), saved);
-      }
+  private void persistNewPlayers(
+      List<com.fortnite.pronos.model.Player> newPlayers,
+      Map<String, com.fortnite.pronos.model.Player> playersByNickname) {
+    if (newPlayers.isEmpty()) {
+      return;
     }
+    List<com.fortnite.pronos.model.Player> savedPlayers = playerRepository.saveAll(newPlayers);
+    for (com.fortnite.pronos.model.Player saved : savedPlayers) {
+      playersByNickname.put(normalizeNickname(saved.getNickname()), saved);
+    }
+  }
 
-    // Build assignments after all players are persisted
+  private void buildPronosticatorAssignments(
+      List<CsvRow> rows, Map<String, com.fortnite.pronos.model.Player> playersByNickname) {
     for (CsvRow row : rows) {
-      String key = normalizeNickname(row.nickname());
-      Player player = playersByNickname.get(key);
-      if (player != null) {
-        playersByPronosticator
-            .computeIfAbsent(row.pronostiqueur(), keyValue -> new ArrayList<>())
-            .add(player);
+      com.fortnite.pronos.model.Player player =
+          playersByNickname.get(normalizeNickname(row.nickname()));
+      if (player == null) {
+        continue;
       }
+      playersByPronosticator
+          .computeIfAbsent(row.pronostiqueur(), keyValue -> new ArrayList<>())
+          .add(player);
     }
+  }
 
-    Map<UUID, Score> scoresByPlayerId = loadScoresByPlayerId();
-    List<Score> newScores = new ArrayList<>();
+  private ScoreSyncResult upsertScores(
+      List<CsvRow> rows,
+      Map<String, com.fortnite.pronos.model.Player> playersByNickname,
+      Map<UUID, com.fortnite.pronos.model.Score> scoresByPlayerId) {
+    List<com.fortnite.pronos.model.Score> newScores = new ArrayList<>();
     int updatedScores = 0;
-
     for (CsvRow row : rows) {
-      Player player = playersByNickname.get(normalizeNickname(row.nickname()));
+      com.fortnite.pronos.model.Player player =
+          playersByNickname.get(normalizeNickname(row.nickname()));
       if (player == null || player.getId() == null) {
         continue;
       }
-
-      Score score = scoresByPlayerId.get(player.getId());
+      com.fortnite.pronos.model.Score score = scoresByPlayerId.get(player.getId());
       if (score == null) {
         newScores.add(buildScore(player, row));
-      } else if (score.getPoints() == null || score.getPoints() != row.points()) {
+        continue;
+      }
+      if (score.getPoints() == null || score.getPoints() != row.points()) {
         score.setPoints(row.points());
         updatedScores++;
       }
     }
-
     if (!newScores.isEmpty()) {
       scoreRepository.saveAll(newScores);
     }
-
-    return new CsvSaveResult(newPlayers.size(), updatedPlayers, newScores.size(), updatedScores);
+    return new ScoreSyncResult(newScores.size(), updatedScores);
   }
 
-  private Map<String, Player> loadPlayersByNickname() {
-    Map<String, Player> result = new HashMap<>();
-    for (Player player : playerRepository.findAll()) {
+  private Map<String, com.fortnite.pronos.model.Player> loadPlayersByNickname() {
+    Map<String, com.fortnite.pronos.model.Player> result = new HashMap<>();
+    for (com.fortnite.pronos.model.Player player : playerRepository.findAll()) {
       result.putIfAbsent(normalizeNickname(player.getNickname()), player);
     }
     return result;
   }
 
-  private Map<UUID, Score> loadScoresByPlayerId() {
-    Map<UUID, Score> result = new HashMap<>();
-    for (Score score : scoreRepository.findBySeason(CURRENT_SEASON)) {
+  private Map<UUID, com.fortnite.pronos.model.Score> loadScoresByPlayerId() {
+    Map<UUID, com.fortnite.pronos.model.Score> result = new HashMap<>();
+    for (com.fortnite.pronos.model.Score score : scoreRepository.findBySeason(CURRENT_SEASON)) {
       if (score.getPlayer() != null && score.getPlayer().getId() != null) {
         result.putIfAbsent(score.getPlayer().getId(), score);
       }
@@ -243,9 +266,9 @@ public class CsvDataLoaderService {
     return result;
   }
 
-  private Player buildPlayer(CsvRow row) {
+  private com.fortnite.pronos.model.Player buildPlayer(CsvRow row) {
     String cleanUsername = buildUsername(row.nickname());
-    return Player.builder()
+    return com.fortnite.pronos.model.Player.builder()
         .username(cleanUsername)
         .nickname(row.nickname())
         .region(row.region())
@@ -254,7 +277,7 @@ public class CsvDataLoaderService {
         .build();
   }
 
-  private boolean updatePlayerFromRow(Player player, CsvRow row) {
+  private boolean updatePlayerFromRow(com.fortnite.pronos.model.Player player, CsvRow row) {
     boolean updated = false;
     if (player.getRegion() != row.region()) {
       player.setRegion(row.region());
@@ -271,8 +294,9 @@ public class CsvDataLoaderService {
     return updated;
   }
 
-  private Score buildScore(Player player, CsvRow row) {
-    Score score = new Score();
+  private com.fortnite.pronos.model.Score buildScore(
+      com.fortnite.pronos.model.Player player, CsvRow row) {
+    com.fortnite.pronos.model.Score score = new com.fortnite.pronos.model.Score();
     score.setPlayer(player);
     score.setSeason(CURRENT_SEASON);
     score.setPoints(row.points());
@@ -297,12 +321,12 @@ public class CsvDataLoaderService {
     }
   }
 
-  private Player.Region parseRegion(String region) {
+  private com.fortnite.pronos.model.Player.Region parseRegion(String region) {
     try {
-      return Player.Region.valueOf(region.toUpperCase());
+      return com.fortnite.pronos.model.Player.Region.valueOf(region.toUpperCase());
     } catch (IllegalArgumentException e) {
       log.warn("CSV parse: invalid region '{}', defaulting to EU", region);
-      return Player.Region.EU;
+      return com.fortnite.pronos.model.Player.Region.EU;
     }
   }
 
@@ -317,7 +341,7 @@ public class CsvDataLoaderService {
   private record CsvRow(
       String pronostiqueur,
       String nickname,
-      Player.Region region,
+      com.fortnite.pronos.model.Player.Region region,
       int points,
       int classement,
       String tranche) {}
@@ -338,4 +362,6 @@ public class CsvDataLoaderService {
 
   private record CsvSaveResult(
       int newPlayers, int updatedPlayers, int newScores, int updatedScores) {}
+
+  private record ScoreSyncResult(int newScores, int updatedScores) {}
 }

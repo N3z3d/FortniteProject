@@ -34,7 +34,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "pr_snapshots")
 @IdClass(PrSnapshot.PrSnapshotId.class)
-public class PrSnapshot implements Serializable {
+public class PrSnapshot {
   @Id
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "player_id", nullable = false)

@@ -1,6 +1,9 @@
 package com.fortnite.pronos.service.leaderboard;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -8,94 +11,109 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.dto.PronostiqueurLeaderboardEntryDTO;
-import com.fortnite.pronos.model.*;
-import com.fortnite.pronos.repository.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Service responsible for predictor (user) leaderboard operations.
- *
- * <p>Extracted from LeaderboardService to respect SRP (Single Responsibility Principle) and
- * CLAUDE.md 500-line limit.
- */
+/** Service responsible for predictor (user) leaderboard operations. */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PronostiqueurLeaderboardService {
 
-  private final TeamRepository teamRepository;
-  private final ScoreRepository scoreRepository;
+  private final com.fortnite.pronos.repository.TeamRepository teamRepository;
+  private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
 
-  /** Obtenir le classement des pronostiqueurs */
+  /** Returns the pronosticator leaderboard for the requested season. */
   @Cacheable(value = "leaderboard", key = "'pronostiqueurs_' + #season")
   public List<PronostiqueurLeaderboardEntryDTO> getPronostiqueurLeaderboard(int season) {
-    log.info("👥 Récupération du classement des pronostiqueurs - Saison: {}", season);
+    log.info("Loading pronosticator leaderboard for season={}", season);
 
-    // 1. Récupérer toutes les équipes avec leurs propriétaires
-    List<Team> teams = teamRepository.findBySeasonWithFetch(season);
-
-    // 2. Récupérer tous les scores en une seule requête
+    List<com.fortnite.pronos.model.Team> teams = teamRepository.findBySeasonWithFetch(season);
     Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(season);
+    Map<UUID, List<com.fortnite.pronos.model.Team>> teamsByUser = groupTeamsByUser(teams);
 
-    // 3. Grouper par pronostiqueur et calculer les statistiques
-    Map<UUID, List<Team>> teamsByUser =
-        teams.stream().collect(Collectors.groupingBy(team -> team.getOwner().getId()));
+    List<PronostiqueurLeaderboardEntryDTO> entries = buildEntries(teamsByUser, playerPointsMap);
+    sortAndAssignRanks(entries);
 
+    log.info("Pronosticator leaderboard generated with {} users", entries.size());
+    return entries;
+  }
+
+  private Map<UUID, List<com.fortnite.pronos.model.Team>> groupTeamsByUser(
+      List<com.fortnite.pronos.model.Team> teams) {
+    return teams.stream().collect(Collectors.groupingBy(team -> team.getOwner().getId()));
+  }
+
+  private List<PronostiqueurLeaderboardEntryDTO> buildEntries(
+      Map<UUID, List<com.fortnite.pronos.model.Team>> teamsByUser,
+      Map<UUID, Integer> playerPointsMap) {
     List<PronostiqueurLeaderboardEntryDTO> entries = new ArrayList<>();
+    for (Map.Entry<UUID, List<com.fortnite.pronos.model.Team>> entry : teamsByUser.entrySet()) {
+      entries.add(buildUserEntry(entry.getKey(), entry.getValue(), playerPointsMap));
+    }
+    return entries;
+  }
 
-    for (Map.Entry<UUID, List<Team>> entry : teamsByUser.entrySet()) {
-      UUID userId = entry.getKey();
-      List<Team> userTeams = entry.getValue();
-      User user = userTeams.get(0).getOwner(); // Récupérer l'utilisateur
+  private PronostiqueurLeaderboardEntryDTO buildUserEntry(
+      UUID userId,
+      List<com.fortnite.pronos.model.Team> userTeams,
+      Map<UUID, Integer> playerPointsMap) {
+    com.fortnite.pronos.model.User user = userTeams.get(0).getOwner();
+    TeamScoreSummary scoreSummary = calculateTeamScoreSummary(userTeams, playerPointsMap);
+    int avgPointsPerTeam = userTeams.isEmpty() ? 0 : scoreSummary.totalPoints() / userTeams.size();
 
-      int totalPoints = 0;
-      int bestTeamPoints = 0;
-      String bestTeamName = "";
+    return PronostiqueurLeaderboardEntryDTO.builder()
+        .userId(userId)
+        .username(user.getUsername())
+        .email(user.getEmail())
+        .totalPoints(scoreSummary.totalPoints())
+        .totalTeams(userTeams.size())
+        .avgPointsPerTeam(avgPointsPerTeam)
+        .bestTeamPoints(scoreSummary.bestTeamPoints())
+        .bestTeamName(scoreSummary.bestTeamName())
+        .victories(0)
+        .winRate(0.0)
+        .build();
+  }
 
-      // Calculer les points pour chaque équipe de l'utilisateur
-      for (Team team : userTeams) {
-        int teamPoints = 0;
-        for (TeamPlayer teamPlayer : team.getPlayers()) {
-          if (teamPlayer.isActive()) {
-            teamPoints += playerPointsMap.getOrDefault(teamPlayer.getPlayer().getId(), 0);
-          }
-        }
-        totalPoints += teamPoints;
+  private TeamScoreSummary calculateTeamScoreSummary(
+      List<com.fortnite.pronos.model.Team> userTeams, Map<UUID, Integer> playerPointsMap) {
+    int totalPoints = 0;
+    int bestTeamPoints = 0;
+    String bestTeamName = "";
 
-        if (teamPoints > bestTeamPoints) {
-          bestTeamPoints = teamPoints;
-          bestTeamName = team.getName();
-        }
+    for (com.fortnite.pronos.model.Team team : userTeams) {
+      int teamPoints = calculateTeamPoints(team, playerPointsMap);
+      totalPoints += teamPoints;
+      if (teamPoints > bestTeamPoints) {
+        bestTeamPoints = teamPoints;
+        bestTeamName = team.getName();
       }
-
-      int avgPointsPerTeam = userTeams.size() > 0 ? totalPoints / userTeams.size() : 0;
-
-      entries.add(
-          PronostiqueurLeaderboardEntryDTO.builder()
-              .userId(userId)
-              .username(user.getUsername())
-              .email(user.getEmail())
-              .totalPoints(totalPoints)
-              .totalTeams(userTeams.size())
-              .avgPointsPerTeam(avgPointsPerTeam)
-              .bestTeamPoints(bestTeamPoints)
-              .bestTeamName(bestTeamName)
-              .victories(0) // À calculer selon les critères de victoire
-              .winRate(0.0) // À calculer selon les critères de victoire
-              .build());
     }
 
-    // 4. Trier par points décroissants et assigner les rangs
-    entries.sort((a, b) -> Integer.compare(b.getTotalPoints(), a.getTotalPoints()));
+    return new TeamScoreSummary(totalPoints, bestTeamPoints, bestTeamName);
+  }
 
+  private int calculateTeamPoints(
+      com.fortnite.pronos.model.Team team, Map<UUID, Integer> playerPointsMap) {
+    int teamPoints = 0;
+    for (com.fortnite.pronos.model.TeamPlayer teamPlayer : team.getPlayers()) {
+      if (!teamPlayer.isActive()) {
+        continue;
+      }
+      teamPoints += playerPointsMap.getOrDefault(teamPlayer.getPlayer().getId(), 0);
+    }
+    return teamPoints;
+  }
+
+  private void sortAndAssignRanks(List<PronostiqueurLeaderboardEntryDTO> entries) {
+    entries.sort((a, b) -> Integer.compare(b.getTotalPoints(), a.getTotalPoints()));
     for (int i = 0; i < entries.size(); i++) {
       entries.get(i).setRank(i + 1);
     }
-
-    log.info("[OK] Classement pronostiqueurs généré avec {} utilisateurs", entries.size());
-    return entries;
   }
+
+  private record TeamScoreSummary(int totalPoints, int bestTeamPoints, String bestTeamName) {}
 }

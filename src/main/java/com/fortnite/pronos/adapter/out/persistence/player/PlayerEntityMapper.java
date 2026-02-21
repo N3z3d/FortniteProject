@@ -2,7 +2,6 @@ package com.fortnite.pronos.adapter.out.persistence.player;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -91,7 +90,7 @@ public class PlayerEntityMapper {
     if (entities == null) {
       return Collections.emptyList();
     }
-    return entities.stream().map(this::toDomain).collect(Collectors.toList());
+    return entities.stream().map(this::toDomain).toList();
   }
 
   // ===============================

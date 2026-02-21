@@ -429,9 +429,9 @@
         "customDesc": "Crie sua própria configuração"
       },
       "smartDesc": {
-        "quickPlay": "Partida r?pida criada em {date} ?s {time}. Que ven?a o melhor!",
-        "championship": "Torneio oficial - {date}. Prepare-se para a competi??o!",
-        "casual": "Partida relaxada com amigos - {date}. Divers?o garantida!",
+        "quickPlay": "Partida rápida criada em {date} às {time}. Que vença o melhor!",
+        "championship": "Torneio oficial - {date}. Prepare-se para a competição!",
+        "casual": "Partida relaxada com amigos - {date}. Diversão garantida!",
         "custom": "Partida personalizada criada em {date} à s {time}"
       }
     },
@@ -962,7 +962,7 @@
     "regions": {
       "EU": "Europa",
       "NAW": "NAW (América do Norte Oeste)",
-      "ASIA": "Ãsia",
+      "ASIA": "Ásia",
       "BR": "Brasil",
       "NAC": "NAC (América do Norte Central)",
       "OCE": "Oceania",
@@ -1065,7 +1065,7 @@
     "team": {
       "playerAdded": "{player} adicionado ao seu time",
       "playerRemoved": "{player} removido do seu time",
-      "tradeCompleted": "Troca conclu?da: {out} <-> {in}"
+      "tradeCompleted": "Troca concluída: {out} <-> {in}"
     },
     "auth": {
       "loginSuccess": "Login realizado como {username}",
@@ -1494,6 +1494,8 @@
       "health": "Saúde do sistema",
       "recentActivity": "Atividade recente",
       "metrics": "Métricas do sistema",
+      "alerts": "Alertas ativos",
+      "visits": "Rastreamento de visitas",
       "refresh": "Atualizar",
       "loadError": "Erro ao carregar os dados."
     },
@@ -1512,7 +1514,7 @@
       "recentGames": "Partidas recentes",
       "recentTrades": "Trocas recentes",
       "totalUsers": "Usuários",
-      "latestGames": "?ltimas partidas"
+      "latestGames": "Últimas partidas"
     },
     "metrics": {
       "heapUsed": "Heap usado",
@@ -1520,6 +1522,19 @@
       "threads": "Threads",
       "totalRequests": "Requisições totais",
       "errorRate": "Taxa de erro"
+    },
+    "alerts": {
+      "none": "Sem alertas ativos.",
+      "threshold": "Limite"
+    },
+    "visits": {
+      "pageViews": "Páginas vistas",
+      "uniqueVisitors": "Visitantes únicos",
+      "activeSessions": "Sessões ativas",
+      "averageDuration": "Duração média",
+      "topPages": "Páginas mais vistas",
+      "bounceRate": "Taxa de rejeição",
+      "topFlows": "Fluxos de navegação"
     },
     "errors": {
       "title": "Registro de erros",
@@ -1530,6 +1545,10 @@
         "uniqueTypes": "Tipos únicos",
         "serverErrors": "Erros do servidor (5xx)",
         "notFound": "Não encontrado (404)"
+      },
+      "trend": {
+        "title": "Tendencia de erros",
+        "subtitle": "Distribuicao no periodo selecionado"
       },
       "filter": {
         "status": "Código HTTP",

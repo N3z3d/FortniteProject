@@ -13,6 +13,8 @@ import { GameSelectionService } from '../../../core/services/game-selection.serv
 import { LoggerService } from '../../../core/services/logger.service';
 import { UserGamesState, UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
+import { NavigationTrackingService } from '../../../core/services/navigation-tracking.service';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
 
@@ -25,7 +27,10 @@ describe('MainLayoutComponent', () => {
   let userGamesStore: jasmine.SpyObj<UserGamesStore>;
   let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
   let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
+  let gamesRealtimeService: jasmine.SpyObj<GamesRealtimeService>;
+  let navigationTrackingService: jasmine.SpyObj<NavigationTrackingService>;
   let stateSubject: BehaviorSubject<UserGamesState>;
+  let realtimeEventsSubject: BehaviorSubject<any>;
 
   const mockUser: UserProfile = {
     id: '1',
@@ -96,6 +101,7 @@ describe('MainLayoutComponent', () => {
     gameService = jasmine.createSpyObj('GameService', ['joinGameWithCode']);
     const logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
     uiFeedback = jasmine.createSpyObj('UiErrorFeedbackService', ['showSuccessWithAction']);
+    navigationTrackingService = jasmine.createSpyObj('NavigationTrackingService', ['trackNavigation']);
     const accessibilityService = jasmine.createSpyObj('AccessibilityAnnouncerService', ['announceNavigation']);
     const focusManagementService = jasmine.createSpyObj('FocusManagementService', ['restoreFocusAfterNavigation']);
 
@@ -106,16 +112,24 @@ describe('MainLayoutComponent', () => {
       { selectedGame$: of(null) }
     );
 
+    realtimeEventsSubject = new BehaviorSubject<any>({ type: 'CONNECTED' });
+    gamesRealtimeService = jasmine.createSpyObj<GamesRealtimeService>(
+      'GamesRealtimeService',
+      ['start', 'stop'],
+      { events$: realtimeEventsSubject.asObservable() }
+    );
+
     stateSubject = new BehaviorSubject<UserGamesState>(initialState);
     userGamesStore = jasmine.createSpyObj<UserGamesStore>(
       'UserGamesStore',
-      ['loadGames', 'refreshGames', 'clear', 'startAutoRefresh', 'stopAutoRefresh'],
+      ['loadGames', 'refreshGames', 'clear'],
       { state$: stateSubject.asObservable() }
     );
 
     breakpointObserver.observe.and.returnValue(of({ matches: false }));
     userGamesStore.loadGames.and.returnValue(of([]));
     userGamesStore.refreshGames.and.returnValue(of([]));
+    navigationTrackingService.trackNavigation.and.returnValue(of(void 0));
     userContextService.getCurrentUser.and.returnValue(mockUser);
 
     await TestBed.configureTestingModule({
@@ -129,7 +143,9 @@ describe('MainLayoutComponent', () => {
         { provide: FocusManagementService, useValue: focusManagementService },
         { provide: UserContextService, useValue: userContextService },
         { provide: GameSelectionService, useValue: gameSelectionService },
-        { provide: UserGamesStore, useValue: userGamesStore }
+        { provide: UserGamesStore, useValue: userGamesStore },
+        { provide: GamesRealtimeService, useValue: gamesRealtimeService },
+        { provide: NavigationTrackingService, useValue: navigationTrackingService }
       ]
     }).compileComponents();
 
@@ -150,9 +166,10 @@ describe('MainLayoutComponent', () => {
 
     expect(userContextService.getCurrentUser).toHaveBeenCalled();
     expect(userGamesStore.loadGames).toHaveBeenCalled();
-    expect(userGamesStore.startAutoRefresh).toHaveBeenCalledWith(15000);
+    expect(gamesRealtimeService.start).toHaveBeenCalled();
     expect(component.currentUser).toEqual(mockUser);
     expect(component.userGames).toEqual(mockGames);
+    expect(navigationTrackingService.trackNavigation).toHaveBeenCalled();
   });
 
   it('should refresh user games', () => {
@@ -186,12 +203,21 @@ describe('MainLayoutComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('should stop auto-refresh on destroy', () => {
+  it('should stop realtime sync on destroy', () => {
     component.ngOnInit();
 
     component.ngOnDestroy();
 
-    expect(userGamesStore.stopAutoRefresh).toHaveBeenCalled();
+    expect(gamesRealtimeService.stop).toHaveBeenCalled();
+  });
+
+  it('should refresh games when a realtime game event is received', () => {
+    component.ngOnInit();
+    userGamesStore.refreshGames.calls.reset();
+
+    realtimeEventsSubject.next({ type: 'GAME_DELETED', gameId: '1' });
+
+    expect(userGamesStore.refreshGames).toHaveBeenCalled();
   });
 
   it('should refresh games on window focus', () => {

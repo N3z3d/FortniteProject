@@ -39,6 +39,11 @@ describe('ErrorJournalComponent', () => {
     totalErrors: 15,
     errorsByType: { GameNotFoundException: 10, BusinessException: 5 },
     errorsByStatusCode: { 404: 10, 400: 5 },
+    trendGranularity: 'HOUR',
+    errorTrend: [
+      { periodStart: '2026-02-17T09:00:00', count: 3 },
+      { periodStart: '2026-02-17T10:00:00', count: 6 }
+    ],
     topErrors: [
       { type: 'GameNotFoundException', message: 'not found', count: 10, lastOccurrence: '2026-02-17T10:00:00' }
     ]
@@ -230,10 +235,35 @@ describe('ErrorJournalComponent', () => {
       expect(entries.length).toBe(2);
     }));
 
+    it('should return trend entries from statistics', fakeAsync(() => {
+      fixture.detectChanges();
+      tick();
+
+      const entries = component.getTrendEntries();
+      expect(entries.length).toBe(2);
+      expect(entries[0].count).toBe(3);
+    }));
+
+    it('should compute trend bar width relative to max count', fakeAsync(() => {
+      fixture.detectChanges();
+      tick();
+
+      expect(component.getTrendBarWidth(3)).toBe('50%');
+      expect(component.getTrendBarWidth(6)).toBe('100%');
+    }));
+
+    it('should format trend label for hourly granularity', fakeAsync(() => {
+      fixture.detectChanges();
+      tick();
+
+      expect(component.formatTrendLabel('2026-02-17T10:00:00')).toContain(':');
+    }));
+
     it('should return empty arrays when no statistics', () => {
       component.statistics = null;
       expect(component.getStatusEntries()).toEqual([]);
       expect(component.getTypeEntries()).toEqual([]);
+      expect(component.getTrendEntries()).toEqual([]);
     });
   });
 

@@ -17,6 +17,7 @@ import com.fortnite.pronos.service.InvitationCodeService.InvitationCodeGeneratio
 /** Tests TDD pour InvitationCodeService Clean Code : tests clairs et focalisés */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests TDD - InvitationCodeService")
+@SuppressWarnings({"java:S5853"})
 class InvitationCodeServiceTest {
 
   @Mock private InvitationCodeRepositoryPort invitationCodeRepository;
@@ -33,8 +34,7 @@ class InvitationCodeServiceTest {
     String code = invitationCodeService.generateUniqueCode();
 
     // Then
-    assertThat(code).isNotNull();
-    assertThat(code).hasSize(8);
+    assertThat(code).isNotNull().hasSize(8);
     assertThat(code).matches("^[A-Z0-9]{8}$");
     verify(invitationCodeRepository, times(1)).existsByInvitationCode(anyString());
   }

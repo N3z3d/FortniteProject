@@ -10,6 +10,7 @@ import { Game, GameParticipant, GameStatus } from '../models/game.interface';
 import { GameApiMapper } from '../mappers/game-api.mapper';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
+import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
 
 describe('GameDetailComponent - TDD Tests', () => {
   let component: GameDetailComponent;
@@ -64,6 +65,9 @@ describe('GameDetailComponent - TDD Tests', () => {
       'validateGameData'
     ]);
     const uiFeedbackSpy = jasmine.createSpyObj('UiErrorFeedbackService', ['showError']);
+    const gamesRealtimeServiceSpy = jasmine.createSpyObj('GamesRealtimeService', [], {
+      events$: of({ type: 'CONNECTED' })
+    });
     const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame', 'refreshGames']);
@@ -97,6 +101,7 @@ describe('GameDetailComponent - TDD Tests', () => {
         { provide: UserContextService, useValue: userContextSpy },
         { provide: UserGamesStore, useValue: userGamesStoreSpy },
         { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
+        { provide: GamesRealtimeService, useValue: gamesRealtimeServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]

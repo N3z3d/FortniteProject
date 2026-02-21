@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, forkJoin, throwError } from 'rxjs';
 import { map, catchError, timeout, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
-// import { LeaderboardApiMapper } from '../mappers/leaderboard-api.mapper';
 import { StatsApiMapper } from '../mappers/stats-api.mapper';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { LoggerService } from '../../../core/services/logger.service';

@@ -254,7 +254,7 @@ export class LeaderboardService {
 
   getTeamMovements(teamId: string): Observable<TeamMovement[]> {
     return this.http.get<TeamMovement[]>(`${this.apiUrl}/teams/${teamId}/movements`).pipe(
-      map(movements => movements.sort((a, b) => 
+      map(movements => [...movements].sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       ))
     );
@@ -306,7 +306,7 @@ export class LeaderboardService {
           throw new Error("Aucun remplaçant disponible");
         }
 
-        const bestReplacement = players.sort((a, b) => {
+        const bestReplacement = [...players].sort((a, b) => {
           if (a.points !== b.points) return b.points - a.points;
           if (a.rank !== b.rank) return a.rank - b.rank;
           return b.stats.winRate - a.stats.winRate;
@@ -336,7 +336,7 @@ export class LeaderboardService {
 
   getRegionRankings(region: Region): Observable<PlayerPool[]> {
     return this.http.get<PlayerPool[]>(`${this.apiUrl}/rankings/${region}`).pipe(
-      map(players => players.sort((a, b) => a.rank - b.rank))
+      map(players => [...players].sort((a, b) => a.rank - b.rank))
     );
   }
 

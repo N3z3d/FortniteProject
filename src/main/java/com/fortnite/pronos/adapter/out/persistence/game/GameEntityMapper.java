@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -83,7 +82,7 @@ public class GameEntityMapper {
     return rules.stream()
         .map(rule -> toEntityRegionRule(rule, parentEntity))
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private List<com.fortnite.pronos.model.GameParticipant> toEntityParticipants(
@@ -94,7 +93,7 @@ public class GameEntityMapper {
     return participants.stream()
         .map(participant -> toEntityParticipant(participant, parentEntity, participantUsersById))
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private com.fortnite.pronos.model.GameParticipant toEntityParticipant(
@@ -123,7 +122,7 @@ public class GameEntityMapper {
     return selectedPlayerIds.stream()
         .map(this::createPlayerReference)
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private User resolveParticipantUser(
@@ -243,10 +242,7 @@ public class GameEntityMapper {
     if (rules == null) {
       return Collections.emptyList();
     }
-    return rules.stream()
-        .map(this::toDomainRegionRule)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return rules.stream().map(this::toDomainRegionRule).filter(Objects::nonNull).toList();
   }
 
   private List<GameParticipant> toDomainParticipants(
@@ -254,10 +250,7 @@ public class GameEntityMapper {
     if (participants == null) {
       return Collections.emptyList();
     }
-    return participants.stream()
-        .map(this::toDomainParticipant)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return participants.stream().map(this::toDomainParticipant).filter(Objects::nonNull).toList();
   }
 
   /**
@@ -271,7 +264,7 @@ public class GameEntityMapper {
 
     List<java.util.UUID> selectedPlayerIds =
         entity.getSelectedPlayers() != null
-            ? entity.getSelectedPlayers().stream().map(Player::getId).collect(Collectors.toList())
+            ? entity.getSelectedPlayers().stream().map(Player::getId).toList()
             : Collections.emptyList();
 
     return GameParticipant.restore(
@@ -339,7 +332,7 @@ public class GameEntityMapper {
     if (entities == null) {
       return Collections.emptyList();
     }
-    return entities.stream().map(this::toDomain).collect(Collectors.toList());
+    return entities.stream().map(this::toDomain).toList();
   }
 
   // ===============================

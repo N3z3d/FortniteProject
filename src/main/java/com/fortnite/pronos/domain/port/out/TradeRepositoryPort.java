@@ -14,6 +14,8 @@ public interface TradeRepositoryPort {
 
   Optional<Trade> findById(UUID id);
 
+  Trade save(Trade trade);
+
   List<Trade> findByTeamId(UUID teamId);
 
   List<Trade> findPendingTradesForTeam(UUID teamId);

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
  * puis le refactoring (REFACTOR)
  */
 @DisplayName("Game - Rich Domain Model Tests")
+@SuppressWarnings({"java:S5853"})
 class GameRichDomainTest {
 
   private User creator;
@@ -250,8 +251,7 @@ class GameRichDomainTest {
       // RED: Each game should have a unique invitation code
       String invitationCode = game.generateInvitationCode();
 
-      assertThat(invitationCode).isNotNull();
-      assertThat(invitationCode).hasSize(8); // 8-character codes
+      assertThat(invitationCode).isNotNull().hasSize(8); // 8-character codes
       assertThat(invitationCode).matches("[A-Z0-9]{8}"); // Alphanumeric uppercase
 
       // Code should be stored in the game

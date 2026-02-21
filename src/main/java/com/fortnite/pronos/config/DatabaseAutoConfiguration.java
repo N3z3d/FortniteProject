@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class DatabaseAutoConfiguration implements ApplicationListener<ApplicationReadyEvent> {
 
+  private static final String SECTION_SEPARATOR =
+      "================================================================";
+
   private final DataSource dataSource;
 
   public DatabaseAutoConfiguration(DataSource dataSource) {
@@ -50,9 +53,9 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
 
   /** Affiche le statut de la base de données de manière UX-friendly */
   private void displayDatabaseStatus(String databaseType, String jdbcUrl) {
-    log.info("================================================================");
+    log.info(SECTION_SEPARATOR);
     log.info("[START] FORTNITE PRONOS - STATUT BASE DE DONNEES");
-    log.info("================================================================");
+    log.info(SECTION_SEPARATOR);
 
     if (databaseType.contains("H2")) {
       log.info("BASE DE DONNEES: H2 (profil test)");
@@ -69,7 +72,7 @@ public class DatabaseAutoConfiguration implements ApplicationListener<Applicatio
       log.info("[DB] URL: {}", jdbcUrl);
     }
 
-    log.info("================================================================");
+    log.info(SECTION_SEPARATOR);
   }
 
   /** Affiche des conseils UX selon le type de base de données */

@@ -213,7 +213,7 @@ class PlayerDomainModelTest {
       Player p1 = Player.restore(id, null, "user1", "nick1", PlayerRegion.EU, "1-7", 2025, false);
       Player p2 = Player.restore(id, "FN1", "user2", "nick2", PlayerRegion.NAW, "1-10", 2024, true);
 
-      assertThat(p1.hashCode()).isEqualTo(p2.hashCode());
+      assertThat(p1).hasSameHashCodeAs(p2);
     }
   }
 

@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.exception.UserNotFoundException;
-import com.fortnite.pronos.model.User;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserContextService {
+
+  private static final String USER_NOT_FOUND_PREFIX = "Utilisateur non trouve: ";
+  private static final String USER_NOT_AUTHENTICATED_MESSAGE = "Utilisateur non authentifie";
 
   private final UserService userService;
 
@@ -43,11 +45,11 @@ public class UserContextService {
    * @return User authentifié
    * @throws IllegalStateException si aucun utilisateur n'est authentifié
    */
-  public User getCurrentUser() {
+  public com.fortnite.pronos.model.User getCurrentUser() {
     UUID userId = getCurrentUserId();
     return userService
         .findUserById(userId)
-        .orElseThrow(() -> new IllegalStateException("Utilisateur non trouve: " + userId));
+        .orElseThrow(() -> new IllegalStateException(USER_NOT_FOUND_PREFIX + userId));
   }
 
   /**
@@ -57,7 +59,7 @@ public class UserContextService {
    * @return User correspondant
    * @throws IllegalStateException si l'utilisateur n'est pas trouvé
    */
-  public User getCurrentUserFromParam(String usernameParam) {
+  public com.fortnite.pronos.model.User getCurrentUserFromParam(String usernameParam) {
     if (usernameParam == null || usernameParam.trim().isEmpty()) {
       log.error("Parametre username manquant - authentification requise");
       throw new IllegalStateException("Parametre username requis pour l'authentification");
@@ -117,7 +119,7 @@ public class UserContextService {
    * @return User authentifié
    * @throws IllegalStateException si aucun utilisateur n'est trouvé
    */
-  public User getCurrentUserWithFallback(String usernameParam) {
+  public com.fortnite.pronos.model.User getCurrentUserWithFallback(String usernameParam) {
     // Privilégier le paramètre user s'il est fourni
     if (usernameParam != null && !usernameParam.trim().isEmpty()) {
       log.debug("Utilisation du paramètre user: {}", usernameParam);
@@ -149,7 +151,7 @@ public class UserContextService {
    * Trouve un utilisateur par son nom d'utilisateur Clean Code : méthode simple avec une
    * responsabilité unique
    */
-  public User findUserByUsername(String username) {
+  public com.fortnite.pronos.model.User findUserByUsername(String username) {
     log.debug("Recherche de l'utilisateur par nom: {}", username);
 
     return getUserOrNotFound(username);
@@ -165,7 +167,7 @@ public class UserContextService {
   public UUID getUserIdFromUsername(String username) {
     log.debug("Recuperation de l'ID utilisateur par nom: {}", username);
 
-    User user = getUserOrNotFound(username);
+    com.fortnite.pronos.model.User user = getUserOrNotFound(username);
 
     return user.getId();
   }
@@ -175,18 +177,18 @@ public class UserContextService {
 
     if (authentication == null || !authentication.isAuthenticated()) {
       log.warn("Aucun utilisateur authentifie trouve dans le contexte de securite");
-      throw new IllegalStateException("Utilisateur non authentifie");
+      throw new IllegalStateException(USER_NOT_AUTHENTICATED_MESSAGE);
     }
 
     Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
     if (authorities == null) {
       log.warn("Aucune autorite dans le contexte de securite");
-      throw new IllegalStateException("Utilisateur non authentifie");
+      throw new IllegalStateException(USER_NOT_AUTHENTICATED_MESSAGE);
     }
 
     if (authorities.contains(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))) {
       log.warn("Authentification anonyme detectee, refus de continuer");
-      throw new IllegalStateException("Utilisateur non authentifie");
+      throw new IllegalStateException(USER_NOT_AUTHENTICATED_MESSAGE);
     }
 
     String username = authentication.getName();
@@ -198,23 +200,23 @@ public class UserContextService {
     return username.trim();
   }
 
-  private User getUserOrIllegalState(String username) {
+  private com.fortnite.pronos.model.User getUserOrIllegalState(String username) {
     return userService
         .findUserByUsername(username)
         .orElseThrow(
             () -> {
               log.error("Utilisateur non trouve en base: {}", username);
-              return new IllegalStateException("Utilisateur non trouve: " + username);
+              return new IllegalStateException(USER_NOT_FOUND_PREFIX + username);
             });
   }
 
-  private User getUserOrNotFound(String username) {
+  private com.fortnite.pronos.model.User getUserOrNotFound(String username) {
     return userService
         .findUserByUsername(username)
         .orElseThrow(
             () -> {
               log.error("Utilisateur non trouve en base: {}", username);
-              return new UserNotFoundException("Utilisateur non trouve: " + username);
+              return new UserNotFoundException(USER_NOT_FOUND_PREFIX + username);
             });
   }
 }

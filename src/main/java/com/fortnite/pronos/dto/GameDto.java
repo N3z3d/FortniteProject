@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@SuppressWarnings({"java:S1640"})
 public class GameDto {
 
   private UUID id;

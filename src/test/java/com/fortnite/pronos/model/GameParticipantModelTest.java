@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
  * attendus
  */
 @DisplayName("Tests TDD - Modèle GameParticipant")
+@SuppressWarnings({"java:S2925"})
 class GameParticipantModelTest {
 
   private GameParticipant participant;
@@ -100,7 +101,7 @@ class GameParticipantModelTest {
   @DisplayName("Devrait ajouter un joueur à la sélection")
   void shouldAddPlayerToSelection() {
     // Given: Participant sans joueurs sélectionnés
-    assertThat(participant.getSelectedPlayersCount()).isEqualTo(0);
+    assertThat(participant.getSelectedPlayersCount()).isZero();
 
     // When: Ajout d'un joueur
     participant.addSelectedPlayer(player1);
@@ -138,8 +139,7 @@ class GameParticipantModelTest {
 
     // Then: Joueur supprimé
     assertThat(participant.getSelectedPlayersCount()).isEqualTo(1);
-    assertThat(participant.getSelectedPlayers()).contains(player2);
-    assertThat(participant.getSelectedPlayers()).doesNotContain(player1);
+    assertThat(participant.getSelectedPlayers()).contains(player2).doesNotContain(player1);
   }
 
   @Test
@@ -161,7 +161,7 @@ class GameParticipantModelTest {
   @DisplayName("Devrait retourner le bon nombre de joueurs sélectionnés")
   void shouldReturnCorrectSelectedPlayersCount() {
     // Given: Participant sans joueurs
-    assertThat(participant.getSelectedPlayersCount()).isEqualTo(0);
+    assertThat(participant.getSelectedPlayersCount()).isZero();
 
     // When: Ajout de joueurs
     participant.addSelectedPlayer(player1);
@@ -260,8 +260,7 @@ class GameParticipantModelTest {
     // Then: Relations correctes
     assertThat(hasPlayer1).isTrue();
     assertThat(hasPlayer2).isTrue();
-    assertThat(participant.getSelectedPlayers()).hasSize(2);
-    assertThat(participant.getSelectedPlayers()).contains(player1, player2);
+    assertThat(participant.getSelectedPlayers()).hasSize(2).contains(player1, player2);
   }
 
   @Test

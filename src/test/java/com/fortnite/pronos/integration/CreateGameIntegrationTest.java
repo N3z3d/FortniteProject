@@ -40,7 +40,7 @@ import com.fortnite.pronos.service.JwtService;
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @Transactional
-public class CreateGameIntegrationTest {
+class CreateGameIntegrationTest {
 
   private static final Logger log = LoggerFactory.getLogger(CreateGameIntegrationTest.class);
 

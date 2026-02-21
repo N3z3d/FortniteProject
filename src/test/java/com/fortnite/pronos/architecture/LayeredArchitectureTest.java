@@ -11,7 +11,7 @@ import com.tngtech.archunit.library.Architectures;
  * Architecture tests to enforce layered architecture principles and ensure clean separation of
  * concerns across the application.
  */
-public class LayeredArchitectureTest {
+class LayeredArchitectureTest {
 
   private final JavaClasses classes =
       new ClassFileImporter()
