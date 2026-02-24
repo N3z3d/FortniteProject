@@ -55,6 +55,18 @@ Default gate: `Fortnite Local Gate` with conditions on new code:
 - Backend: `http://localhost:9000/dashboard?id=fortnite-pronos-backend`
 - Frontend: `http://localhost:9000/dashboard?id=fortnite-pronos-frontend`
 
+## 7) CI integration (GitHub Actions)
+Workflow file: `.github/workflows/sonar.yml`
+
+Required repository secrets:
+- `SONAR_HOST_URL` (must be reachable from GitHub runners)
+- `SONAR_TOKEN`
+
+Behavior:
+- Runs on pull requests and on push to `main`.
+- Runs backend and frontend scans separately.
+- Waits for Quality Gate (`sonar.qualitygate.wait=true`) and fails the workflow when gate is not `OK`.
+
 ## Troubleshooting
 - Token/auth errors (`401/403`):
   - Regenerate token and update `$env:SONAR_TOKEN`.
