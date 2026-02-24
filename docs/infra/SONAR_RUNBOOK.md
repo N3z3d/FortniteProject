@@ -14,10 +14,11 @@ Invoke-WebRequest -UseBasicParsing http://localhost:9000/api/system/status
 1. Open `http://localhost:9000`.
 2. Login (`admin/admin` by default local setup).
 3. `My Account` -> `Security` -> `Generate Tokens`.
-4. Export token for current shell:
+4. Save the token in `.env`:
 ```powershell
-$env:SONAR_TOKEN = "<your-token>"
+SONAR_TOKEN=<your-token>
 ```
+The scan scripts load `SONAR_TOKEN` from `.env` automatically (and still honor `$env:SONAR_TOKEN` if already set).
 
 ## 3) Run backend scan
 ```powershell

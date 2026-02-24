@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -216,7 +215,7 @@ public class DraftSimultaneousService {
                   entry.put("playerId", s.getPlayerId().toString());
                   return entry;
                 })
-            .collect(Collectors.toList());
+            .toList();
 
     Map<String, Object> message = new HashMap<>();
     message.put("type", "ALL_RESOLVED");

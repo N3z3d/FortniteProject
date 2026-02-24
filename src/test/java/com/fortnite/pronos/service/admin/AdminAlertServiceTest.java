@@ -42,13 +42,12 @@ class AdminAlertServiceTest {
 
       List<AdminAlertDto> alerts = service.getActiveAlerts(24, AdminAlertThresholdsDto.defaults());
 
-      assertThat(alerts).isNotEmpty();
       assertThat(alerts)
           .anySatisfy(
-              alert -> {
-                assertThat(alert.getCode()).isEqualTo("SYSTEM_DOWN");
-                assertThat(alert.getSeverity()).isEqualTo(AdminAlertDto.Severity.CRITICAL);
-              });
+              alert ->
+                  assertThat(alert)
+                      .extracting(AdminAlertDto::getCode, AdminAlertDto::getSeverity)
+                      .containsExactly("SYSTEM_DOWN", AdminAlertDto.Severity.CRITICAL));
     }
 
     @Test
@@ -69,15 +68,15 @@ class AdminAlertServiceTest {
 
       assertThat(alerts)
           .anySatisfy(
-              alert -> {
-                assertThat(alert.getCode()).isEqualTo("HEAP_USAGE_HIGH");
-                assertThat(alert.getSeverity()).isEqualTo(AdminAlertDto.Severity.WARNING);
-              });
+              alert ->
+                  assertThat(alert)
+                      .extracting(AdminAlertDto::getCode, AdminAlertDto::getSeverity)
+                      .containsExactly("HEAP_USAGE_HIGH", AdminAlertDto.Severity.WARNING));
     }
 
     @Test
     void shouldReturnNoAlertsWhenEverythingIsHealthy() {
-      when(adminDashboardService.getSystemHealth()).thenReturn(systemHealth("UP", 20, 20, 10));
+      when(adminDashboardService.getSystemHealth()).thenReturn(systemHealth("UP", 20, 2, 10));
       when(adminDashboardService.getSystemMetrics()).thenReturn(systemMetrics(30, 1.0));
       when(errorJournalService.getErrorStatistics(24)).thenReturn(errorStatistics(0));
 
