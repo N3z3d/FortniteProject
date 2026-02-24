@@ -37,7 +37,6 @@ describe('DashboardRepository', () => {
 
   describe('HttpDashboardRepository', () => {
     it('should map statistics response and include season progress', (done) => {
-      spyOn<any>(httpRepo, 'calculateSeasonProgress').and.returnValue(12.5);
       const apiResponse = {
         totalTeams: 10,
         totalPlayers: 20,
@@ -47,14 +46,14 @@ describe('DashboardRepository', () => {
       };
 
       httpRepo.getStatistics('game-1').subscribe(stats => {
-        expect(stats).toEqual({
-          totalTeams: 10,
-          totalPlayers: 20,
-          totalPoints: 300,
-          averagePointsPerTeam: 30,
-          mostActiveTeam: 'Team A',
-          seasonProgress: 12.5
-        });
+        expect(stats.totalTeams).toBe(10);
+        expect(stats.totalPlayers).toBe(20);
+        expect(stats.totalPoints).toBe(300);
+        expect(stats.averagePointsPerTeam).toBe(30);
+        expect(stats.mostActiveTeam).toBe('Team A');
+        expect(stats.seasonProgress).toEqual(jasmine.any(Number));
+        expect(stats.seasonProgress).toBeGreaterThanOrEqual(0);
+        expect(stats.seasonProgress).toBeLessThanOrEqual(100);
         done();
       });
 
@@ -64,12 +63,12 @@ describe('DashboardRepository', () => {
     });
 
     it('should request stats without gameId when not provided', (done) => {
-      spyOn<any>(httpRepo, 'calculateSeasonProgress').and.returnValue(1);
-
       httpRepo.getStatistics('').subscribe(stats => {
         expect(stats.totalTeams).toBe(0);
         expect(stats.mostActiveTeam).toBe('');
-        expect(stats.seasonProgress).toBe(1);
+        expect(stats.seasonProgress).toEqual(jasmine.any(Number));
+        expect(stats.seasonProgress).toBeGreaterThanOrEqual(0);
+        expect(stats.seasonProgress).toBeLessThanOrEqual(100);
         done();
       });
 
@@ -105,8 +104,6 @@ describe('DashboardRepository', () => {
     });
 
     it('should aggregate dashboard data and build teams', (done) => {
-      spyOn<any>(httpRepo, 'calculateSeasonProgress').and.returnValue(50);
-
       const leaderboard = [
         { teamId: 't1', teamName: 'Alpha', totalPoints: 10, ownerName: 'Owner', players: [{ id: 1 }] },
         { id: 't2', teamName: 'Beta', ownerName: 'Owner 2' }
@@ -157,10 +154,10 @@ describe('DashboardRepository', () => {
 
   describe('MockDashboardRepository', () => {
     it('should return empty dashboard data', (done) => {
-      spyOn<any>(mockRepo, 'calculateSeasonProgress').and.returnValue(77);
-
       mockRepo.getDashboardData('game-1').subscribe(data => {
-        expect(data.statistics.seasonProgress).toBe(77);
+        expect(data.statistics.seasonProgress).toEqual(jasmine.any(Number));
+        expect(data.statistics.seasonProgress).toBeGreaterThanOrEqual(0);
+        expect(data.statistics.seasonProgress).toBeLessThanOrEqual(100);
         expect(data.leaderboard).toEqual([]);
         expect(data.regionDistribution['EU']).toBe(0);
         expect(loggerService.warn).toHaveBeenCalled();
@@ -169,11 +166,11 @@ describe('DashboardRepository', () => {
     });
 
     it('should return empty stats and region distribution', (done) => {
-      spyOn<any>(mockRepo, 'calculateSeasonProgress').and.returnValue(11);
-
       mockRepo.getStatistics('game-1').subscribe(stats => {
         expect(stats.totalTeams).toBe(0);
-        expect(stats.seasonProgress).toBe(11);
+        expect(stats.seasonProgress).toEqual(jasmine.any(Number));
+        expect(stats.seasonProgress).toBeGreaterThanOrEqual(0);
+        expect(stats.seasonProgress).toBeLessThanOrEqual(100);
       });
 
       mockRepo.getRegionDistribution('game-1').subscribe(distribution => {

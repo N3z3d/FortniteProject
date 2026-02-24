@@ -11,10 +11,7 @@ if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) {
 }
 
 if (-not $SkipCoverage) {
-    npx --prefix frontend ng test --watch=false --browsers=ChromeHeadless --code-coverage `
-        --include="src/app/core/services/translation.service.spec.ts" `
-        --include="src/app/core/services/ui-error-feedback.service.spec.ts" `
-        --include="src/app/shared/components/main-layout/main-layout.component.spec.ts"
+    npx --prefix frontend ng test --watch=false --browsers=ChromeHeadless --code-coverage
 
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE

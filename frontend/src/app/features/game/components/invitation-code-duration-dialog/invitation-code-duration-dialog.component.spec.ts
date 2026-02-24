@@ -71,7 +71,7 @@ describe('InvitationCodeDurationDialogComponent', () => {
 
     component.onCancel();
 
-    expect(dialogRefSpy.close).toHaveBeenCalledWith(undefined);
+    expect(dialogRefSpy.close).toHaveBeenCalledWith();
   });
 
   it('falls back to regenerate wording when generate keys are missing', () => {

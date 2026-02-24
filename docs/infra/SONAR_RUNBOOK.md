@@ -28,6 +28,7 @@ $env:SONAR_TOKEN = "<your-token>"
 ```powershell
 .\scripts\sonar\scan-frontend.ps1
 ```
+This command runs the full frontend test suite (`ng test --code-coverage`) before uploading analysis.
 
 Default scanner image is pinned to `sonarsource/sonar-scanner-cli:11.1` (Node 18) to avoid non-recommended Node runtime warnings on SonarQube 9.9.
 By default, local scan disables SCM blame import (`-Dsonar.scm.disabled=true`) to avoid non-actionable local warnings on dirty workspaces.

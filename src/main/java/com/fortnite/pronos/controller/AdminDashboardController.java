@@ -42,6 +42,9 @@ public class AdminDashboardController {
   private static final int MAX_ALERT_HOURS = 168;
   private static final int MIN_VISIT_ANALYTICS_HOURS = 1;
   private static final int MAX_VISIT_ANALYTICS_HOURS = 168;
+  private static final String HOURS_VALIDATION_ERROR_MESSAGE =
+      "Le parametre hours doit etre entre 1 et 168";
+  private static final String VALIDATION_ERROR_CODE = "VALIDATION_ERROR";
 
   private final AdminDashboardService adminDashboardService;
   private final AdminAlertService adminAlertService;
@@ -67,8 +70,7 @@ public class AdminDashboardController {
           int hours) {
     if (hours < MIN_RECENT_ACTIVITY_HOURS || hours > MAX_RECENT_ACTIVITY_HOURS) {
       return ResponseEntity.badRequest()
-          .body(
-              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+          .body(ApiResponse.error(HOURS_VALIDATION_ERROR_MESSAGE, VALIDATION_ERROR_CODE));
     }
     log.info("Admin: fetching recent activity for last {} hours", hours);
     return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getRecentActivity(hours)));
@@ -98,8 +100,7 @@ public class AdminDashboardController {
       @RequestParam(defaultValue = "24") int hours) {
     if (hours < MIN_VISIT_ANALYTICS_HOURS || hours > MAX_VISIT_ANALYTICS_HOURS) {
       return ResponseEntity.badRequest()
-          .body(
-              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+          .body(ApiResponse.error(HOURS_VALIDATION_ERROR_MESSAGE, VALIDATION_ERROR_CODE));
     }
     return ResponseEntity.ok(
         ApiResponse.success(adminVisitAnalyticsService.getVisitAnalytics(hours)));
@@ -115,8 +116,7 @@ public class AdminDashboardController {
       @RequestParam(defaultValue = "10") int criticalErrorsThreshold) {
     if (hours < MIN_ALERT_HOURS || hours > MAX_ALERT_HOURS) {
       return ResponseEntity.badRequest()
-          .body(
-              ApiResponse.error("Le parametre hours doit etre entre 1 et 168", "VALIDATION_ERROR"));
+          .body(ApiResponse.error(HOURS_VALIDATION_ERROR_MESSAGE, VALIDATION_ERROR_CODE));
     }
     AdminAlertThresholdsDto thresholds =
         AdminAlertThresholdsDto.builder()
