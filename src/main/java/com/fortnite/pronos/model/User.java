@@ -10,6 +10,8 @@ import jakarta.validation.constraints.Size;
 
 import org.hibernate.annotations.ColumnTransformer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 @Data
@@ -28,7 +30,7 @@ public class User {
   @Column(unique = true)
   private String email;
 
-  @NotBlank private String password;
+  @JsonIgnore @NotBlank private String password;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, columnDefinition = "user_role")
@@ -61,6 +63,7 @@ public class User {
     }
   }
 
+  @JsonIgnore
   public String getPasswordHash() {
     return password;
   }

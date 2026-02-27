@@ -109,6 +109,8 @@ public class SecurityConfig {
         .permitAll()
         .requestMatchers("/ws/**")
         .permitAll()
+        .requestMatchers("/api/users/**")
+        .hasRole("ADMIN")
         .requestMatchers("/api/admin/**")
         .hasRole("ADMIN")
         .requestMatchers("/api/**")
