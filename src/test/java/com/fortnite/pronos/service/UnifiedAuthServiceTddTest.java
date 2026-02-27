@@ -207,7 +207,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.login(testLoginRequest))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
+          .hasMessageContaining("Utilisateur non trouve");
 
       verify(userRepository).findByUsername(testUsername);
       verifyNoInteractions(jwtService);
@@ -311,7 +311,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.refreshToken(invalidToken))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Token de rafraîchissement invalide");
+          .hasMessageContaining("Token de rafraichissement invalide");
 
       verify(jwtService).extractUsername(invalidToken);
       verify(jwtService).isTokenValid(eq(invalidToken), any());
@@ -327,7 +327,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.refreshToken(validRefreshToken))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
+          .hasMessageContaining("Utilisateur non trouve");
 
       verify(jwtService).extractUsername(validRefreshToken);
       verify(userRepository).findByUsername(testUsername);
@@ -343,7 +343,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.refreshToken(validRefreshToken))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Token de rafraîchissement invalide");
+          .hasMessageContaining("Token de rafraichissement invalide");
 
       verify(jwtService).extractUsername(validRefreshToken);
       verifyNoInteractions(userRepository);
@@ -361,7 +361,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.refreshToken(validRefreshToken))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Token de rafraîchissement invalide");
+          .hasMessageContaining("Token de rafraichissement invalide");
 
       verify(jwtService).generateToken(any());
     }
@@ -462,7 +462,7 @@ class UnifiedAuthServiceTddTest {
 
       assertThatThrownBy(() -> unifiedAuthService.refreshToken(malformedToken))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Token de rafraîchissement invalide");
+          .hasMessageContaining("Token de rafraichissement invalide");
 
       // Should not expose internal error details
       verify(jwtService).extractUsername(malformedToken);
@@ -482,7 +482,7 @@ class UnifiedAuthServiceTddTest {
       // Login should still try to find user and fail gracefully
       assertThatThrownBy(() -> unifiedAuthService.login(nullUsernameRequest))
           .isInstanceOf(RuntimeException.class)
-          .hasMessageContaining("Utilisateur non trouvé");
+          .hasMessageContaining("Utilisateur non trouve");
     }
 
     @Test
