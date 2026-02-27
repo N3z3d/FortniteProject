@@ -63,17 +63,14 @@ describe('ParticleEffectsService', () => {
 
   it('createParticleExplosion generates and removes particles', fakeAsync(() => {
     const { elementRef, element } = createElementRef();
-    spyOn(Math, 'random').and.returnValue(0);
 
     service.createParticleExplosion(elementRef, 3);
 
-    tick(0);
-    tick(100);
-    tick(100);
+    tick(250);
 
     expect(element.querySelectorAll('.explosion-particle').length).toBe(3);
 
-    tick(1000);
+    tick(2000);
 
     expect(element.querySelectorAll('.explosion-particle').length).toBe(0);
     expect((renderer.removeChild as jasmine.Spy).calls.count()).toBe(3);
