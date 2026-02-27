@@ -11,8 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.application.usecase.PlayerQueryUseCase;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
+import com.fortnite.pronos.dto.player.CataloguePlayerDto;
+import com.fortnite.pronos.dto.player.PlayerDetailDto;
 import com.fortnite.pronos.dto.player.PlayerDto;
+import com.fortnite.pronos.dto.player.RankSnapshotResponse;
 import com.fortnite.pronos.model.Player;
+import com.fortnite.pronos.service.RankSnapshotService;
+import com.fortnite.pronos.service.catalogue.PlayerCatalogueService;
+import com.fortnite.pronos.service.catalogue.PlayerDetailService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +43,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class PlayerController {
+  private static final int MAX_PAGE_SIZE = 50;
+  private static final int LEGACY_PAGE_SIZE = 200;
+
   private final PlayerQueryUseCase playerQueryUseCase;
+  private final RankSnapshotService rankSnapshotService;
+  private final PlayerCatalogueService playerCatalogueService;
+  private final PlayerDetailService playerDetailService;
 
   @Operation(
       summary = "Get all players with pagination",
@@ -62,7 +75,7 @@ public class PlayerController {
     Pageable optimizedPageable =
         PageRequest.of(
             page,
-            Math.min(size, 50), // Max 50 per page
+            Math.min(size, MAX_PAGE_SIZE), // Max 50 per page
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
     return ResponseEntity.ok(playerQueryUseCase.getAllPlayers(optimizedPageable));
@@ -76,7 +89,7 @@ public class PlayerController {
   @GetMapping("/all")
   public ResponseEntity<List<PlayerDto>> getAllPlayersLegacy() {
     // Use pagination internally but return as list for backward compatibility
-    Pageable pageable = PageRequest.of(0, 200);
+    Pageable pageable = PageRequest.of(0, LEGACY_PAGE_SIZE);
     return ResponseEntity.ok(playerQueryUseCase.getAllPlayers(pageable).getContent());
   }
 
@@ -154,11 +167,77 @@ public class PlayerController {
   }
 
   @Operation(
+      summary = "Get rank sparkline",
+      description =
+          "Retrieve daily rank snapshots for a player/region over the last N days (max 90)")
+  @ApiResponse(responseCode = "200", description = "Sparkline data retrieved")
+  @GetMapping("/{id}/sparkline")
+  public ResponseEntity<List<RankSnapshotResponse>> getSparkline(
+      @Parameter(description = "Player unique identifier", required = true) @PathVariable UUID id,
+      @Parameter(description = "Fortnite region", example = "EU") @RequestParam(defaultValue = "EU")
+          String region,
+      @Parameter(description = "Number of past days (max 90)", example = "14")
+          @RequestParam(defaultValue = "14")
+          int days) {
+    return ResponseEntity.ok(rankSnapshotService.getSparkline(id, region, days));
+  }
+
+  @Operation(
       summary = "Get player statistics",
       description = "Retrieve aggregated statistics about all players")
   @ApiResponse(responseCode = "200", description = "Player statistics retrieved successfully")
   @GetMapping("/stats")
   public ResponseEntity<Object> getPlayersStats() {
     return ResponseEntity.ok(playerQueryUseCase.getPlayersStats());
+  }
+
+  @Operation(
+      summary = "Get player catalogue filtered by region",
+      description =
+          "Retrieve players for the catalogue view (max 1000). Optional region filter. Accessible to all authenticated roles (FR-10).")
+  @ApiResponse(responseCode = "200", description = "Catalogue retrieved successfully")
+  @ApiResponse(responseCode = "400", description = "Invalid region value")
+  @GetMapping("/catalogue")
+  public ResponseEntity<List<CataloguePlayerDto>> getCatalogue(
+      @Parameter(description = "Fortnite region (EU, NAW, BR, ASIA, OCE, NAC, ME, NA, UNKNOWN)")
+          @RequestParam(required = false)
+          String region) {
+    if (region == null) {
+      return ResponseEntity.ok(playerCatalogueService.findAll());
+    }
+    try {
+      PlayerRegion playerRegion = PlayerRegion.valueOf(region.toUpperCase());
+      return ResponseEntity.ok(playerCatalogueService.findByRegion(playerRegion));
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @Operation(
+      summary = "Search catalogue by nickname",
+      description =
+          "Case and accent-insensitive nickname search across all players (FR-12). Returns up to 1000 results.")
+  @ApiResponse(responseCode = "200", description = "Search results retrieved successfully")
+  @GetMapping("/catalogue/search")
+  public ResponseEntity<List<CataloguePlayerDto>> searchCatalogue(
+      @Parameter(description = "Search term (case/accent-insensitive)", example = "éric")
+          @RequestParam
+          String q) {
+    return ResponseEntity.ok(playerCatalogueService.searchByNickname(q));
+  }
+
+  @Operation(
+      summary = "Get player profile detail",
+      description =
+          "Rich player profile: nickname, main region, latest PR per region, last snapshot date (FR-11).")
+  @ApiResponse(responseCode = "200", description = "Player profile retrieved successfully")
+  @ApiResponse(responseCode = "404", description = "Player not found")
+  @GetMapping("/{id}/profile")
+  public ResponseEntity<PlayerDetailDto> getPlayerProfile(
+      @Parameter(description = "Player unique identifier", required = true) @PathVariable UUID id) {
+    return playerDetailService
+        .getPlayerDetail(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
   }
 }

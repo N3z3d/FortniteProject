@@ -19,7 +19,7 @@ class GameDomainModelTest {
 
   @BeforeEach
   void setUp() {
-    game = new Game("Test Game", CREATOR_ID, 4);
+    game = new Game("Test Game", CREATOR_ID, 4, DraftMode.SNAKE, 5, 10, true);
   }
 
   @Nested
@@ -37,39 +37,52 @@ class GameDomainModelTest {
 
     @Test
     void trimsGameName() {
-      Game g = new Game("  Spaced Name  ", CREATOR_ID, 2);
+      Game g = new Game("  Spaced Name  ", CREATOR_ID, 2, DraftMode.SNAKE, 5, 10, true);
       assertThat(g.getName()).isEqualTo("Spaced Name");
     }
 
     @Test
     void rejectsNullName() {
-      assertThatIllegalArgumentException().isThrownBy(() -> new Game(null, CREATOR_ID, 4));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new Game(null, CREATOR_ID, 4, DraftMode.SNAKE, 5, 10, true));
     }
 
     @Test
     void rejectsEmptyName() {
-      assertThatIllegalArgumentException().isThrownBy(() -> new Game("  ", CREATOR_ID, 4));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new Game("  ", CREATOR_ID, 4, DraftMode.SNAKE, 5, 10, true));
     }
 
     @Test
     void rejectsNullCreator() {
-      assertThatIllegalArgumentException().isThrownBy(() -> new Game("Test", null, 4));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new Game("Test", null, 4, DraftMode.SNAKE, 5, 10, true));
     }
 
     @Test
     void rejectsTooFewParticipants() {
-      assertThatIllegalArgumentException().isThrownBy(() -> new Game("Test", CREATOR_ID, 1));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new Game("Test", CREATOR_ID, 1, DraftMode.SNAKE, 5, 10, true));
     }
 
     @Test
     void rejectsTooManyParticipants() {
-      assertThatIllegalArgumentException().isThrownBy(() -> new Game("Test", CREATOR_ID, 51));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new Game("Test", CREATOR_ID, 51, DraftMode.SNAKE, 5, 10, true));
     }
 
     @Test
     void acceptsBoundaryParticipants() {
-      assertThatCode(() -> new Game("Min", CREATOR_ID, 2)).doesNotThrowAnyException();
-      assertThatCode(() -> new Game("Max", CREATOR_ID, 50)).doesNotThrowAnyException();
+      assertThatCode(() -> new Game("Min", CREATOR_ID, 2, DraftMode.SNAKE, 5, 10, true))
+          .doesNotThrowAnyException();
+      assertThatCode(() -> new Game("Max", CREATOR_ID, 50, DraftMode.SNAKE, 5, 10, true))
+          .doesNotThrowAnyException();
+    }
+
+    @Test
+    void definesDefaultMaxTradesConstant() {
+      assertThatCode(() -> Game.class.getDeclaredField("DEFAULT_MAX_TRADES_PER_TEAM"))
+          .doesNotThrowAnyException();
     }
   }
 

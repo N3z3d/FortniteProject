@@ -3,6 +3,7 @@ package com.fortnite.pronos.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SuppressWarnings({"java:S1640", "java:S6353"})
 public class ValidationService {
+
+  private static final Pattern EMAIL_PATTERN =
+      Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{1,}$");
+  private static final int MAX_TOTAL_REGION_PLAYERS = 20;
+  private static final int MAX_PLAYERS_PER_REGION = 10;
 
   /** Valide une requête générique */
   public boolean validateRequest(Object request) {
@@ -38,8 +44,7 @@ public class ValidationService {
       return false;
     }
     String trimmed = email.trim();
-    // Basic pattern: local part + @ + domain with at least one dot, no spaces
-    return trimmed.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{1,}$");
+    return EMAIL_PATTERN.matcher(trimmed).matches();
   }
 
   /** Valide une requête de création de game */
@@ -56,7 +61,18 @@ public class ValidationService {
       throw new IllegalArgumentException("Erreurs de validation: " + errors);
     }
 
+    validateCompetitionDates(request);
+
     log.info("Requête de création de game validée avec succès");
+  }
+
+  private void validateCompetitionDates(CreateGameRequest request) {
+    if (request.getCompetitionStart() != null
+        && request.getCompetitionEnd() != null
+        && request.getCompetitionEnd().isBefore(request.getCompetitionStart())) {
+      throw new IllegalArgumentException(
+          "La date de fin de compétition doit être >= à la date de début");
+    }
   }
 
   /** Valide une requête de rejoindre une game */
@@ -96,12 +112,12 @@ public class ValidationService {
     for (Map.Entry<com.fortnite.pronos.model.Player.Region, Integer> entry :
         regionRules.entrySet()) {
       com.fortnite.pronos.model.Player.Region region = entry.getKey();
-      Integer maxPlayers = entry.getValue();
 
       if (region == null) {
         throw new IllegalArgumentException("La région ne peut pas être null");
       }
 
+      Integer maxPlayers = entry.getValue();
       if (maxPlayers == null || maxPlayers <= 0) {
         throw new IllegalArgumentException(
             "Le nombre de joueurs par région doit être positif pour la région " + region);
@@ -110,7 +126,7 @@ public class ValidationService {
       totalPlayers += maxPlayers;
     }
 
-    if (totalPlayers > 20) { // Max 20 joueurs au total
+    if (totalPlayers > MAX_TOTAL_REGION_PLAYERS) {
       throw new IllegalArgumentException("Le nombre total de joueurs ne peut pas dépasser 20");
     }
 
@@ -119,7 +135,7 @@ public class ValidationService {
       com.fortnite.pronos.model.Player.Region region = entry.getKey();
       Integer maxPlayers = entry.getValue();
 
-      if (maxPlayers > 10) { // Max 10 joueurs par région
+      if (maxPlayers > MAX_PLAYERS_PER_REGION) {
         throw new IllegalArgumentException(
             "Le nombre de joueurs par région ne peut pas dépasser 10 pour la région " + region);
       }

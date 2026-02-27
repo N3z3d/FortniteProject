@@ -91,6 +91,15 @@ class GameRichDomainTest {
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("Max participants must be between 2 and 50");
     }
+
+    @Test
+    @DisplayName("Should define participant bounds as named constants")
+    void shouldDefineParticipantBoundsAsNamedConstants() {
+      assertThatCode(() -> Game.class.getDeclaredField("MIN_PARTICIPANTS"))
+          .doesNotThrowAnyException();
+      assertThatCode(() -> Game.class.getDeclaredField("MAX_PARTICIPANTS"))
+          .doesNotThrowAnyException();
+    }
   }
 
   @Nested

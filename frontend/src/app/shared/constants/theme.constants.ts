@@ -6,22 +6,22 @@
 // Primary accent colors
 export const THEME_COLORS = {
   // Nexus theme primary colors
-  primaryCyan: '#00d4ff',
-  primaryGold: '#ffaa00',
-  primaryOrange: '#ff6b35',
-  primaryGreen: '#00ff88',
+  primaryCyan: 'var(--color-info)',
+  primaryGold: 'var(--color-action)',
+  primaryOrange: 'var(--color-region-brazil)',
+  primaryGreen: 'var(--color-success)',
 
   // Status colors
   success: 'rgba(0, 255, 136, 0.9)',
   error: 'rgba(255, 51, 102, 0.9)',
-  errorSolid: '#c53030',
+  errorSolid: 'var(--color-danger)',
   info: 'rgba(0, 212, 255, 0.9)',
-  warning: '#ffaa00',
+  warning: 'var(--color-warning)',
 
   // UI colors
-  focusOutline: '#2563eb',
-  focusOutlineHover: '#1d4ed8',
-  lightBackground: '#f7f7f7',
+  focusOutline: 'var(--color-primary)',
+  focusOutlineHover: 'var(--color-info)',
+  lightBackground: 'var(--color-light)',
 
   // Overlay colors
   overlayLight: 'rgba(255, 255, 255, 0.2)',
@@ -32,17 +32,23 @@ export const THEME_COLORS = {
 
   // Region colors for team statistics
   regions: {
-    EU: '#4CAF50',
-    NAW: '#2196F3',
-    NAC: '#FF9800',
-    BR: '#FFD700',
-    ASIA: '#E91E63',
-    OCE: '#9C27B0',
-    ME: '#FF5722'
+    EU: 'var(--color-region-eu)',
+    NAW: 'var(--color-region-naw)',
+    NAC: 'var(--color-admin-warning)',
+    BR: 'var(--color-region-brazil)',
+    ASIA: 'var(--color-region-asia)',
+    OCE: 'var(--color-region-oce)',
+    ME: 'var(--color-region-mena)'
   } as Record<string, string>,
 
   // Tranche colors for player tiers
-  tranches: ['#FFD700', '#C0C0C0', '#CD7F32', '#4CAF50', '#2196F3']
+  tranches: [
+    'var(--color-achievement)',
+    'rgb(192 192 192)',
+    'rgb(205 127 50)',
+    'var(--color-region-eu)',
+    'var(--color-admin-info)'
+  ]
 } as const;
 
 // Animation timing constants
@@ -108,12 +114,12 @@ export const PARTICLE_COLORS = [
 
 // Helper function to get region color
 export function getRegionColor(region: string): string {
-  return THEME_COLORS.regions[region] || '#757575';
+  return THEME_COLORS.regions[region] || 'var(--color-neutral)';
 }
 
 // Helper function to get tranche color
 export function getTrancheColor(trancheIndex: number): string {
-  return THEME_COLORS.tranches[trancheIndex - 1] || '#757575';
+  return THEME_COLORS.tranches[trancheIndex - 1] || 'var(--color-neutral)';
 }
 
 // Helper function to format points

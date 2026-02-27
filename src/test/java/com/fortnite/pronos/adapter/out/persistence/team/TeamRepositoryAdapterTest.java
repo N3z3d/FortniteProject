@@ -58,7 +58,7 @@ class TeamRepositoryAdapterTest {
 
     assertThat(result).isPresent();
     assertThat(result.orElseThrow().getId()).isEqualTo(id);
-    assertThat(result.getName()).isEqualTo("Team");
+    assertThat(result.orElseThrow().getName()).isEqualTo("Team");
   }
 
   @Test

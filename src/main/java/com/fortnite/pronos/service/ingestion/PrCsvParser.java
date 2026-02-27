@@ -11,11 +11,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 @SuppressWarnings({"java:S135"})
 public class PrCsvParser {
+  private static final Logger LOG = LoggerFactory.getLogger(PrCsvParser.class);
   private static final List<String> REQUIRED_HEADERS =
       List.of("nickname", "region", "points", "rank", "snapshot_date");
   private static final List<String> ALLOWED_REGIONS =
@@ -24,34 +27,47 @@ public class PrCsvParser {
   public ParseResult parse(Reader reader) {
     List<PrCsvRow> rows = new ArrayList<>();
     int errorCount = 0;
+    String failureReason = null;
     try (BufferedReader bufferedReader = new BufferedReader(reader)) {
       String headerLine = bufferedReader.readLine();
-      if (headerLine == null) {
-        return ParseResult.failure("invalid_header", 0);
-      }
-      Map<String, Integer> index = headerIndex(headerLine);
-      if (!hasRequiredHeaders(index)) {
-        return ParseResult.failure("invalid_header", 0);
-      }
-      String line;
-      while ((line = bufferedReader.readLine()) != null) {
-        if (line.isBlank() || line.trim().startsWith("#")) {
-          continue;
-        }
-        PrCsvRow row = parseRow(line, index);
-        if (row == null) {
-          errorCount++;
-          continue;
-        }
-        rows.add(row);
+      Map<String, Integer> index = headerLine == null ? Map.of() : headerIndex(headerLine);
+      if (headerLine == null || !hasRequiredHeaders(index)) {
+        failureReason = "invalid_header";
+      } else {
+        RowParsingResult rowParsingResult = parseRows(bufferedReader, index);
+        rows.addAll(rowParsingResult.rows());
+        errorCount = rowParsingResult.errorCount();
       }
     } catch (IOException e) {
-      return ParseResult.failure("io_error", errorCount);
+      LOG.warn("I/O error while parsing PR CSV input", e);
+      failureReason = "io_error";
     }
-    if (rows.isEmpty()) {
-      return ParseResult.failure("no_rows", errorCount);
+    if (failureReason == null && rows.isEmpty()) {
+      failureReason = "no_rows";
+    }
+    if (failureReason != null) {
+      return ParseResult.failure(failureReason, errorCount);
     }
     return ParseResult.success(rows, errorCount);
+  }
+
+  private RowParsingResult parseRows(BufferedReader bufferedReader, Map<String, Integer> index)
+      throws IOException {
+    List<PrCsvRow> rows = new ArrayList<>();
+    int errorCount = 0;
+    String line;
+    while ((line = bufferedReader.readLine()) != null) {
+      if (line.isBlank() || line.trim().startsWith("#")) {
+        continue;
+      }
+      PrCsvRow row = parseRow(line, index);
+      if (row == null) {
+        errorCount += 1;
+      } else {
+        rows.add(row);
+      }
+    }
+    return new RowParsingResult(rows, errorCount);
   }
 
   private Map<String, Integer> headerIndex(String headerLine) {
@@ -79,24 +95,23 @@ public class PrCsvParser {
     String[] parts = line.split(",", -1);
     String nickname = clean(readValue(parts, index.get("nickname")));
     String regionRaw = clean(readValue(parts, index.get("region")));
-    String pointsRaw = clean(readValue(parts, index.get("points")));
-    String rankRaw = clean(readValue(parts, index.get("rank")));
     String dateRaw = clean(readValue(parts, index.get("snapshot_date")));
 
-    if (nickname.isEmpty() || regionRaw.isEmpty() || dateRaw.isEmpty()) {
-      return null;
+    PrCsvRow parsedRow = null;
+    if (!nickname.isEmpty() && !regionRaw.isEmpty() && !dateRaw.isEmpty()) {
+      String region = regionRaw.toUpperCase(Locale.ROOT);
+      if (ALLOWED_REGIONS.contains(region)) {
+        LocalDate snapshotDate = parseDate(dateRaw);
+        String pointsRaw = clean(readValue(parts, index.get("points")));
+        String rankRaw = clean(readValue(parts, index.get("rank")));
+        Integer points = parseInt(pointsRaw);
+        Integer rank = parseInt(rankRaw);
+        if (points != null && rank != null && snapshotDate != null) {
+          parsedRow = new PrCsvRow(nickname, region, points, rank, snapshotDate);
+        }
+      }
     }
-    String region = regionRaw.toUpperCase(Locale.ROOT);
-    if (!ALLOWED_REGIONS.contains(region)) {
-      return null;
-    }
-    Integer points = parseInt(pointsRaw);
-    Integer rank = parseInt(rankRaw);
-    LocalDate snapshotDate = parseDate(dateRaw);
-    if (points == null || rank == null || snapshotDate == null) {
-      return null;
-    }
-    return new PrCsvRow(nickname, region, points, rank, snapshotDate);
+    return parsedRow;
   }
 
   private String readValue(String[] parts, Integer index) {
@@ -138,4 +153,6 @@ public class PrCsvParser {
       return new ParseResult(List.of(), errorCount, reason);
     }
   }
+
+  private record RowParsingResult(List<PrCsvRow> rows, int errorCount) {}
 }

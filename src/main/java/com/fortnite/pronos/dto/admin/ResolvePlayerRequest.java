@@ -1,0 +1,8 @@
+package com.fortnite.pronos.dto.admin;
+
+import java.util.UUID;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record ResolvePlayerRequest(@NotNull UUID playerId, @NotBlank String epicId) {}

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -166,6 +167,30 @@ class GameControllerSimpleTest {
         .registerAttemptOrThrow(user.getId(), request.getRemoteAddr());
     verify(validationService).validateJoinGameRequest(any(JoinGameRequest.class));
     verify(gameService).joinGame(eq(user.getId()), any(JoinGameRequest.class));
+  }
+
+  @Test
+  void shouldNormalizeInvitationCodeWithLocaleRoot() {
+    UUID gameId = UUID.randomUUID();
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+
+    Locale initialLocale = Locale.getDefault();
+    try {
+      Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+      when(userResolver.resolve(null, request)).thenReturn(user);
+      when(gameService.getGameByInvitationCode("I-TEST")).thenReturn(Optional.of(gameDto));
+      when(gameService.joinGame(eq(user.getId()), any(JoinGameRequest.class))).thenReturn(true);
+
+      ResponseEntity<GameDto> response =
+          gameController.joinGameWithCode(
+              new JoinGameWithCodeRequest("i-test", null), null, request);
+
+      org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+      verify(gameService).getGameByInvitationCode("I-TEST");
+    } finally {
+      Locale.setDefault(initialLocale);
+    }
   }
 
   @Test

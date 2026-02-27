@@ -1497,7 +1497,9 @@
       "alerts": "Alertes actives",
       "visits": "Suivi des visites",
       "refresh": "Actualiser",
-      "loadError": "Échec du chargement des données."
+      "loadError": "Échec du chargement des données.",
+      "realtime": "Analytiques temps réel",
+      "database": "Explorateur BDD"
     },
     "kpi": {
       "totalUsers": "Utilisateurs",
@@ -1534,7 +1536,8 @@
       "averageDuration": "Durée moyenne",
       "topPages": "Pages les plus vues",
       "bounceRate": "Taux de rebond",
-      "topFlows": "Flux de navigation"
+      "topFlows": "Flux de navigation",
+      "geoDistribution": "Répartition géographique"
     },
     "errors": {
       "title": "Journal d'erreurs",
@@ -1568,6 +1571,38 @@
         "errorCode": "Code erreur",
         "stackTrace": "Trace d'exécution",
         "close": "Fermer"
+      }
+    },
+    "realtime": {
+      "activeUsers": "Utilisateurs actifs",
+      "activeSessions": "Sessions actives",
+      "activePages": "Pages actives (2 dernières min)",
+      "noActivity": "Aucune activité en direct"
+    },
+    "database": {
+      "noTables": "Aucune table trouvée."
+    },
+    "incidents": {
+      "title": "Signalements d'incidents",
+      "loadError": "Impossible de charger les signalements.",
+      "empty": "Aucun incident signalé. Tout va bien !",
+      "filter": {
+        "label": "Filtrer les incidents",
+        "type": "Type d'incident",
+        "allTypes": "Tous les types"
+      },
+      "table": {
+        "gameName": "Partie",
+        "reporter": "Signalé par",
+        "type": "Type",
+        "description": "Description"
+      },
+      "type": {
+        "cheating": "Triche",
+        "abuse": "Abus",
+        "bug": "Bug",
+        "dispute": "Litige",
+        "other": "Autre"
       }
     }
   },

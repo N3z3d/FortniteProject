@@ -1,0 +1,9 @@
+// Z-Index Scale — Fortnite Pronos
+// Usage: z-index: $z-timer;
+
+$z-nav:      100; // Main navigation / sticky header
+$z-timer:    200; // Draft countdown timer overlay
+$z-modal:    500; // Dialogs, drawers, side panels
+$z-toast:    800; // Snackbar / toast notifications
+$z-critical: 9000; // Pick-auto toast, urgent draft alerts
+$z-reserved: 9999; // Skip links, accessibility overlays

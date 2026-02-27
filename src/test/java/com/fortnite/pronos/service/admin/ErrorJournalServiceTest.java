@@ -129,6 +129,17 @@ class ErrorJournalServiceTest {
     }
 
     @Test
+    void shouldFilterByExceptionTypeIgnoringCase() {
+      service.recordError(buildEntry("GameNotFoundException", "game not found", 404));
+      service.recordError(buildEntry("UserNotFoundException", "user not found", 404));
+      service.recordError(buildEntry("BusinessException", "business error", 400));
+
+      List<ErrorEntry> results = service.getRecentErrors(10, null, "notfound");
+
+      assertThat(results).hasSize(2);
+    }
+
+    @Test
     void shouldFilterByBothStatusAndType() {
       service.recordError(buildEntry("GameNotFoundException", "game 1", 404));
       service.recordError(buildEntry("GameNotFoundException", "game 2", 404));
@@ -151,7 +162,7 @@ class ErrorJournalServiceTest {
       Optional<ErrorEntry> result = service.findById(entry.getId());
 
       assertThat(result).isPresent();
-      assertThat(result.getExceptionType()).isEqualTo("TestEx");
+      assertThat(result.orElseThrow().getExceptionType()).isEqualTo("TestEx");
     }
 
     @Test
@@ -249,6 +260,16 @@ class ErrorJournalServiceTest {
                   .mapToInt(ErrorStatisticsDto.TrendPoint::getCount)
                   .sum())
           .isEqualTo(2);
+    }
+
+    @Test
+    void shouldUseHourlyTrendAtFortyEightHoursBoundary() {
+      LocalDateTime now = LocalDateTime.now();
+      service.recordError(buildEntryAt("BoundaryEx", "h-1", 500, now.minusHours(1)));
+
+      ErrorStatisticsDto stats = service.getErrorStatistics(48);
+
+      assertThat(stats.getTrendGranularity()).isEqualTo("HOUR");
     }
   }
 

@@ -6,12 +6,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { Subject, forkJoin, takeUntil, timer } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { AdminService } from '../services/admin.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import {
   AdminAlert,
   DashboardSummary,
+  DbTableInfo,
+  RealTimeAnalytics,
   RecentActivity,
   SystemHealth,
   SystemMetrics,
@@ -47,14 +50,46 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   metrics: SystemMetrics | null = null;
   alerts: AdminAlert[] = [];
   visitAnalytics: VisitAnalytics | null = null;
+  realTimeAnalytics: RealTimeAnalytics | null = null;
+  dbTables: DbTableInfo[] = [];
+  dbTablesLoading = true;
 
   ngOnInit(): void {
     this.loadDashboard();
+    this.startRealTimePolling();
+    this.loadDatabaseTables();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadDatabaseTables(): void {
+    this.adminService
+      .getDatabaseTables()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (tables) => {
+          this.dbTables = tables;
+          this.dbTablesLoading = false;
+        },
+        error: () => {
+          this.dbTablesLoading = false;
+        }
+      });
+  }
+
+  private startRealTimePolling(): void {
+    timer(0, 15_000)
+      .pipe(
+        switchMap(() => this.adminService.getRealTimeAnalytics()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (data) => { this.realTimeAnalytics = data; },
+        error: () => {} // supplementary data — silent failure
+      });
   }
 
   loadDashboard(): void {

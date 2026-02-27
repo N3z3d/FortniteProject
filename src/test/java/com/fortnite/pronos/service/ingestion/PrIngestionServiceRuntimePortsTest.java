@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.domain.port.out.PlayerAliasRepositoryPort;
+import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerRepositoryPort;
 import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
 import com.fortnite.pronos.model.IngestionRun;
@@ -38,6 +40,8 @@ class PrIngestionServiceRuntimePortsTest {
   @Mock private PrSnapshotRepository prSnapshotRepository;
   @Mock private ScoreRepositoryPort scoreRepository;
   @Mock private IngestionRunRepository ingestionRunRepository;
+  @Mock private PlayerIdentityRepositoryPort identityRepository;
+  @Mock private PlayerAliasRepositoryPort aliasRepository;
 
   private PrIngestionService service;
 
@@ -46,9 +50,12 @@ class PrIngestionServiceRuntimePortsTest {
     service =
         new PrIngestionService(
             new PrCsvParser(),
-            playerRepository,
-            prSnapshotRepository,
-            scoreRepository,
+            new PrIngestionRowProcessor(
+                playerRepository,
+                prSnapshotRepository,
+                scoreRepository,
+                identityRepository,
+                aliasRepository),
             ingestionRunRepository);
 
     when(ingestionRunRepository.save(any(IngestionRun.class)))

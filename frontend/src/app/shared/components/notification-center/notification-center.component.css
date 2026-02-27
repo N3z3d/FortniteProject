@@ -24,7 +24,7 @@
   right: 0;
   width: 400px;
   max-height: 600px;
-  background: white;
+  background: var(--color-text-primary);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -37,8 +37,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, rgb(102 126 234) 0%, rgb(118 75 162) 100%);
+  color: var(--color-text-primary);
 }
 
 .notification-header h3 {
@@ -76,11 +76,11 @@
 }
 
 .connection-status.connected {
-  color: #4caf50;
+  color: var(--color-admin-success);
 }
 
 .connection-status.disconnected {
-  color: #f44336;
+  color: var(--color-admin-danger);
 }
 
 .connection-status mat-icon {
@@ -100,7 +100,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #666;
+  color: var(--nexus-text-muted);
 }
 
 .notification-empty mat-icon {
@@ -126,7 +126,7 @@
 
 .notification-item.unread {
   background-color: rgba(33, 150, 243, 0.05);
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid var(--color-admin-info);
 }
 
 .notification-icon {
@@ -141,23 +141,23 @@
 }
 
 .notification-trade .notification-icon {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-  color: white;
+  background: linear-gradient(135deg, var(--color-admin-danger-soft), rgb(238 90 82));
+  color: var(--color-text-primary);
 }
 
 .notification-score .notification-icon {
-  background: linear-gradient(135deg, #4ecdc4, #44a08d);
-  color: white;
+  background: linear-gradient(135deg, rgb(78 205 196), rgb(68 160 141));
+  color: var(--color-text-primary);
 }
 
 .notification-system .notification-icon {
-  background: linear-gradient(135deg, #45b7d1, #96c93d);
-  color: white;
+  background: linear-gradient(135deg, rgb(69 183 209), rgb(150 201 61));
+  color: var(--color-text-primary);
 }
 
 .notification-achievement .notification-icon {
-  background: linear-gradient(135deg, #f093fb, #f5576c);
-  color: white;
+  background: linear-gradient(135deg, rgb(240 147 251), rgb(245 87 108));
+  color: var(--color-text-primary);
 }
 
 .notification-content {
@@ -169,19 +169,19 @@
   font-weight: 600;
   margin: 0 0 4px 0;
   font-size: 14px;
-  color: #333;
+  color: var(--color-dark);
 }
 
 .notification-message {
   margin: 0 0 8px 0;
   font-size: 13px;
-  color: #666;
+  color: var(--nexus-text-muted);
   line-height: 1.4;
 }
 
 .notification-timestamp {
   font-size: 12px;
-  color: #999;
+  color: var(--color-admin-muted);
 }
 
 .notification-actions {
@@ -193,7 +193,7 @@
 .notification-delete {
   background: none;
   border: none;
-  color: #999;
+  color: var(--color-admin-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -207,7 +207,7 @@
 
 .notification-delete:hover {
   background: rgba(244, 67, 54, 0.1);
-  color: #f44336;
+  color: var(--color-admin-danger);
 }
 
 .unread-indicator {
@@ -216,7 +216,7 @@
   right: 12px;
   width: 8px;
   height: 8px;
-  background: #2196f3;
+  background: var(--color-admin-info);
   border-radius: 50%;
 }
 
@@ -226,7 +226,7 @@
   top: 20px;
   right: 20px;
   width: 320px;
-  background: white;
+  background: var(--color-text-primary);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   display: flex;
@@ -249,11 +249,11 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, rgb(102 126 234), rgb(118 75 162));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--color-text-primary);
   margin-right: 12px;
 }
 
@@ -265,13 +265,13 @@
   margin: 0 0 4px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-dark);
 }
 
 .toast-content p {
   margin: 0;
   font-size: 13px;
-  color: #666;
+  color: var(--nexus-text-muted);
   line-height: 1.3;
 }
 

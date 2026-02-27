@@ -26,6 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"java:S3923"})
 public class GameDomainService {
 
+  private static final int MIN_PARTICIPANTS = 2;
+  private static final int MIN_PARTICIPANTS_DIVISOR = 2;
+  private static final int PARTICIPANT_PRIORITY_WEIGHT = 10;
+  private static final int MAX_AGE_PRIORITY_HOURS = 168;
+  private static final int CAPACITY_PRIORITY_WEIGHT = 50;
+  private static final int MAX_ALLOWED_PARTICIPANTS = 50;
+
   /** Calculate if a game can be started based on domain rules */
   public boolean canStartGame(Game game, int currentParticipants) {
     if (game.getStatus() != GameStatus.CREATING && game.getStatus() != GameStatus.DRAFTING) {
@@ -49,7 +56,7 @@ public class GameDomainService {
   /** Calculate minimum participants based on game rules */
   public int calculateMinimumParticipants(Game game) {
     // Domain rule: minimum 2 participants, or half of max capacity, whichever is higher
-    return Math.max(2, game.getMaxParticipants() / 2);
+    return Math.max(MIN_PARTICIPANTS, game.getMaxParticipants() / MIN_PARTICIPANTS_DIVISOR);
   }
 
   /** Determine if a user can participate in a game */
@@ -75,59 +82,52 @@ public class GameDomainService {
     int priority = 0;
 
     // Higher priority for games with more participants
-    priority += participantCount * 10;
+    priority += participantCount * PARTICIPANT_PRIORITY_WEIGHT;
 
     // Higher priority for older games
     if (game.getCreatedAt() != null) {
       long hoursOld =
           java.time.Duration.between(game.getCreatedAt(), LocalDateTime.now()).toHours();
-      priority += (int) Math.min(hoursOld, 168); // Cap at 1 week
+      priority += (int) Math.min(hoursOld, MAX_AGE_PRIORITY_HOURS);
     }
 
     // Higher priority for games close to capacity
     double capacityRatio = (double) participantCount / game.getMaxParticipants();
-    priority += (int) (capacityRatio * 50);
+    priority += (int) (capacityRatio * CAPACITY_PRIORITY_WEIGHT);
 
     return priority;
   }
 
   /** Determine next logical game status */
   public GameStatus determineNextStatus(Game game, int participantCount) {
-    switch (game.getStatus()) {
-      case CREATING:
-        int minParticipants = calculateMinimumParticipants(game);
-        return participantCount >= minParticipants ? GameStatus.CREATING : GameStatus.CREATING;
-
-      case DRAFTING:
-        // This would be determined by draft completion logic
-        return GameStatus.DRAFTING;
-
-      case ACTIVE:
-        // Game continues until end conditions are met
-        return GameStatus.ACTIVE;
-
-      default:
-        return game.getStatus();
+    if (game.getStatus() == GameStatus.CREATING) {
+      int minParticipants = calculateMinimumParticipants(game);
+      log.debug(
+          "Game {} next status check - participants: {}, minimum: {}",
+          game.getId(),
+          participantCount,
+          minParticipants);
     }
+    return game.getStatus();
   }
 
   /** Validate game configuration */
   public boolean isValidGameConfiguration(Game game) {
-    if (game.getMaxParticipants() < 2) {
+    boolean hasValidMinimumParticipants = game.getMaxParticipants() >= MIN_PARTICIPANTS;
+    if (!hasValidMinimumParticipants) {
       log.warn("Invalid game configuration: maxParticipants must be at least 2");
-      return false;
     }
 
-    if (game.getMaxParticipants() > 50) { // Business rule: reasonable upper limit
+    boolean hasValidMaximumParticipants = game.getMaxParticipants() <= MAX_ALLOWED_PARTICIPANTS;
+    if (!hasValidMaximumParticipants) {
       log.warn("Invalid game configuration: maxParticipants cannot exceed 50");
-      return false;
     }
 
-    if (game.getName() == null || game.getName().trim().isEmpty()) {
+    boolean hasValidName = game.getName() != null && !game.getName().trim().isEmpty();
+    if (!hasValidName) {
       log.warn("Invalid game configuration: name is required");
-      return false;
     }
 
-    return true;
+    return hasValidMinimumParticipants && hasValidMaximumParticipants && hasValidName;
   }
 }

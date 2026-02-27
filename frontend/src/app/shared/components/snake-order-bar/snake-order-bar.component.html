@@ -1,0 +1,33 @@
+<div
+  class="snake-bar"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+  [attr.aria-label]="ariaLabel"
+>
+
+  <!-- Region label (Multi-Régions) -->
+  <span *ngIf="regionLabel" class="region-label">{{ regionLabel }}</span>
+
+  <!-- Avatar mode (≤6 participants, non-mobile) -->
+  <div *ngIf="showAvatarMode" class="avatar-list" aria-hidden="true">
+    <div
+      class="avatar-cursor"
+      [style.transform]="'translateX(' + cursorOffset + ')'"
+    ></div>
+    <div
+      *ngFor="let p of participants; let i = index"
+      class="avatar-item"
+      [class.avatar-item--active]="i === currentIndex"
+      [attr.title]="p.username"
+    >{{ getInitials(p.username) }}</div>
+  </div>
+
+  <!-- Text mode (>6 participants or mobile) -->
+  <div *ngIf="!showAvatarMode" class="text-mode">
+    Tour de
+    <strong class="participant-name">{{ currentParticipant?.username }}</strong>
+    <span class="position-badge">({{ position }}/{{ total }})</span>
+  </div>
+
+</div>

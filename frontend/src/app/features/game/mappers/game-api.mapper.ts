@@ -138,13 +138,7 @@ export class GameApiMapper {
 
     const creatorId = apiResponse.creatorId;
     const participants = apiResponse.participants;
-    if (
-      typeof creatorId === 'string' &&
-      creatorId.trim() !== '' &&
-      participants &&
-      typeof participants === 'object' &&
-      !Array.isArray(participants)
-    ) {
+    if (this.canResolveCreatorNameFromParticipants(creatorId, participants)) {
       const creatorParticipantName = participants[creatorId];
       if (typeof creatorParticipantName === 'string' && creatorParticipantName.trim() !== '') {
         return creatorParticipantName;
@@ -152,6 +146,22 @@ export class GameApiMapper {
     }
 
     return 'Créateur inconnu';
+  }
+
+  /**
+   * Validates that creator name can be resolved from a participants object map.
+   */
+  private static canResolveCreatorNameFromParticipants(
+    creatorId: unknown,
+    participants: unknown
+  ): participants is Record<string, unknown> {
+    if (typeof creatorId !== 'string' || creatorId.trim() === '') {
+      return false;
+    }
+    if (!participants || typeof participants !== 'object') {
+      return false;
+    }
+    return !Array.isArray(participants);
   }
 
   /**

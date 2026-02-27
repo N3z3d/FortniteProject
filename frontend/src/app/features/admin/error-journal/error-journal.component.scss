@@ -86,31 +86,31 @@
   }
 
   &.stat-total .stat-icon mat-icon {
-    color: #ff9800;
+    color: var(--color-admin-warning);
   }
   &.stat-total .stat-value {
-    color: #ff9800;
+    color: var(--color-admin-warning);
   }
 
   &.stat-types .stat-icon mat-icon {
-    color: #2196f3;
+    color: var(--color-admin-info);
   }
   &.stat-types .stat-value {
-    color: #2196f3;
+    color: var(--color-admin-info);
   }
 
   &.stat-5xx .stat-icon mat-icon {
-    color: #f44336;
+    color: var(--color-admin-danger);
   }
   &.stat-5xx .stat-value {
-    color: #f44336;
+    color: var(--color-admin-danger);
   }
 
   &.stat-4xx .stat-icon mat-icon {
-    color: #ff9800;
+    color: var(--color-admin-warning);
   }
   &.stat-4xx .stat-value {
-    color: #ff9800;
+    color: var(--color-admin-warning);
   }
 }
 
@@ -146,7 +146,7 @@
   .trend-bar-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #ff9800, #f44336);
+    background: linear-gradient(90deg, var(--color-admin-warning), var(--color-admin-danger));
     min-width: 3px;
   }
 
@@ -193,7 +193,7 @@
   }
 
   .type-cell {
-    color: #ff6b6b;
+    color: var(--color-admin-danger-soft);
     font-weight: 600;
     font-size: 0.9rem;
   }
@@ -224,17 +224,17 @@
 
 .status-4xx {
   background: rgba(255, 152, 0, 0.2);
-  color: #ff9800;
+  color: var(--color-admin-warning);
 }
 
 .status-5xx {
   background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
+  color: var(--color-admin-danger);
 }
 
 .status-other {
   background: rgba(158, 158, 158, 0.2);
-  color: #9e9e9e;
+  color: var(--color-admin-muted);
 }
 
 // Empty State
@@ -276,3 +276,4 @@
     }
   }
 }
+

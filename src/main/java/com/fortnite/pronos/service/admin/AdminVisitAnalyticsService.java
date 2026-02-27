@@ -2,6 +2,7 @@ package com.fortnite.pronos.service.admin;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 
 import lombok.RequiredArgsConstructor;
@@ -17,5 +18,9 @@ public class AdminVisitAnalyticsService {
   public VisitAnalyticsDto getVisitAnalytics(int hours) {
     int effectiveHours = hours > 0 ? hours : DEFAULT_HOURS;
     return visitTrackingService.getVisitAnalytics(effectiveHours);
+  }
+
+  public RealTimeAnalyticsDto getRealTimeSnapshot() {
+    return visitTrackingService.getRealTimeSnapshot();
   }
 }

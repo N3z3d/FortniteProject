@@ -1,5 +1,6 @@
 package com.fortnite.pronos.dto;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.model.Player;
 
 import lombok.AllArgsConstructor;
@@ -56,6 +58,22 @@ public class CreateGameRequest {
 
   private UUID creatorId;
 
+  private DraftMode draftMode;
+
+  @Min(value = 1, message = "La taille d'équipe doit être >= 1")
+  @Max(value = 50, message = "La taille d'équipe doit être <= 50")
+  private Integer teamSize;
+
+  @Min(value = 1, message = "La taille de tranche doit être >= 1")
+  @Max(value = 200, message = "La taille de tranche doit être <= 200")
+  private Integer trancheSize;
+
+  private Boolean tranchesEnabled;
+
+  private LocalDate competitionStart;
+
+  private LocalDate competitionEnd;
+
   @Valid
   private Map<
           Player.Region,
@@ -94,6 +112,16 @@ public class CreateGameRequest {
   private static final int MIN_AUTO_PICK_DELAY = 300; // 5 minutes
   private static final int MAX_AUTO_PICK_DELAY = 86400; // 24 heures
   private static final int MAX_PLAYERS_PER_REGION = 10;
+  private static final int SECONDS_PER_MINUTE = 60;
+  private static final int SECONDS_PER_HOUR = 3600;
+  private static final int SHORT_NAME_MAX_LENGTH = 30;
+  private static final int SHORT_NAME_TRUNCATE_LENGTH = 27;
+  private static final int SHORT_DESCRIPTION_MAX_LENGTH = 100;
+  private static final int SHORT_DESCRIPTION_TRUNCATE_LENGTH = 97;
+  private static final int DEFAULT_CURRENT_SEASON = 2025;
+  private static final int DEFAULT_MAX_PARTICIPANTS = 8;
+  private static final int DEFAULT_DRAFT_TIME_LIMIT = 300;
+  private static final int DEFAULT_AUTO_PICK_DELAY = 43200;
 
   private List<String> validationErrors = new ArrayList<>();
 
@@ -281,12 +309,12 @@ public class CreateGameRequest {
 
   /** Obtenir la durée du draft en minutes */
   public int getDraftTimeLimitMinutes() {
-    return draftTimeLimit != null ? draftTimeLimit / 60 : 0;
+    return draftTimeLimit != null ? (draftTimeLimit / SECONDS_PER_MINUTE) : 0;
   }
 
   /** Obtenir le délai d'auto-pick en heures */
   public int getAutoPickDelayHours() {
-    return autoPickDelay != null ? autoPickDelay / 3600 : 0;
+    return autoPickDelay != null ? (autoPickDelay / SECONDS_PER_HOUR) : 0;
   }
 
   /** Vérifier si l'auto-pick est activé */
@@ -304,7 +332,10 @@ public class CreateGameRequest {
     if (name == null) {
       return "";
     }
-    return name.length() > 30 ? name.substring(0, 27) + "..." : name;
+    if (name.length() > SHORT_NAME_MAX_LENGTH) {
+      return name.substring(0, SHORT_NAME_TRUNCATE_LENGTH) + "...";
+    }
+    return name;
   }
 
   /** Obtenir la description courte (max 100 caractères) */
@@ -312,7 +343,10 @@ public class CreateGameRequest {
     if (description == null) {
       return "";
     }
-    return description.length() > 100 ? description.substring(0, 97) + "..." : description;
+    if (description.length() > SHORT_DESCRIPTION_MAX_LENGTH) {
+      return description.substring(0, SHORT_DESCRIPTION_TRUNCATE_LENGTH) + "...";
+    }
+    return description;
   }
 
   /** Vérifier si la game est privée */
@@ -322,21 +356,21 @@ public class CreateGameRequest {
 
   /** Obtenir la saison courante (défaut 2025) */
   public int getCurrentSeasonOrDefault() {
-    return currentSeason != null ? currentSeason : 2025;
+    return currentSeason != null ? currentSeason : DEFAULT_CURRENT_SEASON;
   }
 
   /** Obtenir le nombre maximum de participants (défaut 8) */
   public int getMaxParticipantsOrDefault() {
-    return maxParticipants != null ? maxParticipants : 8;
+    return maxParticipants != null ? maxParticipants : DEFAULT_MAX_PARTICIPANTS;
   }
 
   /** Obtenir la limite de temps du draft (défaut 5 minutes) */
   public int getDraftTimeLimitOrDefault() {
-    return draftTimeLimit != null ? draftTimeLimit : 300;
+    return draftTimeLimit != null ? draftTimeLimit : DEFAULT_DRAFT_TIME_LIMIT;
   }
 
   /** Obtenir le délai d'auto-pick (défaut 12 heures) */
   public int getAutoPickDelayOrDefault() {
-    return autoPickDelay != null ? autoPickDelay : 43200;
+    return autoPickDelay != null ? autoPickDelay : DEFAULT_AUTO_PICK_DELAY;
   }
 }

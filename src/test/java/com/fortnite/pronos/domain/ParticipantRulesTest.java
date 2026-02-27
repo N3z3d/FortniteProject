@@ -116,6 +116,16 @@ class ParticipantRulesTest {
     }
 
     @Test
+    @DisplayName("rejects adding null participant ID")
+    void rejectsNullParticipantId() {
+      ValidationResult result =
+          ParticipantRules.canAddParticipant(GameStatus.CREATING, 2, 10, null, creatorId, Set.of());
+
+      assertThat(result.valid()).isFalse();
+      assertThat(result.errorMessage()).contains("cannot be null");
+    }
+
+    @Test
     @DisplayName("rejects adding duplicate participant")
     void rejectsDuplicateParticipant() {
       ValidationResult result =
@@ -145,7 +155,7 @@ class ParticipantRulesTest {
     @Test
     @DisplayName("adds 1 when creator not in participants list")
     void addsOneWhenCreatorNotInList() {
-      int total = ParticipantRules.calculateTotalParticipants(3, false);
+      int total = ParticipantRules.calculateTotalParticipantsWithCreatorExcluded(3);
 
       assertThat(total).isEqualTo(4);
     }
@@ -153,7 +163,7 @@ class ParticipantRulesTest {
     @Test
     @DisplayName("does not add when creator already in participants list")
     void doesNotAddWhenCreatorInList() {
-      int total = ParticipantRules.calculateTotalParticipants(3, true);
+      int total = ParticipantRules.calculateTotalParticipantsWithCreatorIncluded(3);
 
       assertThat(total).isEqualTo(3);
     }

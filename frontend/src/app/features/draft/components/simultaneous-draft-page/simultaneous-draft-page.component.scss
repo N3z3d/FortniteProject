@@ -1,0 +1,209 @@
+@import '../../../../shared/styles/mixins';
+
+// ============================================================
+// SIMULTANEOUS DRAFT PAGE
+// ============================================================
+
+.simultaneous-draft-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+// ===== SKIP LINK =====
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  z-index: 1000;
+  padding: 4px 8px;
+  background: var(--color-action);
+  color: var(--color-black);
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s;
+
+  &:focus {
+    top: 0;
+  }
+}
+
+// ===== WS BANNER =====
+
+.ws-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: rgba(239, 68, 68, 0.15);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 0.875rem;
+  color: rgba(239, 68, 68, 0.9);
+}
+
+// ===== SUBMISSION HEADER =====
+
+.submission-header {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 2.5rem;
+}
+
+.submission-count {
+  font-family: var(--font-display, 'Rajdhani', sans-serif);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-action);
+  letter-spacing: 0.04em;
+}
+
+// ===== RESELECT BANNER =====
+
+.reselect-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(245, 166, 35, 0.12);
+  border-bottom: 1px solid rgba(245, 166, 35, 0.35);
+  font-size: 0.9375rem;
+  color: var(--color-action);
+}
+
+// ===== PLAYER LIST =====
+
+.player-list {
+  flex: 1;
+  height: 60vh;
+}
+
+// ===== SUBMIT ZONE =====
+
+.submit-zone {
+  padding: var(--space-md);
+  background: var(--color-surface-raised);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-submit {
+  width: 100%;
+  height: 48px;
+  background: var(--color-action) !important;
+  color: var(--color-black) !important;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+// ===== WAITING ZONE =====
+
+.waiting-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.waiting-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-text-secondary);
+  animation: pulse-opacity 2s ease-in-out infinite;
+}
+
+.waiting-text {
+  font-family: var(--font-display, 'Rajdhani', sans-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.waiting-subtext {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+// ===== DONE ZONE =====
+
+.done-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  text-align: center;
+  animation: fade-in 0.6s ease forwards;
+}
+
+.done-icon {
+  font-size: 4rem;
+  width: 4rem;
+  height: 4rem;
+  color: var(--color-pipeline-ok);
+}
+
+.done-title {
+  font-family: var(--font-display, 'Rajdhani', sans-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.done-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+// ===== KEYFRAMES =====
+
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ===== REDUCED MOTION =====
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting-icon {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .done-zone {
+    animation: none;
+  }
+}
+
+// ===== RESPONSIVE =====
+
+@include mobile {
+  .submit-zone {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .waiting-zone,
+  .done-zone {
+    padding: var(--space-lg) var(--space-md);
+  }
+}

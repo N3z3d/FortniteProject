@@ -1,7 +1,9 @@
 package com.fortnite.pronos.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -442,5 +444,27 @@ class JoinGameRequestTest {
 
     // Then
     assertThat(participationType).isEqualTo("PARTICIPANT");
+  }
+
+  @Test
+  @DisplayName("Devrait définir un pattern d'invitation compilé")
+  void shouldDefineCompiledInvitationPattern() {
+    assertThatCode(() -> JoinGameRequest.class.getDeclaredField("INVITATION_CODE_PATTERN_COMPILED"))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @DisplayName("Devrait normaliser les majuscules avec Locale ROOT")
+  void shouldNormalizeUppercaseWithLocaleRoot() {
+    Locale initialLocale = Locale.getDefault();
+    try {
+      Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+      joinGameRequest.setInvitationCode("i-test");
+
+      assertThat(joinGameRequest.getInvitationCodeUpperCase()).isEqualTo("I-TEST");
+      assertThat(joinGameRequest.getNormalizedInvitationCode()).isEqualTo("I-TEST");
+    } finally {
+      Locale.setDefault(initialLocale);
+    }
   }
 }

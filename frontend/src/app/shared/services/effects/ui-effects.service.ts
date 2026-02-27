@@ -1,4 +1,5 @@
 import { Injectable, ElementRef, Renderer2, RendererFactory2 } from '@angular/core';
+import { secureRandomFloat } from '../../utils/secure-random.util';
 
 @Injectable({
   providedIn: 'root'
@@ -117,8 +118,8 @@ export class UiEffectsService {
     const shake = () => {
       const elapsed = Date.now() - startTime;
       if (elapsed < duration) {
-        const x = (Math.random() - 0.5) * intensity;
-        const y = (Math.random() - 0.5) * intensity;
+        const x = (secureRandomFloat() - 0.5) * intensity;
+        const y = (secureRandomFloat() - 0.5) * intensity;
 
         this.renderer.setStyle(document.body, 'transform',
           `translateX(${x}px) translateY(${y}px)`);

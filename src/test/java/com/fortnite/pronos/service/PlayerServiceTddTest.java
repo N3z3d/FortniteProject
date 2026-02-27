@@ -395,7 +395,7 @@ class PlayerServiceTddTest {
 
       Map<String, Object> result = playerService.getPlayersStats();
 
-      assertThat(result.get("totalPlayers")).isZero();
+      assertThat(result.get("totalPlayers")).isEqualTo(0);
 
       @SuppressWarnings("unchecked")
       Map<String, Long> regionStats = (Map<String, Long>) result.get("playersByRegion");

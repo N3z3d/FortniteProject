@@ -29,6 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 public class H2SeedService {
 
   private static final String H2_GAME_NAME = "H2 Test Game";
+  private static final int TEST_PLAYERS_COUNT = 20;
+  private static final int CURRENT_SEASON = 2025;
+  private static final int REGION_MAX_PLAYERS = 5;
+  private static final int INITIAL_DRAFT_ORDER = 1;
+  private static final int INITIAL_PLAYER_INDEX = 0;
   private static final int PLAYERS_PER_USER = 5;
 
   private final UserRepositoryPort userRepository;
@@ -105,14 +110,14 @@ public class H2SeedService {
     List<com.fortnite.pronos.model.Player> players = new ArrayList<>();
     String[] regions = {"EU", "NAC", "BR", "ASIA"};
 
-    for (int i = 1; i <= 20; i++) {
+    for (int i = 1; i <= TEST_PLAYERS_COUNT; i++) {
       com.fortnite.pronos.model.Player player = new com.fortnite.pronos.model.Player();
       player.setNickname("Player" + i);
       player.setUsername("player" + i);
       player.setRegion(
           com.fortnite.pronos.model.Player.Region.valueOf(regions[i % regions.length]));
       player.setTranche("1-5");
-      player.setCurrentSeason(2025);
+      player.setCurrentSeason(CURRENT_SEASON);
       players.add(player);
     }
 
@@ -121,6 +126,17 @@ public class H2SeedService {
   }
 
   private void createTestGame(
+      com.fortnite.pronos.model.User creator, List<com.fortnite.pronos.model.User> participants) {
+    com.fortnite.pronos.model.Game game = buildGame(creator, participants);
+    addRegionRules(game);
+    addParticipants(game, creator, participants);
+    com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
+    log.info("H2 Seed: created game '{}' with {} participants", H2_GAME_NAME, participants.size());
+    createTeams(savedGame, participants);
+    log.info("H2 Seed: created {} teams", participants.size());
+  }
+
+  private com.fortnite.pronos.model.Game buildGame(
       com.fortnite.pronos.model.User creator, List<com.fortnite.pronos.model.User> participants) {
     com.fortnite.pronos.model.Game game =
         com.fortnite.pronos.model.Game.builder()
@@ -132,60 +148,83 @@ public class H2SeedService {
             .participants(new ArrayList<>())
             .regionRules(new ArrayList<>())
             .build();
+    game.generateInvitationCode();
+    return game;
+  }
 
-    // Add region rules
+  private void addRegionRules(com.fortnite.pronos.model.Game game) {
     for (com.fortnite.pronos.model.Player.Region region :
         com.fortnite.pronos.model.Player.Region.values()) {
       com.fortnite.pronos.model.GameRegionRule rule =
           com.fortnite.pronos.model.GameRegionRule.builder()
               .game(game)
               .region(region)
-              .maxPlayers(5)
+              .maxPlayers(REGION_MAX_PLAYERS)
               .build();
       game.addRegionRule(rule);
     }
+  }
 
-    game.generateInvitationCode();
-
-    // Add participants
-    int order = 1;
+  private void addParticipants(
+      com.fortnite.pronos.model.Game game,
+      com.fortnite.pronos.model.User creator,
+      List<com.fortnite.pronos.model.User> participants) {
+    int draftOrder = INITIAL_DRAFT_ORDER;
     for (com.fortnite.pronos.model.User user : participants) {
       if (user != null) {
-        com.fortnite.pronos.model.GameParticipant participant =
-            com.fortnite.pronos.model.GameParticipant.builder()
-                .game(game)
-                .user(user)
-                .draftOrder(order++)
-                .joinedAt(LocalDateTime.now())
-                .creator(user.getId().equals(creator.getId()))
-                .selectedPlayers(new ArrayList<>())
-                .build();
-        game.addParticipant(participant);
+        game.addParticipant(createGameParticipant(game, creator, user, draftOrder));
+        draftOrder = draftOrder + 1;
       }
     }
+  }
 
-    com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
-    log.info("H2 Seed: created game '{}' with {} participants", H2_GAME_NAME, participants.size());
+  private com.fortnite.pronos.model.GameParticipant createGameParticipant(
+      com.fortnite.pronos.model.Game game,
+      com.fortnite.pronos.model.User creator,
+      com.fortnite.pronos.model.User user,
+      int draftOrder) {
+    return com.fortnite.pronos.model.GameParticipant.builder()
+        .game(game)
+        .user(user)
+        .draftOrder(draftOrder)
+        .joinedAt(LocalDateTime.now())
+        .creator(user.getId().equals(creator.getId()))
+        .selectedPlayers(new ArrayList<>())
+        .build();
+  }
 
-    // Create teams with players
+  private void createTeams(
+      com.fortnite.pronos.model.Game savedGame, List<com.fortnite.pronos.model.User> participants) {
     List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
-    int playerIndex = 0;
-
+    int playerIndex = INITIAL_PLAYER_INDEX;
     for (com.fortnite.pronos.model.User user : participants) {
       if (user != null && playerIndex < allPlayers.size()) {
-        com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
-        team.setName("Team " + user.getUsername());
-        team.setOwner(user);
-        team.setSeason(2025);
-        team.setGame(savedGame);
-
-        for (int pos = 1; pos <= PLAYERS_PER_USER && playerIndex < allPlayers.size(); pos++) {
-          team.addPlayer(allPlayers.get(playerIndex++), pos);
-        }
-
+        com.fortnite.pronos.model.Team team = buildTeam(savedGame, user);
+        playerIndex = assignPlayersToTeam(team, allPlayers, playerIndex);
         ((TeamRepositoryPort) teamRepository).save(team);
       }
     }
-    log.info("H2 Seed: created {} teams", participants.size());
+  }
+
+  private com.fortnite.pronos.model.Team buildTeam(
+      com.fortnite.pronos.model.Game savedGame, com.fortnite.pronos.model.User user) {
+    com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
+    team.setName("Team " + user.getUsername());
+    team.setOwner(user);
+    team.setSeason(CURRENT_SEASON);
+    team.setGame(savedGame);
+    return team;
+  }
+
+  private int assignPlayersToTeam(
+      com.fortnite.pronos.model.Team team,
+      List<com.fortnite.pronos.model.Player> allPlayers,
+      int startingPlayerIndex) {
+    int playerIndex = startingPlayerIndex;
+    for (int pos = 1; pos <= PLAYERS_PER_USER && playerIndex < allPlayers.size(); pos++) {
+      team.addPlayer(allPlayers.get(playerIndex), pos);
+      playerIndex = playerIndex + 1;
+    }
+    return playerIndex;
   }
 }

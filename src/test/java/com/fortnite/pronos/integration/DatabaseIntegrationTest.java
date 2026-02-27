@@ -96,8 +96,8 @@ class DatabaseIntegrationTest {
 
     // Then
     assertThat(thibaut).isPresent();
-    assertThat(thibaut.getUsername()).isEqualTo("Thibaut");
-    assertThat(thibaut.getRole()).isEqualTo(User.UserRole.USER);
+    assertThat(thibaut.orElseThrow().getUsername()).isEqualTo("Thibaut");
+    assertThat(thibaut.orElseThrow().getRole()).isEqualTo(User.UserRole.USER);
   }
 
   @Test

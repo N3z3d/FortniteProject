@@ -1,0 +1,102 @@
+<div class="snake-draft-page">
+
+  <!-- Skip link (screen readers) -->
+  <a class="skip-link" href="#player-list">Passer à la liste accessible (50 items)</a>
+
+  <!-- Sticky timer zone -->
+  <div class="timer-zone">
+
+    <!-- WebSocket disconnect banner -->
+    <div *ngIf="!wsConnected" class="ws-banner" role="alert" aria-live="assertive">
+      <mat-icon aria-hidden="true">wifi_off</mat-icon>
+      Connexion instable — timer serveur fait foi
+    </div>
+
+    <div class="timer-zone__inner">
+      <app-snake-order-bar
+        [participants]="participants"
+        [currentIndex]="currentIndex"
+        [regionLabel]="regions.length > 1 ? regions[activeRegionIndex] : undefined"
+      ></app-snake-order-bar>
+
+      <app-draft-timer
+        *ngIf="draft"
+        [durationSeconds]="draft.draft?.rules?.timePerPick ?? 60"
+        [autoPickPlayer]="recommendedPlayer?.username"
+        (expired)="onTimerExpired()"
+        (cancelled)="onPickCancelled()"
+      ></app-draft-timer>
+    </div>
+  </div>
+
+  <!-- Draft content -->
+  <div class="draft-content">
+
+    <!-- TON TOUR badge -->
+    <div *ngIf="isMyTurn" class="my-turn-badge" role="status" aria-live="polite" aria-atomic="true">
+      🟢 TON TOUR
+    </div>
+
+    <!-- Multi-region tabs -->
+    <mat-tab-group
+      *ngIf="regions.length > 1"
+      class="region-tabs"
+      (selectedIndexChange)="activeRegionIndex = $event"
+    >
+      <mat-tab *ngFor="let r of regions" [label]="r"></mat-tab>
+    </mat-tab-group>
+
+    <!-- Recommend CTA -->
+    <div *ngIf="isMyTurn && recommendedPlayer" class="recommend-bar">
+      <button
+        mat-stroked-button
+        class="btn-recommend"
+        (click)="onPlayerSelect(recommendedPlayer!)"
+        [attr.aria-label]="'Recommander ' + recommendedPlayer.username"
+      >
+        ⭐ Recommander {{ recommendedPlayer.username }}
+        <span class="recommend-hint">Meilleur joueur disponible</span>
+      </button>
+    </div>
+
+    <!-- Search + filter -->
+    <app-player-search-filter
+      mode="draft"
+      [availableRegions]="regions"
+      [availableTranches]="[]"
+      [totalResults]="filteredPlayers.length"
+      (filterChanged)="onFilterChange($event)"
+    ></app-player-search-filter>
+
+    <!-- Virtual scroll player list -->
+    <cdk-virtual-scroll-viewport
+      id="player-list"
+      class="player-list"
+      [itemSize]="48"
+      aria-label="Liste des joueurs disponibles"
+    >
+      <app-player-card
+        *cdkVirtualFor="let player of filteredPlayers"
+        [player]="player"
+        mode="draft"
+        [selected]="selectedPlayer?.id === player.id"
+        [taken]="player.selected === true"
+        [recommended]="recommendedPlayer?.id === player.id"
+        (cardSelected)="onPlayerSelect($event)"
+      ></app-player-card>
+    </cdk-virtual-scroll-viewport>
+
+    <!-- Confirm pick zone -->
+    <div *ngIf="isMyTurn && selectedPlayer" class="confirm-zone">
+      <button
+        mat-flat-button
+        class="btn-confirm"
+        [disabled]="isPickPending"
+        (click)="confirmPick()"
+      >
+        Confirmer {{ selectedPlayer.username }}
+      </button>
+    </div>
+
+  </div>
+</div>

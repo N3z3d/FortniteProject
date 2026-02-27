@@ -19,6 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"java:S112"})
 public class FlexibleAuthenticationService {
 
+  private static final int DEFAULT_SEASON = 2025;
+  private static final String ANONYMOUS_USER = "anonymousUser";
+
   private final UnifiedAuthService unifiedAuthService;
   private final Environment environment;
 
@@ -39,20 +42,27 @@ public class FlexibleAuthenticationService {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     if (authentication == null || !authentication.isAuthenticated()) {
-      log.warn("Aucun utilisateur authentifie trouve");
-      // Fallback uniquement en dev/local, jamais en profil de test
-      if (isDevelopmentEnvironment()) {
-        log.info("Profil de developpement detecte: utilisation d'un utilisateur par defaut");
-        return createDefaultUser();
-      }
-      throw new RuntimeException("Utilisateur non authentifie");
+      return resolveUnauthenticatedUser();
     }
 
-    String username = authentication.getName();
+    return resolveAuthenticatedUser(authentication.getName());
+  }
+
+  private com.fortnite.pronos.model.User resolveUnauthenticatedUser() {
+    log.warn("Aucun utilisateur authentifie trouve");
+    // Fallback uniquement en dev/local, jamais en profil de test
+    if (isDevelopmentEnvironment()) {
+      log.info("Profil de developpement detecte: utilisation d'un utilisateur par defaut");
+      return createDefaultUser();
+    }
+    throw new RuntimeException("Utilisateur non authentifie");
+  }
+
+  private com.fortnite.pronos.model.User resolveAuthenticatedUser(String username) {
     log.info("Username depuis l'authentification: {}", username);
 
     // Pour le MVP, on utilise une strategie simplifiee
-    if ("anonymousUser".equals(username) || username == null) {
+    if (ANONYMOUS_USER.equals(username) || username == null) {
       log.info("Utilisateur anonyme detecte, retour d'un utilisateur par defaut");
       return createDefaultUser();
     }
@@ -117,15 +127,15 @@ public class FlexibleAuthenticationService {
 
   /** Determine le type de base de donnees depuis l'URL */
   private String getDatabaseType(String datasourceUrl) {
+    String databaseType = "Unknown";
     if (datasourceUrl.contains("h2")) {
-      return "H2 (In-Memory)";
+      databaseType = "H2 (In-Memory)";
     } else if (datasourceUrl.contains("postgresql")) {
-      return "PostgreSQL";
+      databaseType = "PostgreSQL";
     } else if (datasourceUrl.contains("mysql")) {
-      return "MySQL";
-    } else {
-      return "Unknown";
+      databaseType = "MySQL";
     }
+    return databaseType;
   }
 
   /** Cree un utilisateur par defaut pour le MVP */
@@ -135,7 +145,7 @@ public class FlexibleAuthenticationService {
     defaultUser.setEmail("dev@fortnite-pronos.com");
     defaultUser.setUsername("dev-user");
     defaultUser.setPassword("password");
-    defaultUser.setCurrentSeason(2025);
+    defaultUser.setCurrentSeason(DEFAULT_SEASON);
     defaultUser.setRole(com.fortnite.pronos.model.User.UserRole.ADMIN);
 
     log.info("Utilisateur par defaut cree: {}", defaultUser.getEmail());

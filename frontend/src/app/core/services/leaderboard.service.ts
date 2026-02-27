@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, map, switchMap, catchError, filter, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from './logger.service';
+import { secureRandomId } from '../../shared/utils/secure-random.util';
 
 export type Region = 'EU' | 'NAW' | 'BR' | 'ASIA' | 'OCE' | 'NAC' | 'ME';
 
@@ -326,12 +327,21 @@ export class LeaderboardService {
     if (criteria.minPoints) params = params.set('minPoints', criteria.minPoints.toString());
 
     return this.http.get<PlayerPool[]>(`${this.apiUrl}/players/search`, { params }).pipe(
-      map(players => players.filter(player => 
-        player.isAvailable && 
-        (!criteria.minRank || player.rank <= criteria.minRank) &&
-        (!criteria.minPoints || player.points >= criteria.minPoints)
-      ))
+      map(players => players.filter(player => this.matchesSearchCriteria(player, criteria)))
     );
+  }
+
+  private matchesSearchCriteria(player: PlayerPool, criteria: PlayerSearchCriteria): boolean {
+    if (!player.isAvailable) {
+      return false;
+    }
+    if (criteria.minRank && player.rank > criteria.minRank) {
+      return false;
+    }
+    if (criteria.minPoints && player.points < criteria.minPoints) {
+      return false;
+    }
+    return true;
   }
 
   getRegionRankings(region: Region): Observable<PlayerPool[]> {
@@ -459,6 +469,6 @@ export class LeaderboardService {
    * Génère un ID de requête unique pour le traçage
    */
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `req_${Date.now()}_${secureRandomId(7)}`;
   }
 } 

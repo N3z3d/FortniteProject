@@ -110,6 +110,24 @@ class PlayerLeaderboardServiceTddTest {
     assertThat(entries.get(0).getTotalPoints()).isZero();
   }
 
+  @Test
+  @DisplayName("getPlayerLeaderboard computes average points using estimated games")
+  void getPlayerLeaderboardComputesAveragePointsUsingEstimatedGames() {
+    int season = 2025;
+    Player player = buildPlayer("avg", Player.Region.EU);
+    Team team = buildTeam("Team", buildUser("owner"), season, activePlayer(player, 1));
+
+    when(playerRepository.findAll()).thenReturn(List.of(player));
+    when(teamRepository.findBySeasonWithFetch(season)).thenReturn(List.of(team));
+    when(scoreRepository.findAllBySeasonGroupedByPlayer(season))
+        .thenReturn(Map.of(player.getId(), 2000));
+
+    List<PlayerLeaderboardEntryDTO> entries = playerLeaderboardService.getPlayerLeaderboard(season);
+
+    assertThat(entries).hasSize(1);
+    assertThat(entries.getFirst().getAvgPointsPerGame()).isEqualTo(1000.0);
+  }
+
   private User buildUser(String username) {
     User user = new User();
     user.setId(UUID.randomUUID());

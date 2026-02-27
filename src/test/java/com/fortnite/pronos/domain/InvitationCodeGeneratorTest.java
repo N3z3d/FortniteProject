@@ -1,6 +1,7 @@
 package com.fortnite.pronos.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Random;
@@ -13,6 +14,17 @@ import org.junit.jupiter.api.Test;
 @DisplayName("InvitationCodeGenerator")
 @SuppressWarnings({"java:S5778"})
 class InvitationCodeGeneratorTest {
+
+  @Test
+  @DisplayName("defines explicit min and max code length constants")
+  void definesMinAndMaxCodeLengthConstants() {
+    assertThatCode(
+            () -> {
+              InvitationCodeGenerator.class.getDeclaredField("MIN_CODE_LENGTH");
+              InvitationCodeGenerator.class.getDeclaredField("MAX_CODE_LENGTH");
+            })
+        .doesNotThrowAnyException();
+  }
 
   @Nested
   @DisplayName("constructor")

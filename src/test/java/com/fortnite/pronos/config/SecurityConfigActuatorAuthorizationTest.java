@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fortnite.pronos.service.JwtService;
 import com.fortnite.pronos.service.admin.ErrorJournalService;
+import com.fortnite.pronos.service.admin.VisitTrackingService;
 
 @WebMvcTest(controllers = TestActuatorController.class)
 @Import({SecurityConfig.class, SecurityConfigActuatorAuthorizationTest.SecurityTestBeans.class})
@@ -38,6 +39,9 @@ class SecurityConfigActuatorAuthorizationTest {
 
   @org.springframework.boot.test.mock.mockito.MockBean
   private ErrorJournalService errorJournalService;
+
+  @org.springframework.boot.test.mock.mockito.MockBean
+  private VisitTrackingService visitTrackingService;
 
   @Test
   @DisplayName("Anonymous user can access actuator health")

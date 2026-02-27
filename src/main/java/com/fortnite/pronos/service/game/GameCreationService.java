@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.application.usecase.GameCreationUseCase;
+import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameRegionRule;
@@ -155,9 +156,27 @@ public class GameCreationService implements GameCreationUseCase {
   }
 
   private Game buildDomainGame(com.fortnite.pronos.model.User creator, CreateGameRequest request) {
-    Game game = new Game(request.getName(), creator.getId(), request.getMaxParticipants());
+    DraftMode draftMode = request.getDraftMode() != null ? request.getDraftMode() : DraftMode.SNAKE;
+    int teamSize = request.getTeamSize() != null ? request.getTeamSize() : 5;
+    int trancheSize = request.getTrancheSize() != null ? request.getTrancheSize() : 10;
+    boolean tranchesEnabled = !Boolean.FALSE.equals(request.getTranchesEnabled());
+    Game game =
+        new Game(
+            request.getName(),
+            creator.getId(),
+            request.getMaxParticipants(),
+            draftMode,
+            teamSize,
+            trancheSize,
+            tranchesEnabled);
     if (request.getDescription() != null) {
       game.setDescription(request.getDescription());
+    }
+    if (request.getCompetitionStart() != null) {
+      game.setCompetitionStart(request.getCompetitionStart());
+    }
+    if (request.getCompetitionEnd() != null) {
+      game.setCompetitionEnd(request.getCompetitionEnd());
     }
     return game;
   }

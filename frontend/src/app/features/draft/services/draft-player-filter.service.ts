@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Player } from './draft.service';
 import { PlayerRegion } from '../models/draft.interface';
+import { secureRandomIntInRange } from '../../../shared/utils/secure-random.util';
 
 /**
  * Service responsible for filtering and searching draft players.
@@ -54,7 +55,7 @@ export class DraftPlayerFilterService {
     return players.slice(0, limit).map((player, index) => ({
       player,
       rank: index + 1,
-      score: Math.floor(Math.random() * 1000) + 500 // Simulated score
+      score: secureRandomIntInRange(500, 1499) // Simulated score
     }));
   }
 

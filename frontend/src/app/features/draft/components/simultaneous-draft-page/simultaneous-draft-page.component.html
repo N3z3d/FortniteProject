@@ -1,0 +1,88 @@
+<div class="simultaneous-draft-page">
+
+  <!-- Skip link (screen readers) -->
+  <a class="skip-link" href="#player-list">Passer à la liste de joueurs</a>
+
+  <!-- WebSocket disconnect banner -->
+  <div *ngIf="!wsConnected" class="ws-banner" role="alert" aria-live="assertive">
+    <mat-icon aria-hidden="true">wifi_off</mat-icon>
+    Connexion instable — résultats du serveur font foi
+  </div>
+
+  <!-- Submission indicator (always visible) -->
+  <div class="submission-header" role="status" aria-live="polite" aria-atomic="true">
+    <span class="submission-count" *ngIf="totalCount > 0">
+      {{ submittedCount }} / {{ totalCount }} ont soumis ✓
+    </span>
+  </div>
+
+  <!-- ===== SUBMITTING / RESELECTING: player catalogue ===== -->
+  <ng-container *ngIf="phase === 'submitting' || phase === 'reselecting'">
+
+    <!-- Reselect banner -->
+    <div *ngIf="phase === 'reselecting'" class="reselect-banner" role="status" aria-live="assertive">
+      <mat-icon aria-hidden="true">refresh</mat-icon>
+      <span>Tu dois resélectionner{{ lostSlotLabel ? ' (tu as perdu ' + lostSlotLabel + ')' : '' }}</span>
+      <app-draft-timer
+        [durationSeconds]="reselectSeconds"
+        (expired)="onReselectTimerExpired()"
+      ></app-draft-timer>
+    </div>
+
+    <!-- Player search + filter -->
+    <app-player-search-filter
+      mode="draft"
+      [availableRegions]="regions"
+      [availableTranches]="[]"
+      [totalResults]="filteredPlayers.length"
+      (filterChanged)="onFilterChange($event)"
+    ></app-player-search-filter>
+
+    <!-- Virtual scroll player list -->
+    <cdk-virtual-scroll-viewport
+      id="player-list"
+      class="player-list"
+      [itemSize]="48"
+      aria-label="Liste des joueurs disponibles"
+    >
+      <app-player-card
+        *cdkVirtualFor="let player of filteredPlayers"
+        [player]="player"
+        mode="draft"
+        [selected]="selectedPlayer?.id === player.id"
+        [taken]="player.selected === true"
+        (cardSelected)="onPlayerSelect($event)"
+      ></app-player-card>
+    </cdk-virtual-scroll-viewport>
+
+    <!-- Submit zone -->
+    <div class="submit-zone" *ngIf="selectedPlayer">
+      <button
+        mat-flat-button
+        class="btn-submit"
+        (click)="submitSelection()"
+        [attr.aria-label]="'Soumettre ' + selectedPlayer.username"
+      >
+        Soumettre {{ selectedPlayer.username }}
+      </button>
+    </div>
+
+  </ng-container>
+
+  <!-- ===== WAITING: lock screen ===== -->
+  <div *ngIf="phase === 'waiting'" class="waiting-zone" role="status" aria-live="polite">
+    <mat-icon class="waiting-icon" aria-hidden="true">hourglass_empty</mat-icon>
+    <p class="waiting-text">En attente des autres participants...</p>
+    <p class="waiting-subtext" *ngIf="totalCount > 0">
+      {{ submittedCount }} / {{ totalCount }} ont soumis
+    </p>
+  </div>
+
+  <!-- ===== DONE: reveal ===== -->
+  <div *ngIf="phase === 'done'" class="done-zone" role="status" aria-live="polite">
+    <mat-icon class="done-icon" aria-hidden="true">check_circle</mat-icon>
+    <h2 class="done-title">Draft simultané terminé !</h2>
+    <p class="done-subtitle">Toutes les sélections ont été validées.</p>
+  </div>
+
+</div>

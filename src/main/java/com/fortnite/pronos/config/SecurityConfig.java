@@ -10,10 +10,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,7 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 
-/** Configuration de sécurité pour l'application */
+/** Security configuration for the application. */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -38,80 +41,25 @@ import lombok.RequiredArgsConstructor;
 @SuppressWarnings({"java:S1874", "java:S5738"})
 public class SecurityConfig {
 
+  private static final long HSTS_MAX_AGE_SECONDS = 31_536_000L;
+  private static final long CORS_MAX_AGE_SECONDS = 3_600L;
+
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final UserDetailsService userDetailsService;
   private final Environment environment;
   private final org.springframework.beans.factory.ObjectProvider<TestFallbackAuthenticationFilter>
       testFallbackAuthenticationFilter;
 
-  /** Configuration du filtre de sécurité */
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        // Désactiver CSRF pour les API REST
-        .csrf(AbstractHttpConfigurer::disable)
-
-        // Configuration CORS
+    http.csrf(AbstractHttpConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-        // Configuration des autorisations - Sécurité rétablie
-        .authorizeHttpRequests(
-            authz ->
-                authz
-                    // Endpoints publics
-                    .requestMatchers("/api/auth/**")
-                    .permitAll()
-                    .requestMatchers("/actuator/health")
-                    .permitAll()
-                    .requestMatchers("/actuator/**")
-                    .hasRole("ADMIN")
-                    .requestMatchers("/h2-console/**")
-                    .permitAll() // Pour H2 en dev
-                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-                    .permitAll()
-                    // WebSocket endpoints - SockJS requires multiple paths
-                    .requestMatchers("/ws/**")
-                    .permitAll()
-
-                    // Endpoints API protégés
-                    .requestMatchers("/api/admin/**")
-                    .hasRole("ADMIN")
-                    .requestMatchers("/api/**")
-                    .authenticated()
-
-                    // Toutes les autres requêtes nécessitent une authentification
-                    .anyRequest()
-                    .authenticated())
-
-        // Configuration des sessions
+        .authorizeHttpRequests(this::configureAuthorizationRules)
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-        // Fournisseur d'authentification
         .authenticationProvider(authenticationProvider())
-
-        // Ajouter le filtre JWT (le fallback de test est injecté plus bas si présent)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-        // PHASE 1A: ENHANCED SECURITY HEADERS for production hardening
-        .headers(
-            headers ->
-                headers
-                    .frameOptions()
-                    .deny()
-                    .contentTypeOptions()
-                    .and()
-                    .httpStrictTransportSecurity(
-                        hstsConfig ->
-                            hstsConfig
-                                .maxAgeInSeconds(31536000)
-                                .includeSubDomains(true)
-                                .preload(true))
-                    .referrerPolicy(
-                        org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
-                            .ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
-                    .and()
-                    .httpPublicKeyPinning(hpkp -> hpkp.includeSubDomains(true)));
+        .headers(this::configureSecurityHeaders);
 
     TestFallbackAuthenticationFilter fallbackFilter =
         testFallbackAuthenticationFilter.getIfAvailable();
@@ -122,31 +70,11 @@ public class SecurityConfig {
     return http.build();
   }
 
-  /** Configuration CORS */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-
-    // PHASE 1A: ENHANCED CORS - More restrictive for production security
-    boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
-    if (isProd) {
-      // Production: strict domain restrictions
-      configuration.setAllowedOriginPatterns(
-          List.of("https://fortnitepronos.com", "https://*.fortnitepronos.com"));
-    } else {
-      // Development: allow local development
-      configuration.setAllowedOriginPatterns(
-          List.of(
-              "http://localhost:4200",
-              "http://localhost:4201",
-              "http://127.0.0.1:4200",
-              "http://127.0.0.1:4201"));
-    }
-
-    // Méthodes autorisées
+    configuration.setAllowedOriginPatterns(resolveAllowedOriginPatterns());
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-    // Headers autorisés - restrictifs pour la sécurité
     configuration.setAllowedHeaders(
         Arrays.asList(
             "Authorization",
@@ -157,26 +85,72 @@ public class SecurityConfig {
             "X-Test-User",
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers"));
-
-    // Credentials autorisés
     configuration.setAllowCredentials(true);
-
-    // Max age
-    configuration.setMaxAge(3600L);
+    configuration.setMaxAge(CORS_MAX_AGE_SECONDS);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
-
     return source;
   }
 
-  /** Encodeur de mots de passe */
+  private void configureAuthorizationRules(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          authorizations) {
+    authorizations
+        .requestMatchers("/api/auth/**")
+        .permitAll()
+        .requestMatchers("/actuator/health")
+        .permitAll()
+        .requestMatchers("/actuator/**")
+        .hasRole("ADMIN")
+        .requestMatchers("/h2-console/**")
+        .permitAll()
+        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+        .permitAll()
+        .requestMatchers("/ws/**")
+        .permitAll()
+        .requestMatchers("/api/admin/**")
+        .hasRole("ADMIN")
+        .requestMatchers("/api/**")
+        .authenticated()
+        .anyRequest()
+        .authenticated();
+  }
+
+  private void configureSecurityHeaders(HeadersConfigurer<HttpSecurity> headers) {
+    headers
+        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+        .contentTypeOptions(Customizer.withDefaults())
+        .httpStrictTransportSecurity(this::configureHsts)
+        .referrerPolicy(
+            referrer ->
+                referrer.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+                        .ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+        .httpPublicKeyPinning(hpkp -> hpkp.includeSubDomains(true));
+  }
+
+  private void configureHsts(HeadersConfigurer<HttpSecurity>.HstsConfig hstsConfig) {
+    hstsConfig.maxAgeInSeconds(HSTS_MAX_AGE_SECONDS).includeSubDomains(true).preload(true);
+  }
+
+  private List<String> resolveAllowedOriginPatterns() {
+    boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+    if (isProd) {
+      return List.of("https://fortnitepronos.com", "https://*.fortnitepronos.com");
+    }
+    return List.of(
+        "http://localhost:4200",
+        "http://localhost:4201",
+        "http://127.0.0.1:4200",
+        "http://127.0.0.1:4201");
+  }
+
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 
-  /** Fournisseur d'authentification */
   @Bean
   public AuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -185,7 +159,6 @@ public class SecurityConfig {
     return authProvider;
   }
 
-  /** Gestionnaire d'authentification */
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
       throws Exception {

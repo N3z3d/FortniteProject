@@ -27,6 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+  private static final String BEARER_PREFIX = "Bearer ";
+  private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
+
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
 
@@ -38,20 +41,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     final String authHeader = request.getHeader("Authorization");
-    final String jwt;
-    final String userEmail;
 
     // Vérifier si le header Authorization contient un token Bearer
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
       filterChain.doFilter(request, response);
       return;
     }
 
     // Extraire le token
-    jwt = authHeader.substring(7);
+    String jwt = authHeader.substring(BEARER_PREFIX_LENGTH);
 
     try {
-      userEmail = jwtService.extractUsername(jwt);
+      String userEmail = jwtService.extractUsername(jwt);
 
       // Si l'utilisateur n'est pas encore authentifié
       if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {

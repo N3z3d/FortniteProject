@@ -1,0 +1,42 @@
+<div
+  class="player-card"
+  [class.player-card--draft]="mode === 'draft'"
+  [class.player-card--browse]="mode === 'browse'"
+  [class.player-card--selected]="selected"
+  [class.player-card--taken]="taken"
+  [class.player-card--recommended]="recommended"
+  role="button"
+  [attr.tabindex]="taken ? -1 : 0"
+  [attr.aria-selected]="selected"
+  [attr.aria-label]="ariaLabel"
+  (click)="onSelect()"
+  (keydown)="onKeydown($event)"
+>
+  <!-- Recommended badge -->
+  <span *ngIf="recommended" class="badge-recommended" aria-hidden="true">★</span>
+
+  <!-- Rank -->
+  <span class="player-rank rank-number">{{ player?.totalPoints ?? '—' }}</span>
+
+  <!-- Name — UPPERCASE via CSS -->
+  <span class="player-name">{{ player?.username }}</span>
+
+  <!-- Region chip -->
+  <span class="player-region">{{ player?.region }}</span>
+
+  <!-- Sparkline slot — populated by SparklineChartComponent (UX-004a) -->
+  <div *ngIf="showSparklineSlot" class="sparkline-slot" aria-hidden="true">
+    <!-- SparklineChartComponent injected here in UX-004a -->
+  </div>
+
+  <!-- Taken overlay: only CTA is Signaler -->
+  <button
+    *ngIf="taken"
+    class="btn-report"
+    mat-stroked-button
+    (click)="onReport($event)"
+    [attr.aria-label]="'Signaler ' + player?.username"
+  >
+    Signaler
+  </button>
+</div>

@@ -27,7 +27,6 @@ import com.fortnite.pronos.model.Score;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
-import com.fortnite.pronos.service.seed.TeamSeedService;
 
 /** Unit tests for ReferenceGameSeedService. Tests seed configuration behavior and game creation. */
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +39,6 @@ class ReferenceGameSeedServiceTest {
   // Seed service dependencies
   @Mock private ReferenceUserSeedService referenceUserSeedService;
   @Mock private PlayerSeedService playerSeedService;
-  @Mock private TeamSeedService teamSeedService;
   @Mock private CsvDataLoaderService csvDataLoaderService;
 
   // Repository
@@ -92,7 +90,6 @@ class ReferenceGameSeedServiceTest {
     referenceGameSeedService.ensureReferenceGame();
 
     verify(gameRepository).save(any(Game.class));
-    verify(teamSeedService).getAllTeams();
   }
 
   @Test

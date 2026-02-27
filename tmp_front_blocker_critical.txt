@@ -1,0 +1,12 @@
+
+rule             severity component                                                                                                                                line message                                                                 
+----             -------- ---------                                                                                                                                ---- -------                                                                 
+typescript:S1186 CRITICAL fortnite-pronos-frontend:src/app/core/services/game-selection.service.ts                                                                   12 Unexpected empty constructor.                                           
+typescript:S3776 CRITICAL fortnite-pronos-frontend:src/app/features/dashboard/services/dashboard-stats-calculator.service.ts                                         14 Refactor this function to reduce its Cognitive Complexity from 16 to ...
+css:S4657        CRITICAL fortnite-pronos-frontend:src/app/features/game/components/invitation-code-duration-dialog/invitation-code-duration-dialog.component.scss   22 Unexpected shorthand "padding" after "padding-bottom"                   
+typescript:S3776 CRITICAL fortnite-pronos-frontend:src/app/features/leaderboard/simple-leaderboard.component.ts                                                     148 Refactor this function to reduce its Cognitive Complexity from 17 to ...
+typescript:S3776 CRITICAL fortnite-pronos-frontend:src/app/features/trades/services/trade-validation.service.ts                                                      22 Refactor this function to reduce its Cognitive Complexity from 16 to ...
+typescript:S1186 CRITICAL fortnite-pronos-frontend:src/app/shared/services/focus-management.service.ts                                                               10 Unexpected empty constructor.                                           
+
+
+

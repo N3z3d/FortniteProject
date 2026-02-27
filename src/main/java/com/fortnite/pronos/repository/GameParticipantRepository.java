@@ -175,13 +175,19 @@ public interface GameParticipantRepository
   // ============== MÉTHODES MANQUANTES POUR PERFORMANCE ==============
 
   /** Performance methods using IDs to avoid entity loading */
-  List<GameParticipant> findByGameIdOrderByJoinedAt(UUID gameId);
+  @Query("SELECT gp FROM GameParticipant gp WHERE gp.game.id = :gameId ORDER BY gp.joinedAt")
+  List<GameParticipant> findByGameIdOrderByJoinedAt(@Param("gameId") UUID gameId);
 
-  boolean existsByUserIdAndGameId(UUID userId, UUID gameId);
+  @Query(
+      "SELECT COUNT(gp) > 0 FROM GameParticipant gp WHERE gp.user.id = :userId AND gp.game.id = :gameId")
+  boolean existsByUserIdAndGameId(@Param("userId") UUID userId, @Param("gameId") UUID gameId);
 
-  long countByGameId(UUID gameId);
+  @Query("SELECT COUNT(gp) FROM GameParticipant gp WHERE gp.game.id = :gameId")
+  long countByGameId(@Param("gameId") UUID gameId);
 
-  Optional<GameParticipant> findByUserIdAndGameId(UUID userId, UUID gameId);
+  @Query("SELECT gp FROM GameParticipant gp WHERE gp.user.id = :userId AND gp.game.id = :gameId")
+  Optional<GameParticipant> findByUserIdAndGameId(
+      @Param("userId") UUID userId, @Param("gameId") UUID gameId);
 
   /** OPTIMISÉ: Trouve les participants d'une game par ID avec utilisateur */
   @Query(

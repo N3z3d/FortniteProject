@@ -10,11 +10,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.fortnite.pronos.exception.AccountDeletionBlockedException;
 import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.exception.DraftIncompleteException;
+import com.fortnite.pronos.exception.InvalidEpicIdException;
+import com.fortnite.pronos.exception.InvalidInvitationCodeException;
 import com.fortnite.pronos.exception.InvalidSwapException;
 import com.fortnite.pronos.exception.NotYourTurnException;
 import com.fortnite.pronos.exception.PlayerAlreadySelectedException;
+import com.fortnite.pronos.exception.PlayerIdentityNotFoundException;
 import com.fortnite.pronos.exception.TeamNotFoundException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.service.admin.ErrorEntry;
@@ -87,6 +91,42 @@ public class DomainExceptionHandler {
       InvalidSwapException ex, HttpServletRequest request) {
     log.warn("Invalid swap: {}", ex.getMessage());
     return buildAndRecordError(ex, request, HttpStatus.BAD_REQUEST, "Invalid Swap", "INVALID_SWAP");
+  }
+
+  @ExceptionHandler(InvalidEpicIdException.class)
+  public ResponseEntity<GlobalExceptionHandler.ErrorResponse> handleInvalidEpicId(
+      InvalidEpicIdException ex, HttpServletRequest request) {
+    log.warn("Invalid Epic ID: {}", ex.getMessage());
+    return buildAndRecordError(
+        ex, request, HttpStatus.UNPROCESSABLE_ENTITY, "Invalid Epic ID", "INVALID_EPIC_ID");
+  }
+
+  @ExceptionHandler(InvalidInvitationCodeException.class)
+  public ResponseEntity<GlobalExceptionHandler.ErrorResponse> handleInvalidInvitationCode(
+      InvalidInvitationCodeException ex, HttpServletRequest request) {
+    log.warn("Invalid invitation code: {}", ex.getMessage());
+    return buildAndRecordError(
+        ex, request, HttpStatus.BAD_REQUEST, "Invalid Invitation Code", "INVALID_INVITATION_CODE");
+  }
+
+  @ExceptionHandler(AccountDeletionBlockedException.class)
+  public ResponseEntity<GlobalExceptionHandler.ErrorResponse> handleAccountDeletionBlocked(
+      AccountDeletionBlockedException ex, HttpServletRequest request) {
+    log.warn("Account deletion blocked: {}", ex.getMessage());
+    return buildAndRecordError(
+        ex, request, HttpStatus.CONFLICT, "Account Deletion Blocked", "ACCOUNT_DELETION_BLOCKED");
+  }
+
+  @ExceptionHandler(PlayerIdentityNotFoundException.class)
+  public ResponseEntity<GlobalExceptionHandler.ErrorResponse> handlePlayerIdentityNotFound(
+      PlayerIdentityNotFoundException ex, HttpServletRequest request) {
+    log.warn("Player identity not found: {}", ex.getMessage());
+    return buildAndRecordError(
+        ex,
+        request,
+        HttpStatus.NOT_FOUND,
+        "Player Identity Not Found",
+        "PLAYER_IDENTITY_NOT_FOUND");
   }
 
   private ResponseEntity<GlobalExceptionHandler.ErrorResponse> buildAndRecordError(

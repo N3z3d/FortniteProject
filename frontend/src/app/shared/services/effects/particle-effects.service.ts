@@ -1,4 +1,5 @@
 import { Injectable, ElementRef, Renderer2, RendererFactory2 } from '@angular/core';
+import { secureRandomFloat, secureRandomPick } from '../../utils/secure-random.util';
 
 @Injectable({
   providedIn: 'root'
@@ -21,12 +22,12 @@ export class ParticleEffectsService {
           this.renderer.addClass(particle, 'explosion-particle');
 
           const angle = (Math.PI * 2 * i) / (particleCount / 3) + (wave * 0.3);
-          const velocity = 80 + Math.random() * 120 + (wave * 20);
-          const size = 3 + Math.random() * 6;
-          const lifetime = 0.8 + Math.random() * 0.4;
+          const velocity = 80 + secureRandomFloat() * 120 + (wave * 20);
+          const size = 3 + secureRandomFloat() * 6;
+          const lifetime = 0.8 + secureRandomFloat() * 0.4;
 
           const colors = ['#00d4ff', '#ff6b35', '#00ff88', '#ffaa00'];
-          const color = colors[Math.floor(Math.random() * colors.length)];
+          const color = secureRandomPick(colors);
 
           this.renderer.setStyle(particle, 'position', 'absolute');
           this.renderer.setStyle(particle, 'width', `${size}px`);

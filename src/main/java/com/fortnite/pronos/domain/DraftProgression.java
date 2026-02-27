@@ -99,14 +99,17 @@ public final class DraftProgression {
     if (pickNumber < 1 || pickNumber > participantCount) {
       throw new IllegalArgumentException("Pick number must be between 1 and participant count");
     }
+    if (roundNumber < 1) {
+      throw new IllegalArgumentException("Round number must be at least 1");
+    }
 
-    if (!useSnakeDraft || roundNumber % 2 == 1) {
+    boolean forwardOrder = !useSnakeDraft || Math.floorMod(roundNumber, 2) == 1;
+    if (forwardOrder) {
       // Forward order (round 1, 3, 5...)
       return pickNumber - 1;
-    } else {
-      // Reverse order (round 2, 4, 6...) - snake draft
-      return participantCount - pickNumber;
     }
+    // Reverse order (round 2, 4, 6...) - snake draft
+    return participantCount - pickNumber;
   }
 
   /** Represents a position in the draft (round and pick). */

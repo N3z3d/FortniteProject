@@ -25,7 +25,7 @@ class MaximumClassLinesCondition extends ArchCondition<JavaClass> {
   }
 
   @Override
-  void check(JavaClass javaClass, ConditionEvents events) {
+  public void check(JavaClass javaClass, ConditionEvents events) {
     try {
       int lineCount = countLines(javaClass);
 

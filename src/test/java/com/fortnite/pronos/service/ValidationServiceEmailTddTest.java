@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,5 +89,12 @@ class ValidationServiceEmailTddTest {
 
     assertThat(minimalResult).isTrue();
     assertThat(longResult).isTrue();
+  }
+
+  @Test
+  @DisplayName("Should define compiled email pattern constant")
+  void shouldDefineCompiledEmailPatternConstant() {
+    assertThatCode(() -> ValidationService.class.getDeclaredField("EMAIL_PATTERN"))
+        .doesNotThrowAnyException();
   }
 }

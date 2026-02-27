@@ -1,10 +1,11 @@
 package com.fortnite.pronos.domain.game.model;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /** Domain model representing a participant in a game. Framework-free. */
@@ -20,7 +21,7 @@ public final class GameParticipant {
   private LocalDateTime joinedAt;
   private LocalDateTime lastSelectionTime;
   private boolean creator;
-  private final List<UUID> selectedPlayerIds;
+  private final Set<UUID> selectedPlayerIds;
 
   public GameParticipant(UUID userId, String username, boolean creator) {
     Objects.requireNonNull(userId, "User ID cannot be null");
@@ -28,7 +29,7 @@ public final class GameParticipant {
     this.username = username;
     this.creator = creator;
     this.joinedAt = LocalDateTime.now();
-    this.selectedPlayerIds = new ArrayList<>();
+    this.selectedPlayerIds = new LinkedHashSet<>();
   }
 
   /** Reconstitution constructor for persistence mapping. */
@@ -54,8 +55,7 @@ public final class GameParticipant {
   }
 
   public void addSelectedPlayer(UUID playerId) {
-    if (!selectedPlayerIds.contains(playerId)) {
-      selectedPlayerIds.add(playerId);
+    if (selectedPlayerIds.add(playerId)) {
       this.lastSelectionTime = LocalDateTime.now();
     }
   }
@@ -114,7 +114,7 @@ public final class GameParticipant {
   }
 
   public List<UUID> getSelectedPlayerIds() {
-    return Collections.unmodifiableList(selectedPlayerIds);
+    return Collections.unmodifiableList(List.copyOf(selectedPlayerIds));
   }
 
   @Override

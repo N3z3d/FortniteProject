@@ -92,7 +92,7 @@ class CouplingTest {
   private static ArchCondition<JavaClass> haveAtMostNInjectedDependencies(int maxDependencies) {
     return new ArchCondition<>("have at most " + maxDependencies + " injected dependencies") {
       @Override
-      void check(JavaClass javaClass, ConditionEvents events) {
+      public void check(JavaClass javaClass, ConditionEvents events) {
         try {
           Class<?> clazz = Class.forName(javaClass.getName());
           long dependencyCount = countInjectedDependencies(clazz);

@@ -1,5 +1,6 @@
 package com.fortnite.pronos.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Player;
 
@@ -23,6 +25,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @SuppressWarnings({"java:S1640"})
 public class GameDto {
+
+  private static final double PERCENT_SCALE = 100.0;
+  private static final int SECONDS_PER_MINUTE = 60;
+  private static final int SECONDS_PER_HOUR = 3600;
+  private static final int SHORT_NAME_MAX_LENGTH = 50;
+  private static final int SHORT_NAME_TRUNCATE_LENGTH = 47;
+  private static final int SHORT_DESCRIPTION_MAX_LENGTH = 100;
+  private static final int SHORT_DESCRIPTION_TRUNCATE_LENGTH = 97;
+  private static final int RECENT_HOURS_WINDOW = 24;
+  private static final int MIN_PARTICIPANTS_TO_START_DRAFT = 2;
 
   private UUID id;
   private String name;
@@ -52,6 +64,13 @@ public class GameDto {
 
   /** Total count of available Fortnite players for draft selection */
   private Long fortnitePlayerCount;
+
+  private DraftMode draftMode;
+  private Integer teamSize;
+  private Integer trancheSize;
+  private Boolean tranchesEnabled;
+  private LocalDate competitionStart;
+  private LocalDate competitionEnd;
 
   /** Calculer le nombre de places disponibles */
   public int getAvailableSlots() {
@@ -96,7 +115,7 @@ public class GameDto {
     if (maxParticipants == null || maxParticipants == 0 || currentParticipantCount == null) {
       return 0.0;
     }
-    return (double) currentParticipantCount / maxParticipants * 100.0;
+    return (((double) currentParticipantCount / maxParticipants) * PERCENT_SCALE);
   }
 
   /** Initialiser les collections si elles sont nulles */
@@ -155,7 +174,7 @@ public class GameDto {
   public boolean canStartDraft() {
     return status == GameStatus.CREATING
         && currentParticipantCount != null
-        && currentParticipantCount >= 2;
+        && currentParticipantCount >= MIN_PARTICIPANTS_TO_START_DRAFT;
   }
 
   /** Vérifier si la game peut être rejointe par code d'invitation */
@@ -170,12 +189,12 @@ public class GameDto {
 
   /** Obtenir la durée du draft en minutes */
   public int getDraftTimeLimitMinutes() {
-    return draftTimeLimit != null ? draftTimeLimit / 60 : 0;
+    return draftTimeLimit != null ? (draftTimeLimit / SECONDS_PER_MINUTE) : 0;
   }
 
   /** Obtenir le délai d'auto-pick en heures */
   public int getAutoPickDelayHours() {
-    return autoPickDelay != null ? autoPickDelay / 3600 : 0;
+    return autoPickDelay != null ? (autoPickDelay / SECONDS_PER_HOUR) : 0;
   }
 
   /** Vérifier si l'auto-pick est activé */
@@ -193,7 +212,10 @@ public class GameDto {
     if (name == null) {
       return "";
     }
-    return name.length() > 50 ? name.substring(0, 47) + "..." : name;
+    if (name.length() > SHORT_NAME_MAX_LENGTH) {
+      return name.substring(0, SHORT_NAME_TRUNCATE_LENGTH) + "...";
+    }
+    return name;
   }
 
   /** Obtenir la description courte (max 100 caractères) */
@@ -201,7 +223,10 @@ public class GameDto {
     if (description == null) {
       return "";
     }
-    return description.length() > 100 ? description.substring(0, 97) + "..." : description;
+    if (description.length() > SHORT_DESCRIPTION_MAX_LENGTH) {
+      return description.substring(0, SHORT_DESCRIPTION_TRUNCATE_LENGTH) + "...";
+    }
+    return description;
   }
 
   /** Vérifier si la game est récente (créée dans les 24h) */
@@ -209,7 +234,7 @@ public class GameDto {
     if (createdAt == null) {
       return false;
     }
-    LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
+    LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(RECENT_HOURS_WINDOW);
     return createdAt.isAfter(twentyFourHoursAgo);
   }
 

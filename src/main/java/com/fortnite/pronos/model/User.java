@@ -1,5 +1,6 @@
 package com.fortnite.pronos.model;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -36,6 +37,9 @@ public class User {
 
   @Column(name = "current_season", nullable = false)
   private Integer currentSeason = 2025;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
 
   public enum UserRole {
     USER, // Regular user - can create/join games, participate in drafts

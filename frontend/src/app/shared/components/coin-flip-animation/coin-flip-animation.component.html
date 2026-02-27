@@ -1,0 +1,64 @@
+<div
+  class="coin-flip-dialog"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="conflict-title"
+  [class.reduced-motion]="reducedMotion"
+>
+  <!-- Header -->
+  <div class="conflict-header">
+    <mat-icon aria-hidden="true" class="conflict-icon">swap_horiz</mat-icon>
+    <h2 id="conflict-title" class="conflict-title">
+      ⚔️ CONFLIT — <span class="contested-name">{{ contestedPlayer }}</span>
+    </h2>
+    <p class="conflict-subtitle">{{ player1Label }} VS {{ player2Label }}</p>
+  </div>
+
+  <!-- Coin animation zone -->
+  <div class="coin-zone" [class.flipping]="phase === 'flipping'" aria-hidden="true">
+    <div class="coin" [class.coin--flip]="phase === 'flipping' && !reducedMotion">
+      <div class="coin-face coin-face--front">
+        <span class="coin-name">{{ player1Label }}</span>
+      </div>
+      <div class="coin-face coin-face--back">
+        <span class="coin-name">{{ player2Label }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result zone (aria-live) -->
+  <div
+    class="result-zone"
+    aria-live="polite"
+    aria-atomic="true"
+    [class.result-zone--visible]="phase === 'result'"
+  >
+    <ng-container *ngIf="phase === 'result'">
+      <div class="winner-block">
+        <span class="result-label">🏆 GAGNANT</span>
+        <span class="winner-name">{{ winner }}</span>
+        <p class="winner-message">conserve <strong>{{ contestedPlayer }}</strong></p>
+      </div>
+
+      <div class="loser-block">
+        <span class="result-label loser-label">❌ PERDANT</span>
+        <span class="loser-name">{{ loser }}</span>
+        <p class="loser-message">doit re-sélectionner un joueur (45s)</p>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Action -->
+  <div class="action-zone">
+    <button
+      #reselectBtn
+      mat-flat-button
+      class="btn-reselect"
+      [disabled]="phase !== 'result'"
+      (click)="onReselect()"
+      aria-label="Re-sélectionner un joueur"
+    >
+      Re-sélectionner
+    </button>
+  </div>
+</div>

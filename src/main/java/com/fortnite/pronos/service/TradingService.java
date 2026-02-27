@@ -2,6 +2,7 @@ package com.fortnite.pronos.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +25,7 @@ public class TradingService {
 
   private static final String TRADE_NOT_FOUND_MESSAGE = "Trade not found";
   private static final String TRADE_NOT_PENDING_MESSAGE = "Trade is not in pending status";
+  private static final int MAX_PLAYERS_PER_SIDE = 5;
 
   private final TradeRepositoryPort tradeRepository;
   private final TeamRepositoryPort teamRepository;
@@ -41,7 +43,10 @@ public class TradingService {
    * @return The created trade proposal
    */
   public com.fortnite.pronos.model.Trade proposeTradeWithPlayerIds(
-      UUID fromTeamId, UUID toTeamId, List<UUID> offeredPlayerIds, List<UUID> requestedPlayerIds) {
+      UUID fromTeamId,
+      UUID toTeamId,
+      Collection<UUID> offeredPlayerIds,
+      Collection<UUID> requestedPlayerIds) {
     log.info("Proposing trade from team {} to team {}", fromTeamId, toTeamId);
 
     // Convert UUIDs to Player entities
@@ -133,7 +138,8 @@ public class TradingService {
             .orElseThrow(() -> new BusinessException(TRADE_NOT_FOUND_MESSAGE));
 
     // Validate user can reject this trade
-    if (!teamOwnerId(toTeamOf(trade)).equals(userId)) {
+    com.fortnite.pronos.model.Team toTeam = TradingTeamSupport.toTeamOf(trade);
+    if (!TradingTeamSupport.teamOwnerId(toTeam).equals(userId)) {
       throw new BusinessException("Only the target team owner can reject this trade");
     }
 
@@ -166,7 +172,8 @@ public class TradingService {
             .orElseThrow(() -> new BusinessException(TRADE_NOT_FOUND_MESSAGE));
 
     // Validate user can cancel this trade
-    if (!teamOwnerId(fromTeamOf(trade)).equals(userId)) {
+    com.fortnite.pronos.model.Team fromTeam = TradingTeamSupport.fromTeamOf(trade);
+    if (!TradingTeamSupport.teamOwnerId(fromTeam).equals(userId)) {
       throw new BusinessException("Only the initiating team owner can cancel this trade");
     }
 
@@ -195,8 +202,8 @@ public class TradingService {
   public com.fortnite.pronos.model.Trade counterTradeWithPlayerIds(
       UUID originalTradeId,
       UUID userId,
-      List<UUID> offeredPlayerIds,
-      List<UUID> requestedPlayerIds) {
+      Collection<UUID> offeredPlayerIds,
+      Collection<UUID> requestedPlayerIds) {
     // Convert UUIDs to Player entities
     List<com.fortnite.pronos.model.Player> offeredPlayers =
         offeredPlayerIds.stream()
@@ -243,7 +250,8 @@ public class TradingService {
             .orElseThrow(() -> new BusinessException("Original trade not found"));
 
     // Validate user can counter this trade
-    if (!teamOwnerId(toTeamOf(originalTrade)).equals(userId)) {
+    com.fortnite.pronos.model.Team originalTargetTeam = TradingTeamSupport.toTeamOf(originalTrade);
+    if (!TradingTeamSupport.teamOwnerId(originalTargetTeam).equals(userId)) {
       throw new BusinessException("Only the target team owner can counter this trade");
     }
 
@@ -256,11 +264,14 @@ public class TradingService {
     originalTrade.setStatus(com.fortnite.pronos.model.Trade.Status.COUNTERED);
     com.fortnite.pronos.model.Trade savedOriginal = tradeRepository.save(originalTrade);
 
+    com.fortnite.pronos.model.Team originalInitiatorTeam =
+        TradingTeamSupport.fromTeamOf(originalTrade);
+
     // Create counter-offer (roles are swapped)
     com.fortnite.pronos.model.Trade counterTrade =
         proposeTrade(
-            toTeamOf(originalTrade).getId(),
-            fromTeamOf(originalTrade).getId(),
+            originalTargetTeam.getId(),
+            originalInitiatorTeam.getId(),
             offeredPlayers,
             requestedPlayers);
 
@@ -272,10 +283,10 @@ public class TradingService {
 
   private void validateGameTradingRules(
       com.fortnite.pronos.model.Team fromTeam, com.fortnite.pronos.model.Team toTeam) {
-    if (!gameId(fromTeam).equals(gameId(toTeam))) {
+    if (!TradingTeamSupport.gameId(fromTeam).equals(TradingTeamSupport.gameId(toTeam))) {
       throw new BusinessException("Teams must be in the same game");
     }
-    com.fortnite.pronos.model.Game game = teamGame(fromTeam);
+    com.fortnite.pronos.model.Game game = TradingTeamSupport.teamGame(fromTeam);
     if (!Boolean.TRUE.equals(game.getTradingEnabled())) {
       throw new BusinessException("Trading is disabled for this game");
     }
@@ -295,7 +306,7 @@ public class TradingService {
       List<com.fortnite.pronos.model.Player> players,
       String ownershipErrorPrefix) {
     for (com.fortnite.pronos.model.Player player : players) {
-      if (!teamOwnsPlayer(team, player)) {
+      if (!TradingTeamSupport.teamOwnsPlayer(team, player)) {
         throw new BusinessException(ownershipErrorPrefix + player.getName());
       }
       if (player.isLocked()) {
@@ -321,8 +332,9 @@ public class TradingService {
     tempToTeam.setName(toTeam.getName());
     tempToTeam.setPlayers(asTeamPlayers(tempToTeam, toPlayersAfter));
 
-    validationService.validateTeamComposition(tempFromTeam, regionRules(fromTeam));
-    validationService.validateTeamComposition(tempToTeam, regionRules(toTeam));
+    validationService.validateTeamComposition(
+        tempFromTeam, TradingTeamSupport.regionRules(fromTeam));
+    validationService.validateTeamComposition(tempToTeam, TradingTeamSupport.regionRules(toTeam));
   }
 
   private com.fortnite.pronos.model.Team findTeamOrThrow(UUID teamId, String errorMessage) {
@@ -332,7 +344,8 @@ public class TradingService {
   private void validateTradeSize(
       List<com.fortnite.pronos.model.Player> offeredPlayers,
       List<com.fortnite.pronos.model.Player> requestedPlayers) {
-    if (offeredPlayers.size() > 5 || requestedPlayers.size() > 5) {
+    if (offeredPlayers.size() > MAX_PLAYERS_PER_SIDE
+        || requestedPlayers.size() > MAX_PLAYERS_PER_SIDE) {
       throw new BusinessException("Too many players in trade (maximum 5 per side)");
     }
   }
@@ -366,7 +379,8 @@ public class TradingService {
   }
 
   private void validateTradeAcceptanceRights(com.fortnite.pronos.model.Trade trade, UUID userId) {
-    if (!teamOwnerId(toTeamOf(trade)).equals(userId)) {
+    com.fortnite.pronos.model.Team toTeam = TradingTeamSupport.toTeamOf(trade);
+    if (!TradingTeamSupport.teamOwnerId(toTeam).equals(userId)) {
       throw new BusinessException("Only the target team owner can accept this trade");
     }
     if (trade.getStatus() != com.fortnite.pronos.model.Trade.Status.PENDING) {
@@ -374,37 +388,12 @@ public class TradingService {
     }
   }
 
-  private com.fortnite.pronos.model.Team fromTeamOf(com.fortnite.pronos.model.Trade trade) {
-    return trade.getFromTeam();
-  }
-
-  private com.fortnite.pronos.model.Team toTeamOf(com.fortnite.pronos.model.Trade trade) {
-    return trade.getToTeam();
-  }
-
-  private com.fortnite.pronos.model.Game teamGame(com.fortnite.pronos.model.Team team) {
-    return team.getGame();
-  }
-
-  private UUID gameId(com.fortnite.pronos.model.Team team) {
-    return team.getGameId();
-  }
-
-  private UUID teamOwnerId(com.fortnite.pronos.model.Team team) {
-    return team.getUserId();
-  }
-
-  private List<com.fortnite.pronos.model.GameRegionRule> regionRules(
-      com.fortnite.pronos.model.Team team) {
-    return team.getGameRegionRules();
-  }
-
   private List<com.fortnite.pronos.model.Player> simulatePlayersAfterTrade(
       com.fortnite.pronos.model.Team team,
       List<com.fortnite.pronos.model.Player> playersToRemove,
       List<com.fortnite.pronos.model.Player> playersToAdd) {
     List<com.fortnite.pronos.model.Player> playersAfterTrade =
-        new ArrayList<>(getActivePlayers(team));
+        new ArrayList<>(TradingTeamSupport.getActivePlayers(team));
     playersAfterTrade.removeAll(playersToRemove);
     playersAfterTrade.addAll(playersToAdd);
     return playersAfterTrade;
@@ -438,27 +427,6 @@ public class TradingService {
     return savedTrade;
   }
 
-  // Helpers to work with TeamPlayer mapping
-  private List<com.fortnite.pronos.model.Player> getActivePlayers(
-      com.fortnite.pronos.model.Team team) {
-    return team.getPlayers().stream()
-        .filter(
-            tp -> tp != null && tp.getPlayer() != null && (tp.getUntil() == null || tp.isActive()))
-        .map(com.fortnite.pronos.model.TeamPlayer::getPlayer)
-        .toList();
-  }
-
-  private boolean teamOwnsPlayer(
-      com.fortnite.pronos.model.Team team, com.fortnite.pronos.model.Player player) {
-    return team.getPlayers().stream()
-        .anyMatch(
-            tp ->
-                tp != null
-                    && tp.getPlayer() != null
-                    && tp.getPlayer().equals(player)
-                    && (tp.getUntil() == null || tp.isActive()));
-  }
-
   private List<com.fortnite.pronos.model.TeamPlayer> asTeamPlayers(
       com.fortnite.pronos.model.Team team, List<com.fortnite.pronos.model.Player> players) {
     List<com.fortnite.pronos.model.TeamPlayer> result = new ArrayList<>();
@@ -467,7 +435,8 @@ public class TradingService {
       com.fortnite.pronos.model.TeamPlayer tp = new com.fortnite.pronos.model.TeamPlayer();
       tp.setTeam(team);
       tp.setPlayer(p);
-      tp.setPosition(position++);
+      tp.setPosition(position);
+      position = position + 1;
       result.add(tp);
     }
     return result;

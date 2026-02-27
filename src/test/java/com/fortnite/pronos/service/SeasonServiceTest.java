@@ -228,7 +228,8 @@ class SeasonServiceTest {
     List<Integer> validSeasons = seasonService.getAllValidSeasons();
 
     // Then
-    assertThat(validSeasons).isNotEmpty().containsEntry(0, 2024);
+    assertThat(validSeasons).isNotEmpty();
+    assertThat(validSeasons.get(0)).isEqualTo(2024);
     assertThat(validSeasons.get(validSeasons.size() - 1))
         .isEqualTo(seasonService.getMaxValidSeason());
     assertThat(validSeasons).containsSequence(2024, 2025, 2026);
@@ -240,10 +241,10 @@ class SeasonServiceTest {
     List<Integer> availableSeasons = seasonService.getAvailableSeasons();
 
     // Then
-    assertThat(availableSeasons).isNotEmpty().containsEntry(0, 2024);
-    assertThat(availableSeasons)
-        .containsEntry(availableSeasons.size() - 1, 2025)
-        .containsSequence(2024, 2025);
+    assertThat(availableSeasons).isNotEmpty();
+    assertThat(availableSeasons.get(0)).isEqualTo(2024);
+    assertThat(availableSeasons.get(availableSeasons.size() - 1)).isEqualTo(2025);
+    assertThat(availableSeasons).containsSequence(2024, 2025);
   }
 
   @Test

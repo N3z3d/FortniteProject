@@ -2,6 +2,7 @@ package com.fortnite.pronos.service.leaderboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
@@ -109,7 +110,7 @@ class TeamLeaderboardServiceTddTest {
   @DisplayName("getTeamRanking throws when team is missing")
   void getTeamRankingThrowsWhenTeamIsMissing() {
     UUID teamId = UUID.randomUUID();
-    when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
+    doReturn(Optional.empty()).when(teamRepository).findById(teamId);
 
     assertThatThrownBy(() -> teamLeaderboardService.getTeamRanking(teamId.toString()))
         .isInstanceOf(RuntimeException.class);

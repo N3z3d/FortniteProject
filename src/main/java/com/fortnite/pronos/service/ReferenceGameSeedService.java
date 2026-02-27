@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,7 +18,6 @@ import com.fortnite.pronos.config.SeedProperties;
 import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.service.seed.PlayerSeedService;
 import com.fortnite.pronos.service.seed.ReferenceUserSeedService;
-import com.fortnite.pronos.service.seed.TeamSeedService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,8 @@ public class ReferenceGameSeedService {
   private static final String REFERENCE_GAME_DESCRIPTION =
       "Partie de reference CSV (Thibaut, Teddy, Marcel)";
   private static final int CURRENT_SEASON = 2025;
-  private static final List<String> REQUIRED_USERS = List.of("Thibaut", "Teddy", "Marcel");
+  private static final String CREATOR_USERNAME = "Thibaut";
+  private static final List<String> REQUIRED_USERS = List.of(CREATOR_USERNAME, "Teddy", "Marcel");
 
   // Configuration dependencies (2)
   private final Environment environment;
@@ -47,7 +48,6 @@ public class ReferenceGameSeedService {
   // Seed service dependencies (4)
   private final ReferenceUserSeedService referenceUserSeedService;
   private final PlayerSeedService playerSeedService;
-  private final TeamSeedService teamSeedService;
   private final CsvDataLoaderService csvDataLoaderService;
 
   // Repository for game-specific operations (1)
@@ -57,10 +57,7 @@ public class ReferenceGameSeedService {
   @Order(3)
   @Transactional
   public void ensureReferenceGame() {
-    if (!seedProperties.isEnabled()) {
-      return;
-    }
-    if (!isDevProfile()) {
+    if (!seedProperties.isEnabled() || !isDevProfile()) {
       return;
     }
 
@@ -68,44 +65,53 @@ public class ReferenceGameSeedService {
       resetGameData();
     }
 
-    Map<String, com.fortnite.pronos.model.User> users =
-        referenceUserSeedService.ensureReferenceUsers();
-    com.fortnite.pronos.model.User creator = users.get("Thibaut");
-    if (creator == null) {
-      log.warn("Reference seed skipped: missing creator user");
+    SeedPreparationResult preparation = prepareSeedData();
+    if (!preparation.canSeed()) {
       return;
     }
 
-    if (gameRepository.existsByNameAndCreator(REFERENCE_GAME_NAME, creator)) {
-      log.info("Reference game already seeded: {}", REFERENCE_GAME_NAME);
-      return;
-    }
-    if (gameRepository.count() > 0) {
-      log.warn(
-          "Reference seed skipped: existing games detected. Set fortnite.seed.mode=reset to replace.");
-      return;
-    }
-
-    Map<String, List<com.fortnite.pronos.model.Player>> assignments = loadAssignments();
-    if (assignments.isEmpty()) {
-      log.warn("Reference seed skipped: no seed assignments loaded");
-      return;
-    }
-
-    com.fortnite.pronos.model.Game game = buildReferenceGame(creator, assignments);
-    attachParticipants(game, users);
+    com.fortnite.pronos.model.Game game =
+        buildReferenceGame(preparation.creator(), preparation.assignments());
+    attachParticipants(game, preparation.users());
     com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
 
-    List<com.fortnite.pronos.model.Team> teams = buildTeams(savedGame, users, assignments);
-    teamSeedService.getAllTeams(); // Trigger save via teamSeedService
-    // Teams are built but saved via the game cascade
+    List<com.fortnite.pronos.model.Team> teams =
+        buildTeams(savedGame, preparation.users(), preparation.assignments());
 
-    int totalPlayers = assignments.values().stream().mapToInt(List::size).sum();
+    int totalPlayers = preparation.assignments().values().stream().mapToInt(List::size).sum();
     log.info(
         "Reference game seeded: name={}, players={}, teams={}",
         REFERENCE_GAME_NAME,
         totalPlayers,
         teams.size());
+  }
+
+  private SeedPreparationResult prepareSeedData() {
+    Map<String, com.fortnite.pronos.model.User> users =
+        referenceUserSeedService.ensureReferenceUsers();
+    com.fortnite.pronos.model.User creator = users.get(CREATOR_USERNAME);
+    Map<String, List<com.fortnite.pronos.model.Player>> assignments = Map.of();
+    boolean canSeed = true;
+
+    if (creator == null) {
+      log.warn("Reference seed skipped: missing creator user");
+      canSeed = false;
+    } else if (gameRepository.existsByNameAndCreator(REFERENCE_GAME_NAME, creator)) {
+      log.info("Reference game already seeded: {}", REFERENCE_GAME_NAME);
+      canSeed = false;
+    } else if (gameRepository.count() > 0) {
+      log.warn(
+          "Reference seed skipped: existing games detected. Set fortnite.seed.mode=reset to replace.");
+      canSeed = false;
+    } else {
+      assignments = loadAssignments();
+      if (assignments.isEmpty()) {
+        log.warn("Reference seed skipped: no seed assignments loaded");
+        canSeed = false;
+      }
+    }
+
+    return new SeedPreparationResult(canSeed, users, creator, assignments);
   }
 
   private boolean isDevProfile() {
@@ -189,7 +195,7 @@ public class ReferenceGameSeedService {
   }
 
   private String normalizeNickname(String nickname) {
-    return nickname == null ? "" : nickname.trim().toLowerCase();
+    return nickname == null ? "" : nickname.trim().toLowerCase(Locale.ROOT);
   }
 
   private com.fortnite.pronos.model.Game buildReferenceGame(
@@ -201,12 +207,12 @@ public class ReferenceGameSeedService {
             .description(REFERENCE_GAME_DESCRIPTION)
             .creator(creator)
             .maxParticipants(REQUIRED_USERS.size())
-            .status(com.fortnite.pronos.model.GameStatus.ACTIVE)
             .participants(new ArrayList<>())
             .regionRules(new ArrayList<>())
             .build();
+    game.setLegacyStatus(com.fortnite.pronos.model.Game.Status.ACTIVE);
 
-    addRegionRules(game, assignments);
+    ReferenceGameRegionRuleSupport.addRegionRules(game, assignments);
     game.generateInvitationCode();
     return game;
   }
@@ -280,40 +286,16 @@ public class ReferenceGameSeedService {
 
     int position = 1;
     for (com.fortnite.pronos.model.Player player : players) {
-      team.addPlayer(player, position++);
+      team.addPlayer(player, position);
+      position += 1;
     }
 
     return team;
   }
 
-  private void addRegionRules(
-      com.fortnite.pronos.model.Game game,
-      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
-    Map<com.fortnite.pronos.model.Player.Region, Long> counts = countPlayersByRegion(assignments);
-    for (com.fortnite.pronos.model.Player.Region region :
-        com.fortnite.pronos.model.Player.Region.values()) {
-      long count = counts.getOrDefault(region, 0L);
-      int maxPlayers = (int) Math.min(10, Math.max(1, count));
-      com.fortnite.pronos.model.GameRegionRule rule =
-          com.fortnite.pronos.model.GameRegionRule.builder()
-              .game(game)
-              .region(region)
-              .maxPlayers(maxPlayers)
-              .build();
-      game.addRegionRule(rule);
-    }
-  }
-
-  private Map<com.fortnite.pronos.model.Player.Region, Long> countPlayersByRegion(
-      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {
-    Map<com.fortnite.pronos.model.Player.Region, Long> counts = new LinkedHashMap<>();
-    for (List<com.fortnite.pronos.model.Player> players : assignments.values()) {
-      for (com.fortnite.pronos.model.Player player : players) {
-        if (player != null && player.getRegion() != null) {
-          counts.merge(player.getRegion(), 1L, Long::sum);
-        }
-      }
-    }
-    return counts;
-  }
+  private record SeedPreparationResult(
+      boolean canSeed,
+      Map<String, com.fortnite.pronos.model.User> users,
+      com.fortnite.pronos.model.User creator,
+      Map<String, List<com.fortnite.pronos.model.Player>> assignments) {}
 }

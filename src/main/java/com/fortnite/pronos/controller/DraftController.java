@@ -412,47 +412,17 @@ public class DraftController {
       @PathVariable UUID gameId, @RequestBody(required = false) Map<String, String> request) {
     log.info("DraftController: selectPlayer requested - gameId={}", gameId);
 
-    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
-      log.warn("DraftController: selectPlayer gameNotFound - gameId={}", gameId);
-      return ResponseEntity.status(HttpStatus.NOT_FOUND)
-          .body(Map.of(ERROR_KEY, GAME_NOT_FOUND_MESSAGE));
+    ResponseEntity<Map<String, Object>> response;
+    Optional<ResponseEntity<Map<String, Object>>> validationResponse =
+        validateSelectPlayerRequest(gameId, request);
+    if (validationResponse.isPresent()) {
+      response = validationResponse.get();
+    } else {
+      String playerIdStr = request.get("playerId");
+      UUID playerId = parsePlayerId(gameId, playerIdStr);
+      response = buildSelectPlayerResponse(gameId, playerId);
     }
-
-    if (request == null) {
-      log.warn(
-          "DraftController: selectPlayer badRequest - gameId={}, reason=requestMissing", gameId);
-      return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Request body is required"));
-    }
-
-    String playerIdStr = request.get("playerId");
-    if (playerIdStr == null) {
-      log.warn(
-          "DraftController: selectPlayer badRequest - gameId={}, reason=playerIdMissing", gameId);
-      return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "playerId is required"));
-    }
-
-    UUID playerId;
-    try {
-      playerId = UUID.fromString(playerIdStr);
-    } catch (IllegalArgumentException e) {
-      log.warn(
-          "DraftController: selectPlayer badRequest - gameId={}, playerId={}, reason=invalidFormat",
-          gameId,
-          playerIdStr);
-      return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Invalid playerId format"));
-    }
-
-    if (draftUseCase.findPlayerByIdOptional(playerId).isEmpty()) {
-      log.warn(
-          "DraftController: selectPlayer badRequest - gameId={}, playerId={}, reason=playerNotFound",
-          gameId,
-          playerId);
-      return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Player not found"));
-    }
-
-    log.info("DraftController: selectPlayer succeeded - gameId={}, playerId={}", gameId, playerId);
-    return ResponseEntity.ok(
-        Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Joueur selectionne avec succes"));
+    return response;
   }
 
   /** Get next participant to play */
@@ -467,7 +437,6 @@ public class DraftController {
           .body(Map.of(ERROR_KEY, GAME_NOT_FOUND_MESSAGE));
     }
 
-    Game game = gameOpt.get();
     List<GameParticipant> participants = draftUseCase.getParticipantsOrderedByDraftOrder(gameId);
 
     if (participants.isEmpty()) {
@@ -475,6 +444,7 @@ public class DraftController {
       return ResponseEntity.ok(Map.of(MESSAGE_KEY, "No participants found"));
     }
 
+    Game game = gameOpt.get();
     DraftNextParticipantResponse response =
         draftUseCase.buildNextParticipantResponse(game, participants);
     log.debug(
@@ -622,5 +592,66 @@ public class DraftController {
     DraftActionResponse response = draftUseCase.finishDraft(game);
     log.info("DraftController: finishDraft succeeded - gameId={}", gameId);
     return ResponseEntity.ok(response);
+  }
+
+  private Optional<ResponseEntity<Map<String, Object>>> validateSelectPlayerRequest(
+      UUID gameId, Map<String, String> request) {
+    Optional<ResponseEntity<Map<String, Object>>> validationResponse = Optional.empty();
+
+    if (draftUseCase.findGameByIdOptional(gameId).isEmpty()) {
+      log.warn("DraftController: selectPlayer gameNotFound - gameId={}", gameId);
+      validationResponse =
+          Optional.of(
+              ResponseEntity.status(HttpStatus.NOT_FOUND)
+                  .body(Map.of(ERROR_KEY, GAME_NOT_FOUND_MESSAGE)));
+    } else if (request == null) {
+      log.warn(
+          "DraftController: selectPlayer badRequest - gameId={}, reason=requestMissing", gameId);
+      validationResponse =
+          Optional.of(
+              ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Request body is required")));
+    } else if (request.get("playerId") == null) {
+      log.warn(
+          "DraftController: selectPlayer badRequest - gameId={}, reason=playerIdMissing", gameId);
+      validationResponse =
+          Optional.of(ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "playerId is required")));
+    }
+
+    return validationResponse;
+  }
+
+  private UUID parsePlayerId(UUID gameId, String playerIdStr) {
+    UUID playerId = null;
+    try {
+      playerId = UUID.fromString(playerIdStr);
+    } catch (IllegalArgumentException exception) {
+      log.warn(
+          "DraftController: selectPlayer badRequest - gameId={}, playerId={}, reason=invalidFormat",
+          gameId,
+          playerIdStr,
+          exception);
+    }
+    return playerId;
+  }
+
+  private ResponseEntity<Map<String, Object>> buildSelectPlayerResponse(
+      UUID gameId, UUID playerId) {
+    ResponseEntity<Map<String, Object>> response;
+    if (playerId == null) {
+      response = ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Invalid playerId format"));
+    } else if (draftUseCase.findPlayerByIdOptional(playerId).isEmpty()) {
+      log.warn(
+          "DraftController: selectPlayer badRequest - gameId={}, playerId={}, reason=playerNotFound",
+          gameId,
+          playerId);
+      response = ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Player not found"));
+    } else {
+      log.info(
+          "DraftController: selectPlayer succeeded - gameId={}, playerId={}", gameId, playerId);
+      response =
+          ResponseEntity.ok(
+              Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Joueur selectionne avec succes"));
+    }
+    return response;
   }
 }

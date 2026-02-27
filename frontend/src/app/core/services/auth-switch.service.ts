@@ -5,6 +5,7 @@ import { catchError, delay, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from './logger.service';
 import { TranslationService } from './translation.service';
+import { secureRandomId } from '../../shared/utils/secure-random.util';
 
 export interface AuthSwitchResponse {
   success: boolean;
@@ -200,7 +201,7 @@ export class AuthSwitchService {
       'Teddy': '3',
       'Sarah': '4'
     };
-    return userMap[username] || Math.random().toString(36).slice(2, 11);
+    return userMap[username] || secureRandomId();
   }
 
   /**

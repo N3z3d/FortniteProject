@@ -66,17 +66,17 @@ class InvitationCodeAttemptGuardTest {
     }
 
     @Override
-    ZoneId getZone() {
+    public ZoneId getZone() {
       return ZoneId.of("UTC");
     }
 
     @Override
-    Clock withZone(ZoneId zone) {
+    public Clock withZone(ZoneId zone) {
       return this;
     }
 
     @Override
-    Instant instant() {
+    public Instant instant() {
       return instant;
     }
 

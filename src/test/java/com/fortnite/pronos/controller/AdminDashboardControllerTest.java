@@ -3,6 +3,7 @@ package com.fortnite.pronos.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 
 import com.fortnite.pronos.dto.admin.AdminAlertDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
+import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
@@ -214,6 +216,45 @@ class AdminDashboardControllerTest {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
       verify(adminVisitAnalyticsService, never()).getVisitAnalytics(anyInt());
+    }
+  }
+
+  @Nested
+  class GetRealTimeAnalytics {
+
+    @Test
+    void shouldReturnRealTimeSnapshot() {
+      var dto =
+          RealTimeAnalyticsDto.builder()
+              .activeUsersNow(5)
+              .activeSessionsNow(4)
+              .activePagesNow(new ArrayList<>())
+              .build();
+      when(adminVisitAnalyticsService.getRealTimeSnapshot()).thenReturn(dto);
+
+      var response = controller.getRealTimeAnalytics();
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().getData().getActiveUsersNow()).isEqualTo(5);
+      assertThat(response.getBody().getData().getActiveSessionsNow()).isEqualTo(4);
+    }
+
+    @Test
+    void shouldReturnEmptySnapshotWhenNoActivity() {
+      var dto =
+          RealTimeAnalyticsDto.builder()
+              .activeUsersNow(0)
+              .activeSessionsNow(0)
+              .activePagesNow(new ArrayList<>())
+              .build();
+      when(adminVisitAnalyticsService.getRealTimeSnapshot()).thenReturn(dto);
+
+      var response = controller.getRealTimeAnalytics();
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody().getData().getActiveUsersNow()).isZero();
+      assertThat(response.getBody().getData().getActivePagesNow()).isEmpty();
     }
   }
 

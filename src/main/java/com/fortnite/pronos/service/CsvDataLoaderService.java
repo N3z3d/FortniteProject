@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -8,8 +9,10 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Service for loading player data from the CSV file with pronosticator assignments. */
+/** Service for loading player data from CSV with pronosticator assignments. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,6 +33,19 @@ public class CsvDataLoaderService {
   private static final int EXPECTED_COLUMNS = 6;
   private static final int CURRENT_SEASON = 2025;
 
+  private static final int COLUMN_PRONOSTIQUEUR_INDEX = 0;
+  private static final int COLUMN_NICKNAME_INDEX = 1;
+  private static final int COLUMN_REGION_INDEX = 2;
+  private static final int COLUMN_POINTS_INDEX = 3;
+  private static final int COLUMN_RANKING_INDEX = 4;
+  private static final int COLUMN_TRANCHE_INDEX = 5;
+
+  private static final int DEFAULT_NUMERIC_VALUE = 0;
+  private static final String DEFAULT_TRANCHE = "1-5";
+  private static final String EMPTY_STRING = "";
+  private static final String USERNAME_FALLBACK_PREFIX = "player";
+  private static final Pattern NON_ALPHANUMERIC_PATTERN = Pattern.compile("[^a-z0-9]");
+
   private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
   private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
 
@@ -37,7 +53,7 @@ public class CsvDataLoaderService {
   private final Map<String, List<com.fortnite.pronos.model.Player>> playersByPronosticator =
       new HashMap<>();
 
-  /** Load all players and scores from the CSV file. */
+  /** Load all players and scores from CSV. */
   @Transactional
   public void loadAllCsvData() {
     log.info("CSV load start: path={}, season={}", CSV_RESOURCE_PATH, CURRENT_SEASON);
@@ -85,11 +101,34 @@ public class CsvDataLoaderService {
 
   private CsvParseResult parseCsvRows() {
     ClassPathResource resource = new ClassPathResource(CSV_RESOURCE_PATH);
+    List<CsvRow> rows = List.of();
+    int errorCount = 0;
+    String failureReason = null;
+
     if (!resource.exists()) {
+      failureReason = "file_not_found";
       log.warn("CSV parse failed: reason=file_not_found, path={}", CSV_RESOURCE_PATH);
-      return CsvParseResult.failure("file_not_found");
+    } else {
+      CsvReadResult readResult = readRowsFromResource(resource);
+      rows = readResult.rows();
+      errorCount = readResult.errorCount();
+      failureReason = readResult.failureReason();
+
+      if (failureReason == null && rows.isEmpty()) {
+        failureReason = "no_rows";
+        log.warn("CSV parse failed: reason=no_rows");
+      }
     }
 
+    if (failureReason != null) {
+      return CsvParseResult.failure(failureReason, errorCount);
+    }
+
+    log.info("CSV parse ok: rows={}, errors={}", rows.size(), errorCount);
+    return CsvParseResult.success(rows, errorCount);
+  }
+
+  private CsvReadResult readRowsFromResource(ClassPathResource resource) {
     List<CsvRow> rows = new ArrayList<>();
     int errorCount = 0;
 
@@ -98,9 +137,9 @@ public class CsvDataLoaderService {
             new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
 
       String header = reader.readLine();
-      if (header == null || !header.contains(REQUIRED_HEADER_TOKEN)) {
+      if (!isHeaderValid(header)) {
         log.warn("CSV parse failed: reason=invalid_header, header={}", header);
-        return CsvParseResult.failure("invalid_header");
+        return CsvReadResult.failure("invalid_header", errorCount);
       }
 
       String line;
@@ -114,22 +153,20 @@ public class CsvDataLoaderService {
         CsvRow row = parseCsvLine(line, lineNumber);
         if (row == null) {
           errorCount++;
-          continue;
+        } else {
+          rows.add(row);
         }
-        rows.add(row);
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       log.error("CSV parse failed: reason=io_error", e);
-      return CsvParseResult.failure("io_error");
+      return CsvReadResult.failure("io_error", errorCount);
     }
 
-    if (rows.isEmpty()) {
-      log.warn("CSV parse failed: reason=no_rows");
-      return CsvParseResult.failure("no_rows");
-    }
+    return CsvReadResult.success(rows, errorCount);
+  }
 
-    log.info("CSV parse ok: rows={}, errors={}", rows.size(), errorCount);
-    return CsvParseResult.success(rows, errorCount);
+  private boolean isHeaderValid(String header) {
+    return header != null && header.contains(REQUIRED_HEADER_TOKEN);
   }
 
   private CsvRow parseCsvLine(String line, int lineNumber) {
@@ -139,24 +176,24 @@ public class CsvDataLoaderService {
       return null;
     }
 
-    String pronostiqueur = cleanField(parts[0]);
-    String nickname = cleanField(parts[1]);
-    String region = cleanField(parts[2]);
-    String pointsStr = cleanField(parts[3]);
-    String classementStr = cleanField(parts[4]);
-    String tranche = cleanField(parts[5]);
-
+    String pronostiqueur = cleanField(parts[COLUMN_PRONOSTIQUEUR_INDEX]);
+    String nickname = cleanField(parts[COLUMN_NICKNAME_INDEX]);
+    String region = cleanField(parts[COLUMN_REGION_INDEX]);
     if (pronostiqueur.isEmpty() || nickname.isEmpty() || region.isEmpty()) {
       log.warn("CSV parse failed: line={}, reason=missing_required, value={}", lineNumber, line);
       return null;
     }
 
-    int points = parseIntSafely(pointsStr, 0);
-    int classement = parseIntSafely(classementStr, 0);
+    int points = parseIntSafely(cleanField(parts[COLUMN_POINTS_INDEX]), DEFAULT_NUMERIC_VALUE);
+    int classement = parseIntSafely(cleanField(parts[COLUMN_RANKING_INDEX]), DEFAULT_NUMERIC_VALUE);
+    String resolvedTranche = resolveTranche(cleanField(parts[COLUMN_TRANCHE_INDEX]));
     com.fortnite.pronos.model.Player.Region playerRegion = parseRegion(region);
 
-    String resolvedTranche = tranche.isEmpty() ? "1-5" : tranche;
     return new CsvRow(pronostiqueur, nickname, playerRegion, points, classement, resolvedTranche);
+  }
+
+  private String resolveTranche(String tranche) {
+    return tranche.isEmpty() ? DEFAULT_TRANCHE : tranche;
   }
 
   private CsvSaveResult saveCsvRows(List<CsvRow> rows) {
@@ -306,11 +343,11 @@ public class CsvDataLoaderService {
   }
 
   private String normalizeNickname(String nickname) {
-    return nickname == null ? "" : nickname.trim().toLowerCase();
+    return nickname == null ? EMPTY_STRING : nickname.trim().toLowerCase(Locale.ROOT);
   }
 
   private String cleanField(String field) {
-    return field == null ? "" : field.trim().replace("\"", "");
+    return field == null ? EMPTY_STRING : field.trim().replace("\"", EMPTY_STRING);
   }
 
   private int parseIntSafely(String value, int defaultValue) {
@@ -323,7 +360,7 @@ public class CsvDataLoaderService {
 
   private com.fortnite.pronos.model.Player.Region parseRegion(String region) {
     try {
-      return com.fortnite.pronos.model.Player.Region.valueOf(region.toUpperCase());
+      return com.fortnite.pronos.model.Player.Region.valueOf(region.toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
       log.warn("CSV parse: invalid region '{}', defaulting to EU", region);
       return com.fortnite.pronos.model.Player.Region.EU;
@@ -331,9 +368,13 @@ public class CsvDataLoaderService {
   }
 
   private String buildUsername(String nickname) {
-    String cleanUsername = nickname.toLowerCase().replaceAll("[^a-z0-9]", "");
+    String sourceNickname = nickname == null ? EMPTY_STRING : nickname;
+    String cleanUsername =
+        NON_ALPHANUMERIC_PATTERN
+            .matcher(sourceNickname.toLowerCase(Locale.ROOT))
+            .replaceAll(EMPTY_STRING);
     if (cleanUsername.isEmpty()) {
-      cleanUsername = "player" + Math.abs(nickname.hashCode());
+      cleanUsername = USERNAME_FALLBACK_PREFIX + Math.abs(sourceNickname.hashCode());
     }
     return cleanUsername;
   }
@@ -351,12 +392,22 @@ public class CsvDataLoaderService {
       return new CsvParseResult(rows, errorCount, null);
     }
 
-    static CsvParseResult failure(String reason) {
-      return new CsvParseResult(List.of(), 0, reason);
+    static CsvParseResult failure(String reason, int errorCount) {
+      return new CsvParseResult(List.of(), errorCount, reason);
     }
 
     boolean hasRows() {
       return rows != null && !rows.isEmpty();
+    }
+  }
+
+  private record CsvReadResult(List<CsvRow> rows, int errorCount, String failureReason) {
+    static CsvReadResult success(List<CsvRow> rows, int errorCount) {
+      return new CsvReadResult(rows, errorCount, null);
+    }
+
+    static CsvReadResult failure(String reason, int errorCount) {
+      return new CsvReadResult(List.of(), errorCount, reason);
     }
   }
 

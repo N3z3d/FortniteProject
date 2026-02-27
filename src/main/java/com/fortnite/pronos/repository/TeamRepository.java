@@ -17,6 +17,12 @@ import com.fortnite.pronos.model.User;
 @Repository
 @SuppressWarnings({"java:S125"})
 public interface TeamRepository extends JpaRepository<Team, UUID>, TeamRepositoryPort {
+  @Override
+  Optional<Team> findById(UUID id);
+
+  @Override
+  Team save(Team team);
+
   Optional<Team> findByOwnerAndSeason(User owner, int season);
 
   List<Team> findBySeason(int season);

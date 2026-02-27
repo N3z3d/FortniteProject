@@ -166,7 +166,7 @@ class GameDetailServiceTest {
     assertThat(result.getDraftInfo().getStatus()).isEqualTo("FINISHED");
 
     assertThat(result.getStatistics().getTotalParticipants()).isEqualTo(3);
-    assertThat(result.getTotalPlayers()).isEqualTo(2);
+    assertThat(result.getStatistics().getTotalPlayers()).isEqualTo(2);
     assertThat(result.getStatistics().getRegionDistribution())
         .containsEntry("NAW", 1)
         .containsEntry("EU", 1);

@@ -1,6 +1,7 @@
 package com.fortnite.pronos.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -227,6 +228,13 @@ class GameParticipantModelTest {
 
     // Then: Timeout détecté
     assertThat(hasTimedOut).isTrue();
+  }
+
+  @Test
+  @DisplayName("Devrait definir une constante de timeout pour le draft")
+  void shouldDefineDraftSelectionTimeoutConstant() {
+    assertThatCode(() -> GameParticipant.class.getDeclaredField("DRAFT_SELECTION_TIMEOUT_HOURS"))
+        .doesNotThrowAnyException();
   }
 
   @Test

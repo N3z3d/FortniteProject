@@ -88,7 +88,7 @@ class GameControllerIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getName()).isEqualTo("Test Game Integration");
-    assertThat(response.getCreatorId()).isEqualTo(testUser.getId());
+    assertThat(response.getBody().getCreatorId()).isEqualTo(testUser.getId());
   }
 
   @Test
@@ -222,7 +222,7 @@ class GameControllerIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getId()).isEqualTo(game.getId());
-    assertThat(response.getName()).isEqualTo("Test Game for Get");
+    assertThat(response.getBody().getName()).isEqualTo("Test Game for Get");
   }
 
   @Test

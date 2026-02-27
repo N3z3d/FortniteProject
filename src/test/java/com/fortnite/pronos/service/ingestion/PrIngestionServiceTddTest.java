@@ -15,6 +15,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.fortnite.pronos.adapter.out.persistence.player.alias.PlayerAliasEntityMapper;
+import com.fortnite.pronos.adapter.out.persistence.player.alias.PlayerAliasRepositoryAdapter;
+import com.fortnite.pronos.adapter.out.persistence.player.identity.PlayerIdentityEntityMapper;
+import com.fortnite.pronos.adapter.out.persistence.player.identity.PlayerIdentityRepositoryAdapter;
 import com.fortnite.pronos.model.IngestionRun;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.PrRegion;
@@ -30,7 +34,15 @@ import com.fortnite.pronos.service.ingestion.PrIngestionService.PrIngestionResul
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 @ActiveProfiles("test")
-@Import({PrIngestionService.class, PrIngestionServiceTddTest.TestConfig.class})
+@Import({
+  PrIngestionService.class,
+  PrIngestionRowProcessor.class,
+  PrIngestionServiceTddTest.TestConfig.class,
+  PlayerIdentityRepositoryAdapter.class,
+  PlayerIdentityEntityMapper.class,
+  PlayerAliasRepositoryAdapter.class,
+  PlayerAliasEntityMapper.class
+})
 class PrIngestionServiceTddTest {
 
   @TestConfiguration
@@ -190,6 +202,49 @@ class PrIngestionServiceTddTest {
     assertThat(playerRepository.count()).isEqualTo(1);
     assertThat(prSnapshotRepository.count()).isEqualTo(1);
     assertThat(scoreRepository.count()).isEqualTo(1);
+  }
+
+  @Test
+  void assignsExpectedTrancheForRankBoundaries() {
+    String csv =
+        csv(
+            "rank5,EU,1000,5,2025-01-10",
+            "rank6,EU,1000,6,2025-01-10",
+            "rank30,EU,1000,30,2025-01-10",
+            "rank31,EU,1000,31,2025-01-10");
+
+    PrIngestionResult result = ingestCsv(csv, true);
+
+    assertThat(result.status()).isEqualTo(IngestionRun.Status.SUCCESS);
+    assertThat(playerRepository.findByNickname("rank5").orElseThrow().getTranche())
+        .isEqualTo("1-5");
+    assertThat(playerRepository.findByNickname("rank6").orElseThrow().getTranche())
+        .isEqualTo("6-10");
+    assertThat(playerRepository.findByNickname("rank30").orElseThrow().getTranche())
+        .isEqualTo("26-30");
+    assertThat(playerRepository.findByNickname("rank31").orElseThrow().getTranche())
+        .isEqualTo("31-infini");
+  }
+
+  @Test
+  void buildsNormalizedUsernameFromNickname() {
+    String csv = csv("PiXiE-42!,EU,108022,1,2025-01-10");
+
+    ingestCsv(csv, true);
+
+    Player player = playerRepository.findByNickname("PiXiE-42!").orElseThrow();
+    assertThat(player.getUsername()).isEqualTo("pixie42");
+  }
+
+  @Test
+  void fallsBackToGeneratedUsernameWhenNicknameHasNoAlphaNumericCharacter() {
+    String nickname = "***";
+    String csv = csv(nickname + ",EU,108022,1,2025-01-10");
+
+    ingestCsv(csv, true);
+
+    Player player = playerRepository.findByNickname(nickname).orElseThrow();
+    assertThat(player.getUsername()).isEqualTo("player" + Math.abs(nickname.hashCode()));
   }
 
   private String csv(String... rows) {

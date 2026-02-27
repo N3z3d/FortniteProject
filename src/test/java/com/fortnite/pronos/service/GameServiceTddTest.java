@@ -322,10 +322,11 @@ class GameServiceTddTest {
       when(gameQueryService.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
       when(teamDomainRepository.findByGameIdWithFetch(gameId)).thenReturn(expectedTeams);
 
-      List<?> result = gameService.getGameTeams(gameId);
+      @SuppressWarnings("unchecked")
+      List<Team> result = (List<Team>) gameService.getGameTeams(gameId);
 
-      assertThat(result).hasSize(expectedTeams.size()).containsEntry(0, expectedTeams.get(0));
-      assertThat(result).containsEntry(1, expectedTeams.get(1));
+      assertThat(result).hasSize(expectedTeams.size()).contains(expectedTeams.get(0));
+      assertThat(result).contains(expectedTeams.get(1));
       verify(gameQueryService).getGameByIdOrThrow(gameId);
       verify(teamDomainRepository).findByGameIdWithFetch(gameId);
     }

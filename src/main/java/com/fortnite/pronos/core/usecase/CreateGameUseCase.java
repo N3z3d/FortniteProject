@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameStatus;
@@ -27,6 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CreateGameUseCase {
 
+  private static final int ADMIN_MAX_ACTIVE_GAMES = 20;
+  private static final int USER_MAX_ACTIVE_GAMES = 5;
+  private static final int AUTO_USERNAME_PREFIX_LENGTH = 8;
+  private static final int DEFAULT_FALLBACK_SEASON = 2025;
+
   private final GameDomainRepositoryPort gameDomainRepositoryPort;
   private final UserRepositoryPort userRepositoryPort;
   private final ValidationService validationService;
@@ -43,7 +49,19 @@ public class CreateGameUseCase {
 
     validateUserCanCreateGame(creator);
 
-    Game game = new Game(request.getName(), creator.getId(), request.getMaxParticipants());
+    DraftMode draftMode = request.getDraftMode() != null ? request.getDraftMode() : DraftMode.SNAKE;
+    int teamSize = request.getTeamSize() != null ? request.getTeamSize() : 5;
+    int trancheSize = request.getTrancheSize() != null ? request.getTrancheSize() : 10;
+    boolean tranchesEnabled = !Boolean.FALSE.equals(request.getTranchesEnabled());
+    Game game =
+        new Game(
+            request.getName(),
+            creator.getId(),
+            request.getMaxParticipants(),
+            draftMode,
+            teamSize,
+            trancheSize,
+            tranchesEnabled);
     if (request.getDescription() != null) {
       game.setDescription(request.getDescription());
     }
@@ -72,7 +90,8 @@ public class CreateGameUseCase {
         gameDomainRepositoryPort.countByCreatorAndStatusIn(
             user.getId(), List.of(GameStatus.CREATING, GameStatus.DRAFTING, GameStatus.ACTIVE));
 
-    int maxActiveGames = user.getRole().toString().equals("ADMIN") ? 20 : 5;
+    int maxActiveGames =
+        user.getRole().toString().equals("ADMIN") ? ADMIN_MAX_ACTIVE_GAMES : USER_MAX_ACTIVE_GAMES;
 
     if (activeGamesCount >= maxActiveGames) {
       throw new InvalidGameRequestException(
@@ -83,7 +102,7 @@ public class CreateGameUseCase {
   }
 
   private synchronized User createFallbackUser(UUID userId) {
-    String fallbackUsername = "auto-" + userId.toString().substring(0, 8);
+    String fallbackUsername = "auto-" + userId.toString().substring(0, AUTO_USERNAME_PREFIX_LENGTH);
     return userRepositoryPort
         .findByUsername(fallbackUsername)
         .orElseGet(
@@ -94,7 +113,7 @@ public class CreateGameUseCase {
               fallbackUser.setEmail("auto+" + userId + "@fortnite-pronos.test");
               fallbackUser.setPassword("placeholder");
               fallbackUser.setRole(User.UserRole.ADMIN);
-              fallbackUser.setCurrentSeason(2025);
+              fallbackUser.setCurrentSeason(DEFAULT_FALLBACK_SEASON);
               return userRepositoryPort.save(fallbackUser);
             });
   }

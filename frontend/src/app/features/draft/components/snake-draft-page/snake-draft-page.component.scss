@@ -1,0 +1,170 @@
+@import '../../../../shared/styles/mixins';
+
+// ============================================================
+// SNAKE DRAFT PAGE — layout sticky + catalogue virtual scroll
+// ============================================================
+
+.snake-draft-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+// ===== SKIP LINK =====
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-md);
+  background: var(--color-action);
+  color: var(--color-black);
+  padding: 8px 16px;
+  border-radius: 0 0 4px 4px;
+  font-weight: 700;
+  z-index: var(--z-critical, 9000);
+  text-decoration: none;
+
+  &:focus {
+    top: 0;
+  }
+}
+
+// ===== STICKY TIMER ZONE (80px) =====
+
+.timer-zone {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-timer, 200);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 80px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.timer-zone__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 0 var(--space-md);
+  flex: 1;
+}
+
+// ===== WS DISCONNECT BANNER =====
+
+.ws-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px var(--space-md);
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-timer-urgent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// ===== DRAFT CONTENT =====
+
+.draft-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-sm) var(--space-md);
+  gap: var(--space-sm);
+}
+
+// ===== TON TOUR BADGE =====
+
+.my-turn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-action);
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  background: rgba(245, 166, 35, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+// ===== REGION TABS =====
+
+.region-tabs {
+  flex-shrink: 0;
+}
+
+// ===== RECOMMEND BAR =====
+
+.recommend-bar {
+  flex-shrink: 0;
+}
+
+.btn-recommend {
+  color: var(--color-action) !important;
+  border-color: var(--color-action) !important;
+  font-weight: 600;
+
+  .recommend-hint {
+    margin-left: var(--space-xs);
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+}
+
+// ===== VIRTUAL SCROLL LIST =====
+
+.player-list {
+  flex: 1;
+  min-height: 200px;
+}
+
+// ===== CONFIRM ZONE =====
+
+.confirm-zone {
+  flex-shrink: 0;
+  padding: var(--space-sm) 0;
+}
+
+.btn-confirm {
+  width: 100%;
+  background: var(--color-action) !important;
+  color: var(--color-black) !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  height: 48px;
+  font-size: 1rem;
+}
+
+// ===== RESPONSIVE =====
+
+@include mobile {
+  .timer-zone__inner {
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .confirm-zone {
+    position: sticky;
+    bottom: 0;
+    background: var(--color-surface-raised);
+    padding: var(--space-sm);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 10;
+  }
+}

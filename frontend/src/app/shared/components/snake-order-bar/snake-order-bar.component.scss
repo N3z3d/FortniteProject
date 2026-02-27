@@ -1,0 +1,100 @@
+@import '../../../shared/styles/mixins';
+
+$avatar-size: 36px;
+$avatar-gap: 4px;
+
+// ============================================================
+// SNAKE ORDER BAR — cursor animé + mode compact
+// ============================================================
+
+.snake-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: #{$avatar-size};
+}
+
+// ===== REGION LABEL =====
+
+.region-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-action);
+  background: rgba(245, 166, 35, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+// ===== AVATAR MODE =====
+
+.avatar-list {
+  position: relative;
+  display: flex;
+  gap: $avatar-gap;
+  align-items: center;
+}
+
+.avatar-cursor {
+  position: absolute;
+  width: $avatar-size;
+  height: $avatar-size;
+  border-radius: 50%;
+  border: 2px solid var(--color-action);
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 0.25s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.avatar-item {
+  width: $avatar-size;
+  height: $avatar-size;
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+  transition: color 0.2s ease, background 0.2s ease;
+
+  &--active {
+    color: var(--color-action);
+    background: rgba(245, 166, 35, 0.12);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+// ===== TEXT MODE =====
+
+.text-mode {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.participant-name {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.position-badge {
+  margin-left: 4px;
+  opacity: 0.6;
+  font-size: 0.8125rem;
+}

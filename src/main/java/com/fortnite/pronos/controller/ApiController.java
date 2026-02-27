@@ -1,6 +1,8 @@
 package com.fortnite.pronos.controller;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,12 +36,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApiController {
 
-  private static final Logger log = LoggerFactory.getLogger(ApiController.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ApiController.class);
   private static final String ERROR_KEY = "error";
   private static final String AUTH_REQUIRED_MESSAGE = "Authentication required";
   private static final String USER_NOT_FOUND_MESSAGE = "User not found";
   private static final String NO_TEAM_FOUND_MESSAGE = "No team found for user";
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error";
+  private static final int DEFAULT_SEASON = 2025;
+  private static final String DEFAULT_TEST_USERNAME = "Thibaut";
 
   private final TeamQueryService teamQueryService;
   private final PlayerService playerService;
@@ -62,7 +66,7 @@ public class ApiController {
 
       return ResponseEntity.ok(TeamDTO.fromTeam(team));
     } catch (Exception e) {
-      log.error("Erreur lors de la recuperation de l'equipe {}: {}", teamId, e.getMessage());
+      LOG.error("Erreur lors de la recuperation de l'equipe {}", teamId, e);
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
   }
@@ -74,7 +78,7 @@ public class ApiController {
       if (region == null || region.isBlank()) {
         players = playerService.findAllPlayers();
       } else {
-        Player.Region regionEnum = Player.Region.valueOf(region.toUpperCase());
+        Player.Region regionEnum = Player.Region.valueOf(region.toUpperCase(Locale.ROOT));
         players = playerService.findPlayersByRegion(regionEnum);
       }
 
@@ -86,6 +90,7 @@ public class ApiController {
           .body(
               "Invalid region: " + region + ". Valid regions are: EU, NAW, NAC, BR, ASIA, OCE, ME");
     } catch (Exception e) {
+      LOG.error("Error while loading players for region {}", region, e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("An error occurred: " + e.getMessage());
     }
@@ -102,65 +107,76 @@ public class ApiController {
       @RequestParam(value = "user", required = false) String user,
       HttpServletRequest request,
       Authentication auth) {
-    log.debug("Trade form data requested by user: {}", auth != null ? auth.getName() : "anonymous");
+    LOG.debug("Trade form data requested by user: {}", auth != null ? auth.getName() : "anonymous");
 
-    if (log.isTraceEnabled()) {
-      log.trace("Request URL: {}", request.getRequestURL());
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Request URL: {}", request.getRequestURL());
     }
 
+    ResponseEntity<Object> response;
     try {
       String username = resolveRequestUsername(user, auth);
-      if (username == null) {
-        log.warn("Unauthorized access attempt to trade-form-data");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(Map.of(ERROR_KEY, AUTH_REQUIRED_MESSAGE));
-      }
+      response = resolveTradeFormDataResponse(user, username);
+    } catch (Exception e) {
+      LOG.error("Error in getTradeFormData", e);
+      response =
+          ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of(ERROR_KEY, INTERNAL_SERVER_ERROR_MESSAGE));
+    }
+    return response;
+  }
 
-      log.debug("Looking up user in database");
+  private ResponseEntity<Object> resolveTradeFormDataResponse(String user, String username) {
+    ResponseEntity<Object> response;
+    if (username == null) {
+      LOG.warn("Unauthorized access attempt to trade-form-data");
+      response =
+          ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of(ERROR_KEY, AUTH_REQUIRED_MESSAGE));
+    } else {
+      LOG.debug("Looking up user in database");
       User currentUser = userService.findUserByEmailOrUsername(username).orElse(null);
 
       if (currentUser == null) {
-        log.warn("User not found: {}", username);
+        LOG.warn("User not found: {}", username);
         HttpStatus status =
             user != null && !user.isBlank() ? HttpStatus.BAD_REQUEST : HttpStatus.NOT_FOUND;
-        return ResponseEntity.status(status).body(Map.of(ERROR_KEY, USER_NOT_FOUND_MESSAGE));
+        response = ResponseEntity.status(status).body(Map.of(ERROR_KEY, USER_NOT_FOUND_MESSAGE));
+      } else {
+        LOG.debug("User found: {}", currentUser.getUsername());
+
+        List<Team> seasonTeams = teamQueryService.findTeamsBySeasonWithFetch(DEFAULT_SEASON);
+        Team resolvedTeam = resolveTeamForUser(currentUser, seasonTeams);
+
+        if (resolvedTeam == null) {
+          LOG.debug("No team found for user: {}", username);
+          response =
+              ResponseEntity.status(HttpStatus.NOT_FOUND)
+                  .body(Map.of(ERROR_KEY, NO_TEAM_FOUND_MESSAGE));
+        } else {
+          LOG.debug("Team found: {}", resolvedTeam.getName());
+          response = ResponseEntity.ok(buildTradeFormDataResponse(resolvedTeam, seasonTeams));
+        }
       }
-      log.debug("User found: {}", currentUser.getUsername());
-
-      List<Team> seasonTeams = teamQueryService.findTeamsBySeasonWithFetch(2025);
-      Team resolvedTeam = resolveTeamForUser(currentUser, seasonTeams);
-
-      if (resolvedTeam == null) {
-        log.debug("No team found for user: {}", username);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of(ERROR_KEY, NO_TEAM_FOUND_MESSAGE));
-      }
-
-      log.debug("Team found: {}", resolvedTeam.getName());
-      return ResponseEntity.ok(buildTradeFormDataResponse(resolvedTeam, seasonTeams));
-    } catch (Exception e) {
-      log.error("Error in getTradeFormData: {}", e.getMessage());
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body(Map.of(ERROR_KEY, INTERNAL_SERVER_ERROR_MESSAGE));
     }
+    return response;
   }
 
   private String resolveRequestUsername(String user, Authentication auth) {
+    String resolvedUsername = null;
     if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
-      log.debug("Authenticated user: {}", auth.getName());
-      return auth.getName();
+      LOG.debug("Authenticated user: {}", auth.getName());
+      resolvedUsername = auth.getName();
+    } else if (user != null && !user.isBlank()) {
+      resolvedUsername = user;
+    } else if (isTestProfile()) {
+      resolvedUsername = DEFAULT_TEST_USERNAME;
     }
-    if (user != null && !user.isBlank()) {
-      return user;
-    }
-    if (isTestProfile()) {
-      return "Thibaut";
-    }
-    return null;
+    return resolvedUsername;
   }
 
   private Team resolveTeamForUser(User currentUser, List<Team> seasonTeams) {
-    Team team = teamQueryService.findTeamByOwnerAndSeason(currentUser, 2025).orElse(null);
+    Team team = teamQueryService.findTeamByOwnerAndSeason(currentUser, DEFAULT_SEASON).orElse(null);
     if (team != null) {
       return team;
     }
@@ -197,7 +213,7 @@ public class ApiController {
     if (environment == null) {
       return true;
     }
-    return java.util.Arrays.stream(environment.getActiveProfiles())
+    return Arrays.stream(environment.getActiveProfiles())
         .anyMatch(p -> p.equalsIgnoreCase("test") || p.equalsIgnoreCase("h2"));
   }
 

@@ -515,7 +515,7 @@ class PlayerServiceTest {
 
     // Then
     assertThat(result).isNotNull();
-    assertThat(result.get("totalPlayers")).isZero();
+    assertThat(result.get("totalPlayers")).isEqualTo(0);
 
     @SuppressWarnings("unchecked")
     Map<String, Long> playersByRegion = (Map<String, Long>) result.get("playersByRegion");

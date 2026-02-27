@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 import { TranslationService } from '../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../core/services/ui-error-feedback.service';
+import { secureRandomId } from '../utils/secure-random.util';
 
 // Interface pour MatSnackBar pour éviter l'import direct
 interface SnackBarLike {
@@ -409,7 +410,7 @@ export class NotificationService {
    * Generates a unique ID for notifications
    */
   private generateId(): string {
-    return `notification_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    return `notification_${Date.now()}_${secureRandomId()}`;
   }
 
   /**

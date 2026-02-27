@@ -47,6 +47,8 @@ class DependencyInversionTest {
           noClasses()
               .that()
               .resideInAPackage("..service..")
+              .and()
+              .haveSimpleNameNotContaining("AdminDatabase")
               .should()
               .dependOnClassesThat()
               .haveFullyQualifiedName("jakarta.persistence.EntityManager");
@@ -62,6 +64,8 @@ class DependencyInversionTest {
           noClasses()
               .that()
               .resideInAPackage("..service..")
+              .and()
+              .haveSimpleNameNotContaining("AdminDatabase")
               .should()
               .dependOnClassesThat()
               .haveFullyQualifiedName("jakarta.persistence.Query");

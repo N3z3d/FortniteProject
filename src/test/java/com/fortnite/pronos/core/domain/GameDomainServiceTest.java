@@ -42,6 +42,68 @@ class GameDomainServiceTest {
     assertThat(gameDomainService.canUserParticipate(creator, game)).isFalse();
   }
 
+  @Test
+  void calculatesMinimumParticipantsUsingHalfOrTwo() {
+    Game smallGame = buildGame(buildUser("creator", User.UserRole.ADMIN));
+    smallGame.setMaxParticipants(3);
+
+    Game biggerGame = buildGame(buildUser("creator2", User.UserRole.ADMIN));
+    biggerGame.setMaxParticipants(10);
+
+    assertThat(gameDomainService.calculateMinimumParticipants(smallGame)).isEqualTo(2);
+    assertThat(gameDomainService.calculateMinimumParticipants(biggerGame)).isEqualTo(5);
+  }
+
+  @Test
+  void validatesGameConfigurationRules() {
+    Game validGame = buildGame(buildUser("creator", User.UserRole.ADMIN));
+    validGame.setMaxParticipants(50);
+    validGame.setName("Valid name");
+
+    Game tooSmall = buildGame(buildUser("creator2", User.UserRole.ADMIN));
+    tooSmall.setMaxParticipants(1);
+
+    Game tooLarge = buildGame(buildUser("creator3", User.UserRole.ADMIN));
+    tooLarge.setMaxParticipants(51);
+
+    Game blankName = buildGame(buildUser("creator4", User.UserRole.ADMIN));
+    blankName.setName(" ");
+
+    assertThat(gameDomainService.isValidGameConfiguration(validGame)).isTrue();
+    assertThat(gameDomainService.isValidGameConfiguration(tooSmall)).isFalse();
+    assertThat(gameDomainService.isValidGameConfiguration(tooLarge)).isFalse();
+    assertThat(gameDomainService.isValidGameConfiguration(blankName)).isFalse();
+  }
+
+  @Test
+  void keepsCurrentStatusForCreatingDraftingAndActive() {
+    Game creating = buildGame(buildUser("creator", User.UserRole.ADMIN));
+    creating.setStatus(GameStatus.CREATING);
+
+    Game drafting = buildGame(buildUser("creator2", User.UserRole.ADMIN));
+    drafting.setStatus(GameStatus.DRAFTING);
+
+    Game active = buildGame(buildUser("creator3", User.UserRole.ADMIN));
+    active.setStatus(GameStatus.ACTIVE);
+
+    assertThat(gameDomainService.determineNextStatus(creating, 1)).isEqualTo(GameStatus.CREATING);
+    assertThat(gameDomainService.determineNextStatus(drafting, 4)).isEqualTo(GameStatus.DRAFTING);
+    assertThat(gameDomainService.determineNextStatus(active, 4)).isEqualTo(GameStatus.ACTIVE);
+  }
+
+  @Test
+  void allowsGameStartOnlyWhenStatusAndParticipantsAreValid() {
+    Game game = buildGame(buildUser("creator", User.UserRole.ADMIN));
+    game.setMaxParticipants(8);
+    game.setStatus(GameStatus.CREATING);
+
+    assertThat(gameDomainService.canStartGame(game, 4)).isTrue();
+    assertThat(gameDomainService.canStartGame(game, 3)).isFalse();
+
+    game.setStatus(GameStatus.ACTIVE);
+    assertThat(gameDomainService.canStartGame(game, 8)).isFalse();
+  }
+
   private Game buildGame(User creator) {
     return Game.builder()
         .id(UUID.randomUUID())

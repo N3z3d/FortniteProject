@@ -32,20 +32,47 @@ public final class TradeRules {
       Set<UUID> requestedPlayerIds,
       Set<UUID> fromTeamPlayerIds,
       Set<UUID> toTeamPlayerIds) {
+    ValidationResult teamValidation = validateTeams(fromTeamId, toTeamId);
+    if (!teamValidation.valid()) {
+      return teamValidation;
+    }
 
+    ValidationResult playersPresenceValidation =
+        validatePlayersPresence(offeredPlayerIds, requestedPlayerIds);
+    if (!playersPresenceValidation.valid()) {
+      return playersPresenceValidation;
+    }
+
+    return validatePlayerOwnership(
+        offeredPlayerIds, requestedPlayerIds, fromTeamPlayerIds, toTeamPlayerIds);
+  }
+
+  private static ValidationResult validateTeams(UUID fromTeamId, UUID toTeamId) {
     if (fromTeamId == null || toTeamId == null) {
       return ValidationResult.failure("Both teams must be specified");
     }
     if (fromTeamId.equals(toTeamId)) {
       return ValidationResult.failure("Cannot trade with the same team");
     }
+    return ValidationResult.success();
+  }
+
+  private static ValidationResult validatePlayersPresence(
+      Set<UUID> offeredPlayerIds, Set<UUID> requestedPlayerIds) {
     if (offeredPlayerIds == null || offeredPlayerIds.isEmpty()) {
       return ValidationResult.failure("Must offer at least one player");
     }
     if (requestedPlayerIds == null || requestedPlayerIds.isEmpty()) {
       return ValidationResult.failure("Must request at least one player");
     }
+    return ValidationResult.success();
+  }
 
+  private static ValidationResult validatePlayerOwnership(
+      Set<UUID> offeredPlayerIds,
+      Set<UUID> requestedPlayerIds,
+      Set<UUID> fromTeamPlayerIds,
+      Set<UUID> toTeamPlayerIds) {
     // Verify offered players belong to from team
     for (UUID playerId : offeredPlayerIds) {
       if (!fromTeamPlayerIds.contains(playerId)) {

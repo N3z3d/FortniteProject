@@ -1,6 +1,7 @@
 package com.fortnite.pronos.core.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -135,5 +136,17 @@ class CreateGameUseCaseTest {
         .hasMessageContaining("more than 5 active games");
 
     verify(gameDomainRepositoryPort, never()).save(any(Game.class));
+  }
+
+  @Test
+  void shouldDefineNamedConstantsForLimitsAndFallback() {
+    assertThatCode(
+            () -> {
+              CreateGameUseCase.class.getDeclaredField("ADMIN_MAX_ACTIVE_GAMES");
+              CreateGameUseCase.class.getDeclaredField("USER_MAX_ACTIVE_GAMES");
+              CreateGameUseCase.class.getDeclaredField("AUTO_USERNAME_PREFIX_LENGTH");
+              CreateGameUseCase.class.getDeclaredField("DEFAULT_FALLBACK_SEASON");
+            })
+        .doesNotThrowAnyException();
   }
 }

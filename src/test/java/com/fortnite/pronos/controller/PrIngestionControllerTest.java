@@ -55,7 +55,7 @@ class PrIngestionControllerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isEqualTo(result);
     assertThat(configCaptor.getValue().source()).isEqualTo("LOCAL_PR");
-    assertThat(configCaptor.season()).isEqualTo(2025);
+    assertThat(configCaptor.getValue().season()).isEqualTo(2025);
     assertThat(configCaptor.getValue().writeScores()).isFalse();
   }
 }

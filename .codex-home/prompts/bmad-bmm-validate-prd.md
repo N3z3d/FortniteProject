@@ -1,0 +1,10 @@
+﻿---
+name: 'bmm-validate-prd'
+description: 'Validate PRD is comprehensive lean well organized and cohesive'
+argument-hint: [context]
+---
+
+IT IS CRITICAL THAT YOU FOLLOW THIS COMMAND:
+LOAD the FULL @{project-root}/_bmad/bmm/workflows/2-plan-workflows/create-prd/workflow-validate-prd.md
+READ its entire contents and follow its directions exactly.
+If the user provided extra context as $ARGUMENTS, include it when executing the task.

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.PlayerService;
@@ -192,5 +193,41 @@ class ApiControllerTest {
     // Then
     assertEquals(200, response.getStatusCodeValue());
     verify(userService).findUserByEmailOrUsername("Thibaut");
+  }
+
+  @Test
+  void testPlayers_WithLowercaseRegion_UsesRegionFilter() {
+    Player player = new Player();
+    player.setId(UUID.randomUUID());
+    player.setUsername("player-eu");
+    player.setRegion(Player.Region.EU);
+
+    when(playerService.findPlayersByRegion(Player.Region.EU)).thenReturn(List.of(player));
+
+    ResponseEntity<Object> response = apiController.players("eu");
+
+    assertEquals(200, response.getStatusCodeValue());
+    assertTrue(response.getBody() instanceof List<?>);
+    verify(playerService).findPlayersByRegion(Player.Region.EU);
+  }
+
+  @Test
+  void testPlayers_WithInvalidRegion_ReturnsBadRequest() {
+    ResponseEntity<Object> response = apiController.players("invalid-region");
+
+    assertEquals(400, response.getStatusCodeValue());
+    assertTrue(response.getBody() instanceof String);
+    assertTrue(((String) response.getBody()).contains("Invalid region"));
+  }
+
+  @Test
+  void testPlayers_WhenServiceFails_ReturnsInternalServerError() {
+    when(playerService.findAllPlayers()).thenThrow(new RuntimeException("db down"));
+
+    ResponseEntity<Object> response = apiController.players(null);
+
+    assertEquals(500, response.getStatusCodeValue());
+    assertTrue(response.getBody() instanceof String);
+    assertTrue(((String) response.getBody()).contains("An error occurred"));
   }
 }

@@ -17,6 +17,7 @@ import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.InvalidGameStateException;
+import com.fortnite.pronos.exception.InvalidInvitationCodeException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.exception.UserAlreadyInGameException;
 import com.fortnite.pronos.exception.UserNotFoundException;
@@ -101,12 +102,17 @@ public class GameParticipantService {
 
   private Game findGameFromRequest(JoinGameRequest request) {
     if (request.getInvitationCode() != null && !request.getInvitationCode().isBlank()) {
-      return gameRepository
-          .findByInvitationCode(request.getInvitationCode())
-          .orElseThrow(
-              () ->
-                  new GameNotFoundException(
-                      "Game not found with invitation code: " + request.getInvitationCode()));
+      Game game =
+          gameRepository
+              .findByInvitationCode(request.getInvitationCode())
+              .orElseThrow(
+                  () ->
+                      new GameNotFoundException(
+                          "Game not found with invitation code: " + request.getInvitationCode()));
+      if (!game.isInvitationCodeValid()) {
+        throw new InvalidInvitationCodeException("Invitation code is expired or invalid");
+      }
+      return game;
     }
     return findGameOrThrow(request.getGameId());
   }

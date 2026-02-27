@@ -2,7 +2,9 @@ package com.fortnite.pronos.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -42,6 +44,8 @@ public class JoinGameRequest {
   private static final int MIN_INVITATION_CODE_LENGTH = 3;
   private static final int MAX_INVITATION_CODE_LENGTH = 20;
   private static final String INVITATION_CODE_PATTERN = "^[A-Za-z0-9-]+$";
+  private static final Pattern INVITATION_CODE_PATTERN_COMPILED =
+      Pattern.compile(INVITATION_CODE_PATTERN);
 
   private List<String> validationErrors = new ArrayList<>();
 
@@ -89,7 +93,7 @@ public class JoinGameRequest {
       return;
     }
 
-    if (!trimmedCode.matches(INVITATION_CODE_PATTERN)) {
+    if (!INVITATION_CODE_PATTERN_COMPILED.matcher(trimmedCode).matches()) {
       validationErrors.add(
           "Le code d'invitation ne peut contenir que des lettres, chiffres et tirets");
     }
@@ -115,7 +119,7 @@ public class JoinGameRequest {
     if (invitationCode == null) {
       return null;
     }
-    return invitationCode.toUpperCase();
+    return invitationCode.toUpperCase(Locale.ROOT);
   }
 
   /** Obtenir le type de participation */
@@ -149,7 +153,7 @@ public class JoinGameRequest {
     if (invitationCode == null) {
       return null;
     }
-    return invitationCode.trim().toUpperCase();
+    return invitationCode.trim().toUpperCase(Locale.ROOT);
   }
 
   /** Vérifier si le code d'invitation est valide */
@@ -165,7 +169,7 @@ public class JoinGameRequest {
       return false;
     }
 
-    return trimmedCode.matches(INVITATION_CODE_PATTERN);
+    return INVITATION_CODE_PATTERN_COMPILED.matcher(trimmedCode).matches();
   }
 
   /** Obtenir la description du type de participation */

@@ -1,0 +1,64 @@
+// UX semantic tokens shared across draft/catalog/admin flows.
+// Keep this file focused on the UX-000a contract: colors + spacing primitives.
+
+:root {
+  // Action vs achievement
+  --color-action: #f5a623;
+  --color-achievement: #ffd700;
+
+  // Surfaces
+  --color-surface: #1a1a2e;
+  --color-surface-raised: #252540;
+  --color-surface-admin: #0d1117;
+
+  // Timer states
+  --color-timer-ok: #4ade80;
+  --color-timer-warn: #fbbf24;
+  --color-timer-urgent: #ef4444;
+
+  // Status and trends
+  --color-success: #4ade80;
+  --color-pipeline-ok: #22c55e;
+  --color-trend-up: #4ade80;
+  --color-trend-down: #f87171;
+  --color-taken: #6b7280;
+
+  // Draft/status aliases for legacy palettes
+  --color-primary: #007bff;
+  --color-info: #17a2b8;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+  --color-neutral: #6c757d;
+  --color-light: #f8f9fa;
+  --color-dark: #343a40;
+  --color-black: #000000;
+
+  // Admin palette aliases (kept explicit to preserve existing dashboard visuals)
+  --color-admin-info: #2196f3;
+  --color-admin-warning: #ff9800;
+  --color-admin-success: #4caf50;
+  --color-admin-danger: #f44336;
+  --color-admin-danger-soft: #ff6b6b;
+  --color-admin-muted: #9e9e9e;
+
+  // Region semantic tokens
+  --color-region-all: #6c757d;
+  --color-region-nae: #007bff;
+  --color-region-naw: #17a2b8;
+  --color-region-eu: #28a745;
+  --color-region-asia: #ffc107;
+  --color-region-oce: #dc3545;
+  --color-region-brazil: #fd7e14;
+  --color-region-mena: #6f42c1;
+
+  // Text aliases
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a0a0a0;
+
+  // Spacing primitives
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}

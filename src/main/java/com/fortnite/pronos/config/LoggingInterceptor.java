@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoggingInterceptor implements HandlerInterceptor {
 
+  private static final long SLOW_REQUEST_THRESHOLD_MS = 100L;
+  private static final long VERY_SLOW_REQUEST_THRESHOLD_MS = 1_000L;
+
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -37,7 +40,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
       String uri = request.getRequestURI();
 
       // Performance monitoring - log lent uniquement
-      if (executionTime > 100 || isCriticalEndpoint(uri)) {
+      if (executionTime > SLOW_REQUEST_THRESHOLD_MS || isCriticalEndpoint(uri)) {
         log.info(
             "COMPLETED {} {} - {}ms - Status: {}",
             request.getMethod(),
@@ -47,7 +50,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
       }
 
       // Alert pour les requêtes très lentes
-      if (executionTime > 1000) {
+      if (executionTime > VERY_SLOW_REQUEST_THRESHOLD_MS) {
         log.warn(
             "SLOW REQUEST {} {} - {}ms - Potential performance issue",
             request.getMethod(),

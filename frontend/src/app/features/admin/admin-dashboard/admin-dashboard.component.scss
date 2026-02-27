@@ -44,7 +44,7 @@
     font-size: 48px;
     width: 48px;
     height: 48px;
-    color: var(--gaming-error, #f44336);
+    color: var(--gaming-error, var(--color-admin-danger));
   }
 }
 
@@ -72,14 +72,14 @@
     }
 
     mat-card-title {
-      color: var(--gaming-light, #fff);
+      color: var(--gaming-light, var(--color-text-primary));
       @include mixins.gaming-font;
       @include mixins.responsive-font(1.1rem, 1rem, 0.9rem);
     }
   }
 
   mat-card-content {
-    color: var(--gaming-gray-light, #aaa);
+    color: var(--gaming-gray-light);
   }
 }
 
@@ -118,7 +118,7 @@
   h4 {
     @include mixins.gaming-font;
     font-size: 0.85rem;
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
     margin-bottom: var(--space-sm);
   }
 }
@@ -162,21 +162,21 @@
 
   &.status-up {
     background: rgba(76, 175, 80, 0.15);
-    color: #4caf50;
+    color: var(--color-admin-success);
 
-    mat-icon { color: #4caf50; }
+    mat-icon { color: var(--color-admin-success); }
   }
 
   &.status-down {
     background: rgba(244, 67, 54, 0.15);
-    color: #f44336;
+    color: var(--color-admin-danger);
 
-    mat-icon { color: #f44336; }
+    mat-icon { color: var(--color-admin-danger); }
   }
 
   &.status-unknown {
     background: rgba(255, 152, 0, 0.15);
-    color: #ff9800;
+    color: var(--color-admin-warning);
   }
 }
 
@@ -198,7 +198,7 @@
   .detail-value {
     font-family: 'Orbitron', monospace;
     font-weight: 600;
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
   }
 
   mat-progress-bar {
@@ -232,7 +232,7 @@
     font-family: 'Orbitron', monospace;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
   }
 
   .activity-label {
@@ -247,7 +247,7 @@
   h4 {
     @include mixins.gaming-font;
     font-size: 0.85rem;
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
     margin-bottom: var(--space-sm);
   }
 }
@@ -264,7 +264,7 @@
   }
 
   .recent-name {
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
     font-size: 0.9rem;
   }
 
@@ -277,27 +277,27 @@
 
     &.badge-creating {
       background: rgba(33, 150, 243, 0.2);
-      color: #2196f3;
+      color: var(--color-admin-info);
     }
 
     &.badge-drafting {
       background: rgba(255, 152, 0, 0.2);
-      color: #ff9800;
+      color: var(--color-admin-warning);
     }
 
     &.badge-active {
       background: rgba(76, 175, 80, 0.2);
-      color: #4caf50;
+      color: var(--color-admin-success);
     }
 
     &.badge-finished {
       background: rgba(158, 158, 158, 0.2);
-      color: #9e9e9e;
+      color: var(--color-admin-muted);
     }
 
     &.badge-cancelled {
       background: rgba(244, 67, 54, 0.2);
-      color: #f44336;
+      color: var(--color-admin-danger);
     }
   }
 }
@@ -346,7 +346,7 @@
 
 .alert-title {
   flex: 1;
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-weight: 600;
 }
 
@@ -363,7 +363,7 @@
 
 .alert-threshold {
   margin: 0;
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-size: 0.8rem;
 }
 
@@ -390,7 +390,7 @@
 }
 
 .visit-value {
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-family: 'Orbitron', monospace;
   font-size: 1.1rem;
   font-weight: 600;
@@ -404,13 +404,13 @@
 }
 
 .visit-top-pages h4 {
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-size: 0.85rem;
   margin-bottom: var(--space-xs);
 }
 
 .visit-top-flows h4 {
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-size: 0.85rem;
   margin: var(--space-sm) 0 var(--space-xs);
 }
@@ -458,9 +458,35 @@
 }
 
 .visit-count {
-  color: var(--gaming-light, #fff);
+  color: var(--gaming-light, var(--color-text-primary));
   font-family: 'Orbitron', monospace;
   font-size: 0.8rem;
+}
+
+.visit-geo h4 {
+  color: var(--gaming-light, var(--color-text-primary));
+  font-size: 0.85rem;
+  margin: var(--space-sm) 0 var(--space-xs);
+}
+
+.visit-geo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.visit-geo-country {
+  color: var(--gaming-gray-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 // Metrics Card
@@ -498,10 +524,10 @@
   .metric-value {
     font-family: 'Orbitron', monospace;
     font-weight: 600;
-    color: var(--gaming-light, #fff);
+    color: var(--gaming-light, var(--color-text-primary));
 
     &.error-text {
-      color: #f44336;
+      color: var(--color-admin-danger);
     }
   }
 }
@@ -513,3 +539,4 @@
     grid-template-columns: 1fr;
   }
 }
+

@@ -11,6 +11,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AdminAlertThresholdsDto {
 
+  private static final double DEFAULT_HTTP_ERROR_RATE_PERCENT = 5;
+  private static final double DEFAULT_HEAP_USAGE_PERCENT = 85;
+  private static final double DEFAULT_DISK_USAGE_PERCENT = 90;
+  private static final double DEFAULT_DATABASE_CONNECTION_USAGE_PERCENT = 80;
+  private static final int DEFAULT_CRITICAL_ERRORS_LAST_24_HOURS = 10;
+
   private double httpErrorRatePercent;
   private double heapUsagePercent;
   private double diskUsagePercent;
@@ -19,11 +25,11 @@ public class AdminAlertThresholdsDto {
 
   public static AdminAlertThresholdsDto defaults() {
     return AdminAlertThresholdsDto.builder()
-        .httpErrorRatePercent(5)
-        .heapUsagePercent(85)
-        .diskUsagePercent(90)
-        .databaseConnectionUsagePercent(80)
-        .criticalErrorsLast24Hours(10)
+        .httpErrorRatePercent(DEFAULT_HTTP_ERROR_RATE_PERCENT)
+        .heapUsagePercent(DEFAULT_HEAP_USAGE_PERCENT)
+        .diskUsagePercent(DEFAULT_DISK_USAGE_PERCENT)
+        .databaseConnectionUsagePercent(DEFAULT_DATABASE_CONNECTION_USAGE_PERCENT)
+        .criticalErrorsLast24Hours(DEFAULT_CRITICAL_ERRORS_LAST_24_HOURS)
         .build();
   }
 }

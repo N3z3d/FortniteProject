@@ -18,6 +18,7 @@ import { TeamService } from '../../../core/services/team.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { formatPoints as formatPointsUtil } from '../../../shared/constants/theme.constants';
+import { secureRandomIntInRange } from '../../../shared/utils/secure-random.util';
 
 interface Player {
   id: string;
@@ -141,7 +142,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
         nickname: p.nickname,
         region: p.region,
         tranche: p.tranche,
-        points: Math.floor(Math.random() * 300000) + 50000
+        points: secureRandomIntInRange(50000, 349999)
       }));
 
       this.teamForm.patchValue({

@@ -1,5 +1,6 @@
 package com.fortnite.pronos.controller;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -194,32 +195,12 @@ public class GameController {
       return ResponseEntity.badRequest().build();
     }
 
-    String normalizedCode = invitationCode.trim().toUpperCase();
+    String normalizedCode = normalizeInvitationCode(invitationCode);
     invitationCodeAttemptGuard.registerAttemptOrThrow(user.getId(), httpRequest.getRemoteAddr());
     return gameService
         .getGameByInvitationCode(normalizedCode)
-        .map(
-            game -> {
-              JoinGameRequest joinRequest = new JoinGameRequest();
-              joinRequest.setGameId(game.getId());
-              joinRequest.setUserId(user.getId());
-              joinRequest.setInvitationCode(normalizedCode);
-              validationService.validateJoinGameRequest(joinRequest);
-              gameService.joinGame(user.getId(), joinRequest);
-              log.info(
-                  "GameController: joinGameWithCode succeeded - gameId={}, userId={}",
-                  game.getId(),
-                  user.getId());
-              return ResponseEntity.ok(game);
-            })
-        .orElseGet(
-            () -> {
-              log.warn(
-                  "GameController: joinGameWithCode notFound - userId={}, codeLength={}",
-                  user.getId(),
-                  normalizedCode.length());
-              return ResponseEntity.notFound().build();
-            });
+        .map(game -> joinUserToGameByInvitationCode(game, user.getId(), normalizedCode))
+        .orElseGet(() -> notFoundByInvitationCode(user.getId(), normalizedCode));
   }
 
   @Operation(
@@ -289,19 +270,10 @@ public class GameController {
     }
 
     GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
-    if (gameDto.getCreatorId() == null) {
-      log.warn("GameController: startDraft invalidState - gameId={}, creatorId=null", id);
-      return ResponseEntity.status(HttpStatus.CONFLICT)
-          .body(Map.of(ERROR_KEY, "Createur de la partie introuvable"));
-    }
-    if (!user.getId().equals(gameDto.getCreatorId())) {
-      log.warn(
-          "GameController: startDraft forbidden - gameId={}, userId={}, creatorId={}",
-          id,
-          user.getId(),
-          gameDto.getCreatorId());
-      return ResponseEntity.status(HttpStatus.FORBIDDEN)
-          .body(Map.of(ERROR_KEY, "Utilisateur non autorise pour ce draft"));
+    ResponseEntity<Map<String, Object>> invalidStartDraftResponse =
+        validateStartDraftRequest(id, user.getId(), gameDto.getCreatorId());
+    if (invalidStartDraftResponse != null) {
+      return invalidStartDraftResponse;
     }
 
     DraftDto draft = gameService.startDraft(id, user.getId());
@@ -451,16 +423,66 @@ public class GameController {
     }
 
     String newName = request == null ? null : request.sanitizedName();
+    return handleRenameGame(id, user.getId(), newName);
+  }
+
+  private String normalizeInvitationCode(String invitationCode) {
+    return invitationCode.trim().toUpperCase(Locale.ROOT);
+  }
+
+  private ResponseEntity<GameDto> joinUserToGameByInvitationCode(
+      GameDto game, UUID userId, String normalizedCode) {
+    JoinGameRequest joinRequest = new JoinGameRequest();
+    joinRequest.setGameId(game.getId());
+    joinRequest.setUserId(userId);
+    joinRequest.setInvitationCode(normalizedCode);
+    validationService.validateJoinGameRequest(joinRequest);
+    gameService.joinGame(userId, joinRequest);
+    log.info(
+        "GameController: joinGameWithCode succeeded - gameId={}, userId={}", game.getId(), userId);
+    return ResponseEntity.ok(game);
+  }
+
+  private ResponseEntity<GameDto> notFoundByInvitationCode(UUID userId, String normalizedCode) {
+    log.warn(
+        "GameController: joinGameWithCode notFound - userId={}, codeLength={}",
+        userId,
+        normalizedCode.length());
+    return ResponseEntity.notFound().build();
+  }
+
+  private ResponseEntity<Map<String, Object>> validateStartDraftRequest(
+      UUID gameId, UUID userId, UUID creatorId) {
+    if (creatorId == null) {
+      log.warn("GameController: startDraft invalidState - gameId={}, creatorId=null", gameId);
+      return ResponseEntity.status(HttpStatus.CONFLICT)
+          .body(Map.of(ERROR_KEY, "Createur de la partie introuvable"));
+    }
+
+    if (!userId.equals(creatorId)) {
+      log.warn(
+          "GameController: startDraft forbidden - gameId={}, userId={}, creatorId={}",
+          gameId,
+          userId,
+          creatorId);
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(Map.of(ERROR_KEY, "Utilisateur non autorise pour ce draft"));
+    }
+
+    return null;
+  }
+
+  private ResponseEntity<GameDto> handleRenameGame(UUID gameId, UUID userId, String newName) {
     if (newName == null || newName.isBlank()) {
-      log.warn("GameController: renameGame badRequest - gameId={}, userId={}", id, user.getId());
+      log.warn("GameController: renameGame badRequest - gameId={}, userId={}", gameId, userId);
       return ResponseEntity.badRequest().build();
     }
 
-    GameDto updatedGame = gameService.renameGame(id, newName);
+    GameDto updatedGame = gameService.renameGame(gameId, newName);
     log.info(
         "GameController: renameGame succeeded - gameId={}, userId={}, newNameLength={}",
-        id,
-        user.getId(),
+        gameId,
+        userId,
         newName.length());
     return ResponseEntity.ok(updatedGame);
   }

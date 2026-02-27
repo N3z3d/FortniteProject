@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -28,6 +30,9 @@ public class ErrorJournalService {
 
   static final int MAX_ENTRIES = 500;
   private static final int DEFAULT_TOP_ERRORS_LIMIT = 10;
+  private static final Pattern TOP_ERROR_KEY_SEPARATOR_PATTERN = Pattern.compile(": ");
+  private static final int TOP_ERROR_KEY_SPLIT_LIMIT = 2;
+  private static final int HOURLY_TREND_MAX_WINDOW_HOURS = 48;
 
   private final ConcurrentLinkedDeque<ErrorEntry> entries = new ConcurrentLinkedDeque<>();
   private final AtomicInteger size = new AtomicInteger(0);
@@ -56,13 +61,16 @@ public class ErrorJournalService {
    */
   public List<ErrorEntry> getRecentErrors(int limit, Integer statusCode, String exceptionType) {
     int effectiveLimit = Math.max(1, Math.min(limit, MAX_ENTRIES));
+    String normalizedExceptionType = normalizeExceptionTypeFilter(exceptionType);
 
     return entries.stream()
         .filter(e -> statusCode == null || e.getStatusCode() == statusCode)
         .filter(
             e ->
-                exceptionType == null
-                    || e.getExceptionType().toLowerCase().contains(exceptionType.toLowerCase()))
+                normalizedExceptionType == null
+                    || e.getExceptionType()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(normalizedExceptionType))
         .limit(effectiveLimit)
         .toList();
   }
@@ -130,35 +138,38 @@ public class ErrorJournalService {
         recentEntries.stream()
             .collect(Collectors.groupingBy(e -> e.getExceptionType() + ": " + e.getMessage()));
 
-    List<ErrorStatisticsDto.TopErrorEntry> topErrors = new ArrayList<>();
-    grouped.forEach(
-        (key, group) -> {
-          String[] parts = key.split(": ", 2);
-          LocalDateTime lastOccurrence =
-              group.stream()
-                  .map(ErrorEntry::getTimestamp)
-                  .max(Comparator.naturalOrder())
-                  .orElse(null);
-
-          topErrors.add(
-              ErrorStatisticsDto.TopErrorEntry.builder()
-                  .type(parts[0])
-                  .message(parts.length > 1 ? parts[1] : "")
-                  .count(group.size())
-                  .lastOccurrence(lastOccurrence)
-                  .build());
-        });
-
-    topErrors.sort(Comparator.comparingInt(ErrorStatisticsDto.TopErrorEntry::getCount).reversed());
+    List<ErrorStatisticsDto.TopErrorEntry> topErrors =
+        grouped.entrySet().stream()
+            .map(this::toTopErrorEntry)
+            .sorted(Comparator.comparingInt(ErrorStatisticsDto.TopErrorEntry::getCount).reversed())
+            .toList();
 
     if (topErrors.size() > DEFAULT_TOP_ERRORS_LIMIT) {
       return new ArrayList<>(topErrors.subList(0, DEFAULT_TOP_ERRORS_LIMIT));
     }
-    return topErrors;
+    return new ArrayList<>(topErrors);
+  }
+
+  private ErrorStatisticsDto.TopErrorEntry toTopErrorEntry(
+      Map.Entry<String, List<ErrorEntry>> groupedError) {
+    String[] parts =
+        TOP_ERROR_KEY_SEPARATOR_PATTERN.split(groupedError.getKey(), TOP_ERROR_KEY_SPLIT_LIMIT);
+    List<ErrorEntry> groupedEntries = groupedError.getValue();
+    LocalDateTime lastOccurrence =
+        groupedEntries.stream()
+            .map(ErrorEntry::getTimestamp)
+            .max(Comparator.naturalOrder())
+            .orElse(null);
+    return ErrorStatisticsDto.TopErrorEntry.builder()
+        .type(parts[0])
+        .message(parts.length > 1 ? parts[1] : "")
+        .count(groupedEntries.size())
+        .lastOccurrence(lastOccurrence)
+        .build();
   }
 
   private String resolveTrendGranularity(int hours) {
-    return hours <= 48 ? "HOUR" : "DAY";
+    return hours <= HOURLY_TREND_MAX_WINDOW_HOURS ? "HOUR" : "DAY";
   }
 
   private List<ErrorStatisticsDto.TrendPoint> buildErrorTrend(
@@ -212,5 +223,12 @@ public class ErrorJournalService {
       return bucketStart.plusDays(1);
     }
     return bucketStart.plusHours(1);
+  }
+
+  private String normalizeExceptionTypeFilter(String exceptionType) {
+    if (exceptionType == null) {
+      return null;
+    }
+    return exceptionType.toLowerCase(Locale.ROOT);
   }
 }

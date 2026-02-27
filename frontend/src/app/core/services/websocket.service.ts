@@ -26,6 +26,29 @@ export interface GameNotification {
   message: string;
 }
 
+export interface DraftEventMessage {
+  event: string;
+  draftId: string;
+  participantId?: string;
+  playerId?: string;
+  playerName?: string;
+  nextParticipantId?: string;
+  region?: string;
+  round?: number;
+  message?: string;
+}
+
+export interface SimultaneousEventMessage {
+  type: 'SUBMISSION_COUNT' | 'ALL_RESOLVED' | 'CONFLICT_RESOLVED';
+  draftId: string;
+  submitted?: number;
+  total?: number;
+  winnerParticipantId?: string;
+  loserParticipantId?: string;
+  contestedPlayerId?: string;
+  hasMoreConflicts?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -36,6 +59,8 @@ export class WebSocketService implements OnDestroy {
   private connectionStatus$ = new BehaviorSubject<boolean>(false);
   private readonly tradeNotifications$ = new Subject<TradeNotification>();
   private readonly gameNotifications$ = new Subject<GameNotification>();
+  private readonly draftEvents$ = new Subject<DraftEventMessage>();
+  private readonly simultaneousEvents$ = new Subject<SimultaneousEventMessage>();
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 3000;
@@ -53,6 +78,14 @@ export class WebSocketService implements OnDestroy {
 
   get gameNotifications(): Observable<GameNotification> {
     return this.gameNotifications$.asObservable();
+  }
+
+  get draftEvents(): Observable<DraftEventMessage> {
+    return this.draftEvents$.asObservable();
+  }
+
+  get simultaneousEvents(): Observable<SimultaneousEventMessage> {
+    return this.simultaneousEvents$.asObservable();
   }
 
   connect(token?: string): void {
@@ -135,6 +168,56 @@ export class WebSocketService implements OnDestroy {
     });
 
     this.subscriptions.push(subscription);
+  }
+
+  subscribeToDraft(draftId: string): void {
+    if (!this.client?.active) {
+      this.logger.warn('WebSocketService: cannot subscribe to draft while disconnected', { draftId });
+      return;
+    }
+
+    const destination = `/topic/draft/${draftId}`;
+    const subscription = this.client.subscribe(destination, (message: IMessage) => {
+      try {
+        const event: DraftEventMessage = JSON.parse(message.body);
+        this.draftEvents$.next(event);
+      } catch (error) {
+        this.logger.error('WebSocketService: failed to parse draft event', { error, body: message.body });
+      }
+    });
+
+    this.subscriptions.push(subscription);
+  }
+
+  subscribeToSimultaneous(draftId: string): void {
+    if (!this.client?.active) {
+      this.logger.warn('WebSocketService: cannot subscribe to simultaneous draft while disconnected', { draftId });
+      return;
+    }
+
+    const destination = `/topic/draft/${draftId}/simultaneous`;
+    const subscription = this.client.subscribe(destination, (message: IMessage) => {
+      try {
+        const event: SimultaneousEventMessage = JSON.parse(message.body);
+        this.simultaneousEvents$.next(event);
+      } catch (error) {
+        this.logger.error('WebSocketService: failed to parse simultaneous event', { error, body: message.body });
+      }
+    });
+
+    this.subscriptions.push(subscription);
+  }
+
+  publishDraftPick(draftId: string, participantId: string, playerId: string): void {
+    if (!this.client?.active) {
+      this.logger.warn('WebSocketService: cannot publish draft pick while disconnected', { draftId });
+      return;
+    }
+
+    this.client.publish({
+      destination: '/app/draft/pick',
+      body: JSON.stringify({ draftId, participantId, playerId }),
+    });
   }
 
   private subscribeToUserQueue(): void {
@@ -223,6 +306,8 @@ export class WebSocketService implements OnDestroy {
     this.disconnect();
     this.tradeNotifications$.complete();
     this.gameNotifications$.complete();
+    this.draftEvents$.complete();
+    this.simultaneousEvents$.complete();
     this.connectionStatus$.complete();
   }
 }

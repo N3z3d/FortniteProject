@@ -196,6 +196,73 @@
             <span class="visit-count">{{ flow.transitions }}</span>
           </div>
         </div>
+        <div class="visit-geo" *ngIf="visitAnalytics.topCountries?.length">
+          <h4>{{ t.t('admin.visits.geoDistribution') }}</h4>
+          <div class="visit-geo-row" *ngFor="let entry of visitAnalytics.topCountries">
+            <span class="visit-geo-country">{{ entry.country }}</span>
+            <span class="visit-count">{{ entry.visitCount }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Real-Time Analytics Card -->
+    <mat-card class="dashboard-card realtime-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">sensors</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.realtime') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="realTimeAnalytics; else realtimeLoading">
+          <div class="kpi-grid">
+            <div class="kpi-item">
+              <span class="kpi-value realtime-pulse">{{ realTimeAnalytics.activeUsersNow }}</span>
+              <span class="kpi-label">{{ t.t('admin.realtime.activeUsers') }}</span>
+            </div>
+            <div class="kpi-item">
+              <span class="kpi-value">{{ realTimeAnalytics.activeSessionsNow }}</span>
+              <span class="kpi-label">{{ t.t('admin.realtime.activeSessions') }}</span>
+            </div>
+          </div>
+          <div *ngIf="realTimeAnalytics.activePagesNow?.length; else noActivity">
+            <h4>{{ t.t('admin.realtime.activePages') }}</h4>
+            <div class="page-item" *ngFor="let page of realTimeAnalytics.activePagesNow">
+              <span class="page-path">{{ page.path }}</span>
+              <span class="page-count">{{ page.visitorCount }}</span>
+            </div>
+          </div>
+          <ng-template #noActivity>
+            <p class="realtime-empty">{{ t.t('admin.realtime.noActivity') }}</p>
+          </ng-template>
+        </div>
+        <ng-template #realtimeLoading>
+          <mat-spinner diameter="24"></mat-spinner>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Database Explorer Card -->
+    <mat-card class="dashboard-card database-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="card-icon">storage</mat-icon>
+        <mat-card-title>{{ t.t('admin.dashboard.database') }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="!dbTablesLoading; else dbLoading">
+          <div *ngIf="dbTables.length; else noDbTables">
+            <div class="db-table-row" *ngFor="let table of dbTables">
+              <span class="db-table-name">{{ table.tableName }}</span>
+              <span class="db-row-count">{{ table.rowCount >= 0 ? table.rowCount : '?' }}</span>
+              <span class="db-table-size">{{ table.sizeDescription }}</span>
+            </div>
+          </div>
+          <ng-template #noDbTables>
+            <p class="realtime-empty">{{ t.t('admin.database.noTables') }}</p>
+          </ng-template>
+        </div>
+        <ng-template #dbLoading>
+          <mat-spinner diameter="24"></mat-spinner>
+        </ng-template>
       </mat-card-content>
     </mat-card>
 

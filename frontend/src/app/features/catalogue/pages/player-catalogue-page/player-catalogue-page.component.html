@@ -1,0 +1,103 @@
+<a class="skip-link" href="#accessible-list">Passer à la liste accessible (50 items)</a>
+
+<div class="catalogue-page">
+
+  <!-- Filters -->
+  <section class="catalogue-filters" aria-label="Filtres joueurs">
+    <app-player-search-filter
+      mode="browse"
+      [availableRegions]="availableRegions"
+      [availableTranches]="availableTranches"
+      [totalResults]="filteredPlayers.length"
+      (filterChanged)="onFilterChanged($event)"
+    ></app-player-search-filter>
+  </section>
+
+  <!-- Comparison panel -->
+  <section
+    *ngIf="comparedPlayers.length > 0"
+    class="comparison-panel"
+    aria-label="Comparaison joueurs"
+  >
+    <div class="comparison-panel__header">
+      <span class="comparison-panel__title">
+        Comparaison ({{ comparedPlayers.length }}/{{ 2 }})
+      </span>
+      <button
+        class="comparison-panel__clear"
+        (click)="clearCompare()"
+        aria-label="Effacer la comparaison"
+      >
+        &#x2715;
+      </button>
+    </div>
+    <div class="comparison-panel__cards">
+      <div *ngFor="let player of comparedPlayers; trackBy: trackById" class="comparison-card">
+        <strong>{{ player.username }}</strong>
+        <span class="comparison-card__region">{{ player.region }}</span>
+        <span class="comparison-card__tranche">{{ player.tranche }}</span>
+        <span *ngIf="player.totalPoints != null" class="comparison-card__points">
+          {{ player.totalPoints }} pts
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="catalogue-loading" aria-busy="true" role="status">
+    <span class="catalogue-loading__spinner" aria-hidden="true"></span>
+    <span>Chargement des joueurs…</span>
+  </div>
+
+  <!-- Empty state -->
+  <div
+    *ngIf="!loading && filteredPlayers.length === 0"
+    class="catalogue-empty"
+    role="status"
+    aria-live="polite"
+  >
+    <p class="catalogue-empty__message">
+      Aucun joueur trouvé
+      <span *ngIf="currentSearchTerm">pour « {{ currentSearchTerm }} »</span>.
+    </p>
+    <button
+      class="catalogue-empty__cta"
+      (click)="onReportEmpty()"
+      aria-label="Signaler ce joueur"
+    >
+      &#x1F4E3; Signaler ce joueur
+    </button>
+  </div>
+
+  <!-- Virtual scroll list -->
+  <cdk-virtual-scroll-viewport
+    *ngIf="!loading && filteredPlayers.length > 0"
+    class="catalogue-viewport"
+    [itemSize]="itemSize"
+    aria-label="Liste des joueurs"
+  >
+    <div
+      *cdkVirtualFor="let player of filteredPlayers; trackBy: trackById"
+      class="catalogue-row"
+    >
+      <app-player-card
+        [player]="player"
+        mode="browse"
+        [selected]="isCompared(player)"
+        (cardSelected)="onCardSelected($event)"
+        (reportPlayer)="onReport($event)"
+      ></app-player-card>
+    </div>
+  </cdk-virtual-scroll-viewport>
+
+  <!-- Accessible flat list (sr-only, 50 items max) -->
+  <ul id="accessible-list" class="catalogue-accessible-list" aria-label="Liste accessible des joueurs">
+    <li
+      *ngFor="let player of filteredPlayers | slice:0:50; trackBy: trackById"
+      class="catalogue-accessible-list__item"
+    >
+      {{ player.username }} — {{ player.region }} — {{ player.tranche }}
+    </li>
+  </ul>
+
+</div>

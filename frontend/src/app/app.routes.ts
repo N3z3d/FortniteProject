@@ -87,6 +87,13 @@ export const routes: Routes = [
         data: { pageType: 'privacy' }
       },
       {
+        path: 'catalogue',
+        loadComponent: () =>
+          import('./features/catalogue/pages/player-catalogue-page/player-catalogue-page.component').then(
+            c => c.PlayerCataloguePageComponent
+          ),
+      },
+      {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then(r => r.ADMIN_ROUTES),
         canActivate: [AdminGuard]

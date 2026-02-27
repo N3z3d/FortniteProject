@@ -10,6 +10,8 @@ import java.util.Random;
 public final class InvitationCodeGenerator {
 
   private static final String ALPHANUMERIC_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  private static final int MIN_CODE_LENGTH = 4;
+  private static final int MAX_CODE_LENGTH = 20;
   private static final int DEFAULT_CODE_LENGTH = 8;
 
   private final Random random;
@@ -27,7 +29,7 @@ public final class InvitationCodeGenerator {
    * @param codeLength length of generated codes
    */
   public InvitationCodeGenerator(Random random, int codeLength) {
-    if (codeLength < 4 || codeLength > 20) {
+    if (codeLength < MIN_CODE_LENGTH || codeLength > MAX_CODE_LENGTH) {
       throw new IllegalArgumentException("Code length must be between 4 and 20");
     }
     this.random = random;
@@ -54,7 +56,7 @@ public final class InvitationCodeGenerator {
    * @return true if valid format
    */
   public static boolean isValidFormat(String code) {
-    if (code == null || code.length() < 4 || code.length() > 20) {
+    if (code == null || code.length() < MIN_CODE_LENGTH || code.length() > MAX_CODE_LENGTH) {
       return false;
     }
     return code.chars().allMatch(c -> ALPHANUMERIC_CHARS.indexOf(c) >= 0);

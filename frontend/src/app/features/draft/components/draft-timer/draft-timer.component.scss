@@ -1,116 +1,143 @@
 @import '../../../../shared/styles/mixins';
 
-/* Premium Gaming Current Turn Focus */
-.current-turn-focus {
+// ============================================================
+// DRAFT TIMER COMPONENT
+// Uses @property --timer-color (defined globally in styles.scss)
+// for smooth HSL interpolation without the RGB brown artifact
+// ============================================================
+
+// ===== WRAPPER =====
+
+.timer-wrapper {
+  --timer-color: var(--color-text-primary); // default active state
+  transition: --timer-color 0.5s ease-out;
+
   @include glass-card-dark();
-  @include fade-in-up(0.1s);
-  background: var(--gradient-success);
-  color: white;
-  border-radius: var(--radius-xl);
-  padding: var(--space-2xl);
-  margin-bottom: var(--space-2xl);
+  position: sticky;
+  top: 80px;
+  z-index: 200; // var(--z-timer)
+  padding: var(--space-md) var(--space-lg);
   text-align: center;
-  @include pulse-glow(var(--gaming-success), 2s);
-  position: relative;
-  overflow: hidden;
+  margin-bottom: var(--space-lg);
 
-  // Animated particles
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-    @include floating(3s, 8px);
-  }
+  &[data-state='warmup']  { --timer-color: var(--color-text-secondary); }
+  &[data-state='warning'] { --timer-color: var(--color-timer-warn); }
+  &[data-state='urgent']  { --timer-color: var(--color-timer-urgent); }
 }
 
-.turn-announcement {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
+// ===== PLAYER CONTEXT =====
 
-.turn-player {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.crown-icon {
-  font-size: 2rem;
-  color: #ffd700;
-  @include neon-glow(#ffd700, 0.8);
-  @include floating(2s, 10px);
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-  40% { transform: translateY(-12px) scale(1.1); }
-  60% { transform: translateY(-6px) scale(1.05); }
-}
-
-.turn-player h2 {
-  @include gaming-title;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  @include neon-glow(white, 0.3);
-}
-
-.turn-subtitle {
-  font-size: 1rem;
-  opacity: 0.9;
-}
-
-.turn-timer {
-  display: flex;
-  align-items: center;
-}
-
-.timer-circle {
-  width: 80px;
-  height: 80px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+.timer-player {
   display: flex;
   align-items: center;
   justify-content: center;
-  @include glass-card(0.1, 10px, 0.3);
-  @include pulse-glow(white, 2s);
-  position: relative;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    background: var(--gradient-gaming);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    animation: spin 3s linear infinite;
+.crown-icon {
+  font-size: 1.5rem;
+  color: var(--color-achievement);
+}
+
+.timer-player h2 {
+  @include gaming-title;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.timer-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+// ===== COUNTDOWN DISPLAY =====
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.timer-digits {
+  // display-md class (from _typography.scss) provides Rajdhani 32px 700
+  color: var(--timer-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+// Pulse at urgent state — timer-pulse keyframes defined in styles.scss (UX-000a)
+.timer-wrapper[data-state='urgent'] .timer-digits {
+  animation: timer-pulse 0.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer-wrapper .timer-digits {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+// ===== AUTO-PICK TOAST =====
+// z-9000 (var(--z-critical)) — must float above all overlays including modals
+
+.autopick-toast {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000; // var(--z-critical)
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-xl);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.95),
+    rgba(220, 38, 38, 0.95)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--color-timer-urgent);
+  color: var(--color-text-primary);
+
+  @media (max-width: 767px) {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--space-lg);
+  }
 }
 
-.timer-value {
-  @include gaming-font;
-  font-size: 1.2rem;
-  font-weight: 700;
-  @include neon-glow(white, 0.4);
+.autopick-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.cancel-countdown {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.autopick-cancel {
+  flex-shrink: 0;
+  color: var(--color-text-primary) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  font-weight: 600;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-text-primary) !important;
+    outline-offset: 2px !important;
+  }
 }

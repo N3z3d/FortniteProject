@@ -1,6 +1,7 @@
 package com.fortnite.pronos.domain.game.model;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,7 @@ public final class Game {
 
   private static final int MIN_PARTICIPANTS = 2;
   private static final int MAX_PARTICIPANTS_LIMIT = 50;
+  private static final int DEFAULT_MAX_TRADES_PER_TEAM = 5;
   private static final int INVITATION_CODE_LENGTH = 8;
   private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final SecureRandom CODE_RANDOM = new SecureRandom();
@@ -39,10 +41,24 @@ public final class Game {
   private int maxTradesPerTeam;
   private LocalDateTime tradeDeadline;
   private int currentSeason;
+  private DraftMode draftMode;
+  private int teamSize;
+  private int trancheSize;
+  private boolean tranchesEnabled;
+  private LocalDate competitionStart;
+  private LocalDate competitionEnd;
 
   /** Business constructor for creating a new game. */
-  public Game(String name, UUID creatorId, int maxParticipants) {
-    validateCreation(name, creatorId, maxParticipants);
+  public Game(
+      String name,
+      UUID creatorId,
+      int maxParticipants,
+      DraftMode draftMode,
+      int teamSize,
+      int trancheSize,
+      boolean tranchesEnabled) {
+    validateCreation(
+        name, creatorId, maxParticipants, draftMode, teamSize, trancheSize, tranchesEnabled);
     this.id = UUID.randomUUID();
     this.name = name.trim();
     this.creatorId = creatorId;
@@ -52,11 +68,18 @@ public final class Game {
     this.participants = new ArrayList<>();
     this.regionRules = new ArrayList<>();
     this.tradingEnabled = false;
-    this.maxTradesPerTeam = 5;
+    this.maxTradesPerTeam = DEFAULT_MAX_TRADES_PER_TEAM;
     this.currentSeason = java.time.Year.now().getValue();
+    this.draftMode = draftMode;
+    this.teamSize = teamSize;
+    this.trancheSize = trancheSize;
+    this.tranchesEnabled = tranchesEnabled;
   }
 
-  /** Reconstitution factory for persistence mapping. */
+  /**
+   * Reconstitution factory for persistence mapping. Backward-compatible overload without draft
+   * configuration fields — defaults to SNAKE/5/10/true.
+   */
   public static Game restore(
       UUID id,
       String name,
@@ -76,6 +99,59 @@ public final class Game {
       int maxTradesPerTeam,
       LocalDateTime tradeDeadline,
       int currentSeason) {
+    return restore(
+        id,
+        name,
+        description,
+        creatorId,
+        maxParticipants,
+        status,
+        createdAt,
+        finishedAt,
+        deletedAt,
+        invitationCode,
+        invitationCodeExpiresAt,
+        regionRules,
+        participants,
+        draftId,
+        tradingEnabled,
+        maxTradesPerTeam,
+        tradeDeadline,
+        currentSeason,
+        DraftMode.SNAKE,
+        5,
+        10,
+        true,
+        null,
+        null);
+  }
+
+  /** Reconstitution factory for persistence mapping with full draft configuration. */
+  public static Game restore(
+      UUID id,
+      String name,
+      String description,
+      UUID creatorId,
+      int maxParticipants,
+      GameStatus status,
+      LocalDateTime createdAt,
+      LocalDateTime finishedAt,
+      LocalDateTime deletedAt,
+      String invitationCode,
+      LocalDateTime invitationCodeExpiresAt,
+      List<GameRegionRule> regionRules,
+      List<GameParticipant> participants,
+      UUID draftId,
+      boolean tradingEnabled,
+      int maxTradesPerTeam,
+      LocalDateTime tradeDeadline,
+      int currentSeason,
+      DraftMode draftMode,
+      int teamSize,
+      int trancheSize,
+      boolean tranchesEnabled,
+      LocalDate competitionStart,
+      LocalDate competitionEnd) {
     Game game = new Game();
     game.id = id;
     game.name = name;
@@ -99,6 +175,12 @@ public final class Game {
     game.maxTradesPerTeam = maxTradesPerTeam;
     game.tradeDeadline = tradeDeadline;
     game.currentSeason = currentSeason;
+    game.draftMode = draftMode != null ? draftMode : DraftMode.SNAKE;
+    game.teamSize = teamSize;
+    game.trancheSize = trancheSize;
+    game.tranchesEnabled = tranchesEnabled;
+    game.competitionStart = competitionStart;
+    game.competitionEnd = competitionEnd;
     return game;
   }
 
@@ -115,26 +197,18 @@ public final class Game {
   /** Adds a participant with full business rules validation. */
   public boolean addParticipant(GameParticipant participant) {
     Objects.requireNonNull(participant, "Participant cannot be null");
-
-    if (participant.getUserId().equals(this.creatorId)) {
+    if (isInvalidParticipant(participant)) {
       return false;
     }
-    if (participants.stream().anyMatch(p -> p.getUserId().equals(participant.getUserId()))) {
-      return false;
-    }
-    if (isFull()) {
-      return false;
-    }
-    if (!canAddParticipants()) {
-      return false;
-    }
-
     this.participants.add(participant);
     return true;
   }
 
   public void removeParticipant(GameParticipant participant) {
-    participants.remove(participant);
+    int participantIndex = participants.indexOf(participant);
+    if (participantIndex >= 0) {
+      participants.remove(participantIndex);
+    }
   }
 
   public boolean isParticipant(UUID userId) {
@@ -258,7 +332,10 @@ public final class Game {
   }
 
   public void removeRegionRule(GameRegionRule rule) {
-    regionRules.remove(rule);
+    int ruleIndex = regionRules.indexOf(rule);
+    if (ruleIndex >= 0) {
+      regionRules.remove(ruleIndex);
+    }
   }
 
   // ===============================
@@ -298,6 +375,14 @@ public final class Game {
 
   public void setInvitationCodeExpiresAt(LocalDateTime expiresAt) {
     this.invitationCodeExpiresAt = expiresAt;
+  }
+
+  public void setCompetitionStart(LocalDate competitionStart) {
+    this.competitionStart = competitionStart;
+  }
+
+  public void setCompetitionEnd(LocalDate competitionEnd) {
+    this.competitionEnd = competitionEnd;
   }
 
   // ===============================
@@ -376,11 +461,42 @@ public final class Game {
     return currentSeason;
   }
 
+  public DraftMode getDraftMode() {
+    return draftMode;
+  }
+
+  public int getTeamSize() {
+    return teamSize;
+  }
+
+  public int getTrancheSize() {
+    return trancheSize;
+  }
+
+  public boolean isTranchesEnabled() {
+    return tranchesEnabled;
+  }
+
+  public LocalDate getCompetitionStart() {
+    return competitionStart;
+  }
+
+  public LocalDate getCompetitionEnd() {
+    return competitionEnd;
+  }
+
   // ===============================
   // PRIVATE HELPERS
   // ===============================
 
-  private void validateCreation(String name, UUID creatorId, int maxParticipants) {
+  private void validateCreation(
+      String name,
+      UUID creatorId,
+      int maxParticipants,
+      DraftMode draftMode,
+      int teamSize,
+      int trancheSize,
+      boolean tranchesEnabled) {
     if (name == null || name.trim().isEmpty()) {
       throw new IllegalArgumentException("Game name cannot be null or empty");
     }
@@ -394,6 +510,23 @@ public final class Game {
               + " and "
               + MAX_PARTICIPANTS_LIMIT);
     }
+    if (draftMode == null) {
+      throw new IllegalArgumentException("Draft mode cannot be null");
+    }
+    if (teamSize < 1) {
+      throw new IllegalArgumentException("Team size must be >= 1");
+    }
+    if (tranchesEnabled && trancheSize < 1) {
+      throw new IllegalArgumentException("Tranche size must be >= 1 when tranches are enabled");
+    }
+  }
+
+  private boolean isInvalidParticipant(GameParticipant participant) {
+    boolean creatorParticipant = participant.getUserId().equals(this.creatorId);
+    boolean duplicateParticipant =
+        participants.stream().anyMatch(p -> p.getUserId().equals(participant.getUserId()));
+    boolean gameCannotAcceptParticipants = isFull() || !canAddParticipants();
+    return creatorParticipant || duplicateParticipant || gameCannotAcceptParticipants;
   }
 
   private String generateRandomCode() {

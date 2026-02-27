@@ -46,9 +46,23 @@ class AdminDashboardServiceTest {
 
   @BeforeEach
   void setUp() {
-    service =
-        new AdminDashboardService(
-            userRepository, gameRepository, tradeRepository, meterRegistry, dataSource);
+    service = buildService(dataSource);
+  }
+
+  private AdminDashboardService buildService(DataSource metricsDataSource) {
+    AdminSystemMetricsService systemMetricsService =
+        new AdminSystemMetricsService(meterRegistry, metricsDataSource);
+    AdminRecentActivityService recentActivityService =
+        new AdminRecentActivityService(gameRepository, tradeRepository, userRepository);
+    AdminGameCatalogService gameCatalogService =
+        new AdminGameCatalogService(userRepository, gameRepository);
+    return new AdminDashboardService(
+        userRepository,
+        gameRepository,
+        tradeRepository,
+        systemMetricsService,
+        recentActivityService,
+        gameCatalogService);
   }
 
   @Nested
@@ -119,18 +133,16 @@ class AdminDashboardServiceTest {
       when(poolBean.getTotalConnections()).thenReturn(10);
       when(hikari.getMaximumPoolSize()).thenReturn(20);
 
-      AdminDashboardService svc =
-          new AdminDashboardService(
-              userRepository, gameRepository, tradeRepository, meterRegistry, hikari);
+      AdminDashboardService svc = buildService(hikari);
 
       SystemHealthDto result = svc.getSystemHealth();
 
       assertThat(result.getStatus()).isEqualTo("UP");
       assertThat(result.getUptimeMillis()).isPositive();
       assertThat(result.getDatabasePool().getActiveConnections()).isEqualTo(2);
-      assertThat(result.getIdleConnections()).isEqualTo(8);
+      assertThat(result.getDatabasePool().getIdleConnections()).isEqualTo(8);
       assertThat(result.getDatabasePool().getTotalConnections()).isEqualTo(10);
-      assertThat(result.getMaxConnections()).isEqualTo(20);
+      assertThat(result.getDatabasePool().getMaxConnections()).isEqualTo(20);
     }
 
     @Test
@@ -186,6 +198,22 @@ class AdminDashboardServiceTest {
       RecentActivityDto result = service.getRecentActivity(24);
 
       assertThat(result.getRecentTradesCount()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldHandleTradeWithoutIdInRecentActivity() {
+      Trade trade = new Trade();
+      trade.setStatus(Trade.Status.PENDING);
+      trade.setProposedAt(LocalDateTime.now().minusHours(2));
+
+      when(gameRepository.findByCreatedAtAfter(any())).thenReturn(List.of());
+      when(tradeRepository.findAll()).thenReturn(List.of(trade));
+      when(userRepository.count()).thenReturn(0L);
+
+      RecentActivityDto result = service.getRecentActivity(24);
+
+      assertThat(result.getRecentTrades()).hasSize(1);
+      assertThat(result.getRecentTrades().get(0).getName()).isEqualTo("Trade #unknown");
     }
 
     @Test
@@ -288,7 +316,7 @@ class AdminDashboardServiceTest {
 
       assertThat(result.getJvm()).isNotNull();
       assertThat(result.getJvm().getHeapMaxBytes()).isPositive();
-      assertThat(result.getThreadCount()).isPositive();
+      assertThat(result.getJvm().getThreadCount()).isPositive();
     }
 
     @Test

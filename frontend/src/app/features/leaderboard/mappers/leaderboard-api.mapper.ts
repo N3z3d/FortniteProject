@@ -40,7 +40,7 @@ export class LeaderboardApiMapper {
     return {
       teamId: entry.teamId || entry.id || `team_${fallbackRank}`,
       teamName: entry.teamName || entry.team?.name || entry.name || `Équipe ${fallbackRank}`,
-      ownerName: entry.ownerName || entry.pronostiqueurName || entry.user?.name || entry.username || 'Joueur anonyme',
+      ownerName: this.resolveOwnerName(entry),
       totalPoints: this.parseNumber(entry.totalPoints || entry.points || entry.score, 0),
       rank: this.parseNumber(entry.rank || entry.position, fallbackRank),
       players: this.mapPlayers(entry.players || entry.teamPlayers || []),
@@ -53,6 +53,22 @@ export class LeaderboardApiMapper {
    * @param players - Liste des joueurs de l'API
    * @returns Liste des joueurs formatée
    */
+  private static resolveOwnerName(entry: any): string {
+    if (typeof entry.ownerName === 'string' && entry.ownerName.trim() !== '') {
+      return entry.ownerName;
+    }
+    if (typeof entry.pronostiqueurName === 'string' && entry.pronostiqueurName.trim() !== '') {
+      return entry.pronostiqueurName;
+    }
+    if (typeof entry.user?.name === 'string' && entry.user.name.trim() !== '') {
+      return entry.user.name;
+    }
+    if (typeof entry.username === 'string' && entry.username.trim() !== '') {
+      return entry.username;
+    }
+    return 'Joueur anonyme';
+  }
+
   static mapPlayers(players: any[]): Player[] {
     if (!Array.isArray(players)) {
       return [];

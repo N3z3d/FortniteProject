@@ -1,14 +1,41 @@
-<div class="current-turn-focus">
-  <div class="turn-announcement">
-    <div class="turn-player">
-      <mat-icon class="crown-icon">emoji_events</mat-icon>
-      <h2>{{ currentPlayer?.username }}</h2>
-      <span class="turn-subtitle">{{ t.t('draft.ui.currentTurnSubtitle') }}</span>
-    </div>
-    <div class="turn-timer" *ngIf="hasTimer">
-      <div class="timer-circle">
-        <span class="timer-value">{{ formattedTime }}</span>
-      </div>
-    </div>
+<div
+  class="timer-wrapper current-turn-focus"
+  [attr.data-state]="timerState"
+  role="timer"
+  [attr.aria-label]="ariaLabel"
+>
+  <div class="timer-player" *ngIf="currentPlayer">
+    <mat-icon class="crown-icon" aria-hidden="true">emoji_events</mat-icon>
+    <h2>{{ currentPlayer.username }}</h2>
+    <span class="timer-subtitle">{{ t.t('draft.ui.currentTurnSubtitle') }}</span>
   </div>
+
+  <div class="timer-display" *ngIf="hasTimer" aria-live="off" aria-hidden="true">
+    <span *ngIf="timerState === 'urgent'" class="timer-icon" aria-hidden="true">â±ï¸</span>
+    <span class="timer-digits display-md">{{ displayTime }}</span>
+  </div>
+
+  <span role="status" aria-live="assertive" aria-atomic="true" class="sr-only">
+    {{ criticalAnnouncement }}
+  </span>
+</div>
+
+<div
+  *ngIf="showAutopickToast"
+  class="autopick-toast"
+  role="alert"
+  aria-live="assertive"
+  aria-atomic="true"
+>
+  <span class="autopick-message">
+    Pick auto : <strong>{{ autoPickPlayer }}</strong>
+    <span class="cancel-countdown">({{ cancelWindowSecondsLeft }}s)</span>
+  </span>
+  <button
+    class="autopick-cancel"
+    mat-stroked-button
+    (click)="cancelAutopick()"
+  >
+    Annuler le pick auto
+  </button>
 </div>

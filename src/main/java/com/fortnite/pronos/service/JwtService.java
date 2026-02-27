@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SuppressWarnings({"java:S112", "java:S1874", "java:S3077"})
 public class JwtService {
+
+  private static final int MINIMUM_PRODUCTION_SECRET_LENGTH = 64;
+  private static final int MINIMUM_SIGNING_KEY_LENGTH = 32;
 
   @Value("${app.jwt.secret:#{null}}")
   private String secretKey;
@@ -106,7 +110,7 @@ public class JwtService {
         throw new IllegalStateException(errorMsg);
       }
 
-      if (envJwtSecret.length() < 64) {
+      if (envJwtSecret.length() < MINIMUM_PRODUCTION_SECRET_LENGTH) {
         String errorMsg =
             "PRODUCTION SECURITY ERROR: JWT_SECRET is too short for production. "
                 + "Minimum 64 characters required for production security. "
@@ -171,7 +175,7 @@ public class JwtService {
 
   /** Vérifier si le token a expiré */
   private boolean isTokenExpired(String token) {
-    return extractExpiration(token).before(new Date());
+    return extractExpiration(token).toInstant().isBefore(Instant.now());
   }
 
   /** Extraire la date d'expiration du token */
@@ -192,11 +196,13 @@ public class JwtService {
   /** Construire un token */
   private String buildToken(
       Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+    Instant issuedAt = Instant.now();
+    Instant expiresAt = issuedAt.plusMillis(expiration);
     return Jwts.builder()
         .setClaims(extraClaims)
         .setSubject(userDetails.getUsername())
-        .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + expiration))
+        .setIssuedAt(Date.from(issuedAt))
+        .setExpiration(Date.from(expiresAt))
         .signWith(getSignInKey(), SignatureAlgorithm.HS256)
         .compact();
   }
@@ -225,7 +231,7 @@ public class JwtService {
     String effectiveSecret = resolveJwtSecret();
 
     // Security: Assurer une clé suffisamment longue pour HMAC (minimum 32 caractères)
-    if (effectiveSecret.length() < 32) {
+    if (effectiveSecret.length() < MINIMUM_SIGNING_KEY_LENGTH) {
       log.error(
           "JWT secret trop court - minimum 32 caractères requis, longueur actuelle: {}",
           effectiveSecret.length());

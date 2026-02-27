@@ -1,0 +1,95 @@
+<div class="pipeline-table-wrapper" role="region" [attr.aria-label]="mode === 'unresolved' ? 'Joueurs non résolus' : 'Joueurs résolus'">
+  <p *ngIf="entries.length === 0" class="pipeline-table__empty" role="status">
+    {{ mode === 'unresolved' ? 'Aucun joueur en attente.' : 'Aucun joueur résolu.' }}
+  </p>
+
+  <table
+    *ngIf="entries.length > 0"
+    mat-table
+    [dataSource]="entries"
+    class="pipeline-table"
+    aria-label="Pipeline d'identité joueur">
+
+    <!-- Username column -->
+    <ng-container matColumnDef="playerUsername">
+      <th mat-header-cell *matHeaderCellDef>Joueur</th>
+      <td mat-cell *matCellDef="let entry" class="cell--username">{{ entry.playerUsername }}</td>
+    </ng-container>
+
+    <!-- Region column -->
+    <ng-container matColumnDef="playerRegion">
+      <th mat-header-cell *matHeaderCellDef>Région</th>
+      <td mat-cell *matCellDef="let entry">
+        <span class="region-badge">{{ entry.playerRegion }}</span>
+      </td>
+    </ng-container>
+
+    <!-- Epic ID column — editable in unresolved mode, read-only otherwise -->
+    <ng-container matColumnDef="epicId">
+      <th mat-header-cell *matHeaderCellDef>Epic ID</th>
+      <td mat-cell *matCellDef="let entry" class="cell--epic-id">
+        <ng-container *ngIf="mode === 'unresolved'; else readonlyEpicId">
+          <input
+            class="epic-id-input"
+            type="text"
+            [formControl]="getControl(entry.playerId)"
+            placeholder="epic_id_joueur"
+            [attr.aria-label]="'Saisir l\'Epic ID pour ' + entry.playerUsername"
+            (keydown)="onKeydown($event, entry)" />
+        </ng-container>
+        <ng-template #readonlyEpicId>
+          <span class="epic-id-readonly">{{ entry.epicId ?? '—' }}</span>
+        </ng-template>
+      </td>
+    </ng-container>
+
+    <!-- Actions column (unresolved only) -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="cell--actions-header">Actions</th>
+      <td mat-cell *matCellDef="let entry" class="cell--actions">
+        <button
+          mat-icon-button
+          class="btn-confirm"
+          [disabled]="isConfirmDisabled(entry)"
+          [attr.aria-label]="'Résoudre ' + entry.playerUsername"
+          matTooltip="Résoudre"
+          (click)="onConfirm(entry)">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="btn-reject"
+          [attr.aria-label]="'Rejeter ' + entry.playerUsername"
+          matTooltip="Rejeter"
+          (click)="onReject(entry)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <!-- Confidence score column (resolved only) -->
+    <ng-container matColumnDef="confidenceScore">
+      <th mat-header-cell *matHeaderCellDef>Score</th>
+      <td mat-cell *matCellDef="let entry" class="cell--score">
+        <span [class]="scoreClass(entry.confidenceScore)">{{ entry.confidenceScore ?? '—' }}</span>
+      </td>
+    </ng-container>
+
+    <!-- Resolved by column (resolved only) -->
+    <ng-container matColumnDef="resolvedBy">
+      <th mat-header-cell *matHeaderCellDef>Résolu par</th>
+      <td mat-cell *matCellDef="let entry">{{ entry.resolvedBy ?? '—' }}</td>
+    </ng-container>
+
+    <!-- Status column (resolved only) -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Statut</th>
+      <td mat-cell *matCellDef="let entry">
+        <span class="status-chip" [class]="statusClass(entry.status)">{{ entry.status }}</span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="pipeline-row"></tr>
+  </table>
+</div>

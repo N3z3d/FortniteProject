@@ -46,7 +46,7 @@ class ErrorJournalControllerTest {
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody()).isNotNull();
       assertThat(response.getBody().isSuccess()).isTrue();
-      assertThat(response.getData()).hasSize(1);
+      assertThat(response.getBody().getData()).hasSize(1);
     }
 
     @Test
@@ -103,7 +103,7 @@ class ErrorJournalControllerTest {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody().getData().getTotalErrors()).isEqualTo(5);
-      assertThat(response.getTrendGranularity()).isEqualTo("HOUR");
+      assertThat(response.getBody().getData().getTrendGranularity()).isEqualTo("HOUR");
       assertThat(response.getBody().getData().getErrorTrend()).hasSize(1);
     }
 

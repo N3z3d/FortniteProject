@@ -27,35 +27,69 @@ public final class TeamRosterSanitizer {
       List<com.fortnite.pronos.model.TeamPlayer> roster, UUID teamId, String source) {
     List<com.fortnite.pronos.model.TeamPlayer> safeRoster = roster == null ? List.of() : roster;
     Map<UUID, com.fortnite.pronos.model.TeamPlayer> uniquePlayers = new LinkedHashMap<>();
-    int duplicates = 0;
-    int missingPlayers = 0;
+    SanitizationStats stats = new SanitizationStats();
 
     for (com.fortnite.pronos.model.TeamPlayer teamPlayer : safeRoster) {
-      if (teamPlayer == null || !teamPlayer.isActive()) {
+      UUID playerId = extractActivePlayerId(teamPlayer, stats);
+      if (playerId == null) {
         continue;
       }
-      com.fortnite.pronos.model.Player player = teamPlayer.getPlayer();
-      if (player == null || player.getId() == null) {
-        missingPlayers++;
-        continue;
+      if (uniquePlayers.putIfAbsent(playerId, teamPlayer) != null) {
+        stats.incrementDuplicates();
       }
-      UUID playerId = player.getId();
-      if (uniquePlayers.containsKey(playerId)) {
-        duplicates++;
-        continue;
-      }
-      uniquePlayers.put(playerId, teamPlayer);
     }
 
-    if (duplicates > 0 || missingPlayers > 0) {
-      log.warn(
-          "TeamRosterSanitizer: source={}, teamId={}, duplicates={}, missingPlayers={}",
-          source == null ? "unknown" : source,
-          teamId,
-          duplicates,
-          missingPlayers);
-    }
-
+    logIfSanitized(source, teamId, stats);
     return new ArrayList<>(uniquePlayers.values());
+  }
+
+  private static UUID extractActivePlayerId(
+      com.fortnite.pronos.model.TeamPlayer teamPlayer, SanitizationStats stats) {
+    if (teamPlayer == null || !teamPlayer.isActive()) {
+      return null;
+    }
+    com.fortnite.pronos.model.Player player = teamPlayer.getPlayer();
+    if (player == null || player.getId() == null) {
+      stats.incrementMissingPlayers();
+      return null;
+    }
+    return player.getId();
+  }
+
+  private static void logIfSanitized(String source, UUID teamId, SanitizationStats stats) {
+    if (!stats.hasIssues()) {
+      return;
+    }
+    log.warn(
+        "TeamRosterSanitizer: source={}, teamId={}, duplicates={}, missingPlayers={}",
+        source == null ? "unknown" : source,
+        teamId,
+        stats.getDuplicates(),
+        stats.getMissingPlayers());
+  }
+
+  private static final class SanitizationStats {
+    private int duplicates;
+    private int missingPlayers;
+
+    void incrementDuplicates() {
+      duplicates++;
+    }
+
+    void incrementMissingPlayers() {
+      missingPlayers++;
+    }
+
+    int getDuplicates() {
+      return duplicates;
+    }
+
+    int getMissingPlayers() {
+      return missingPlayers;
+    }
+
+    boolean hasIssues() {
+      return duplicates > 0 || missingPlayers > 0;
+    }
   }
 }

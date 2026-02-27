@@ -345,10 +345,10 @@
     .join-feedback--error {
       background: rgba(239, 68, 68, 0.14);
       border-color: rgba(248, 113, 113, 0.45);
-      color: #fecaca;
+      color: rgb(254 202 202);
 
       mat-icon {
-        color: #fca5a5;
+        color: rgb(252 165 165);
       }
     }
 
@@ -488,12 +488,12 @@
 
             &[data-status="DRAFTING"] {
               background: var(--gradient-primary);
-              color: #000;
+              color: var(--color-black);
             }
 
             &[data-status="ACTIVE"] {
               background: var(--gradient-success);
-              color: #000;
+              color: var(--color-black);
             }
 
             &[data-status="COMPLETED"] {
@@ -609,12 +609,12 @@
     transition: color 0.2s ease;
 
     &:hover {
-      color: #8b5cf6;
+      color: var(--color-region-mena);
       text-decoration: underline;
     }
 
     &:focus {
-      outline: 2px solid #8b5cf6;
+      outline: 2px solid var(--color-region-mena);
       outline-offset: 2px;
       border-radius: 2px;
     }

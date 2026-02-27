@@ -8,6 +8,9 @@ import {
   AdminAlert,
   AlertThresholds,
   DashboardSummary,
+  DbTableInfo,
+  IncidentEntry,
+  RealTimeAnalytics,
   RecentActivity,
   SystemHealth,
   SystemMetrics,
@@ -57,6 +60,18 @@ export class AdminService {
       .pipe(map(r => r.data));
   }
 
+  getRealTimeAnalytics(): Observable<RealTimeAnalytics> {
+    return this.http
+      .get<ApiResponse<RealTimeAnalytics>>(`${this.baseUrl}/dashboard/realtime`)
+      .pipe(map(r => r.data));
+  }
+
+  getDatabaseTables(): Observable<DbTableInfo[]> {
+    return this.http
+      .get<ApiResponse<DbTableInfo[]>>(`${this.baseUrl}/database/tables`)
+      .pipe(map(r => r.data));
+  }
+
   getAlerts(hours: number = 24): Observable<AdminAlert[]> {
     return this.http
       .get<ApiResponse<AdminAlert[]>>(`${this.baseUrl}/alerts`, {
@@ -95,6 +110,16 @@ export class AdminService {
   getErrorDetail(id: string): Observable<ErrorEntry> {
     return this.http
       .get<ApiResponse<ErrorEntry>>(`${this.baseUrl}/errors/${id}`)
+      .pipe(map(r => r.data));
+  }
+
+  getIncidents(limit: number = 50, gameId?: string): Observable<IncidentEntry[]> {
+    const params: Record<string, string> = { limit: limit.toString() };
+    if (gameId) {
+      params['gameId'] = gameId;
+    }
+    return this.http
+      .get<ApiResponse<IncidentEntry[]>>(`${this.baseUrl}/incidents`, { params })
       .pipe(map(r => r.data));
   }
 }

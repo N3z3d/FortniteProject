@@ -1,0 +1,127 @@
+package com.fortnite.pronos.service.admin;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
+import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
+import com.fortnite.pronos.domain.port.out.EpicIdValidatorPort;
+import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
+import com.fortnite.pronos.dto.admin.PipelineCountResponse;
+import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
+import com.fortnite.pronos.exception.InvalidEpicIdException;
+import com.fortnite.pronos.exception.PlayerIdentityNotFoundException;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PlayerIdentityPipelineService {
+
+  static final String WS_TOPIC = "/topic/admin/pipeline";
+  private static final int MAX_PAGE_SIZE = 200;
+  private static final int DEFAULT_PAGE_SIZE = 50;
+
+  private final PlayerIdentityRepositoryPort identityRepository;
+  private final SimpMessagingTemplate messagingTemplate;
+  private final ConfidenceScoreService confidenceScoreService;
+  private final EpicIdValidatorPort epicIdValidator;
+
+  public List<PlayerIdentityEntryResponse> getUnresolved() {
+    return getUnresolved(0, DEFAULT_PAGE_SIZE);
+  }
+
+  public List<PlayerIdentityEntryResponse> getUnresolved(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = sanitizePageSize(size);
+    return identityRepository
+        .findByStatusPaged(IdentityStatus.UNRESOLVED, safePage, safeSize)
+        .stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  public List<PlayerIdentityEntryResponse> getResolved() {
+    return getResolved(0, DEFAULT_PAGE_SIZE);
+  }
+
+  public List<PlayerIdentityEntryResponse> getResolved(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = sanitizePageSize(size);
+    return identityRepository
+        .findByStatusPaged(IdentityStatus.RESOLVED, safePage, safeSize)
+        .stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  public PipelineCountResponse getCount() {
+    long unresolved = identityRepository.countByStatus(IdentityStatus.UNRESOLVED);
+    long resolved = identityRepository.countByStatus(IdentityStatus.RESOLVED);
+    return new PipelineCountResponse(unresolved, resolved);
+  }
+
+  public PlayerIdentityEntryResponse resolve(UUID playerId, String epicId, String resolvedBy) {
+    if (!epicIdValidator.validate(epicId)) {
+      throw new InvalidEpicIdException(epicId);
+    }
+
+    PlayerIdentityEntry entry = findEntry(playerId);
+    int score = confidenceScoreService.compute(entry, epicId);
+    entry.resolve(epicId, score, resolvedBy);
+    PlayerIdentityEntry saved = identityRepository.save(entry);
+
+    broadcastCount();
+    log.info("Player {} resolved with Epic ID {} (score {})", playerId, epicId, score);
+    return toResponse(saved);
+  }
+
+  public PlayerIdentityEntryResponse reject(UUID playerId, String reason, String rejectedBy) {
+    PlayerIdentityEntry entry = findEntry(playerId);
+    entry.reject(reason, rejectedBy);
+    PlayerIdentityEntry saved = identityRepository.save(entry);
+
+    broadcastCount();
+    log.info("Player {} rejected (reason: {})", playerId, reason);
+    return toResponse(saved);
+  }
+
+  private PlayerIdentityEntry findEntry(UUID playerId) {
+    return identityRepository
+        .findByPlayerId(playerId)
+        .orElseThrow(() -> new PlayerIdentityNotFoundException(playerId));
+  }
+
+  private void broadcastCount() {
+    PipelineCountResponse count = getCount();
+    messagingTemplate.convertAndSend(WS_TOPIC, count);
+  }
+
+  private int sanitizePageSize(int requestedSize) {
+    if (requestedSize <= 0) {
+      return DEFAULT_PAGE_SIZE;
+    }
+    return Math.min(requestedSize, MAX_PAGE_SIZE);
+  }
+
+  private PlayerIdentityEntryResponse toResponse(PlayerIdentityEntry e) {
+    return new PlayerIdentityEntryResponse(
+        e.getId(),
+        e.getPlayerId(),
+        e.getPlayerUsername(),
+        e.getPlayerRegion(),
+        e.getEpicId(),
+        e.getStatus().name(),
+        e.getConfidenceScore(),
+        e.getResolvedBy(),
+        e.getResolvedAt(),
+        e.getRejectedAt(),
+        e.getRejectionReason(),
+        e.getCreatedAt());
+  }
+}

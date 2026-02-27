@@ -1,5 +1,6 @@
 package com.fortnite.pronos.domain;
 
+import java.util.Collection;
 import java.util.UUID;
 
 import com.fortnite.pronos.model.GameStatus;
@@ -25,18 +26,16 @@ public final class ParticipantRules {
    */
   public static ValidationResult validateGameCreation(
       String name, UUID creatorId, int maxParticipants) {
-
+    String validationError = null;
     if (name == null || name.trim().isEmpty()) {
-      return ValidationResult.failure("Game name cannot be null or empty");
+      validationError = "Game name cannot be null or empty";
+    } else if (creatorId == null) {
+      validationError = "Game creator cannot be null";
+    } else if (maxParticipants < MIN_PARTICIPANTS || maxParticipants > MAX_PARTICIPANTS) {
+      validationError =
+          "Max participants must be between " + MIN_PARTICIPANTS + " and " + MAX_PARTICIPANTS;
     }
-    if (creatorId == null) {
-      return ValidationResult.failure("Game creator cannot be null");
-    }
-    if (maxParticipants < MIN_PARTICIPANTS || maxParticipants > MAX_PARTICIPANTS) {
-      return ValidationResult.failure(
-          "Max participants must be between " + MIN_PARTICIPANTS + " and " + MAX_PARTICIPANTS);
-    }
-    return ValidationResult.success();
+    return toValidationResult(validationError);
   }
 
   /**
@@ -56,33 +55,40 @@ public final class ParticipantRules {
       int maxParticipants,
       UUID userIdToAdd,
       UUID creatorId,
-      java.util.Set<UUID> existingParticipantIds) {
-
+      Collection<UUID> existingParticipantIds) {
+    String validationError = null;
     if (status != GameStatus.CREATING) {
-      return ValidationResult.failure("Cannot join games that have already started");
+      validationError = "Cannot join games that have already started";
+    } else if (userIdToAdd == null) {
+      validationError = "User to add cannot be null";
+    } else if (userIdToAdd.equals(creatorId)) {
+      validationError = "Creator is automatically a participant";
+    } else if (existingParticipantIds.contains(userIdToAdd)) {
+      validationError = "User is already a participant";
+    } else if (currentCount >= maxParticipants) {
+      validationError = "Game is full";
     }
-    if (userIdToAdd.equals(creatorId)) {
-      return ValidationResult.failure("Creator is automatically a participant");
-    }
-    if (existingParticipantIds.contains(userIdToAdd)) {
-      return ValidationResult.failure("User is already a participant");
-    }
-    if (currentCount >= maxParticipants) {
-      return ValidationResult.failure("Game is full");
-    }
-    return ValidationResult.success();
+    return toValidationResult(validationError);
   }
 
   /**
-   * Calculates total participant count including creator.
+   * Calculates total participant count when the creator is already in the participants list.
    *
    * @param explicitParticipantCount count of explicit participants
-   * @param creatorInParticipants whether creator is in participants list
    * @return total count
    */
-  public static int calculateTotalParticipants(
-      int explicitParticipantCount, boolean creatorInParticipants) {
-    return creatorInParticipants ? explicitParticipantCount : explicitParticipantCount + 1;
+  public static int calculateTotalParticipantsWithCreatorIncluded(int explicitParticipantCount) {
+    return explicitParticipantCount;
+  }
+
+  /**
+   * Calculates total participant count when the creator is not in the participants list.
+   *
+   * @param explicitParticipantCount count of explicit participants
+   * @return total count
+   */
+  public static int calculateTotalParticipantsWithCreatorExcluded(int explicitParticipantCount) {
+    return explicitParticipantCount + 1;
   }
 
   /**
@@ -106,5 +112,12 @@ public final class ParticipantRules {
     public static ValidationResult failure(String errorMessage) {
       return new ValidationResult(false, errorMessage);
     }
+  }
+
+  private static ValidationResult toValidationResult(String validationError) {
+    if (validationError == null) {
+      return ValidationResult.success();
+    }
+    return ValidationResult.failure(validationError);
   }
 }

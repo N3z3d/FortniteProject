@@ -1,0 +1,46 @@
+@import '../../../shared/styles/mixins';
+
+.filter-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.search-field {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.filter-field {
+  flex: 0 1 140px;
+  min-width: 120px;
+}
+
+.filter-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  padding-top: var(--space-xs);
+}
+
+.lock-hint {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.result-counter {
+  width: 100%;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  padding-top: var(--space-xs);
+}
+
+@include mobile {
+  .filter-field {
+    flex: 1 1 100%;
+  }
+}

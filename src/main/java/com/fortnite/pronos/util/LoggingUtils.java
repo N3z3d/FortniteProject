@@ -2,6 +2,7 @@ package com.fortnite.pronos.util;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,43 +11,37 @@ import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
-/** Utilitaire pour les logs structurés et professionnels */
+/** Utility for structured logs used by backend services. */
 @Component
 @Slf4j
 @SuppressWarnings({"java:S1118", "java:S1488", "java:S2629"})
 public class LoggingUtils {
 
-  private static final Logger PERFORMANCE_LOGGER =
-      LoggerFactory.getLogger("com.fortnite.pronos.performance");
-  private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("com.fortnite.pronos.access");
-  private static final Logger AUDIT_LOGGER = LoggerFactory.getLogger("com.fortnite.pronos.audit");
+  private static final int TRACE_ID_LENGTH = 8;
 
   private static final String TRACE_ID_KEY = "traceId";
   private static final String USER_ID_KEY = "userId";
   private static final String ACTION_KEY = "action";
   private static final String DURATION_KEY = "duration";
   private static final String STATUS_KEY = "status";
+
   private static final String SUCCESS_STATUS = "SUCCESS";
   private static final String FAILURE_STATUS = "FAILURE";
 
-  /** Initialise un contexte de trace pour une requête */
   public static String initTraceContext() {
-    String traceId = UUID.randomUUID().toString().substring(0, 8);
+    String traceId = UUID.randomUUID().toString().substring(0, TRACE_ID_LENGTH);
     MDC.put(TRACE_ID_KEY, traceId);
     return traceId;
   }
 
-  /** Nettoie le contexte MDC */
   public static void clearContext() {
     MDC.clear();
   }
 
-  /** Ajoute l'utilisateur au contexte */
   public static void setUserContext(String userId) {
     MDC.put(USER_ID_KEY, userId);
   }
 
-  /** Log une action d'audit avec contexte */
   public static void logAudit(String action, String userId, Map<String, Object> details) {
     MDC.put(ACTION_KEY, action);
     MDC.put(USER_ID_KEY, userId);
@@ -59,20 +54,17 @@ public class LoggingUtils {
       details.forEach((key, value) -> message.append(key).append("=").append(value).append(" "));
     }
 
-    AUDIT_LOGGER.info(message.toString());
+    AuditLogHolder.LOGGER.info(message.toString());
   }
 
-  /** Log une métrique de performance */
   public static void logPerformance(String operation, long durationMs, String status) {
     MDC.put(ACTION_KEY, operation);
     MDC.put(DURATION_KEY, String.valueOf(durationMs));
     MDC.put(STATUS_KEY, status);
-
-    PERFORMANCE_LOGGER.info(
+    PerformanceLogHolder.LOGGER.info(
         "PERFORMANCE: {} completed in {}ms with status {}", operation, durationMs, status);
   }
 
-  /** Log un accès HTTP */
   public static void logHttpAccess(
       String method,
       String uri,
@@ -84,11 +76,9 @@ public class LoggingUtils {
         String.format(
             "HTTP_ACCESS: %s %s - Status: %d - Duration: %dms - IP: %s - UserAgent: %s",
             method, uri, statusCode, durationMs, clientIp, userAgent);
-
-    ACCESS_LOGGER.info(message);
+    AccessLogHolder.LOGGER.info(message);
   }
 
-  /** Log une erreur avec contexte enrichi */
   public static void logError(String operation, Exception exception, Map<String, Object> context) {
     MDC.put(ACTION_KEY, operation);
     MDC.put(STATUS_KEY, "ERROR");
@@ -108,7 +98,6 @@ public class LoggingUtils {
     log.error(message.toString(), exception);
   }
 
-  /** Log une transaction métier */
   public static void logBusinessTransaction(
       String transactionType, String entityId, String action, String userId, boolean success) {
     MDC.put(ACTION_KEY, transactionType + "_" + action);
@@ -124,19 +113,16 @@ public class LoggingUtils {
         success ? SUCCESS_STATUS : FAILURE_STATUS);
   }
 
-  /** Log des métriques système */
   public static void logSystemMetric(String metricName, double value, String unit) {
-    PERFORMANCE_LOGGER.info("SYSTEM_METRIC: {} = {} {}", metricName, value, unit);
+    PerformanceLogHolder.LOGGER.info("SYSTEM_METRIC: {} = {} {}", metricName, value, unit);
   }
 
-  /** Wrapper pour mesurer et logger le temps d'exécution */
-  public static <T> T measureAndLog(String operation, java.util.function.Supplier<T> supplier) {
+  public static <T> T measureAndLog(String operation, Supplier<T> supplier) {
     long startTime = System.currentTimeMillis();
     String status = SUCCESS_STATUS;
 
     try {
-      T result = supplier.get();
-      return result;
+      return supplier.get();
     } catch (Exception e) {
       status = "ERROR";
       logError(operation, e, null);
@@ -147,18 +133,15 @@ public class LoggingUtils {
     }
   }
 
-  /** Log de démarrage d'application */
   public static void logApplicationStart(String applicationName, String version, String profile) {
     log.info(
         "APPLICATION_START: {} v{} started with profile: {}", applicationName, version, profile);
   }
 
-  /** Log de fin d'application */
   public static void logApplicationShutdown(String applicationName) {
     log.info("APPLICATION_SHUTDOWN: {} is shutting down", applicationName);
   }
 
-  /** Log pour les imports de données */
   public static void logDataImport(
       String importType, int totalRecords, int successCount, int errorCount, long durationMs) {
     MDC.put(ACTION_KEY, "DATA_IMPORT_" + importType);
@@ -173,7 +156,6 @@ public class LoggingUtils {
         durationMs);
   }
 
-  /** Log pour les validations métier */
   public static void logValidation(
       String validationType, String entityId, boolean isValid, String errorMessage) {
     MDC.put(ACTION_KEY, "VALIDATION_" + validationType);
@@ -187,16 +169,13 @@ public class LoggingUtils {
     }
   }
 
-  /** Log pour les opérations de cache */
   public static void logCacheOperation(String operation, String cacheKey, boolean hit) {
     MDC.put(ACTION_KEY, "CACHE_" + operation);
     MDC.put(STATUS_KEY, hit ? "HIT" : "MISS");
-
-    PERFORMANCE_LOGGER.debug(
+    PerformanceLogHolder.LOGGER.debug(
         "CACHE: {} for key {} - {}", operation, cacheKey, hit ? "HIT" : "MISS");
   }
 
-  /** Log pour les notifications */
   public static void logNotification(
       String notificationType, String recipient, boolean success, String errorMessage) {
     MDC.put(ACTION_KEY, "NOTIFICATION_" + notificationType);
@@ -208,5 +187,23 @@ public class LoggingUtils {
       log.error(
           "NOTIFICATION: {} failed for {} - Error: {}", notificationType, recipient, errorMessage);
     }
+  }
+
+  private static final class PerformanceLogHolder {
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.fortnite.pronos.performance");
+
+    private PerformanceLogHolder() {}
+  }
+
+  private static final class AccessLogHolder {
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.fortnite.pronos.access");
+
+    private AccessLogHolder() {}
+  }
+
+  private static final class AuditLogHolder {
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.fortnite.pronos.audit");
+
+    private AuditLogHolder() {}
   }
 }

@@ -133,9 +133,9 @@ class TradingServiceTddTest {
       List<Player> offeredPlayers = List.of(player1);
       List<Player> requestedPlayers = List.of(player2);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade trade =
@@ -158,8 +158,8 @@ class TradingServiceTddTest {
     void shouldRejectTradeIfTradingDisabled() {
       // Given
       game.setTradingEnabled(false);
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -177,8 +177,8 @@ class TradingServiceTddTest {
       otherGame.setId(UUID.randomUUID());
       team2.setGame(otherGame);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -194,8 +194,8 @@ class TradingServiceTddTest {
       // Given
       team1.setCompletedTradesCount(5);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -213,8 +213,8 @@ class TradingServiceTddTest {
       addPlayer(team1, player1);
       addPlayer(team2, player2);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       BusinessException exception =
@@ -234,8 +234,8 @@ class TradingServiceTddTest {
       addPlayer(team2, player2);
       // player1 n'est pas dans team1
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -278,7 +278,7 @@ class TradingServiceTddTest {
               .findById(pendingTrade.getId()))
           .thenReturn(Optional.of(pendingTrade));
       when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade acceptedTrade = tradingService.acceptTrade(pendingTrade.getId(), user2.getId());
@@ -338,7 +338,7 @@ class TradingServiceTddTest {
               .findById(pendingTrade.getId()))
           .thenReturn(Optional.of(pendingTrade));
       when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       tradingService.acceptTrade(pendingTrade.getId(), user2.getId());
@@ -356,7 +356,7 @@ class TradingServiceTddTest {
               .findById(pendingTrade.getId()))
           .thenReturn(Optional.of(pendingTrade));
       when(teamRepository.save(any(Team.class))).thenAnswer(i -> i.getArgument(0));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade acceptedTrade = tradingService.acceptTrade(pendingTrade.getId(), user2.getId());
@@ -391,7 +391,7 @@ class TradingServiceTddTest {
       when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
               .findById(pendingTrade.getId()))
           .thenReturn(Optional.of(pendingTrade));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade rejectedTrade = tradingService.rejectTrade(pendingTrade.getId(), user2.getId());
@@ -409,7 +409,7 @@ class TradingServiceTddTest {
       when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
               .findById(pendingTrade.getId()))
           .thenReturn(Optional.of(pendingTrade));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade cancelledTrade = tradingService.cancelTrade(pendingTrade.getId(), user1.getId());
@@ -451,9 +451,9 @@ class TradingServiceTddTest {
       when(((com.fortnite.pronos.domain.port.out.TradeRepositoryPort) tradeRepository)
               .findById(originalTrade.getId()))
           .thenReturn(Optional.of(originalTrade));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade counterTrade =
@@ -523,8 +523,8 @@ class TradingServiceTddTest {
       addPlayer(team1, player1);
       addPlayer(team2, player2);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -540,8 +540,8 @@ class TradingServiceTddTest {
       // Given
       game.setTradeDeadline(LocalDateTime.now().minusDays(1));
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -570,9 +570,9 @@ class TradingServiceTddTest {
       List<Player> offered = List.of(player1, player3);
       List<Player> requested = List.of(player2);
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
-      when(tradeRepository.save(any(Trade.class))).thenAnswer(i -> i.getArgument(0));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
 
       // When
       Trade trade = tradingService.proposeTrade(team1.getId(), team2.getId(), offered, requested);
@@ -594,8 +594,8 @@ class TradingServiceTddTest {
         addPlayer(team1, p);
       }
 
-      when(teamRepository.findById(team1.getId())).thenReturn(Optional.of(team1));
-      when(teamRepository.findById(team2.getId())).thenReturn(Optional.of(team2));
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
 
       // When & Then
       assertThrows(
@@ -603,6 +603,39 @@ class TradingServiceTddTest {
           () ->
               tradingService.proposeTrade(
                   team1.getId(), team2.getId(), tooManyPlayers, List.of(player2)));
+    }
+
+    @Test
+    @DisplayName("Devrait autoriser un trade avec 5 joueurs maximum par cote")
+    void shouldAllowTradeWithFivePlayersPerSide() {
+      // Given
+      List<Player> offered = new ArrayList<>();
+      List<Player> requested = new ArrayList<>();
+      for (int i = 0; i < 5; i++) {
+        Player offeredPlayer = new Player();
+        offeredPlayer.setId(UUID.randomUUID());
+        offeredPlayer.setName("Offered " + i);
+        offered.add(offeredPlayer);
+        addPlayer(team1, offeredPlayer);
+
+        Player requestedPlayer = new Player();
+        requestedPlayer.setId(UUID.randomUUID());
+        requestedPlayer.setName("Requested " + i);
+        requested.add(requestedPlayer);
+        addPlayer(team2, requestedPlayer);
+      }
+
+      doReturn(Optional.of(team1)).when(teamRepository).findById(team1.getId());
+      doReturn(Optional.of(team2)).when(teamRepository).findById(team2.getId());
+      when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      // When
+      Trade trade = tradingService.proposeTrade(team1.getId(), team2.getId(), offered, requested);
+
+      // Then
+      assertNotNull(trade);
+      assertEquals(5, trade.getOfferedPlayers().size());
+      assertEquals(5, trade.getRequestedPlayers().size());
     }
   }
 

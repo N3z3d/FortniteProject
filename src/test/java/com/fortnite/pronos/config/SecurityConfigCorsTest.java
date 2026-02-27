@@ -49,6 +49,8 @@ class SecurityConfigCorsTest {
     assertThat(configuration).isNotNull();
     assertThat(configuration.getAllowedMethods()).doesNotContain("*");
     assertThat(configuration.getAllowedHeaders()).doesNotContain("*");
+    assertThat(configuration.getAllowCredentials()).isTrue();
+    assertThat(configuration.getMaxAge()).isEqualTo(3600L);
   }
 
   @Test

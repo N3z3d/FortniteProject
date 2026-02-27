@@ -111,7 +111,7 @@ class FrontendBackendIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getId()).isEqualTo(firstPlayer.getId());
-    assertThat(response.getUsername()).isEqualTo(firstPlayer.getUsername());
+    assertThat(response.getBody().getUsername()).isEqualTo(firstPlayer.getUsername());
   }
 
   @Test

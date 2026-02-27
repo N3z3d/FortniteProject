@@ -7,6 +7,9 @@ import { TranslationService } from '../../../core/services/translation.service';
 import {
   AdminAlert,
   DashboardSummary,
+  DbTableInfo,
+  GeoDistributionEntry,
+  RealTimeAnalytics,
   RecentActivity,
   SystemHealth,
   SystemMetrics,
@@ -59,6 +62,17 @@ describe('AdminDashboardComponent', () => {
     }
   ];
 
+  const mockRealTimeAnalytics: RealTimeAnalytics = {
+    activeUsersNow: 7,
+    activeSessionsNow: 5,
+    activePagesNow: [{ path: '/games', visitorCount: 3 }, { path: '/catalogue', visitorCount: 2 }]
+  };
+
+  const mockGeoEntries: GeoDistributionEntry[] = [
+    { country: 'FR', visitCount: 80 },
+    { country: 'US', visitCount: 30 }
+  ];
+
   const mockVisitAnalytics: VisitAnalytics = {
     pageViews: 120,
     uniqueVisitors: 32,
@@ -66,8 +80,14 @@ describe('AdminDashboardComponent', () => {
     averageSessionDurationSeconds: 140,
     bounceRatePercent: 42.5,
     topPages: [{ path: '/api/games', views: 40 }],
-    topNavigationFlows: [{ fromPath: '/api/games', toPath: '/api/trades', transitions: 12 }]
+    topNavigationFlows: [{ fromPath: '/api/games', toPath: '/api/trades', transitions: 12 }],
+    topCountries: mockGeoEntries
   };
+
+  const mockDbTables: DbTableInfo[] = [
+    { tableName: 'games', entityName: 'Game', rowCount: 42, sizeDescription: '8 KB' },
+    { tableName: 'users', entityName: 'User', rowCount: 10, sizeDescription: '4 KB' }
+  ];
 
   beforeEach(async () => {
     const adminSpy = jasmine.createSpyObj('AdminService', [
@@ -76,7 +96,9 @@ describe('AdminDashboardComponent', () => {
       'getRecentActivity',
       'getSystemMetrics',
       'getAlerts',
-      'getVisitAnalytics'
+      'getVisitAnalytics',
+      'getRealTimeAnalytics',
+      'getDatabaseTables'
     ]);
 
     const translationSpy = jasmine.createSpyObj('TranslationService', ['t']);
@@ -100,6 +122,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
     adminService.getAlerts.and.returnValue(of(mockAlerts));
     adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+    adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+    adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -129,6 +153,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
     adminService.getAlerts.and.returnValue(of(mockAlerts));
     adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+    adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+    adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -145,6 +171,8 @@ describe('AdminDashboardComponent', () => {
     adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
     adminService.getAlerts.and.returnValue(of(mockAlerts));
     adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+    adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+    adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
 
     fixture = TestBed.createComponent(AdminDashboardComponent);
     component = fixture.componentInstance;
@@ -243,5 +271,110 @@ describe('AdminDashboardComponent', () => {
     createComponent();
     expect(component.visitAnalytics?.bounceRatePercent).toBe(42.5);
     expect(component.visitAnalytics?.topNavigationFlows.length).toBe(1);
+  });
+
+  it('should expose topCountries from visit analytics', () => {
+    createComponent();
+    expect(component.visitAnalytics?.topCountries).toEqual(mockGeoEntries);
+    expect(component.visitAnalytics?.topCountries?.length).toBe(2);
+    expect(component.visitAnalytics?.topCountries?.[0].country).toBe('FR');
+    expect(component.visitAnalytics?.topCountries?.[0].visitCount).toBe(80);
+  });
+
+  describe('real-time analytics polling', () => {
+    it('should populate realTimeAnalytics after timer fires', fakeAsync(() => {
+      createComponent();
+      tick(0);
+
+      expect(component.realTimeAnalytics).toEqual(mockRealTimeAnalytics);
+      expect(component.realTimeAnalytics?.activeUsersNow).toBe(7);
+      expect(component.realTimeAnalytics?.activeSessionsNow).toBe(5);
+    }));
+
+    it('should show active pages from real-time snapshot', fakeAsync(() => {
+      createComponent();
+      tick(0);
+
+      expect(component.realTimeAnalytics?.activePagesNow.length).toBe(2);
+      expect(component.realTimeAnalytics?.activePagesNow[0].path).toBe('/games');
+      expect(component.realTimeAnalytics?.activePagesNow[0].visitorCount).toBe(3);
+    }));
+
+    it('should call getRealTimeAnalytics on polling start', fakeAsync(() => {
+      createComponent();
+      tick(0);
+
+      expect(adminService.getRealTimeAnalytics).toHaveBeenCalled();
+    }));
+
+    it('should start with null realTimeAnalytics before init', () => {
+      adminService.getDashboardSummary.and.returnValue(of(mockSummary));
+      adminService.getSystemHealth.and.returnValue(of(mockHealth));
+      adminService.getRecentActivity.and.returnValue(of(mockActivity));
+      adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+      adminService.getAlerts.and.returnValue(of(mockAlerts));
+      adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+      adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+      adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
+
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+
+      expect(component.realTimeAnalytics).toBeNull();
+    });
+  });
+
+  describe('database tables', () => {
+    it('should populate dbTables after load', () => {
+      createComponent();
+      expect(component.dbTables).toEqual(mockDbTables);
+      expect(component.dbTables.length).toBe(2);
+      expect(component.dbTables[0].tableName).toBe('games');
+      expect(component.dbTables[0].rowCount).toBe(42);
+    });
+
+    it('should set dbTablesLoading to false after load', () => {
+      createComponent();
+      expect(component.dbTablesLoading).toBeFalse();
+    });
+
+    it('should start with dbTablesLoading true before init', () => {
+      adminService.getDashboardSummary.and.returnValue(of(mockSummary));
+      adminService.getSystemHealth.and.returnValue(of(mockHealth));
+      adminService.getRecentActivity.and.returnValue(of(mockActivity));
+      adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+      adminService.getAlerts.and.returnValue(of(mockAlerts));
+      adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+      adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+      adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
+
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+
+      expect(component.dbTablesLoading).toBeTrue();
+    });
+
+    it('should call getDatabaseTables on init', () => {
+      createComponent();
+      expect(adminService.getDatabaseTables).toHaveBeenCalledTimes(1);
+    });
+
+    it('should set dbTablesLoading false on error', () => {
+      adminService.getDashboardSummary.and.returnValue(of(mockSummary));
+      adminService.getSystemHealth.and.returnValue(of(mockHealth));
+      adminService.getRecentActivity.and.returnValue(of(mockActivity));
+      adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+      adminService.getAlerts.and.returnValue(of(mockAlerts));
+      adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+      adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+      adminService.getDatabaseTables.and.returnValue(throwError(() => new Error('DB error')));
+
+      fixture = TestBed.createComponent(AdminDashboardComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.dbTablesLoading).toBeFalse();
+      expect(component.dbTables).toEqual([]);
+    });
   });
 });

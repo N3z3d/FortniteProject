@@ -1,0 +1,26 @@
+<div *ngIf="isVisible" class="sparkline-wrapper" [attr.aria-label]="ariaLabel" role="img">
+  <span
+    *ngIf="trend === 'up'"
+    class="trend-arrow trend-arrow--up"
+    aria-hidden="true"
+  >&#x25B2;</span>
+  <span
+    *ngIf="trend === 'down'"
+    class="trend-arrow trend-arrow--down"
+    aria-hidden="true"
+  >&#x25BC;</span>
+  <span
+    *ngIf="trend === 'flat'"
+    class="trend-arrow trend-arrow--flat"
+    aria-hidden="true"
+  >&#x2014;</span>
+
+  <div class="sparkline-canvas">
+    <canvas
+      baseChart
+      [data]="chartData"
+      [options]="chartOptions"
+      type="line"
+    ></canvas>
+  </div>
+</div>

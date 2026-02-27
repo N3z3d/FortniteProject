@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service.leaderboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -120,6 +121,13 @@ class LeaderboardStatsServiceTddTest {
     assertThat(stats.getTotalPlayers()).isZero();
     assertThat(stats.getTotalPoints()).isZero();
     assertThat(stats.getAveragePoints()).isZero();
+  }
+
+  @Test
+  @DisplayName("defines a default season constant")
+  void definesDefaultSeasonConstant() {
+    assertThatCode(() -> LeaderboardStatsService.class.getDeclaredField("DEFAULT_SEASON"))
+        .doesNotThrowAnyException();
   }
 
   @Test

@@ -6,6 +6,7 @@ import {
   AdminAlert,
   AlertThresholds,
   DashboardSummary,
+  IncidentEntry,
   RecentActivity,
   SystemHealth,
   SystemMetrics,
@@ -288,6 +289,53 @@ describe('AdminService', () => {
       const req = httpMock.expectOne(`${baseUrl}/errors/uuid-1`);
       expect(req.request.method).toBe('GET');
       req.flush({ success: true, data: mockEntry, message: 'OK', timestamp: '' });
+    });
+  });
+
+  describe('getIncidents', () => {
+    const mockIncidents: IncidentEntry[] = [
+      {
+        id: 'inc-1',
+        gameId: 'game-1',
+        gameName: 'Test Game',
+        reporterId: 'reporter-1',
+        reporterUsername: 'player1',
+        incidentType: 'CHEATING',
+        description: 'Suspected aimbot',
+        timestamp: '2026-02-27T09:00:00'
+      }
+    ];
+
+    it('should fetch incidents with default limit', () => {
+      service.getIncidents().subscribe(result => {
+        expect(result.length).toBe(1);
+        expect(result[0].incidentType).toBe('CHEATING');
+      });
+
+      const req = httpMock.expectOne(r => r.url === `${baseUrl}/incidents`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('limit')).toBe('50');
+      expect(req.request.params.has('gameId')).toBeFalse();
+      req.flush({ success: true, data: mockIncidents, message: 'OK', timestamp: '' });
+    });
+
+    it('should pass gameId filter when provided', () => {
+      service.getIncidents(20, 'game-uuid').subscribe(result => {
+        expect(result).toEqual(mockIncidents);
+      });
+
+      const req = httpMock.expectOne(r => r.url === `${baseUrl}/incidents`);
+      expect(req.request.params.get('limit')).toBe('20');
+      expect(req.request.params.get('gameId')).toBe('game-uuid');
+      req.flush({ success: true, data: mockIncidents, message: 'OK', timestamp: '' });
+    });
+
+    it('should not pass gameId when undefined', () => {
+      service.getIncidents(10).subscribe();
+
+      const req = httpMock.expectOne(r => r.url === `${baseUrl}/incidents`);
+      expect(req.request.params.has('gameId')).toBeFalse();
+      req.flush({ success: true, data: [], message: 'OK', timestamp: '' });
     });
   });
 });

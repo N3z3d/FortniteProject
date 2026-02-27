@@ -1,0 +1,39 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sparkline-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trend-arrow {
+  font-size: 0.7rem;
+  line-height: 1;
+
+  &--up {
+    color: var(--color-pipeline-ok);
+  }
+
+  &--down {
+    color: var(--color-trend-down);
+  }
+
+  &--flat {
+    color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.sparkline-canvas {
+  width: 80px;
+  height: 24px;
+  position: relative;
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}

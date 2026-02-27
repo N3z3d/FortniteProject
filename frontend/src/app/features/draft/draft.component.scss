@@ -144,7 +144,7 @@
     border-radius: inherit;
     padding: 2px;
     @include gaming-gradient-bg();
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(white 0 0) content-box, linear-gradient(white 0 0);
     mask-composite: exclude;
     opacity: 0.3;
   }

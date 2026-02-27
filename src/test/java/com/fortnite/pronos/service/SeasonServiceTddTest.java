@@ -286,7 +286,7 @@ class SeasonServiceTddTest {
       List<Integer> validSeasons = seasonService.getAllValidSeasons();
       int expectedSize = seasonService.getMaxValidSeason() - FIRST_SEASON + 1;
 
-      assertThat(validSeasons).hasSize(expectedSize).containsEntry(0, FIRST_SEASON);
+      assertThat(validSeasons).hasSize(expectedSize).contains(FIRST_SEASON);
       assertThat(validSeasons.get(validSeasons.size() - 1))
           .isEqualTo(seasonService.getMaxValidSeason());
     }
@@ -298,8 +298,8 @@ class SeasonServiceTddTest {
       List<Integer> availableSeasons = seasonService.getAvailableSeasons();
       int expectedSize = TEST_CURRENT_SEASON - FIRST_SEASON + 1;
 
-      assertThat(availableSeasons).hasSize(expectedSize).containsEntry(0, FIRST_SEASON);
-      assertThat(availableSeasons).containsEntry(availableSeasons.size() - 1, TEST_CURRENT_SEASON);
+      assertThat(availableSeasons).hasSize(expectedSize).contains(FIRST_SEASON);
+      assertThat(availableSeasons).contains(TEST_CURRENT_SEASON);
 
       // Should not contain future seasons
       assertThat(availableSeasons).doesNotContain(TEST_CURRENT_SEASON + 1);
@@ -313,7 +313,7 @@ class SeasonServiceTddTest {
 
       // Verify ascending order
       for (int i = 0; i < seasons.size() - 1; i++) {
-        assertThat(seasons).containsEntry(i + 1, seasons.get(i) + 1);
+        assertThat(seasons.get(i + 1)).isEqualTo(seasons.get(i) + 1);
       }
     }
 
@@ -512,8 +512,9 @@ class SeasonServiceTddTest {
       List<Integer> allSeasons = seasonService.getAllValidSeasons();
 
       // Should generate large list without issues
-      assertThat(allSeasons).hasSizeGreaterThan(50).containsEntry(0, FIRST_SEASON);
-      assertThat(allSeasons).containsEntry(allSeasons.size() - 1, currentYear + 50);
+      assertThat(allSeasons).hasSizeGreaterThan(50);
+      assertThat(allSeasons.get(0)).isEqualTo(FIRST_SEASON);
+      assertThat(allSeasons.get(allSeasons.size() - 1)).isEqualTo(currentYear + 50);
     }
 
     @Test

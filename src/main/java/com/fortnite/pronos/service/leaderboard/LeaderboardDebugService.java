@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LeaderboardDebugService {
 
   private static final String SEASON_KEY = "season";
+  private static final int DEBUG_SAMPLE_SIZE = 3;
 
   private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
@@ -49,7 +50,7 @@ public class LeaderboardDebugService {
     debug.put(
         "rawScoresSample",
         rawScores.stream()
-            .limit(3)
+            .limit(DEBUG_SAMPLE_SIZE)
             .map(row -> Map.of("playerId", row[0], "totalPoints", row[1]))
             .toList());
 
@@ -72,7 +73,7 @@ public class LeaderboardDebugService {
     debug.put(
         "playersSample",
         playerRepository.findAll().stream()
-            .limit(3)
+            .limit(DEBUG_SAMPLE_SIZE)
             .map(
                 player ->
                     Map.of(
@@ -89,7 +90,7 @@ public class LeaderboardDebugService {
     debug.put(
         "scoresSample",
         scoreRepository.findAll().stream()
-            .limit(3)
+            .limit(DEBUG_SAMPLE_SIZE)
             .map(
                 score ->
                     Map.of(

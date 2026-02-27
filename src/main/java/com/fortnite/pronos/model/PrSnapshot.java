@@ -3,7 +3,6 @@ package com.fortnite.pronos.model;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -23,6 +22,7 @@ import jakarta.validation.constraints.Min;
 import org.hibernate.annotations.ColumnTransformer;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -50,9 +50,16 @@ public class PrSnapshot {
   @Column(name = "snapshot_date", nullable = false)
   private LocalDate snapshotDate;
 
+  @Column(nullable = false)
+  private UUID id;
+
   @Min(0)
   @Column(nullable = false)
   private Integer points;
+
+  @Min(0)
+  @Column(name = "pr_value", nullable = false)
+  private Integer prValue;
 
   @Min(1)
   @Column(nullable = false)
@@ -68,37 +75,23 @@ public class PrSnapshot {
   @PrePersist
   @PreUpdate
   void applyDefaults() {
+    if (id == null) {
+      id = UUID.randomUUID();
+    }
+    if (prValue == null) {
+      prValue = 0;
+    }
     if (collectedAt == null) {
       collectedAt = OffsetDateTime.now();
     }
   }
 
-  @Getter
-  @Setter
+  @Data
   @NoArgsConstructor
   @AllArgsConstructor
   public static class PrSnapshotId implements Serializable {
     private UUID player;
     private PrRegion region;
     private LocalDate snapshotDate;
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      PrSnapshotId that = (PrSnapshotId) o;
-      return Objects.equals(player, that.player)
-          && Objects.equals(region, that.region)
-          && Objects.equals(snapshotDate, that.snapshotDate);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(player, region, snapshotDate);
-    }
   }
 }

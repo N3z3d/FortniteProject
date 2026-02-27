@@ -48,14 +48,14 @@ export const FILTER_OPTIONS = {
   DEFAULT_SEARCH_TERM: '',
 
   REGIONS: [
-    { value: 'ALL', labelKey: 'draft.filters.allRegions', color: '#6c757d' },
-    { value: 'NAE', labelKey: 'draft.filters.naeRegion', color: '#007bff' },
-    { value: 'NAW', labelKey: 'draft.filters.nawRegion', color: '#17a2b8' },
-    { value: 'EU', labelKey: 'draft.filters.euRegion', color: '#28a745' },
-    { value: 'ASIA', labelKey: 'draft.filters.asiaRegion', color: '#ffc107' },
-    { value: 'OCE', labelKey: 'draft.filters.oceRegion', color: '#dc3545' },
-    { value: 'BRAZIL', labelKey: 'draft.filters.brazilRegion', color: '#fd7e14' },
-    { value: 'MENA', labelKey: 'draft.filters.menaRegion', color: '#6f42c1' }
+    { value: 'ALL', labelKey: 'draft.filters.allRegions', color: 'var(--color-region-all)' },
+    { value: 'NAE', labelKey: 'draft.filters.naeRegion', color: 'var(--color-region-nae)' },
+    { value: 'NAW', labelKey: 'draft.filters.nawRegion', color: 'var(--color-region-naw)' },
+    { value: 'EU', labelKey: 'draft.filters.euRegion', color: 'var(--color-region-eu)' },
+    { value: 'ASIA', labelKey: 'draft.filters.asiaRegion', color: 'var(--color-region-asia)' },
+    { value: 'OCE', labelKey: 'draft.filters.oceRegion', color: 'var(--color-region-oce)' },
+    { value: 'BRAZIL', labelKey: 'draft.filters.brazilRegion', color: 'var(--color-region-brazil)' },
+    { value: 'MENA', labelKey: 'draft.filters.menaRegion', color: 'var(--color-region-mena)' }
   ] as const,
 
   PERFORMANCE_LEVELS: [
@@ -90,11 +90,11 @@ export const PERFORMANCE_CONFIG = {
   
   // Couleurs associées aux performances
   PERFORMANCE_COLORS: {
-    EXCELLENT: '#28a745', // Vert
-    GOOD: '#17a2b8',      // Bleu clair
-    AVERAGE: '#ffc107',   // Jaune
-    POOR: '#dc3545',      // Rouge
-    UNKNOWN: '#6c757d'    // Gris
+    EXCELLENT: 'var(--color-success)', // Vert
+    GOOD: 'var(--color-info)',      // Bleu clair
+    AVERAGE: 'var(--color-warning)',   // Jaune
+    POOR: 'var(--color-danger)',      // Rouge
+    UNKNOWN: 'var(--color-neutral)'    // Gris
   },
   
   // Labels de performance - use translation keys
@@ -174,14 +174,14 @@ export const UI_CONFIG = {
   
   // Couleurs du thème
   THEME_COLORS: {
-    PRIMARY: '#007bff',
-    SECONDARY: '#6c757d',
-    SUCCESS: '#28a745',
-    WARNING: '#ffc107',
-    DANGER: '#dc3545',
-    INFO: '#17a2b8',
-    LIGHT: '#f8f9fa',
-    DARK: '#343a40'
+    PRIMARY: 'var(--color-primary)',
+    SECONDARY: 'var(--color-neutral)',
+    SUCCESS: 'var(--color-success)',
+    WARNING: 'var(--color-warning)',
+    DANGER: 'var(--color-danger)',
+    INFO: 'var(--color-info)',
+    LIGHT: 'var(--color-light)',
+    DARK: 'var(--color-dark)'
   },
   
   // Breakpoints responsive
@@ -301,14 +301,14 @@ export const REGION_LABELS = REGION_LABEL_KEYS;
 
 // Couleurs pour les statuts
 export const STATUS_COLORS = {
-  NOT_STARTED: '#6c757d',
-  IN_PROGRESS: '#007bff',
-  PAUSED: '#ffc107',
-  COMPLETED: '#28a745',
-  CANCELLED: '#dc3545',
-  ERROR: '#dc3545',
-  CREATED: '#6c757d', // Alias pour NOT_STARTED
-  ACTIVE: '#007bff'   // Alias pour IN_PROGRESS
+  NOT_STARTED: 'var(--color-neutral)',
+  IN_PROGRESS: 'var(--color-primary)',
+  PAUSED: 'var(--color-warning)',
+  COMPLETED: 'var(--color-success)',
+  CANCELLED: 'var(--color-danger)',
+  ERROR: 'var(--color-danger)',
+  CREATED: 'var(--color-neutral)', // Alias pour NOT_STARTED
+  ACTIVE: 'var(--color-primary)'   // Alias pour IN_PROGRESS
 } as const;
 
 // Status label translation keys
@@ -325,3 +325,4 @@ export const STATUS_LABEL_KEYS = {
 
 // Legacy alias for backwards compatibility (with index signature for dynamic access)
 export const STATUS_LABELS: Record<string, string> = STATUS_LABEL_KEYS;
+

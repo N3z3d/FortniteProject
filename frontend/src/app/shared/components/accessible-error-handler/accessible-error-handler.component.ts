@@ -6,6 +6,7 @@ import { AccessibilityAnnouncerService } from '../../services/accessibility-anno
 import { FocusManagementService } from '../../services/focus-management.service';
 import { BrowserNavigationService } from '../../services/browser-navigation.service';
 import { TranslationService } from '../../../core/services/translation.service';
+import { secureRandomId } from '../../utils/secure-random.util';
 
 export interface AccessibleErrorInfo {
   title: string;
@@ -38,8 +39,8 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
 
   currentError: AccessibleErrorInfo | null = null;
   detailsExpanded = false;
-  errorTitleId = 'error-title-' + Math.random().toString(36).slice(2, 11);
-  errorDescriptionId = 'error-desc-' + Math.random().toString(36).slice(2, 11);
+  errorTitleId = `error-title-${secureRandomId()}`;
+  errorDescriptionId = `error-desc-${secureRandomId()}`;
 
   private destroy$ = new Subject<void>();
 
@@ -144,11 +145,22 @@ export class AccessibleErrorHandlerComponent implements OnInit, OnDestroy {
   }
 
   hasDetailedInfo(): boolean {
-    return !!(this.currentError?.status ||
-              this.currentError?.code ||
-              this.currentError?.path ||
-              this.currentError?.requestId ||
-              this.currentError?.validationErrors);
+    if (!this.currentError) {
+      return false;
+    }
+    if (this.currentError.status) {
+      return true;
+    }
+    if (this.currentError.code) {
+      return true;
+    }
+    if (this.currentError.path) {
+      return true;
+    }
+    if (this.currentError.requestId) {
+      return true;
+    }
+    return !!this.currentError.validationErrors;
   }
 
   getValidationErrorsArray(): Array<{field: string; message: string}> {

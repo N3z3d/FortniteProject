@@ -5,8 +5,10 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
   private static final String KEY = "supabase";
   private static final int CURRENT_SEASON = 2025;
   private static final String DEFAULT_TRANCHE = "1-5";
+  private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]");
 
   private final SupabaseProperties supabaseProperties;
   private final SupabaseTableService supabaseTableService;
@@ -104,7 +107,7 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     try {
       return UUID.fromString(supabaseProperties.getSeedGameId());
     } catch (IllegalArgumentException ex) {
-      log.warn("Invalid supabase seed game id: {}", supabaseProperties.getSeedGameId());
+      log.warn("Invalid supabase seed game id: {}", supabaseProperties.getSeedGameId(), ex);
       return null;
     }
   }
@@ -348,7 +351,8 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
       return com.fortnite.pronos.model.Player.Region.EU;
     }
     try {
-      return com.fortnite.pronos.model.Player.Region.valueOf(regionStr.toUpperCase().trim());
+      String normalizedRegion = regionStr.trim().toUpperCase(Locale.ROOT);
+      return com.fortnite.pronos.model.Player.Region.valueOf(normalizedRegion);
     } catch (IllegalArgumentException e) {
       return com.fortnite.pronos.model.Player.Region.EU;
     }
@@ -358,7 +362,8 @@ public class SupabaseSeedDataProviderService implements SeedDataProvider {
     if (nickname == null || nickname.isBlank()) {
       return "unknown_user";
     }
-    return nickname.toLowerCase().replaceAll("[^a-z0-9]", "_");
+    String normalizedNickname = nickname.toLowerCase(Locale.ROOT);
+    return NON_ALPHANUMERIC.matcher(normalizedNickname).replaceAll("_");
   }
 
   private record PrimaryTables(

@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class LeaderboardStatsService {
 
+  private static final int DEFAULT_SEASON = 2025;
   private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
   private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
@@ -30,7 +31,7 @@ public class LeaderboardStatsService {
   /** Obtenir les statistiques du leaderboard - VERSION OPTIMISÉE SANS N+1 */
   @Cacheable(value = "gameStats", key = "'stats_default'")
   public LeaderboardStatsDTO getLeaderboardStats() {
-    return getLeaderboardStats(2025); // Utiliser saison 2025 par défaut, cohérent avec le front-end
+    return getLeaderboardStats(DEFAULT_SEASON);
   }
 
   /** Obtenir les statistiques du leaderboard pour une saison spécifique */
@@ -65,7 +66,7 @@ public class LeaderboardStatsService {
     }
 
     // Calculer la moyenne des points par équipe
-    double averagePoints = totalTeams > 0 ? (double) totalPoints / totalTeams : 0.0;
+    double averagePoints = totalTeams > 0 ? ((double) totalPoints / totalTeams) : 0.0;
 
     log.info(
         "[OK] Stats calculees pour saison {} - {} equipes, {} joueurs total, {} points total",
@@ -113,7 +114,8 @@ public class LeaderboardStatsService {
     List<com.fortnite.pronos.model.Player> gamePlayers = playerRepository.findAllById(playerIds);
     int totalPlayers = gamePlayers.size();
 
-    Map<UUID, Integer> playerPointsMap = scoreRepository.findAllBySeasonGroupedByPlayer(2025);
+    Map<UUID, Integer> playerPointsMap =
+        scoreRepository.findAllBySeasonGroupedByPlayer(DEFAULT_SEASON);
 
     int totalTeams = teams.size();
     long totalPoints = 0;
@@ -128,7 +130,7 @@ public class LeaderboardStatsService {
       regionPoints.merge(region, points, Long::sum);
     }
 
-    double averagePoints = totalTeams > 0 ? (double) totalPoints / totalTeams : 0.0;
+    double averagePoints = totalTeams > 0 ? ((double) totalPoints / totalTeams) : 0.0;
 
     log.info(
         "[OK] Stats calculees pour game {} - {} equipes, {} joueurs, {} points",

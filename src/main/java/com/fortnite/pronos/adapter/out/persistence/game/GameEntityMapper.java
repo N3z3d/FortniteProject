@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameRegionRule;
 import com.fortnite.pronos.domain.game.model.GameStatus;
@@ -55,6 +56,12 @@ public class GameEntityMapper {
     entity.setMaxTradesPerTeam(domain.getMaxTradesPerTeam());
     entity.setTradeDeadline(domain.getTradeDeadline());
     entity.setCurrentSeason(domain.getCurrentSeason());
+    entity.setDraftMode(toEntityDraftMode(domain.getDraftMode()));
+    entity.setTeamSize(domain.getTeamSize());
+    entity.setTrancheSize(domain.getTrancheSize());
+    entity.setTranchesEnabled(domain.isTranchesEnabled());
+    entity.setCompetitionStart(domain.getCompetitionStart());
+    entity.setCompetitionEnd(domain.getCompetitionEnd());
     entity.setCreator(creator);
 
     if (domain.getDraftId() != null) {
@@ -211,7 +218,13 @@ public class GameEntityMapper {
         safeBool(entity.getTradingEnabled()),
         safeInt(entity.getMaxTradesPerTeam(), 5),
         entity.getTradeDeadline(),
-        safeInt(entity.getCurrentSeason(), java.time.Year.now().getValue()));
+        safeInt(entity.getCurrentSeason(), java.time.Year.now().getValue()),
+        toDomainDraftMode(entity.getDraftMode()),
+        safeInt(entity.getTeamSize(), 5),
+        safeInt(entity.getTrancheSize(), 10),
+        safeBool(entity.getTranchesEnabled()),
+        entity.getCompetitionStart(),
+        entity.getCompetitionEnd());
   }
 
   private List<GameParticipant> ensureCreatorParticipant(
@@ -305,6 +318,22 @@ public class GameEntityMapper {
       return null;
     }
     return GameStatus.valueOf(entityStatus.name());
+  }
+
+  /** Maps domain DraftMode to JPA DraftMode. */
+  public com.fortnite.pronos.model.DraftMode toEntityDraftMode(DraftMode domainDraftMode) {
+    if (domainDraftMode == null) {
+      return com.fortnite.pronos.model.DraftMode.SNAKE;
+    }
+    return com.fortnite.pronos.model.DraftMode.valueOf(domainDraftMode.name());
+  }
+
+  /** Maps JPA DraftMode to domain DraftMode. */
+  public DraftMode toDomainDraftMode(com.fortnite.pronos.model.DraftMode entityDraftMode) {
+    if (entityDraftMode == null) {
+      return DraftMode.SNAKE;
+    }
+    return DraftMode.valueOf(entityDraftMode.name());
   }
 
   /** Maps domain PlayerRegion to JPA Player.Region. */

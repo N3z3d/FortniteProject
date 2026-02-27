@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service.seed;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -21,6 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"java:S1488"})
 public class TeamSeedService {
 
+  private static final int MIN_FALLBACK_PLAYERS = 3;
+  private static final int MIN_FALLBACK_PARTICIPANTS = 3;
+  private static final int MAX_FALLBACK_TEAMS = 3;
+  private static final int DEFAULT_SEASON = 2025;
+
   private final com.fortnite.pronos.repository.TeamRepository teamRepository;
   private final com.fortnite.pronos.repository.PlayerRepository playerRepository;
 
@@ -32,7 +38,8 @@ public class TeamSeedService {
    * @return list of saved teams
    */
   public List<com.fortnite.pronos.model.Team> createTeamsFromCsvAssignments(
-      List<com.fortnite.pronos.model.User> users, MockDataGeneratorService.MockDataSet mockData) {
+      Collection<com.fortnite.pronos.model.User> users,
+      MockDataGeneratorService.MockDataSet mockData) {
 
     if (mockData.total() == 0) {
       log.warn("No mock data available, using fallback method");
@@ -57,7 +64,7 @@ public class TeamSeedService {
 
   private com.fortnite.pronos.model.Team createTeamForPronostiqueur(
       String pronostiqueur,
-      List<com.fortnite.pronos.model.User> users,
+      Collection<com.fortnite.pronos.model.User> users,
       MockDataGeneratorService.MockDataSet mockData) {
 
     List<MockDataGeneratorService.PlayerWithScore> playerDataList =
@@ -68,31 +75,33 @@ public class TeamSeedService {
       return null;
     }
 
-    com.fortnite.pronos.model.User owner =
-        users.stream()
-            .filter(u -> u.getUsername().equalsIgnoreCase(pronostiqueur))
-            .findFirst()
-            .orElse(null);
-
-    if (owner == null) {
+    com.fortnite.pronos.model.Team team = null;
+    com.fortnite.pronos.model.User owner = findOwnerByUsername(users, pronostiqueur);
+    if (owner != null) {
+      List<com.fortnite.pronos.model.Player> assignedPlayers = findPlayersForTeam(playerDataList);
+      if (assignedPlayers.isEmpty()) {
+        log.warn("No players found in DB for {}, team skipped", pronostiqueur);
+      } else {
+        String teamName = "Equipe " + pronostiqueur;
+        team = createTeam(teamName, owner, assignedPlayers);
+        log.info("{} created with {} players assigned from CSV", teamName, assignedPlayers.size());
+      }
+    } else {
       log.warn("User not found for pronosticator '{}', team skipped", pronostiqueur);
-      return null;
     }
-
-    List<com.fortnite.pronos.model.Player> assignedPlayers = findPlayersForTeam(playerDataList);
-    if (assignedPlayers.isEmpty()) {
-      log.warn("No players found in DB for {}, team skipped", pronostiqueur);
-      return null;
-    }
-
-    String teamName = "Equipe " + pronostiqueur;
-    com.fortnite.pronos.model.Team team = createTeam(teamName, owner, assignedPlayers);
-    log.info("{} created with {} players assigned from CSV", teamName, assignedPlayers.size());
     return team;
   }
 
+  private com.fortnite.pronos.model.User findOwnerByUsername(
+      Collection<com.fortnite.pronos.model.User> users, String username) {
+    return users.stream()
+        .filter(u -> u.getUsername().equalsIgnoreCase(username))
+        .findFirst()
+        .orElse(null);
+  }
+
   private List<com.fortnite.pronos.model.Player> findPlayersForTeam(
-      List<MockDataGeneratorService.PlayerWithScore> playerDataList) {
+      Collection<MockDataGeneratorService.PlayerWithScore> playerDataList) {
 
     List<com.fortnite.pronos.model.Player> assignedPlayers = new ArrayList<>();
     for (MockDataGeneratorService.PlayerWithScore playerData : playerDataList) {
@@ -116,11 +125,11 @@ public class TeamSeedService {
    * @return list of saved teams
    */
   public List<com.fortnite.pronos.model.Team> createFallbackTeams(
-      List<com.fortnite.pronos.model.User> users) {
+      Collection<com.fortnite.pronos.model.User> users) {
     log.info("Using fallback method to create teams");
 
     List<com.fortnite.pronos.model.Player> allPlayers = playerRepository.findAll();
-    if (allPlayers.size() < 3) {
+    if (allPlayers.size() < MIN_FALLBACK_PLAYERS) {
       log.warn("Not enough players for fallback teams");
       return new ArrayList<>();
     }
@@ -130,7 +139,7 @@ public class TeamSeedService {
             .filter(u -> u.getRole() == com.fortnite.pronos.model.User.UserRole.USER)
             .toList();
 
-    if (participants.size() < 3) {
+    if (participants.size() < MIN_FALLBACK_PARTICIPANTS) {
       log.warn("Not enough participant users for teams");
       return new ArrayList<>();
     }
@@ -138,7 +147,7 @@ public class TeamSeedService {
     List<com.fortnite.pronos.model.Team> teams = new ArrayList<>();
     int playersPerTeam = Math.max(1, allPlayers.size() / participants.size());
 
-    for (int i = 0; i < Math.min(participants.size(), 3); i++) {
+    for (int i = 0; i < Math.min(participants.size(), MAX_FALLBACK_TEAMS); i++) {
       com.fortnite.pronos.model.User owner = participants.get(i);
       String teamName = "Equipe " + owner.getUsername();
 
@@ -160,21 +169,28 @@ public class TeamSeedService {
   private com.fortnite.pronos.model.Team createTeam(
       String name,
       com.fortnite.pronos.model.User owner,
-      List<com.fortnite.pronos.model.Player> players) {
+      Collection<com.fortnite.pronos.model.Player> players) {
     com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
     team.setOwner(owner);
     team.setName(name);
-    team.setSeason(2025);
+    team.setSeason(DEFAULT_SEASON);
 
-    for (int i = 0; i < players.size(); i++) {
-      com.fortnite.pronos.model.Player player = players.get(i);
-      if (player.getId() != null) {
-        player = ((PlayerRepositoryPort) playerRepository).findById(player.getId()).orElse(player);
-      }
-      team.addPlayer(player, i + 1);
+    int position = 1;
+    for (com.fortnite.pronos.model.Player player : players) {
+      com.fortnite.pronos.model.Player managedPlayer = resolveManagedPlayer(player);
+      team.addPlayer(managedPlayer, position);
+      position = position + 1;
     }
 
     return team;
+  }
+
+  private com.fortnite.pronos.model.Player resolveManagedPlayer(
+      com.fortnite.pronos.model.Player player) {
+    if (player.getId() == null) {
+      return player;
+    }
+    return ((PlayerRepositoryPort) playerRepository).findById(player.getId()).orElse(player);
   }
 
   /** Returns all teams in the repository. */

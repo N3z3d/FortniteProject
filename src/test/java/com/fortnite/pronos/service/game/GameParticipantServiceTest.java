@@ -208,6 +208,7 @@ class GameParticipantServiceTest {
     @Test
     @DisplayName("finds game by invitation code when provided")
     void findsGameByInvitationCode() {
+      game.setInvitationCode("TESTCODE"); // valid: no expiry → permanent
       JoinGameRequest request = new JoinGameRequest();
       request.setInvitationCode("TESTCODE");
 

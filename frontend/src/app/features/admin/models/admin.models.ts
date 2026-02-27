@@ -65,6 +65,11 @@ export interface AlertThresholds {
   criticalErrorsLast24Hours: number;
 }
 
+export interface GeoDistributionEntry {
+  country: string;
+  visitCount: number;
+}
+
 export interface VisitAnalytics {
   pageViews: number;
   uniqueVisitors: number;
@@ -73,6 +78,7 @@ export interface VisitAnalytics {
   bounceRatePercent: number;
   topPages: VisitPageView[];
   topNavigationFlows: VisitNavigationFlow[];
+  topCountries?: GeoDistributionEntry[];
 }
 
 export interface VisitPageView {
@@ -98,9 +104,77 @@ export interface HttpInfo {
   errorRate: number;
 }
 
+export interface RealTimeActivePage {
+  path: string;
+  visitorCount: number;
+}
+
+export interface RealTimeAnalytics {
+  activeUsersNow: number;
+  activeSessionsNow: number;
+  activePagesNow: RealTimeActivePage[];
+}
+
+export interface DbTableInfo {
+  tableName: string;
+  entityName: string;
+  rowCount: number;
+  sizeDescription: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message: string;
   timestamp: string;
+}
+
+export type IdentityStatus = 'UNRESOLVED' | 'RESOLVED' | 'REJECTED';
+
+export interface PlayerIdentityEntry {
+  id: string | null;
+  playerId: string;
+  playerUsername: string;
+  playerRegion: string;
+  epicId: string | null;
+  status: IdentityStatus;
+  confidenceScore: number | null;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+export interface PipelineCount {
+  unresolvedCount: number;
+  resolvedCount: number;
+}
+
+export interface ResolvePlayerRequest {
+  playerId: string;
+  epicId: string;
+}
+
+export interface RejectPlayerRequest {
+  playerId: string;
+  reason?: string;
+}
+
+export type IncidentType = 'CHEATING' | 'ABUSE' | 'BUG' | 'DISPUTE' | 'OTHER';
+
+export interface IncidentEntry {
+  id: string;
+  gameId: string;
+  gameName: string;
+  reporterId: string;
+  reporterUsername: string;
+  incidentType: IncidentType;
+  description: string;
+  timestamp: string;
+}
+
+export interface IncidentReportRequest {
+  incidentType: IncidentType;
+  description: string;
 }

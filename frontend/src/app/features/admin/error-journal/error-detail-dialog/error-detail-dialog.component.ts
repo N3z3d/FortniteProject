@@ -60,7 +60,7 @@ import { ErrorEntry } from '../../models/error-journal.models';
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #ff6b6b;
+      color: var(--color-admin-danger-soft);
     }
     .dialog-content {
       min-width: 500px;
@@ -87,13 +87,13 @@ import { ErrorEntry } from '../../models/error-journal.models';
       word-break: break-word;
     }
     .type-value {
-      color: #ff6b6b;
+      color: var(--color-admin-danger-soft);
       font-weight: 600;
     }
     .code-value {
       font-family: monospace;
       font-size: 0.9rem;
-      color: #ffd700;
+      color: var(--color-achievement);
     }
     .status-badge {
       display: inline-block;
@@ -104,15 +104,15 @@ import { ErrorEntry } from '../../models/error-journal.models';
     }
     .status-4xx {
       background: rgba(255, 152, 0, 0.2);
-      color: #ff9800;
+      color: var(--color-admin-warning);
     }
     .status-5xx {
       background: rgba(244, 67, 54, 0.2);
-      color: #f44336;
+      color: var(--color-admin-danger);
     }
     .status-other {
       background: rgba(158, 158, 158, 0.2);
-      color: #9e9e9e;
+      color: var(--color-admin-muted);
     }
     .stack-trace-section {
       margin-top: 16px;
@@ -147,3 +147,4 @@ export class ErrorDetailDialogComponent {
     return 'status-other';
   }
 }
+

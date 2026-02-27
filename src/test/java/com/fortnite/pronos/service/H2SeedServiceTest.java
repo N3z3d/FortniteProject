@@ -24,6 +24,7 @@ import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
+import com.fortnite.pronos.model.Team;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.PlayerRepository;
 import com.fortnite.pronos.repository.TeamRepository;
@@ -42,6 +43,7 @@ class H2SeedServiceTest {
   @Captor private ArgumentCaptor<User> userCaptor;
   @Captor private ArgumentCaptor<List<Player>> playersCaptor;
   @Captor private ArgumentCaptor<Game> gameCaptor;
+  @Captor private ArgumentCaptor<Team> teamCaptor;
 
   @BeforeEach
   void setUp() {
@@ -160,6 +162,13 @@ class H2SeedServiceTest {
     assertThat(game.getName()).isEqualTo("H2 Test Game");
     assertThat(game.getParticipants()).hasSize(4);
     assertThat(game.getRegionRules()).isNotEmpty();
+
+    verify(teamRepository, times(4)).save(teamCaptor.capture());
+    List<Team> teams = teamCaptor.getAllValues();
+    assertThat(teams)
+        .hasSize(4)
+        .allMatch(team -> team.getSeason() == 2025)
+        .allMatch(team -> team.getPlayers().size() <= 5);
   }
 
   @Test

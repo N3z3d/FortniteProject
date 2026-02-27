@@ -20,6 +20,7 @@ public class VisitAnalyticsDto {
   private double bounceRatePercent;
   private List<PageViewDto> topPages;
   private List<NavigationFlowDto> topNavigationFlows;
+  private List<GeoDistributionDto> topCountries;
 
   @Data
   @Builder
@@ -38,5 +39,14 @@ public class VisitAnalyticsDto {
     private String fromPath;
     private String toPath;
     private long transitions;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class GeoDistributionDto {
+    private String country;
+    private long visitCount;
   }
 }

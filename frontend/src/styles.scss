@@ -4,6 +4,8 @@
 @use 'app/shared/styles/mixins' as *;
 @use 'app/shared/styles/typography';
 @use 'app/shared/styles/accessibility-enhancements';
+@use 'app/shared/styles/z-index' as z;
+@use 'app/shared/styles/tokens';
 
 // ============================================
 // NEXUS FORTNITE COLOR SYSTEM
@@ -112,7 +114,7 @@
   --value-negative-rgb: 248, 113, 113;
   --value-neutral: var(--nexus-gold);
   --value-neutral-rgb: var(--nexus-gold-rgb);
-  
+
   // === CARD SHADOWS ===
   --shadow-trading-card: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-trading-card-hover: 0 16px 48px rgba(0, 0, 0, 0.5);
@@ -127,14 +129,18 @@
   --radius-full: 9999px;
   
   // === SPACING ===
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
+  // Core spacing tokens (xs->xl) come from shared/styles/_tokens.scss.
   --space-2xl: 48px;
   --space-3xl: 64px;
   
+  // === Z-INDEX SCALE (CSS custom properties — mirrors _z-index.scss SCSS vars) ===
+  --z-nav:      100;
+  --z-timer:    200;
+  --z-modal:    500;
+  --z-toast:    800;
+  --z-critical: 9000;
+  --z-reserved: 9999;
+
   // === ANIMATIONS ===
   --transition-fast: 0.15s ease-out;
   --transition-normal: 0.3s ease-out;
@@ -144,6 +150,23 @@
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+// ============================================
+// CSS CUSTOM PROPERTIES — TYPED (UX-000a)
+// Enables smooth HSL color interpolation for
+// the draft timer without the RGB brown artifact
+// ============================================
+
+@property --timer-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #ffffff;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1.0); }
+  50%       { transform: scale(1.05); }
 }
 
 // Base Styling
@@ -841,6 +864,17 @@ a:not(.mat-button):not(.nav-link) {
   transform: translateX(-50%) translateY(-5px);
 }
 
+/* ===== TABULAR NUMBERS — global rank/PR alignment (UX-000b) ===== */
+/* Ensures rank digits stay aligned in columns regardless of value */
+.rank-badge,
+.rank-cell,
+.rank-display,
+.rank-indicator,
+.rank-number,
+.suggestion-rank {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Smooth reveal animation */
 .reveal-animation {
   opacity: 0;
@@ -1409,3 +1443,4 @@ a:not(.mat-button):not(.nav-link) {
     }
   }
 }
+

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fortnite.pronos.dto.admin.AdminAlertDto;
 import com.fortnite.pronos.dto.admin.AdminAlertThresholdsDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
+import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
@@ -93,6 +94,12 @@ public class AdminDashboardController {
   public ResponseEntity<ApiResponse<SystemMetricsDto>> getSystemMetrics() {
     log.info("Admin: fetching system metrics");
     return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getSystemMetrics()));
+  }
+
+  @GetMapping("/dashboard/realtime")
+  public ResponseEntity<ApiResponse<RealTimeAnalyticsDto>> getRealTimeAnalytics() {
+    log.info("Admin: fetching real-time analytics snapshot");
+    return ResponseEntity.ok(ApiResponse.success(adminVisitAnalyticsService.getRealTimeSnapshot()));
   }
 
   @GetMapping("/dashboard/visits")

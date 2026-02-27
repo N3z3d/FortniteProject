@@ -104,7 +104,7 @@ public class ScoreCalculationService {
     List<Integer> points = scores.stream().map(com.fortnite.pronos.model.Score::getPoints).toList();
 
     // CrÃ©er le PlayerScore avec statistiques
-    return PlayerScore.fromScores(
+    return TeamScoreDto.fromScores(
         player.getId(), player.getNickname(), player.getRegion().name(), points);
   }
 

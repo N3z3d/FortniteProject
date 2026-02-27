@@ -154,7 +154,14 @@ class JwtServiceTest {
   }
 
   @Test
-  @DisplayName("Devrait être thread-safe pour la génération simultanée")
+  @DisplayName("Devrait definir des constantes pour les longueurs minimales de secret")
+  void shouldDefineSecretLengthConstants() {
+    assertDoesNotThrow(() -> JwtService.class.getDeclaredField("MINIMUM_PRODUCTION_SECRET_LENGTH"));
+    assertDoesNotThrow(() -> JwtService.class.getDeclaredField("MINIMUM_SIGNING_KEY_LENGTH"));
+  }
+
+  @Test
+  @DisplayName("Devrait etre thread-safe pour la generation simultanee")
   void shouldBeThreadSafeForConcurrentGeneration() throws InterruptedException {
     int threadCount = 10;
     Thread[] threads = new Thread[threadCount];

@@ -1,5 +1,6 @@
 package com.fortnite.pronos.domain.port.out;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,4 +40,6 @@ public interface UserRepositoryPort {
   List<User> findAll();
 
   void deleteAllInBatch();
+
+  void softDelete(UUID userId, LocalDateTime deletedAt);
 }

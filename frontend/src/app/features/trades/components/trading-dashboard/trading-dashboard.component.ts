@@ -11,6 +11,7 @@ import { TradingService, TradeOffer, TradeStats } from '../../services/trading.s
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { LoggerService } from '../../../../core/services/logger.service';
+import { secureRandomFloat, secureRandomPick } from '../../../../shared/utils/secure-random.util';
 
 @Component({
   selector: 'app-trading-dashboard',
@@ -472,10 +473,10 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     for (let i = 0; i < 50; i++) {
       const confetti = document.createElement('div');
       confetti.className = 'confetti';
-      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      confetti.style.left = Math.random() * 100 + 'vw';
-      confetti.style.animationDelay = Math.random() * 3 + 's';
-      confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+      confetti.style.backgroundColor = secureRandomPick(colors);
+      confetti.style.left = `${secureRandomFloat() * 100}vw`;
+      confetti.style.animationDelay = `${secureRandomFloat() * 3}s`;
+      confetti.style.animationDuration = `${secureRandomFloat() * 3 + 2}s`;
       confettiContainer.appendChild(confetti);
     }
 

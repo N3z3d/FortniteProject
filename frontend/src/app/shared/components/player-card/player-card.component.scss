@@ -1,0 +1,142 @@
+@import '../../../shared/styles/mixins';
+
+// ============================================================
+// PLAYER CARD — dual mode draft(48px) / browse(80px)
+// ============================================================
+
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-medium);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+  position: relative;
+  user-select: none;
+
+  // ===== MODES =====
+
+  &--draft {
+    height: 48px;
+  }
+
+  &--browse {
+    height: 80px;
+    flex-wrap: wrap;
+    padding: var(--space-sm) var(--space-md);
+    align-items: flex-start;
+    align-content: center;
+  }
+
+  // ===== INTERACTION STATES =====
+
+  &:hover:not(&--taken) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-action) !important;
+    outline-offset: 2px !important;
+  }
+
+  &--selected {
+    border-color: var(--color-action);
+    background: rgba(245, 166, 35, 0.08);
+  }
+
+  &--taken {
+    opacity: 0.4;
+    cursor: default;
+    color: var(--color-taken);
+
+    .player-name,
+    .player-rank,
+    .player-region {
+      color: var(--color-taken);
+    }
+  }
+
+  &--recommended {
+    border-color: var(--color-achievement);
+  }
+}
+
+// ===== BADGE =====
+
+.badge-recommended {
+  color: var(--color-achievement);
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+// ===== RANK =====
+
+.player-rank {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+// ===== NAME — esport signature =====
+
+.player-name {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ===== REGION =====
+
+.player-region {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+// ===== SPARKLINE SLOT =====
+
+.sparkline-slot {
+  width: 100%;
+  height: 24px;
+  flex-basis: 100%;
+  // SparklineChartComponent plugged in UX-004a
+}
+
+// ===== REPORT BUTTON (taken state only) =====
+
+.btn-report {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-taken) !important;
+  border-color: var(--color-taken) !important;
+  opacity: 1; // override parent opacity for button visibility
+  position: relative;
+  z-index: 1;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-taken) !important;
+  }
+}
+
+// ===== RESPONSIVE =====
+
+@media (prefers-reduced-motion: reduce) {
+  .player-card {
+    transition: none;
+  }
+}

@@ -76,8 +76,8 @@ class GameRepositoryTest {
 
     // Then
     assertThat(foundGame).isPresent();
-    assertThat(foundGame.getName()).isEqualTo("Test Game 1");
-    assertThat(foundGame.getCreator()).isEqualTo(testCreator);
+    assertThat(foundGame.orElseThrow().getName()).isEqualTo("Test Game 1");
+    assertThat(foundGame.orElseThrow().getCreator()).isEqualTo(testCreator);
   }
 
   @Test

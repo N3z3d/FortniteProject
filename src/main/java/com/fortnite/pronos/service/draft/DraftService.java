@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service.draft;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"java:S1126"})
 public class DraftService implements DraftUseCase {
 
+  private static final int DEFAULT_ROUNDS_WITHOUT_REGION_RULES = 10;
+  private static final int SNAKE_ROUND_MODULO = 2;
+
   private final DraftRepositoryPort draftRepository;
   private final DraftDomainRepositoryPort draftDomainRepository;
   private final GameRepositoryPort gameRepository;
@@ -68,7 +72,7 @@ public class DraftService implements DraftUseCase {
   private int calculateTotalRounds(com.fortnite.pronos.model.Game game) {
     if (game.getRegionRules() == null || game.getRegionRules().isEmpty()) {
       // Par dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©faut : 10 rounds si pas de rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨gles
-      return 10;
+      return DEFAULT_ROUNDS_WITHOUT_REGION_RULES;
     }
 
     // Somme des joueurs max par rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gion
@@ -98,7 +102,7 @@ public class DraftService implements DraftUseCase {
   /** Obtient le participant actuel qui doit picker */
   public com.fortnite.pronos.model.GameParticipant getCurrentPicker(
       com.fortnite.pronos.model.Draft draft,
-      List<com.fortnite.pronos.model.GameParticipant> participants) {
+      Collection<com.fortnite.pronos.model.GameParticipant> participants) {
     int currentPosition = calculateCurrentPosition(draft, participants.size());
 
     return participants.stream()
@@ -115,7 +119,7 @@ public class DraftService implements DraftUseCase {
    * utilisation dans les methodes de construction de reponse.
    */
   public int calculateCurrentPosition(com.fortnite.pronos.model.Draft draft, int participantCount) {
-    boolean isReverseRound = draft.getCurrentRound() % 2 == 0;
+    boolean isReverseRound = draft.getCurrentRound() % SNAKE_ROUND_MODULO == 0;
 
     if (isReverseRound) {
       // Round pair : ordre inverse (snake draft)
@@ -300,24 +304,17 @@ public class DraftService implements DraftUseCase {
   public boolean isUserTurnForGame(UUID gameId, UUID userId) {
     List<com.fortnite.pronos.model.GameParticipant> participants =
         getParticipantsOrderedByDraftOrder(gameId);
-    if (participants.isEmpty()) {
+
+    Optional<com.fortnite.pronos.model.Game> gameOpt =
+        participants.isEmpty() ? Optional.empty() : gameRepository.findById(gameId);
+    if (participants.isEmpty() || gameOpt.isEmpty()) {
       return false;
     }
 
-    // Get the game and its draft to determine current position
-    Optional<com.fortnite.pronos.model.Game> gameOpt = gameRepository.findById(gameId);
-    if (gameOpt.isEmpty()) {
-      return false;
-    }
-
-    Optional<com.fortnite.pronos.model.Draft> draftOpt = findDraftByGame(gameOpt.get());
-    final int snakePosition;
-    if (draftOpt.isPresent()) {
-      com.fortnite.pronos.model.Draft draft = draftOpt.get();
-      snakePosition = calculateCurrentPosition(draft, participants.size());
-    } else {
-      snakePosition = 1; // Default to first participant
-    }
+    int snakePosition =
+        findDraftByGame(gameOpt.get())
+            .map(draft -> calculateCurrentPosition(draft, participants.size()))
+            .orElse(1);
 
     // Snake draft: find participant by their draftOrder matching snake position
     com.fortnite.pronos.model.GameParticipant currentParticipant =
@@ -325,12 +322,8 @@ public class DraftService implements DraftUseCase {
             .filter(p -> p.getDraftOrder() == snakePosition)
             .findFirst()
             .orElse(participants.get(0));
-
-    if (!participantHasUserId(currentParticipant)) {
-      return false;
-    }
-
-    return participantUserId(currentParticipant).equals(userId);
+    UUID currentParticipantUserId = participantUserId(currentParticipant);
+    return currentParticipantUserId != null && currentParticipantUserId.equals(userId);
   }
 
   /** Avance le draft et construit la reponse pour le participant suivant */
@@ -467,10 +460,6 @@ public class DraftService implements DraftUseCase {
 
   private UUID participantUserId(com.fortnite.pronos.model.GameParticipant participant) {
     return participant.getUserId();
-  }
-
-  private boolean participantHasUserId(com.fortnite.pronos.model.GameParticipant participant) {
-    return participantUserId(participant) != null;
   }
 
   private UUID gameIdOf(com.fortnite.pronos.model.Draft draft) {

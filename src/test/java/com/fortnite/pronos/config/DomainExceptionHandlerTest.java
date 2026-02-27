@@ -9,9 +9,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.exception.DraftIncompleteException;
+import com.fortnite.pronos.exception.InvalidEpicIdException;
 import com.fortnite.pronos.exception.InvalidSwapException;
 import com.fortnite.pronos.exception.NotYourTurnException;
 import com.fortnite.pronos.exception.PlayerAlreadySelectedException;
+import com.fortnite.pronos.exception.PlayerIdentityNotFoundException;
 import com.fortnite.pronos.exception.TeamNotFoundException;
 import com.fortnite.pronos.exception.UnauthorizedAccessException;
 import com.fortnite.pronos.service.admin.ErrorJournalService;
@@ -38,7 +40,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(400);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("BUSINESS_RULE_VIOLATION");
-    assertThat(response.getMessage()).isEqualTo("Trade value exceeds cap");
+    assertThat(response.getBody().getMessage()).isEqualTo("Trade value exceeds cap");
     assertThat(response.getBody().getError()).isEqualTo("Business Rule Violation");
   }
 
@@ -52,7 +54,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(403);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("UNAUTHORIZED_ACCESS");
-    assertThat(response.getMessage()).isEqualTo("Not allowed to access game");
+    assertThat(response.getBody().getMessage()).isEqualTo("Not allowed to access game");
   }
 
   @Test
@@ -65,7 +67,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(404);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("TEAM_NOT_FOUND");
-    assertThat(response.getMessage()).contains("abc-123");
+    assertThat(response.getBody().getMessage()).contains("abc-123");
   }
 
   @Test
@@ -78,7 +80,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("DRAFT_INCOMPLETE");
-    assertThat(response.getMessage()).isEqualTo("Draft is not complete");
+    assertThat(response.getBody().getMessage()).isEqualTo("Draft is not complete");
   }
 
   @Test
@@ -91,7 +93,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("NOT_YOUR_TURN");
-    assertThat(response.getMessage()).contains("not your turn");
+    assertThat(response.getBody().getMessage()).contains("not your turn");
   }
 
   @Test
@@ -105,7 +107,7 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(409);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("PLAYER_ALREADY_SELECTED");
-    assertThat(response.getMessage()).contains("already drafted");
+    assertThat(response.getBody().getMessage()).contains("already drafted");
   }
 
   @Test
@@ -118,7 +120,33 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(400);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("INVALID_SWAP");
-    assertThat(response.getMessage()).contains("Cannot swap");
+    assertThat(response.getBody().getMessage()).contains("Cannot swap");
+  }
+
+  @Test
+  void handleInvalidEpicIdReturnsUnprocessableEntity() {
+    InvalidEpicIdException ex = new InvalidEpicIdException("bad_epic_id");
+
+    ResponseEntity<GlobalExceptionHandler.ErrorResponse> response =
+        handler.handleInvalidEpicId(ex, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(422);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo("INVALID_EPIC_ID");
+    assertThat(response.getBody().getMessage()).contains("bad_epic_id");
+  }
+
+  @Test
+  void handlePlayerIdentityNotFoundReturnsNotFound() {
+    PlayerIdentityNotFoundException ex =
+        new PlayerIdentityNotFoundException(java.util.UUID.randomUUID());
+
+    ResponseEntity<GlobalExceptionHandler.ErrorResponse> response =
+        handler.handlePlayerIdentityNotFound(ex, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(404);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo("PLAYER_IDENTITY_NOT_FOUND");
   }
 
   @Test

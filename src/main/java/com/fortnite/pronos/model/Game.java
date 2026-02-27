@@ -1,6 +1,7 @@
 package com.fortnite.pronos.model;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,9 @@ public class Game {
   private static final String INVITATION_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final int INVITATION_CODE_LENGTH = 8;
   private static final SecureRandom INVITATION_CODE_RANDOM = new SecureRandom();
+  private static final int MIN_PARTICIPANTS = 2;
+  private static final int MAX_PARTICIPANTS = 50;
+  private static final int DEFAULT_MAX_TRADES_PER_TEAM = 5;
 
   @Id private UUID id;
 
@@ -102,7 +106,7 @@ public class Game {
 
   @Column(name = "max_trades_per_team")
   @Builder.Default
-  private Integer maxTradesPerTeam = 5;
+  private Integer maxTradesPerTeam = DEFAULT_MAX_TRADES_PER_TEAM;
 
   @Column(name = "trade_deadline")
   private LocalDateTime tradeDeadline;
@@ -110,6 +114,29 @@ public class Game {
   @Column(name = "current_season")
   @Builder.Default
   private Integer currentSeason = java.time.Year.now().getValue();
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "draft_mode", nullable = false, length = 20)
+  @Builder.Default
+  private DraftMode draftMode = DraftMode.SNAKE;
+
+  @Column(name = "team_size", nullable = false)
+  @Builder.Default
+  private Integer teamSize = 5;
+
+  @Column(name = "tranche_size", nullable = false)
+  @Builder.Default
+  private Integer trancheSize = 10;
+
+  @Column(name = "tranches_enabled", nullable = false)
+  @Builder.Default
+  private Boolean tranchesEnabled = true;
+
+  @Column(name = "competition_start")
+  private LocalDate competitionStart;
+
+  @Column(name = "competition_end")
+  private LocalDate competitionEnd;
 
   @PrePersist
   public void ensureId() {
@@ -184,7 +211,10 @@ public class Game {
 
   /** Supprime un participant de la game */
   public void removeParticipant(GameParticipant participant) {
-    participants.remove(participant);
+    int participantIndex = participants.indexOf(participant);
+    if (participantIndex >= 0) {
+      participants.remove(participantIndex);
+    }
     participant.setGame(null);
   }
 
@@ -268,8 +298,10 @@ public class Game {
     if (creator == null) {
       throw new IllegalArgumentException("Game creator cannot be null");
     }
-    if (maxParticipants < 2 || maxParticipants > 50) {
-      throw new IllegalArgumentException("Max participants must be between 2 and 50");
+    if (maxParticipants < MIN_PARTICIPANTS || maxParticipants > MAX_PARTICIPANTS) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Max participants must be between %d and %d", MIN_PARTICIPANTS, MAX_PARTICIPANTS));
     }
   }
 
@@ -280,37 +312,41 @@ public class Game {
    * @return true if successfully added, false if rejected
    */
   public boolean addParticipant(User user) {
+    initializeParticipantsIfNeeded();
+    if (isInvalidNewParticipant(user)) {
+      return false;
+    }
+    this.participants.add(createParticipant(user));
+    return true;
+  }
+
+  private void initializeParticipantsIfNeeded() {
     if (participants == null) {
       participants = new ArrayList<>();
     }
-    // Business rule: Creator is automatically a participant
-    if (user.equals(this.creator)) {
-      return false;
-    }
+  }
 
-    // Business rule: No duplicate participants
-    if (participants.stream().anyMatch(p -> p.getUser().equals(user))) {
-      return false;
-    }
+  private boolean isInvalidNewParticipant(User user) {
+    boolean missingOrCreator = user == null || isCreator(user);
+    boolean duplicateParticipant = !missingOrCreator && isAlreadyParticipant(user);
+    boolean gameCannotAcceptParticipants = isFull() || !canAddParticipants();
+    return missingOrCreator || duplicateParticipant || gameCannotAcceptParticipants;
+  }
 
-    // Business rule: Cannot join if game is full
-    if (isFull()) {
-      return false;
-    }
+  private boolean isCreator(User user) {
+    return user.equals(this.creator);
+  }
 
-    // Business rule: Cannot join started games
-    if (!canAddParticipants()) {
-      return false;
-    }
+  private boolean isAlreadyParticipant(User user) {
+    return participants.stream().anyMatch(p -> p.getUser().equals(user));
+  }
 
-    // Create GameParticipant and add
+  private GameParticipant createParticipant(User user) {
     GameParticipant participant = new GameParticipant();
     participant.setUser(user);
     participant.setGame(this);
     participant.setCreator(false);
-    this.participants.add(participant);
-
-    return true;
+    return participant;
   }
 
   /**
@@ -344,20 +380,22 @@ public class Game {
   public int getTotalParticipantCount() {
     List<GameParticipant> safeParticipants =
         participants != null ? participants : new ArrayList<>();
-    boolean creatorAlreadyCounted =
-        safeParticipants.stream()
-            .anyMatch(
-                p ->
-                    p != null
-                        && p.getUser() != null
-                        && creator != null
-                        && creator.getId() != null
-                        && creator.getId().equals(p.getUser().getId()));
+    boolean creatorAlreadyCounted = safeParticipants.stream().anyMatch(this::isCreatorParticipant);
     int count = safeParticipants.size();
     if (!creatorAlreadyCounted && creator != null) {
       count += 1;
     }
     return count;
+  }
+
+  private boolean isCreatorParticipant(GameParticipant participant) {
+    if (participant == null || participant.getUser() == null) {
+      return false;
+    }
+    if (creator == null || creator.getId() == null) {
+      return false;
+    }
+    return creator.getId().equals(participant.getUser().getId());
   }
 
   /**
@@ -385,7 +423,7 @@ public class Game {
    */
   public boolean startDraft() {
     // Business rule: Need at least 2 total participants to start
-    if (getTotalParticipantCount() < 2) {
+    if (getTotalParticipantCount() < MIN_PARTICIPANTS) {
       return false;
     }
 

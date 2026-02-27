@@ -13,6 +13,7 @@ import { LoggerService } from '../../../../core/services/logger.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
 import { TradeTimelineService } from '../../services/trade-timeline.service';
+import { secureRandomFloat, secureRandomPick } from '../../../../shared/utils/secure-random.util';
 import {
   slideInFromBottom,
   playerStagger,
@@ -422,10 +423,10 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     for (let i = 0; i < 30; i++) {
       const confetti = document.createElement('div');
       confetti.className = 'confetti celebration-burst';
-      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.backgroundColor = secureRandomPick(colors);
+      confetti.style.left = `${secureRandomFloat() * 100}vw`;
       confetti.style.top = '50vh';
-      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      confetti.style.animationDelay = `${secureRandomFloat() * 0.5}s`;
       confettiContainer.appendChild(confetti);
     }
 

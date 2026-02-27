@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -129,6 +130,19 @@ class DraftServiceTddTest {
     void shouldDeclarePlayerRepositoryDependencyAsPort() throws NoSuchFieldException {
       assertThat(DraftService.class.getDeclaredField("playerRepository").getType())
           .isEqualTo(PlayerDomainRepositoryPort.class);
+    }
+
+    @Test
+    @DisplayName("Should expose round constants and generic picker collection")
+    void shouldExposeRoundConstantsAndGenericPickerCollection()
+        throws NoSuchMethodException, NoSuchFieldException {
+      assertThat(DraftService.class.getDeclaredField("DEFAULT_ROUNDS_WITHOUT_REGION_RULES"))
+          .isNotNull();
+      assertThat(DraftService.class.getDeclaredField("SNAKE_ROUND_MODULO")).isNotNull();
+      assertThat(
+              DraftService.class.getDeclaredMethod(
+                  "getCurrentPicker", Draft.class, Collection.class))
+          .isNotNull();
     }
   }
 

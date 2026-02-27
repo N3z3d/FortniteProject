@@ -73,6 +73,14 @@ public enum ErrorCode {
 
   private final String code;
   private final String defaultMessage;
+  private static final int HTTP_BAD_REQUEST = 400;
+  private static final int HTTP_UNAUTHORIZED = 401;
+  private static final int HTTP_FORBIDDEN = 403;
+  private static final int HTTP_NOT_FOUND = 404;
+  private static final int HTTP_CONFLICT = 409;
+  private static final int HTTP_TOO_MANY_REQUESTS = 429;
+  private static final int HTTP_INTERNAL_SERVER_ERROR = 500;
+  private static final int HTTP_SERVICE_UNAVAILABLE = 503;
 
   ErrorCode(String code, String defaultMessage) {
     this.code = code;
@@ -152,33 +160,30 @@ public enum ErrorCode {
    */
   public int getStatusCode() {
     if (isValidationError()) {
-      return 400; // BAD_REQUEST
+      return HTTP_BAD_REQUEST;
     }
 
-    switch (this) {
+    return switch (this) {
       case AUTH_BUS_001, AUTH_SEC_001, AUTH_SEC_002, AUTH_SEC_004, INVALID_TOKEN_FORMAT:
-        return 401; // UNAUTHORIZED
+        yield HTTP_UNAUTHORIZED;
 
       case AUTH_BUS_002, AUTH_BUS_003, AUTH_SEC_003:
-        return 403; // FORBIDDEN
+        yield HTTP_FORBIDDEN;
 
       case PLAYER_BUS_001, TEAM_BUS_001, SCORE_BUS_001, TRADE_BUS_001:
-        return 404; // NOT_FOUND
+        yield HTTP_NOT_FOUND;
 
       case PLAYER_BUS_002, TEAM_BUS_002, SCORE_BUS_002:
-        return 409; // CONFLICT
+        yield HTTP_CONFLICT;
 
       case SYS_002, AUTH_SYS_001, AUTHENTICATION_SERVICE_UNAVAILABLE:
-        return 503; // SERVICE_UNAVAILABLE
+        yield HTTP_SERVICE_UNAVAILABLE;
 
       case SYS_004:
-        return 429; // TOO_MANY_REQUESTS
+        yield HTTP_TOO_MANY_REQUESTS;
 
       default:
-        if (isSystemError()) {
-          return 500; // INTERNAL_SERVER_ERROR
-        }
-        return 400; // BAD_REQUEST
-    }
+        yield isSystemError() ? HTTP_INTERNAL_SERVER_ERROR : HTTP_BAD_REQUEST;
+    };
   }
 }

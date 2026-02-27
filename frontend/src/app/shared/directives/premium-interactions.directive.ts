@@ -7,7 +7,7 @@ import { PremiumInteractionsService } from '../services/premium-interactions.ser
 })
 export class PremiumInteractionsDirective implements OnInit, OnDestroy {
   @Input() interactionType: 'magnetic' | 'ripple' | 'spring' | 'parallax' | 'glow' = 'magnetic';
-  @Input() glowColor: string = '#00d4ff';
+  @Input() glowColor: string = 'var(--color-info)';
   @Input() magneticStrength: number = 0.3;
 
   constructor(
@@ -113,13 +113,13 @@ export class RevealOnScrollDirective implements OnInit, OnDestroy {
   standalone: true
 })
 export class PulseDirective implements OnInit {
-  @Input() pulseColor: string = '#00d4ff';
+  @Input() pulseColor: string = 'var(--color-info)';
 
   constructor(private el: ElementRef) {}
 
   ngOnInit(): void {
     this.el.nativeElement.classList.add('gaming-pulse');
-    if (this.pulseColor !== '#00d4ff') {
+    if (this.pulseColor !== 'var(--color-info)') {
       this.el.nativeElement.style.setProperty('--pulse-color', this.pulseColor);
     }
   }
@@ -235,7 +235,7 @@ export class AnimatedBorderDirective implements OnInit {
 })
 export class ParticleClickDirective {
   @Input() particleCount: number = 20;
-  @Input() particleColor: string = '#00d4ff';
+  @Input() particleColor: string = 'var(--color-info)';
 
   constructor(
     private el: ElementRef,

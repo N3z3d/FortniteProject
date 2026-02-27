@@ -1497,7 +1497,9 @@
       "alerts": "Active Alerts",
       "visits": "Visit Tracking",
       "refresh": "Refresh",
-      "loadError": "Failed to load dashboard data."
+      "loadError": "Failed to load dashboard data.",
+      "realtime": "Real-Time Analytics",
+      "database": "Database Explorer"
     },
     "kpi": {
       "totalUsers": "Total Users",
@@ -1534,7 +1536,8 @@
       "averageDuration": "Average duration",
       "topPages": "Top pages",
       "bounceRate": "Bounce rate",
-      "topFlows": "Navigation flows"
+      "topFlows": "Navigation flows",
+      "geoDistribution": "Geographic distribution"
     },
     "errors": {
       "title": "Error Journal",
@@ -1568,6 +1571,38 @@
         "errorCode": "Error Code",
         "stackTrace": "Stack Trace",
         "close": "Close"
+      }
+    },
+    "realtime": {
+      "activeUsers": "Active users now",
+      "activeSessions": "Active sessions now",
+      "activePages": "Active pages (last 2 min)",
+      "noActivity": "No live activity"
+    },
+    "database": {
+      "noTables": "No tables found."
+    },
+    "incidents": {
+      "title": "Incident Reports",
+      "loadError": "Failed to load incident reports.",
+      "empty": "No incidents reported. All clear!",
+      "filter": {
+        "label": "Filter incidents",
+        "type": "Incident type",
+        "allTypes": "All types"
+      },
+      "table": {
+        "gameName": "Game",
+        "reporter": "Reported by",
+        "type": "Type",
+        "description": "Description"
+      },
+      "type": {
+        "cheating": "Cheating",
+        "abuse": "Abuse",
+        "bug": "Bug",
+        "dispute": "Dispute",
+        "other": "Other"
       }
     }
   },

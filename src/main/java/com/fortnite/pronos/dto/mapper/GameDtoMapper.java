@@ -32,6 +32,12 @@ public final class GameDtoMapper {
     dto.setIsInvitationCodeExpired(game.isInvitationCodeExpired());
     dto.setCurrentSeason(game.getCurrentSeason());
     dto.setCreatedAt(game.getCreatedAt());
+    dto.setDraftMode(game.getDraftMode());
+    dto.setTeamSize(game.getTeamSize());
+    dto.setTranchesEnabled(game.isTranchesEnabled());
+    dto.setTrancheSize(game.getTrancheSize());
+    dto.setCompetitionStart(game.getCompetitionStart());
+    dto.setCompetitionEnd(game.getCompetitionEnd());
     dto.initializeCollections();
 
     mapDomainParticipants(dto, game.getParticipants());

@@ -41,7 +41,7 @@ describe('PremiumInteractionsDirective', () => {
   class TestComponent {
     type: 'magnetic' | 'ripple' | 'spring' | 'parallax' | 'glow' = 'magnetic';
     strength = 0.3;
-    color = '#00d4ff';
+    color = 'var(--color-info)';
   }
 
   it('should create with magnetic interaction by default', () => {
@@ -201,7 +201,7 @@ describe('PulseDirective', () => {
     imports: [PulseDirective]
   })
   class TestComponent {
-    color = '#00d4ff';
+    color = 'var(--color-info)';
   }
 
   it('should add gaming-pulse class', () => {
@@ -223,7 +223,7 @@ describe('PulseDirective', () => {
 
   it('should not set pulse color when default', () => {
     const fixture = TestBed.createComponent(TestComponent);
-    fixture.componentInstance.color = '#00d4ff';
+    fixture.componentInstance.color = 'var(--color-info)';
     fixture.detectChanges();
 
     const div = fixture.debugElement.query(By.css('div'));
@@ -433,7 +433,7 @@ describe('ParticleClickDirective', () => {
   })
   class TestComponent {
     count = 20;
-    color = '#00d4ff';
+    color = 'var(--color-info)';
   }
 
   it('should create particle explosion on click', () => {

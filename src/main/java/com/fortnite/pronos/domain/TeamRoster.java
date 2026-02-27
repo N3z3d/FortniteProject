@@ -1,5 +1,6 @@
 package com.fortnite.pronos.domain;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,28 +25,24 @@ public final class TeamRoster {
    * @return validation result
    */
   public static ValidationResult canAddPlayer(
-      Set<UUID> existingPlayerIds,
+      Collection<UUID> existingPlayerIds,
       UUID playerIdToAdd,
-      Set<Integer> existingPositions,
+      Collection<Integer> existingPositions,
       int positionToAssign,
       int maxPlayers) {
-
+    String validationError = null;
     if (playerIdToAdd == null) {
-      return ValidationResult.failure("Player ID cannot be null");
+      validationError = "Player ID cannot be null";
+    } else if (existingPlayerIds.contains(playerIdToAdd)) {
+      validationError = "Player is already on the team";
+    } else if (existingPlayerIds.size() >= maxPlayers) {
+      validationError = "Team roster is full (max " + maxPlayers + ")";
+    } else if (positionToAssign < 1) {
+      validationError = "Position must be at least 1";
+    } else if (existingPositions.contains(positionToAssign)) {
+      validationError = "Position " + positionToAssign + " is already taken";
     }
-    if (existingPlayerIds.contains(playerIdToAdd)) {
-      return ValidationResult.failure("Player is already on the team");
-    }
-    if (existingPlayerIds.size() >= maxPlayers) {
-      return ValidationResult.failure("Team roster is full (max " + maxPlayers + ")");
-    }
-    if (positionToAssign < 1) {
-      return ValidationResult.failure("Position must be at least 1");
-    }
-    if (existingPositions.contains(positionToAssign)) {
-      return ValidationResult.failure("Position " + positionToAssign + " is already taken");
-    }
-    return ValidationResult.success();
+    return toValidationResult(validationError);
   }
 
   /**
@@ -55,19 +52,21 @@ public final class TeamRoster {
    * @return validation result
    */
   public static ValidationResult validateUniquePositions(List<Integer> positions) {
-    if (positions == null || positions.isEmpty()) {
-      return ValidationResult.success();
-    }
-    Set<Integer> seen = new HashSet<>();
-    for (Integer pos : positions) {
-      if (pos == null || pos < 1) {
-        return ValidationResult.failure("All positions must be positive integers");
+    String validationError = null;
+    if (positions != null && !positions.isEmpty()) {
+      Set<Integer> seen = new HashSet<>();
+      for (Integer pos : positions) {
+        if (pos == null || pos < 1) {
+          validationError = "All positions must be positive integers";
+          break;
+        }
+        if (!seen.add(pos)) {
+          validationError = "Duplicate position found: " + pos;
+          break;
+        }
       }
-      if (!seen.add(pos)) {
-        return ValidationResult.failure("Duplicate position found: " + pos);
-      }
     }
-    return ValidationResult.success();
+    return toValidationResult(validationError);
   }
 
   /**
@@ -93,19 +92,16 @@ public final class TeamRoster {
    * @return validation result
    */
   public static ValidationResult canRemovePlayer(
-      Set<UUID> existingPlayerIds, UUID playerIdToRemove, int minPlayers) {
-
+      Collection<UUID> existingPlayerIds, UUID playerIdToRemove, int minPlayers) {
+    String validationError = null;
     if (playerIdToRemove == null) {
-      return ValidationResult.failure("Player ID cannot be null");
+      validationError = "Player ID cannot be null";
+    } else if (!existingPlayerIds.contains(playerIdToRemove)) {
+      validationError = "Player is not on the team";
+    } else if (existingPlayerIds.size() <= minPlayers) {
+      validationError = "Cannot remove player - minimum roster size is " + minPlayers;
     }
-    if (!existingPlayerIds.contains(playerIdToRemove)) {
-      return ValidationResult.failure("Player is not on the team");
-    }
-    if (existingPlayerIds.size() <= minPlayers) {
-      return ValidationResult.failure(
-          "Cannot remove player - minimum roster size is " + minPlayers);
-    }
-    return ValidationResult.success();
+    return toValidationResult(validationError);
   }
 
   /**
@@ -130,5 +126,12 @@ public final class TeamRoster {
     public static ValidationResult failure(String errorMessage) {
       return new ValidationResult(false, errorMessage);
     }
+  }
+
+  private static ValidationResult toValidationResult(String validationError) {
+    if (validationError == null) {
+      return ValidationResult.success();
+    }
+    return ValidationResult.failure(validationError);
   }
 }

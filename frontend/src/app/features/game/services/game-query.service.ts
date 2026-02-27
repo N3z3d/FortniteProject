@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { MOCK_GAMES } from '../../../core/data/mock-game-data';
+import { secureRandomId } from '../../../shared/utils/secure-random.util';
 import {
   DraftHistoryEntry,
   DraftState,
@@ -244,7 +245,7 @@ export class GameQueryService {
   }
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `req_${Date.now()}_${secureRandomId(7)}`;
   }
 
   private handleErrorWithFallback<T>(

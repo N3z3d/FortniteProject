@@ -35,6 +35,8 @@ public class FakeGameSeedService {
       "Mini dataset for multi-game navigation tests";
   private static final int FAKE_MAX_PARTICIPANTS = 4;
   private static final int FAKE_PLAYER_COUNT = 4;
+  private static final int REGION_MAX_PLAYERS = 2;
+  private static final int DEFAULT_SEASON = 2025;
 
   private final GameRepositoryPort gameRepository;
   private final com.fortnite.pronos.repository.UserRepository userRepository;
@@ -62,13 +64,15 @@ public class FakeGameSeedService {
       return;
     }
 
-    com.fortnite.pronos.model.User creator = creatorOption.get();
+    seedForCreator(creatorOption.get());
+  }
+
+  private void seedForCreator(com.fortnite.pronos.model.User creator) {
     if (gameRepository.existsByNameAndCreator(FAKE_GAME_NAME, creator)) {
       log.info("Fake game already seeded: {}", FAKE_GAME_NAME);
       return;
     }
 
-    List<com.fortnite.pronos.model.User> participants = buildParticipants(creator);
     List<com.fortnite.pronos.model.Player> players = pickPlayers();
     if (players.size() < FAKE_PLAYER_COUNT) {
       log.warn(
@@ -76,6 +80,7 @@ public class FakeGameSeedService {
       return;
     }
 
+    List<com.fortnite.pronos.model.User> participants = buildParticipants(creator);
     com.fortnite.pronos.model.Game game = buildGame(creator);
     attachParticipants(game, participants);
     com.fortnite.pronos.model.Game savedGame = gameRepository.save(game);
@@ -135,13 +140,13 @@ public class FakeGameSeedService {
         com.fortnite.pronos.model.GameRegionRule.builder()
             .game(game)
             .region(com.fortnite.pronos.model.Player.Region.EU)
-            .maxPlayers(2)
+            .maxPlayers(REGION_MAX_PLAYERS)
             .build());
     game.addRegionRule(
         com.fortnite.pronos.model.GameRegionRule.builder()
             .game(game)
             .region(com.fortnite.pronos.model.Player.Region.NAC)
-            .maxPlayers(2)
+            .maxPlayers(REGION_MAX_PLAYERS)
             .build());
   }
 
@@ -189,7 +194,7 @@ public class FakeGameSeedService {
     com.fortnite.pronos.model.Team team = new com.fortnite.pronos.model.Team();
     team.setName("Fake Team " + order + " - " + owner.getUsername());
     team.setOwner(owner);
-    team.setSeason(owner.getCurrentSeason() != null ? owner.getCurrentSeason() : 2025);
+    team.setSeason(owner.getCurrentSeason() != null ? owner.getCurrentSeason() : DEFAULT_SEASON);
     team.setGame(game);
 
     for (int i = 0; i < players.size(); i++) {

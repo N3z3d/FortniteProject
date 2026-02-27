@@ -81,8 +81,8 @@ class UnifiedAuthServiceTddTest {
       Optional<User> result = unifiedAuthService.findUserByUsername(testUsername);
 
       assertThat(result).isPresent();
-      assertThat(result.getUsername()).isEqualTo(testUsername);
-      assertThat(result.getEmail()).isEqualTo(testEmail);
+      assertThat(result.get().getUsername()).isEqualTo(testUsername);
+      assertThat(result.get().getEmail()).isEqualTo(testEmail);
 
       verify(userRepository).findByUsername(testUsername);
     }
@@ -131,7 +131,7 @@ class UnifiedAuthServiceTddTest {
       Optional<User> result = unifiedAuthService.authenticate(testUsername);
 
       assertThat(result).isPresent();
-      assertThat(result.getUsername()).isEqualTo(testUsername);
+      assertThat(result.get().getUsername()).isEqualTo(testUsername);
       verify(userRepository).findByUsername(testUsername);
     }
 
@@ -522,7 +522,7 @@ class UnifiedAuthServiceTddTest {
       // Authentication operation
       Optional<User> authResult = unifiedAuthService.authenticate(testUsername);
       assertThat(authResult).isPresent();
-      assertThat(authResult.getUsername()).isEqualTo(testUsername);
+      assertThat(authResult.get().getUsername()).isEqualTo(testUsername);
 
       // Both operations should have accessed the same user data
       verify(userRepository, times(2)).findByUsername(testUsername);

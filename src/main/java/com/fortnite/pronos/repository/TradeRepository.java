@@ -14,6 +14,9 @@ import com.fortnite.pronos.model.Trade;
 @Repository
 public interface TradeRepository extends JpaRepository<Trade, UUID>, TradeRepositoryPort {
 
+  @Override
+  Trade save(Trade trade);
+
   /**
    * Find all trades involving a specific team (as either from or to team)
    *

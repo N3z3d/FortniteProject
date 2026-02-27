@@ -10,13 +10,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 
 @Service
@@ -25,16 +29,27 @@ public class VisitTrackingService {
   private static final int MAX_EVENTS_IN_MEMORY = 50_000;
   private static final int TOP_PAGE_LIMIT = 5;
   private static final int TOP_FLOW_LIMIT = 5;
+  private static final int TOP_COUNTRY_LIMIT = 5;
+  private static final int MAX_FRONTEND_PATH_LENGTH = 255;
+  private static final double PERCENT_MULTIPLIER = 100.0;
+  private static final String NAVIGATION_SEPARATOR = "->";
+  private static final int NAVIGATION_SPLIT_LIMIT = 2;
+  private static final Pattern NAVIGATION_SEPARATOR_PATTERN =
+      Pattern.compile(Pattern.quote(NAVIGATION_SEPARATOR));
 
   private final Deque<VisitEvent> events = new ConcurrentLinkedDeque<>();
+  private final AtomicInteger eventCount = new AtomicInteger();
   private final Clock clock;
+  private final GeoResolutionService geoResolutionService;
 
-  public VisitTrackingService() {
-    this(Clock.systemUTC());
+  @Autowired
+  public VisitTrackingService(GeoResolutionService geoResolutionService) {
+    this(Clock.systemUTC(), geoResolutionService);
   }
 
-  VisitTrackingService(Clock clock) {
+  VisitTrackingService(Clock clock, GeoResolutionService geoResolutionService) {
     this.clock = clock;
+    this.geoResolutionService = geoResolutionService;
   }
 
   public void recordRequest(HttpServletRequest request) {
@@ -55,6 +70,23 @@ public class VisitTrackingService {
     recordEvent(request, normalizedPath);
   }
 
+  public RealTimeAnalyticsDto getRealTimeSnapshot() {
+    Instant fiveMinutesAgo = clock.instant().minus(Duration.ofMinutes(5));
+    Instant twoMinutesAgo = clock.instant().minus(Duration.ofMinutes(2));
+
+    List<VisitEvent> activeEvents =
+        events.stream().filter(e -> !e.timestamp().isBefore(fiveMinutesAgo)).toList();
+    List<VisitEvent> recentPageEvents =
+        events.stream().filter(e -> !e.timestamp().isBefore(twoMinutesAgo)).toList();
+
+    return RealTimeAnalyticsDto.builder()
+        .activeUsersNow((int) activeEvents.stream().map(VisitEvent::visitorId).distinct().count())
+        .activeSessionsNow(
+            (int) activeEvents.stream().map(VisitEvent::sessionId).distinct().count())
+        .activePagesNow(buildActivePages(recentPageEvents))
+        .build();
+  }
+
   public VisitAnalyticsDto getVisitAnalytics(int hours) {
     Instant cutoff = clock.instant().minus(Duration.ofHours(Math.max(hours, 1)));
     List<VisitEvent> windowEvents =
@@ -70,6 +102,7 @@ public class VisitTrackingService {
         .bounceRatePercent(calculateBounceRate(eventsBySession))
         .topPages(buildTopPages(windowEvents))
         .topNavigationFlows(buildTopNavigationFlows(eventsBySession))
+        .topCountries(buildTopCountries(windowEvents))
         .build();
   }
 
@@ -99,20 +132,56 @@ public class VisitTrackingService {
     return resolveVisitorId(request);
   }
 
-  private void trimOldestIfNeeded() {
-    while (events.size() > MAX_EVENTS_IN_MEMORY) {
-      events.pollFirst();
+  private void trimOldestIfNeeded(int currentEventCount) {
+    int remainingCount = currentEventCount;
+    while (remainingCount > MAX_EVENTS_IN_MEMORY) {
+      VisitEvent removed = events.pollFirst();
+      if (removed == null) {
+        eventCount.set(0);
+        return;
+      }
+      remainingCount = eventCount.decrementAndGet();
     }
   }
 
   private void recordEvent(HttpServletRequest request, String path) {
+    String country = geoResolutionService.resolveCountry(request);
     VisitEvent event =
-        new VisitEvent(clock.instant(), resolveVisitorId(request), resolveSessionId(request), path);
+        new VisitEvent(
+            clock.instant(), resolveVisitorId(request), resolveSessionId(request), path, country);
     events.addLast(event);
-    trimOldestIfNeeded();
+    trimOldestIfNeeded(eventCount.incrementAndGet());
+  }
+
+  private List<VisitAnalyticsDto.GeoDistributionDto> buildTopCountries(
+      List<VisitEvent> eventsWindow) {
+    Map<String, Long> visitsByCountry =
+        eventsWindow.stream()
+            .collect(Collectors.groupingBy(VisitEvent::country, Collectors.counting()));
+    return visitsByCountry.entrySet().stream()
+        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+        .limit(TOP_COUNTRY_LIMIT)
+        .map(
+            entry ->
+                VisitAnalyticsDto.GeoDistributionDto.builder()
+                    .country(entry.getKey())
+                    .visitCount(entry.getValue())
+                    .build())
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private String normalizeFrontendPath(String rawPath) {
+    String cleanedPath = sanitizeNavigationPath(rawPath);
+    if (cleanedPath == null || !cleanedPath.startsWith("/")) {
+      return null;
+    }
+    if (cleanedPath.length() <= MAX_FRONTEND_PATH_LENGTH) {
+      return cleanedPath;
+    }
+    return cleanedPath.substring(0, MAX_FRONTEND_PATH_LENGTH);
+  }
+
+  private String sanitizeNavigationPath(String rawPath) {
     if (rawPath == null) {
       return null;
     }
@@ -120,18 +189,16 @@ public class VisitTrackingService {
     if (trimmedPath.isEmpty()) {
       return null;
     }
-    int fragmentIndex = trimmedPath.indexOf('#');
-    if (fragmentIndex >= 0) {
-      trimmedPath = trimmedPath.substring(0, fragmentIndex);
+    String noFragment = removeSuffixFromCharacter(trimmedPath, '#');
+    return removeSuffixFromCharacter(noFragment, '?');
+  }
+
+  private String removeSuffixFromCharacter(String value, char separator) {
+    int separatorIndex = value.indexOf(separator);
+    if (separatorIndex < 0) {
+      return value;
     }
-    int queryIndex = trimmedPath.indexOf('?');
-    if (queryIndex >= 0) {
-      trimmedPath = trimmedPath.substring(0, queryIndex);
-    }
-    if (!trimmedPath.startsWith("/")) {
-      return null;
-    }
-    return trimmedPath.length() > 255 ? trimmedPath.substring(0, 255) : trimmedPath;
+    return value.substring(0, separatorIndex);
   }
 
   private double calculateAverageSessionDuration(Map<String, List<VisitEvent>> eventsBySession) {
@@ -140,22 +207,39 @@ public class VisitTrackingService {
     }
     double totalSeconds =
         eventsBySession.values().stream()
-            .mapToDouble(
-                sessionEvents -> {
-                  Instant min =
-                      sessionEvents.stream()
-                          .map(VisitEvent::timestamp)
-                          .min(Comparator.naturalOrder())
-                          .orElse(clock.instant());
-                  Instant max =
-                      sessionEvents.stream()
-                          .map(VisitEvent::timestamp)
-                          .max(Comparator.naturalOrder())
-                          .orElse(min);
-                  return Duration.between(min, max).toSeconds();
-                })
+            .mapToDouble(this::calculateSessionDurationInSeconds)
             .sum();
     return totalSeconds / eventsBySession.size();
+  }
+
+  private double calculateSessionDurationInSeconds(List<VisitEvent> sessionEvents) {
+    Instant minTimestamp =
+        sessionEvents.stream()
+            .map(VisitEvent::timestamp)
+            .min(Comparator.naturalOrder())
+            .orElse(clock.instant());
+    Instant maxTimestamp =
+        sessionEvents.stream()
+            .map(VisitEvent::timestamp)
+            .max(Comparator.naturalOrder())
+            .orElse(minTimestamp);
+    return Duration.between(minTimestamp, maxTimestamp).toSeconds();
+  }
+
+  private List<RealTimeAnalyticsDto.ActivePageDto> buildActivePages(List<VisitEvent> recentEvents) {
+    Map<String, Long> viewsByPath =
+        recentEvents.stream()
+            .collect(Collectors.groupingBy(VisitEvent::path, Collectors.counting()));
+    return viewsByPath.entrySet().stream()
+        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+        .limit(TOP_PAGE_LIMIT)
+        .map(
+            entry ->
+                RealTimeAnalyticsDto.ActivePageDto.builder()
+                    .path(entry.getKey())
+                    .visitorCount(entry.getValue().intValue())
+                    .build())
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   private List<VisitAnalyticsDto.PageViewDto> buildTopPages(List<VisitEvent> eventsWindow) {
@@ -184,7 +268,7 @@ public class VisitTrackingService {
                 sessionEvents ->
                     sessionEvents.stream().map(VisitEvent::path).distinct().count() <= 1)
             .count();
-    return (bouncedSessions * 100.0) / eventsBySession.size();
+    return (bouncedSessions * PERCENT_MULTIPLIER) / eventsBySession.size();
   }
 
   private List<VisitAnalyticsDto.NavigationFlowDto> buildTopNavigationFlows(
@@ -216,7 +300,7 @@ public class VisitTrackingService {
   }
 
   private VisitAnalyticsDto.NavigationFlowDto toNavigationFlow(String key, long transitions) {
-    String[] paths = key.split("->", 2);
+    String[] paths = NAVIGATION_SEPARATOR_PATTERN.split(key, NAVIGATION_SPLIT_LIMIT);
     String fromPath = paths.length > 0 ? paths[0] : "";
     String toPath = paths.length > 1 ? paths[1] : "";
     return VisitAnalyticsDto.NavigationFlowDto.builder()
@@ -226,5 +310,6 @@ public class VisitTrackingService {
         .build();
   }
 
-  private record VisitEvent(Instant timestamp, String visitorId, String sessionId, String path) {}
+  private record VisitEvent(
+      Instant timestamp, String visitorId, String sessionId, String path, String country) {}
 }

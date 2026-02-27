@@ -7,6 +7,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { UserProfile } from '../../../core/services/user-context.service';
 import { formatPoints } from '../../../shared/constants/theme.constants';
 import { TranslationService } from '../../../core/services/translation.service';
+import {
+  secureRandomFloat,
+  secureRandomIntInRange,
+  secureRandomPick
+} from '../../../shared/utils/secure-random.util';
 
 interface UserStats {
   gamesPlayed: number;
@@ -60,22 +65,28 @@ export class UserStatsDialogComponent implements OnInit {
   }
 
   private generateMockStats(): UserStats {
-    const gamesPlayed = Math.floor(Math.random() * 50) + 10;
-    const gamesWon = Math.floor(gamesPlayed * (Math.random() * 0.4 + 0.1));
+    const gamesPlayed = secureRandomIntInRange(10, 59);
+    const gamesWon = Math.floor(gamesPlayed * (secureRandomFloat() * 0.4 + 0.1));
+    const regions = ['EU', 'NAW', 'ASIA', 'BR'] as const;
+    const players = ['Bugha', 'Clix', 'Mongraal', 'Tfue', 'Ninja'] as const;
 
     return {
       gamesPlayed,
       gamesWon,
-      totalPoints: Math.floor(Math.random() * 500000) + 100000,
-      bestRank: Math.floor(Math.random() * 5) + 1,
-      averageRank: Math.floor(Math.random() * 10) + 3,
+      totalPoints: secureRandomIntInRange(100000, 599999),
+      bestRank: secureRandomIntInRange(1, 5),
+      averageRank: secureRandomIntInRange(3, 12),
       winRate: Math.round((gamesWon / gamesPlayed) * 100),
-      teamsCreated: Math.floor(Math.random() * 20) + 5,
-      tradesCompleted: Math.floor(Math.random() * 100) + 20,
-      draftParticipations: Math.floor(Math.random() * 30) + 10,
-      favoriteRegion: ['EU', 'NAW', 'ASIA', 'BR'][Math.floor(Math.random() * 4)],
-      topPlayer: ['Bugha', 'Clix', 'Mongraal', 'Tfue', 'Ninja'][Math.floor(Math.random() * 5)],
-      memberSince: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+      teamsCreated: secureRandomIntInRange(5, 24),
+      tradesCompleted: secureRandomIntInRange(20, 119),
+      draftParticipations: secureRandomIntInRange(10, 39),
+      favoriteRegion: secureRandomPick(regions),
+      topPlayer: secureRandomPick(players),
+      memberSince: new Date(
+        2024,
+        secureRandomIntInRange(0, 11),
+        secureRandomIntInRange(1, 28)
+      ),
       lastActive: new Date()
     };
   }

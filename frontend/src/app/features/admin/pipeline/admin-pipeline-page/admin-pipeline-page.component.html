@@ -1,0 +1,89 @@
+<a class="skip-link" href="#pipeline-content">Aller au contenu principal</a>
+
+<div class="pipeline-page">
+  <header class="pipeline-header" role="banner">
+    <div class="pipeline-header__title">
+      <mat-icon class="pipeline-header__icon">manage_accounts</mat-icon>
+      <div>
+        <h1 class="pipeline-header__heading">MODE ADMINISTRATION</h1>
+        <p class="pipeline-header__sub">Pipeline d'identité des joueurs Fortnite</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="refresh()" aria-label="Rafraîchir les données" matTooltip="Rafraîchir">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  <main id="pipeline-content">
+    <!-- Loading state -->
+    <div *ngIf="loading()" class="pipeline-loading" role="status" aria-label="Chargement en cours">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error() && !loading()" class="pipeline-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>Erreur lors du chargement de la pipeline.</p>
+      <button mat-button (click)="refresh()">Réessayer</button>
+    </div>
+
+    <!-- Content -->
+    <ng-container *ngIf="!loading() && !error()">
+
+      <!-- Inbox-zero state -->
+      <div *ngIf="isInboxZero" class="pipeline-inbox-zero" role="status" aria-label="Pipeline vide">
+        <mat-icon class="pipeline-inbox-zero__icon">task_alt</mat-icon>
+        <h2 class="pipeline-inbox-zero__title">Pipeline vide !</h2>
+        <p class="pipeline-inbox-zero__text">Tous les joueurs ont été traités. Revenez plus tard.</p>
+      </div>
+
+      <mat-tab-group class="pipeline-tabs" animationDuration="200ms">
+
+        <!-- Unresolved tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">pending</mat-icon>
+            En attente
+            <span
+              *ngIf="count.unresolvedCount > 0"
+              class="tab-badge tab-badge--pending"
+              [attr.aria-label]="count.unresolvedCount + ' en attente'">
+              {{ count.unresolvedCount }}
+            </span>
+          </ng-template>
+
+          <section class="pipeline-section" aria-label="Joueurs en attente de résolution">
+            <app-admin-pipeline-table
+              [entries]="unresolvedEntries"
+              mode="unresolved"
+              (resolved)="onResolved($event)"
+              (rejected)="onRejected($event)">
+            </app-admin-pipeline-table>
+          </section>
+        </mat-tab>
+
+        <!-- Resolved tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">verified</mat-icon>
+            Traités
+            <span
+              *ngIf="count.resolvedCount > 0"
+              class="tab-badge tab-badge--resolved"
+              [attr.aria-label]="count.resolvedCount + ' traités'">
+              {{ count.resolvedCount }}
+            </span>
+          </ng-template>
+
+          <section class="pipeline-section" aria-label="Joueurs traités">
+            <app-admin-pipeline-table
+              [entries]="resolvedEntries"
+              mode="resolved">
+            </app-admin-pipeline-table>
+          </section>
+        </mat-tab>
+
+      </mat-tab-group>
+    </ng-container>
+  </main>
+</div>
