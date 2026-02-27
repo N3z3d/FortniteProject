@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.fortnite.pronos.dto.auth.LoginRequest;
 import com.fortnite.pronos.dto.auth.LoginResponse;
@@ -39,6 +40,7 @@ class UnifiedAuthServiceTddTest {
 
   @Mock private UserRepository userRepository;
   @Mock private JwtService jwtService;
+  @Mock private PasswordEncoder passwordEncoder;
 
   @InjectMocks private UnifiedAuthService unifiedAuthService;
 
@@ -60,12 +62,16 @@ class UnifiedAuthServiceTddTest {
     testUser = new User();
     testUser.setUsername(testUsername);
     testUser.setEmail(testEmail);
+    testUser.setPassword("$2a$10$encoded.password.hash.for.testing");
     testUser.setRole(User.UserRole.USER);
     testUser.setCurrentSeason(2025);
 
     // Test login request setup
     testLoginRequest = new LoginRequest();
     testLoginRequest.setUsername(testUsername);
+    testLoginRequest.setPassword("password123");
+
+    lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
   }
 
   @Nested
@@ -151,6 +157,26 @@ class UnifiedAuthServiceTddTest {
   @Nested
   @DisplayName("Login Flow and Token Generation")
   class LoginTests {
+
+    @Test
+    @DisplayName("Should reject login when password is invalid and never generate token")
+    void shouldRejectLoginWhenPasswordIsInvalidAndNeverGenerateToken() {
+      when(userRepository.findByUsername(testUsername)).thenReturn(Optional.of(testUser));
+      when(passwordEncoder.matches("wrong-password", testUser.getPassword())).thenReturn(false);
+
+      LoginRequest wrongPasswordRequest = new LoginRequest();
+      wrongPasswordRequest.setUsername(testUsername);
+      wrongPasswordRequest.setPassword("wrong-password");
+
+      assertThatThrownBy(() -> unifiedAuthService.login(wrongPasswordRequest))
+          .isInstanceOf(org.springframework.security.authentication.BadCredentialsException.class)
+          .hasMessageContaining("Identifiants invalides");
+
+      verify(userRepository).findByUsername(testUsername);
+      verify(passwordEncoder).matches("wrong-password", testUser.getPassword());
+      verify(jwtService, never()).generateToken(any());
+      verify(jwtService, never()).generateRefreshToken(any());
+    }
 
     @Test
     @DisplayName("Should perform successful login with token generation")
@@ -351,17 +377,21 @@ class UnifiedAuthServiceTddTest {
       // RED: Test UserDetails for different user roles
       User adminUser = new User();
       adminUser.setUsername("admin_user");
+      adminUser.setPassword("$2a$10$encoded.admin.hash.for.testing");
       adminUser.setRole(User.UserRole.ADMIN);
 
       User spectatorUser = new User();
       spectatorUser.setUsername("spec_user");
+      spectatorUser.setPassword("$2a$10$encoded.spectator.hash.for.testing");
       spectatorUser.setRole(User.UserRole.SPECTATOR);
 
       LoginRequest adminRequest = new LoginRequest();
       adminRequest.setUsername("admin_user");
+      adminRequest.setPassword("admin-password");
 
       LoginRequest specRequest = new LoginRequest();
       specRequest.setUsername("spec_user");
+      specRequest.setPassword("spectator-password");
 
       // Test admin user
       when(userRepository.findByUsername("admin_user")).thenReturn(Optional.of(adminUser));
