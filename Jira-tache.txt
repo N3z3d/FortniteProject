@@ -1,5 +1,5 @@
 JIRA BACKLOG - FORTNITE PRONOS
-Last Updated: 2026-02-21 11:36
+Last Updated: 2026-02-27 19:38
 Source of Truth: Jira-tache.txt
 
 ================================================================================
@@ -73,12 +73,12 @@ ID: JIRA-FEAT-004
 TITRE: [EPIC] Catalogue joueurs Fortnite - technique Bmad (Player CRUD + API Fortnite + BDD)
 TYPE: Epic
 PRIORITE: P2
-STATUT: TODO
+STATUT: IN_PROGRESS
 ESTIMATE: multi-session
 
-ASSIGNE: ->
-ASSIGNE_LE: ->
-DERNIERE_MAJ: ->
+ASSIGNE: @Codex
+ASSIGNE_LE: 2026-02-27 19:38
+DERNIERE_MAJ: 2026-02-27 19:38
 
 DEPENDENCIES: JIRA-FEAT-003
 
@@ -93,6 +93,9 @@ CONTEXTE:
   - Permettre la creation manuelle de joueurs.
   - Stocker les joueurs en BDD pour les drafts.
   - Mettre a jour les stats periodiquement.
+- Verification 2026-02-27:
+  - Avance constatee: route frontend /catalogue + endpoints catalogue/profil + services backend/frontend + tests cibles verts.
+  - Reste pour DONE: integration API Fortnite reelle (pas mock), import joueur depuis API, synchronisation periodique des stats.
 
 DESCRIPTION:
 - Technique Bmad - Decomposition en sous-tickets :
