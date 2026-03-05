@@ -6,8 +6,9 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.adapter.out.persistence.support.EntityReferenceFactory;
+import com.fortnite.pronos.adapter.out.persistence.support.MappingUtils;
 import com.fortnite.pronos.domain.team.model.TeamMember;
-import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.TeamPlayer;
 import com.fortnite.pronos.model.User;
 
@@ -35,9 +36,9 @@ public class TeamEntityMapper {
         entity.getId(),
         entity.getName(),
         entity.getOwner() != null ? entity.getOwner().getId() : null,
-        safeInt(entity.getSeason(), 2025),
+        MappingUtils.safeInt(entity.getSeason(), 2025),
         entity.getGame() != null ? entity.getGame().getId() : null,
-        safeInt(entity.getCompletedTradesCount(), 0),
+        MappingUtils.safeInt(entity.getCompletedTradesCount(), 0),
         members);
   }
 
@@ -53,7 +54,9 @@ public class TeamEntityMapper {
       return null;
     }
     return TeamMember.restore(
-        entity.getPlayer().getId(), safeInt(entity.getPosition(), 1), entity.getUntil());
+        entity.getPlayer().getId(),
+        MappingUtils.safeInt(entity.getPosition(), 1),
+        entity.getUntil());
   }
 
   // ===============================
@@ -75,7 +78,7 @@ public class TeamEntityMapper {
     entity.setCompletedTradesCount(domain.getCompletedTradesCount());
 
     if (domain.getGameId() != null) {
-      entity.setGame(createGameReference(domain.getGameId()));
+      entity.setGame(EntityReferenceFactory.gameRef(domain.getGameId()));
     }
 
     List<TeamPlayer> entityPlayers = toEntityMembers(domain.getMembers(), entity);
@@ -87,7 +90,8 @@ public class TeamEntityMapper {
   /** Convenience overload for tests or temporary callers. */
   public com.fortnite.pronos.model.Team toEntity(
       com.fortnite.pronos.domain.team.model.Team domain) {
-    return toEntity(domain, createUserReference(domain != null ? domain.getOwnerId() : null));
+    return toEntity(
+        domain, EntityReferenceFactory.userRef(domain != null ? domain.getOwnerId() : null));
   }
 
   private List<TeamPlayer> toEntityMembers(
@@ -108,7 +112,7 @@ public class TeamEntityMapper {
     }
     TeamPlayer entity = new TeamPlayer();
     entity.setTeam(parentEntity);
-    entity.setPlayer(createPlayerReference(domain.getPlayerId()));
+    entity.setPlayer(EntityReferenceFactory.playerRef(domain.getPlayerId()));
     entity.setPosition(domain.getPosition());
     entity.setUntil(domain.getUntil());
     return entity;
@@ -125,35 +129,5 @@ public class TeamEntityMapper {
       return Collections.emptyList();
     }
     return entities.stream().map(this::toDomain).toList();
-  }
-
-  // ===============================
-  // PRIVATE HELPERS
-  // ===============================
-
-  private User createUserReference(java.util.UUID userId) {
-    if (userId == null) {
-      return null;
-    }
-    User user = new User();
-    user.setId(userId);
-    return user;
-  }
-
-  private Player createPlayerReference(java.util.UUID playerId) {
-    if (playerId == null) {
-      return null;
-    }
-    return Player.builder().id(playerId).build();
-  }
-
-  private com.fortnite.pronos.model.Game createGameReference(java.util.UUID gameId) {
-    com.fortnite.pronos.model.Game game = new com.fortnite.pronos.model.Game();
-    game.setId(gameId);
-    return game;
-  }
-
-  private static int safeInt(Integer value, int defaultValue) {
-    return value != null ? value : defaultValue;
   }
 }

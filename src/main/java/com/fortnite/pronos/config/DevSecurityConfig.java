@@ -21,7 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
-@Profile({"dev", "h2", "test"})
+@Profile({"dev", "h2"})
 @Order(1)
 @SuppressWarnings({"java:S5738"})
 public class DevSecurityConfig {

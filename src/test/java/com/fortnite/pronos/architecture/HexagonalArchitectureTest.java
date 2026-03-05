@@ -220,6 +220,8 @@ class HexagonalArchitectureTest {
                 "..domain..", // Domain models and ports (including subdomain packages)
                 "..model..", // JPA entities that adapters map from
                 "..repository..", // JPA repositories that adapters delegate to
+                "..dto..", // External-API adapters use response DTOs (e.g.
+                // FortniteApiStatsResponse)
                 "..shared..",
                 "java..",
                 "lombok..",

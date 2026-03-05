@@ -28,10 +28,7 @@ import com.fortnite.pronos.exception.GameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Service pour la gestion des drafts Clean Code : sÃƒÆ’Ã†'Ãƒâ€šÃ‚Â©paration des
- * responsabilitÃƒÆ’Ã†'Ãƒâ€šÃ‚Â©s
- */
+/** Service pour la gestion des drafts Clean Code : séparation des responsabilités */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -48,14 +45,15 @@ public class DraftService implements DraftUseCase {
   private final GameParticipantRepositoryPort gameParticipantRepository;
   private final PlayerDomainRepositoryPort playerRepository;
 
-  /** CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e un nouveau draft pour une game */
+  /** Crée un nouveau draft pour une game */
   public com.fortnite.pronos.model.Draft createDraft(
       com.fortnite.pronos.model.Game game,
       List<com.fortnite.pronos.model.GameParticipant> participants) {
-    log.debug("CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation d'un draft pour la game {}", game.getName());
+    log.debug("Création d'un draft pour la game {}", game.getName());
 
     com.fortnite.pronos.model.Draft draft = new com.fortnite.pronos.model.Draft(game);
-    draft.setId(UUID.randomUUID());
+    // Do NOT pre-assign ID: @GeneratedValue(AUTO) handles it; pre-assigning causes
+    // Hibernate 6.6 to call merge() for an unknown row and throw StaleObjectStateException.
     draft.setStatus(com.fortnite.pronos.model.Draft.Status.ACTIVE);
     draft.setStartedAt(LocalDateTime.now());
     draft.setCurrentRound(1);
@@ -65,17 +63,14 @@ public class DraftService implements DraftUseCase {
     return persistDraftEntity(draft);
   }
 
-  /**
-   * Calcule le nombre total de rounds basÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© sur les rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨gles
-   * rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gionales
-   */
+  /** Calcule le nombre total de rounds basé sur les règles régionales */
   private int calculateTotalRounds(com.fortnite.pronos.model.Game game) {
     if (game.getRegionRules() == null || game.getRegionRules().isEmpty()) {
-      // Par dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©faut : 10 rounds si pas de rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨gles
+      // Par défaut : 10 rounds si pas de règles
       return DEFAULT_ROUNDS_WITHOUT_REGION_RULES;
     }
 
-    // Somme des joueurs max par rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gion
+    // Somme des joueurs max par région
     return game.getRegionRules().stream().mapToInt(rule -> rule.getMaxPlayers()).sum();
   }
 
@@ -89,7 +84,7 @@ public class DraftService implements DraftUseCase {
       draft.setCurrentRound(draft.getCurrentRound() + 1);
       draft.setCurrentPick(1);
 
-      // VÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rifier si le draft est terminÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©
+      // Vérifier si le draft est terminé
       if (draft.getCurrentRound() > draft.getTotalRounds()) {
         draft.setStatus(com.fortnite.pronos.model.Draft.Status.FINISHED);
         draft.setFinishedAt(LocalDateTime.now());
@@ -111,7 +106,7 @@ public class DraftService implements DraftUseCase {
         .orElseThrow(
             () ->
                 new IllegalStateException(
-                    "Aucun participant trouvÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© pour l'ordre " + currentPosition));
+                    "Aucun participant trouvé pour l'ordre " + currentPosition));
   }
 
   /**
@@ -130,7 +125,7 @@ public class DraftService implements DraftUseCase {
     }
   }
 
-  /** DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©marre un draft pour une game */
+  /** Démarre un draft pour une game */
   /** Starts a draft for a game identified by its ID */
   public com.fortnite.pronos.model.Draft startDraftForGame(UUID gameId) {
     com.fortnite.pronos.model.Game game = findGameById(gameId);
@@ -138,7 +133,7 @@ public class DraftService implements DraftUseCase {
   }
 
   public com.fortnite.pronos.model.Draft startDraft(com.fortnite.pronos.model.Game game) {
-    log.debug("DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©marrage du draft pour la game {}", game.getName());
+    log.debug("Démarrage du draft pour la game {}", game.getName());
 
     com.fortnite.pronos.model.Draft draft = new com.fortnite.pronos.model.Draft(game);
     draft.setStatus(com.fortnite.pronos.model.Draft.Status.ACTIVE);
@@ -171,28 +166,28 @@ public class DraftService implements DraftUseCase {
     return persistDraftEntity(draft);
   }
 
-  /** VÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rifie si le draft est terminÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© */
+  /** Vérifie si le draft est terminé */
   public boolean isDraftComplete(com.fortnite.pronos.model.Draft draft) {
     return com.fortnite.pronos.model.Draft.Status.FINISHED.equals(draft.getStatus())
         || draft.getCurrentRound() > draft.getTotalRounds();
   }
 
-  /** VÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rifie si c'est le tour d'un utilisateur */
+  /** Vérifie si c'est le tour d'un utilisateur */
   public boolean isUserTurn(com.fortnite.pronos.model.Draft draft, UUID userId) {
     if (!com.fortnite.pronos.model.Draft.Status.ACTIVE.equals(draft.getStatus())) {
       return false;
     }
 
-    // Cette mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©thode nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cessiterait l'accÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s aux
+    // Cette méthode nécessiterait l'accès aux
     // participants
-    // Pour l'instant, on retourne true pour ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©viter l'erreur de compilation
+    // Pour l'instant, on retourne true pour éviter l'erreur de compilation
     return true;
   }
 
-  // ============== MÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°THODES POUR DÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°COUPLER LE
+  // ============== MÉTHODES POUR DÉCOUPLER LE
   // CONTROLLER ==============
 
-  /** Trouve une game par ID ou lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ve une exception */
+  /** Trouve une game par ID ou lève une exception */
   @Transactional(readOnly = true)
   public com.fortnite.pronos.model.Game findGameById(UUID gameId) {
     return gameRepository
@@ -206,7 +201,7 @@ public class DraftService implements DraftUseCase {
     return gameRepository.findById(gameId);
   }
 
-  /** Trouve un joueur par ID ou lÃƒÆ’Ã†'Ãƒâ€šÃ‚Â¨ve une exception */
+  /** Trouve un joueur par ID ou lève une exception */
   @Transactional(readOnly = true)
   public com.fortnite.pronos.model.Player findPlayerById(UUID playerId) {
     return playerRepository
@@ -221,17 +216,14 @@ public class DraftService implements DraftUseCase {
     return playerRepository.findById(playerId).map(this::toLegacyPlayer);
   }
 
-  /**
-   * RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cupÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨re les participants d'une game
-   * ordonnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s par draft order
-   */
+  /** Récupère les participants d'une game ordonnés par draft order */
   @Transactional(readOnly = true)
   public List<com.fortnite.pronos.model.GameParticipant> getParticipantsOrderedByDraftOrder(
       UUID gameId) {
     return gameParticipantRepository.findByGameIdOrderByDraftOrderAsc(gameId);
   }
 
-  /** Trouve le draft associÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â une game */
+  /** Trouve le draft associé à une game */
   @Transactional(readOnly = true)
   public Optional<com.fortnite.pronos.model.Draft> findDraftByGame(
       com.fortnite.pronos.model.Game game) {
@@ -399,9 +391,7 @@ public class DraftService implements DraftUseCase {
     return persistDraftEntity(draft);
   }
 
-  /**
-   * RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cupÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨re les joueurs disponibles par rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gion
-   */
+  /** Récupère les joueurs disponibles par région */
   @Transactional(readOnly = true)
   public List<com.fortnite.pronos.model.Player> getAvailablePlayersByRegion(
       com.fortnite.pronos.model.Player.Region region) {
@@ -409,7 +399,7 @@ public class DraftService implements DraftUseCase {
     return playerRepository.findByRegion(domainRegion).stream().map(this::toLegacyPlayer).toList();
   }
 
-  /** Met ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â jour le statut d'une game */
+  /** Met à jour le statut d'une game */
   public com.fortnite.pronos.model.Game updateGameStatus(
       com.fortnite.pronos.model.Game game, com.fortnite.pronos.model.GameStatus status) {
     game.setStatus(status);

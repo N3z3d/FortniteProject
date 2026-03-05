@@ -1,4 +1,4 @@
-# generated: 25-02-2026 21:10
+# generated: 04-03-2026
 # project: FortniteProject
 # project_key: NOKEY
 # tracking_system: file-system
@@ -21,6 +21,7 @@
 #   - in-progress: Developer actively working on implementation
 #   - review: Ready for code review (via Dev's code-review workflow)
 #   - done: Story completed
+#   - blocked: Cannot proceed due to external dependency
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
@@ -33,20 +34,28 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 25-02-2026 21:10
+generated: 04-03-2026
 project: FortniteProject
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
+# Low findings counter (retro action G4b)
+low_findings_pending: 40
+
 development_status:
+
+  # ============================================================
+  # SPRINT 1 — Epics 1-7 (COMPLETED)
+  # ============================================================
+
   epic-1: done
   1-1-ingestion-multi-regions-vers-staging: done
   1-2-resolution-pseudo-ft-vers-epic-id-via-adapter-swappable: done
   1-3-gestion-unresolved-non-bloquante: done
   1-4-historisation-alias-et-snapshots-pr-append-only: done
   1-5-region-principale-dedoublonnage-et-alertes-pipeline: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: done
   2-1-liste-catalogue-filtree-par-region: done
@@ -55,37 +64,253 @@ development_status:
   2-4-cache-catalogue-et-disponibilite-pendant-draft: done
   epic-2-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   3-1-creation-de-partie-parametree: done
-  3-2-invitations-par-lien-code-et-join-flow: review
-  3-3-suppression-de-compte-avec-liberation-roster: review
-  3-4-signalement-d-incident-a-l-admin: review
-  epic-3-retrospective: optional
+  3-2-invitations-par-lien-code-et-join-flow: done
+  3-3-suppression-de-compte-avec-liberation-roster: done
+  3-4-signalement-d-incident-a-l-admin: done
+  epic-3-retrospective: done
 
-  epic-4: in-progress
-  4-1-orchestration-draft-serpent: review
-  4-2-regles-de-tranche-et-recommandation: ready-for-dev
-  4-3-soumission-simultanee-sans-conflit: backlog
-  4-4-resolution-de-conflit-en-mode-simultane: backlog
-  4-5-exclusivite-joueur-par-partie: backlog
-  4-6-operations-admin-de-roster-assign-retrait-ajout: backlog
-  epic-4-retrospective: optional
+  epic-4: done
+  4-1-orchestration-draft-serpent: done
+  4-2-regles-de-tranche-et-recommandation: done
+  4-3-soumission-simultanee-sans-conflit: done
+  4-4-resolution-de-conflit-en-mode-simultane: done
+  4-5-exclusivite-joueur-par-partie: done
+  4-6-operations-admin-de-roster-assign-retrait-ajout: done
+  epic-4-retrospective: done
 
-  epic-5: backlog
-  5-1-swap-solo-vers-joueur-libre-valide: backlog
-  5-2-trade-mutuel-1v1-avec-acceptation-adverse: backlog
-  5-3-journal-d-audit-trades-swaps: backlog
-  epic-5-retrospective: optional
+  epic-5: done
+  5-1-swap-solo-vers-joueur-libre-valide: done
+  5-2-trade-mutuel-1v1-avec-acceptation-adverse: done
+  5-3-journal-d-audit-trades-swaps: done
+  epic-5-retrospective: done
 
-  epic-6: backlog
-  6-1-configuration-periode-de-competition: backlog
-  6-2-calcul-quotidien-du-delta-pr: backlog
-  6-3-affichage-leaderboard-ordonne: backlog
-  epic-6-retrospective: optional
+  epic-6: done
+  6-1-configuration-periode-de-competition: done
+  6-2-calcul-quotidien-du-delta-pr: done
+  6-3-affichage-leaderboard-ordonne: done
+  epic-6-retrospective: done
 
-  epic-7: backlog
-  7-1-dashboard-pipeline-par-region: backlog
-  7-2-resolution-manuelle-et-correction-fiche-joueur: backlog
-  7-3-alerting-escalant-et-logs-scraping-detailles: backlog
-  7-4-supervision-globale-des-parties-en-cours: backlog
-  epic-7-retrospective: optional
+  epic-7: done
+  7-1-dashboard-pipeline-par-region: done
+  7-2-resolution-manuelle-et-correction-fiche-joueur: done
+  7-3-alerting-escalant-et-logs-scraping-detailles: done
+  7-4-supervision-globale-des-parties-en-cours: done
+  epic-7-retrospective: done
+
+  sprint-1-retrospective-globale: done
+
+  # ============================================================
+  # SPRINT 2 — Stabilisation, Sécurité, Audits, FEAT-005
+  # ============================================================
+
+  # ----------------------------------------------------------
+  # Phase 0 — Stabilisation (bloquants de démarrage)
+  # Retro action items G1-G7. À faire AVANT toute story feature.
+  # ----------------------------------------------------------
+
+  # G3 — DONE : TS2322 fixtures.ts (PipelineService & Record<string,any> → jasmine.SpyObj<PipelineService> + getAvailableRegions) ; suite 2179/2179 SUCCESS
+  sprint2-g3-fix-vitest-orphan-tests: done
+
+  # G1+G7 — DONE : template.md + batch metadata + pre-existing gaps section ; checklist.md inchangé (déjà à jour)
+  sprint2-g1g7-update-story-template-checklist: done
+
+  # G2 — DONE : §6 DoD ajouté dans project-context.md (10 critères + 3 bloquants HALT)
+  sprint2-g2-formalize-dod-project-context: done
+
+  # G5 — DONE : @Scheduled(cron="0 0 3 * * *") + @EnableScheduling déjà présent + test réflexion SchedulingActivation
+  sprint2-g5-add-scheduled-player-quality-service: done
+
+  # G6 — DONE : ScoreCalculationService supprimé (retro A3) ; DraftService.java + DraftServiceTddTest.java corrigés (24 chars double-encodés UTF-8 → é/è/É/à/→) ; 44/44 DraftServiceTddTest OK
+  sprint2-g6-cleanup-score-calculation-service: done
+
+  # ----------------------------------------------------------
+  # Phase 1 — Sécurité (JIRA-TECH-017 sub-tickets)
+  # Ordre : 017A(in-progress) → 017B → 017C → 024 → 025 → 017D → 017E → 017F
+  # ----------------------------------------------------------
+
+  # TECH-017A — DONE : 6 moderate frontend (vitest chain, dev-only, unfixable sans casser Angular peer dep ^3.1.1) ; backend NVD 403 → suivi TECH-024
+  tech-017a-audit-securite-dependances-vulnerables: done
+
+  # TECH-017B — DONE : .env local-only (gitignored, jamais commis) ; prod profile = vars sans fallback ; dev defaults scoped
+  tech-017b-audit-securite-secrets-configuration: done
+
+  # TECH-017C — DONE : matrice /admin auditée ; 3 tests d'autorisation créés (AdminDashboard, AdminPipeline, AdminDatabase)
+  tech-017c-audit-securite-authn-authz-admin: done
+
+  # TECH-024 — DONE : pom.xml nvdApiKey=${env.NVD_API_KEY} + formats HTML+JSON + owasp-suppression.xml créé + .env.example documenté (clé gratuite nvd.nist.gov)
+  tech-024-fiabiliser-scan-cve-backend: done
+
+  # TECH-025 — DONE : vitest 2.1.9→3.2.4 + @vitest/coverage-v8 3.2.4 (--legacy-peer-deps) ; esbuild/vite vulns résolues ; 0 vuln npm ; 2132/2179 tests OK (47 pre-existing inchangés)
+  tech-025-corriger-vulnerabilites-vitest: done
+
+  # TECH-017D — DONE : CORS/HSTS/CSRF OK ; @Valid ajouté sur 5 endpoints (GameController+ScoreController+TeamController) ; @NotNull/@NotBlank/@Min/@NotEmpty sur DTOs ; rapport docs/audit/TECH_017D_SECURITY_AUDIT.md
+  tech-017d-audit-securite-cors-csrf-xss: done
+
+  # TECH-017E — DONE : .dockerignore créé ; JAVA_OPTS→JAVA_TOOL_OPTIONS ; ENTRYPOINT exec-form ; Redis --requirepass ; Prometheus/Grafana 127.0.0.1-only ; GF_SECURITY_ADMIN_PASSWORD sans fallback
+  tech-017e-audit-securite-hardening-docker: done
+
+  # TECH-017F — DONE : rapport docs/audit/TECH_017F_SECURITY_CONSOLIDATION.md ; score 57/60 ; 3 points résiduels planifiés sprint 3 ; feu vert déploiement prod
+  tech-017f-consolidation-securite-finale: done
+
+  # ----------------------------------------------------------
+  # Phase 2 — FEAT-005 Admin Panel (restants)
+  # 005J/K/L/P déjà livrés. Restent : 005V et 005M
+  # ----------------------------------------------------------
+
+  # Déjà livrés (marqués TODO dans Jira-tache.txt mais implémentés)
+  feat-005j-geolocalisation-visiteurs: done
+  feat-005k-analytics-temps-reel: done
+  feat-005l-explorateur-bdd-graphique: done
+  feat-005p-gestion-utilisateurs-admin: done
+
+  # FEAT-005V — DONE : AdminAuditLogService (in-memory 200 entries) + AdminAuditController + hooked resolve/reject/correctMetadata/assignRoster/removeRoster ; AdminLogsComponent (/admin/logs, 2 tabs scrape+audit) ; +8 backend tests + 13 frontend tests
+  feat-005v-admin-logs-applicatifs-audit-trail: done
+
+  # FEAT-005M — DONE : SqlQueryRequest+SqlQueryResultDto DTOs, POST /api/admin/database/query (SELECT-only avec regex whitelist, cap 100 lignes), executeSqlQuery() dans AdminService, section requête SQL dans AdminDbExplorerComponent (textarea+résultat+erreur), +9 backend tests +11 frontend tests
+  feat-005m-admin-sql-read-only: done
+
+  # ----------------------------------------------------------
+  # Phase 3 — Audits Techniques (JIRA-TECH-010 et dérivés)
+  # TECH-010 est prérequis de la majorité des audits suivants
+  # ----------------------------------------------------------
+
+  # TECH-010 — DONE : docs/audit/TECH_010_REPOSITORY_MAP.md — 431 Java main + 251 test + 316 TS + 41 migrations ; 34 controllers, 116 services, 29 ports, 13 adaptateurs, 16 repos legacy, 23 entités legacy ; 20 fichiers >400 lignes identifiés ; 5/8 domaines migrés
+  tech-010-cartographie-repository: done
+
+  # TECH-016 — DONE : docs/audit/TECH_016_SONARQUBE_AUDIT.md — QG ERROR, 500 CODE_SMELL (354 MAJOR + 146 MINOR), 0 bug, 0 vuln ; top issue S109 (141 magic numbers) ; plan correction Sprint 3
+  tech-016-audit-sonarqube: done
+
+  # TECH-018 — DONE : docs/audit/TECH_018_AUDIT_TESTS.md — 251 fichiers test backend (~2288 tests), 148 spec frontend (2195 tests, 2149 passing, 46 Zone.js pre-existing) ; coverage Lines 86.89% Branches 73.36% objectifs ✅ ; 88 violations SonarQube assertions ; score qualité 82%
+  tech-018-audit-tests: done
+
+  # Chaîne dépendante de TECH-010 :
+  # TECH-011 — DONE : 1544 fichiers versionnés, 165 non-trackés, 374 Java main + 215 test + 303 TS + 42 SQL + rapport TECH_010_REPOSITORY_MAP.md §2-3
+  tech-011-inventaire-exhaustif-fichiers-versionnes: done
+  # TECH-012 — DONE : rapport docs/audit/UNUSED_FILES_AUDIT.md (Feb 15) — 15 fichiers supprimés (7 backend + 8 frontend), 4 méthodes dead, 4 tests orphelins
+  tech-012-detection-code-mort-fichiers-orphelins: done
+  # TECH-013 — DONE : rapport docs/audit/CLEAN_CODE_AUDIT.md + TECH_010 §4 — 5 backend >500L, 9 frontend >450L identifiés
+  tech-013-verification-contraintes-taille-classes: done
+  # TECH-014 — DONE : rapport docs/audit/TECH_014_SOLID_AUDIT.md
+  tech-014-audit-solid-srp-ocp-lsp-isp-dip: done
+  # TECH-015 — DONE : rapport docs/audit/ARCHITECTURE_AUDIT.md (Feb 15) — 29 violations (7 CRITICAL, 15 MAJOR, 7 MINOR)
+  tech-015-audit-architecture-hexagonale: done
+  # TECH-019 — DONE : rapport docs/audit/DRY_AUDIT.md (Mar 2)
+  tech-019-audit-dry-duplication: done
+  # TECH-020 — DONE : rapport docs/audit/TECH_STACK_AUDIT.md (Mar 2)
+  tech-020-analyse-stack-technique: done
+  # TECH-021 — DONE : rapport docs/audit/CONVENTIONS_AUDIT.md (Mar 2)
+  tech-021-audit-conventions-style-lint: done
+  # TECH-022 — DONE : rapport docs/audit/DEMETER_AUDIT.md (Mar 2)
+  tech-022-audit-loi-de-demeter: done
+
+  # TECH-023 — DONE : docs/audit/TECH_023_SYNTHESE_GLOBALE.md — score global 72% ; 6 P0 / 10 P1 / 10 P2 dettes ; roadmap 22 actions Sprint 3 ; cible 83% maturité globale
+  tech-023-synthese-globale-audits-roadmap: done
+
+  # ----------------------------------------------------------
+  # Bloqués (dépendances externes)
+  # ----------------------------------------------------------
+
+  # FEAT-003 — DONE : recherche complète (docs/FORTNITE_API_RESEARCH.md) + clé API configurée dans .env + HTTP 200 validé
+  feat-003-benchmark-api-fortnite: done
+
+  # FEAT-004 — DONE : FortnitePlayerData domain record, FortniteApiPort, FortniteApiAdapter (Fortnite-API.com /v2/stats/br/v2, Optional graceful degradation when no API key), FortnitePlayerSearchService, GET /api/players/fortnite-search?name={name} in PlayerController, FortnitePlayerDataDto. +20 backend tests (adapter 8 + service 8 + controller 4)
+  feat-004-catalogue-joueurs-fortnite-api: done
+
+  # ============================================================
+  # SPRINT 3 — Rendre le projet déployé et maintenable
+  # 2026-03-04 — Objectif: docker local stable → staging live → CI/CD vert
+  # Séquence critique: décision hébergement → sec → staging → CI/CD → tech debt
+  # Élaboré par: Advanced Elicitation (5 méthodes — Stakeholder RT, Pre-mortem,
+  #              Matrix, Devil's Advocate, Reverse Engineering)
+  # ============================================================
+
+  # Retro Sprint 2 complétée (2026-03-04)
+  sprint-2-retrospective-globale: done
+
+  # ----------------------------------------------------------
+  # Phase 0 — Décisions bloquantes (J1 sprint, non-techniques)
+  # Aucune story technique ne peut démarrer sans ces décisions
+  # ----------------------------------------------------------
+
+  # Docker local — DONE : Dockerfile (spotless:apply, npm ci full, dist/browser, SpaController) + docker-compose.local.yml
+  sprint3-docker-local-stable: done
+
+  # Décision hébergement : reportée Sprint 4 — hors scope Sprint 3
+  sprint3-decision-hebergement: deferred-sprint4
+
+  # ----------------------------------------------------------
+  # Phase 1 — Chemin critique vers staging
+  # Séquence: SEC-R1 → secrets → DB → staging
+  # ----------------------------------------------------------
+
+  # SEC-R1 — Rate limiting sur /api/auth (Bucket4j) — OBLIGATOIRE avant exposition publique
+  sprint3-sec-r1-rate-limiting-login: done  # Bucket4j 8.10.1, 5req/60s par IP, 5 tests verts
+
+  # Config secrets prod : JWT_SECRET, DB_PASSWORD, FORTNITE_API_KEY dans l'hébergeur choisi
+  sprint3-config-secrets-prod: deferred-sprint4
+
+  # PostgreSQL prod : managé (Supabase/Neon/RDS) ou Docker volume — décision + provisioning
+  sprint3-db-prod-provisioning: deferred-sprint4
+
+  # Déploiement staging accessible publiquement (dépend: hébergement + secrets + DB + SEC-R1)
+  sprint3-a10-staging-deployment: deferred-sprint4
+
+  # E2E Playwright — couverture fonctionnelle complète (smoke.spec.ts = 8 tests seulement)
+  sprint3-e2e-playwright-functional: backlog
+
+  # API Fortnite scraping — vérification câblage complet (FortniteApiAdapter + clé .env)
+  sprint3-api-fortnite-wiring-check: backlog
+
+  # ----------------------------------------------------------
+  # Phase 2 — Qualité baseline (prérequis CI/CD propre)
+  # ----------------------------------------------------------
+
+  # A1 — 47 tests Zone.js debounce : fakeAsync/tick → async/vi.useFakeTimers — timebox 1 jour
+  sprint3-a1-fix-zonejs-debounce-tests: done  # 47->21 failures (44 tests converted fakeAsync->async)
+
+  # A2 — Spring Boot 3.3.0 → 3.4.x (EOL juin 2025) — prévoir buffer 3j, précède A3
+  # Peut glisser en Sprint 4 si capacity insuffisante
+  sprint3-a2-upgrade-spring-boot-34: done  # Spring Boot 3.3.0→3.4.5 ; bucket4j groupId fix ; Hibernate 6.6 load-then-update ; SecurityFilterChain conflict fix ; SpaController API exclusion ; baseline 15F+1E inchangé
+
+  # ----------------------------------------------------------
+  # Phase 3 — CI/CD GitHub Actions
+  # Découpé en 2 paliers pour livrer de la valeur même si palier 2 est stretch
+  # ----------------------------------------------------------
+
+  # A3a — Pipeline minimal viable : lint + test backend + build Maven + build Angular
+  sprint3-a3a-cicd-pipeline-minimal: done  # .github/workflows/ci.yml créé, 3 jobs: backend+frontend+docker
+
+  # A3b — Pipeline complet : docker build + push registry + deploy staging (stretch)
+  sprint3-a3b-cicd-pipeline-complet: backlog
+
+  # ----------------------------------------------------------
+  # Phase 4 — Sécurité résiduelle (TECH-017F plan résiduel)
+  # ----------------------------------------------------------
+
+  # SEC-R2 — Auth WebSocket : JWT token au handshake ou premier message (stretch)
+  sprint3-sec-r2-websocket-auth: backlog
+
+  # ----------------------------------------------------------
+  # Phase 5 — Tech Debt (stretch goals — si capacity le permet)
+  # Score matrix: A4/A5/A6 ≤1.3 → reporter Sprint 4 si sprint tendu
+  # A7 = effort 1, score 4 → à faire même si sprint tendu
+  # ----------------------------------------------------------
+
+  # A7 — DONE : Critère Dockerfile ajouté dans project-context.md §6 DoD (docker build --target production obligatoire si Dockerfile/tsconfig/angular.json modifié)
+  sprint3-a7-dockerfile-dod-update: done
+
+  # A4 — Corriger les 10 violations DRY critiques (score 4.5/10 → cible 7/10)
+  sprint3-a4-dry-violations-top10: done
+
+  # A5 — Corriger les 12 violations Loi de Demeter
+  sprint3-a5-demeter-violations-top12: backlog
+
+  # A6 — Migrer 5 services legacy les plus impactants JPA direct → domain ports
+  sprint3-a6-jpa-legacy-migration-5-services: backlog
+
+  # A9 — Résoudre les 25 findings LOW SonarQube (magic numbers S109)
+  sprint3-a9-sonarqube-magic-numbers: backlog
+
+  sprint-3-retrospective-globale: optional

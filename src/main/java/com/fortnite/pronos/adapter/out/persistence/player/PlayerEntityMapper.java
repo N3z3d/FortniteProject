@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.adapter.out.persistence.support.MappingUtils;
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
 
 /**
@@ -33,8 +34,8 @@ public class PlayerEntityMapper {
         entity.getNickname(),
         toDomainRegion(entity.getRegion()),
         entity.getTranche(),
-        safeInt(entity.getCurrentSeason(), 2025),
-        safeBool(entity.getLocked()));
+        MappingUtils.safeInt(entity.getCurrentSeason(), 2025),
+        MappingUtils.safeBool(entity.getLocked()));
   }
 
   // ===============================
@@ -91,17 +92,5 @@ public class PlayerEntityMapper {
       return Collections.emptyList();
     }
     return entities.stream().map(this::toDomain).toList();
-  }
-
-  // ===============================
-  // PRIVATE HELPERS
-  // ===============================
-
-  private static int safeInt(Integer value, int defaultValue) {
-    return value != null ? value : defaultValue;
-  }
-
-  private static boolean safeBool(Boolean value) {
-    return value != null && value;
   }
 }

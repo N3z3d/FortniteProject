@@ -131,7 +131,7 @@ public class GameParticipantService {
 
   private void validateUserCanLeaveGame(com.fortnite.pronos.model.User user, Game game) {
     if (!isUserAlreadyInGame(user, game)) {
-      throw new IllegalStateException("User is not in this game");
+      throw new InvalidGameStateException("User is not in this game");
     }
 
     if (isGameCreator(user, game)) {
@@ -170,7 +170,7 @@ public class GameParticipantService {
         game.getParticipants().stream()
             .filter(p -> p.getUserId().equals(user.getId()))
             .findFirst()
-            .orElseThrow(() -> new IllegalStateException("Participant not found"));
+            .orElseThrow(() -> new InvalidGameStateException("Participant not found in game"));
     game.removeParticipant(participant);
     gameRepository.save(game);
   }
@@ -200,9 +200,10 @@ public class GameParticipantService {
       return;
     }
 
+    // Do not pre-assign ID — let @GeneratedValue handle it so that Spring Data JPA calls
+    // persist() (new entity) instead of merge() (which fails in Hibernate 6.6 for unknown IDs).
     com.fortnite.pronos.model.GameParticipant creatorParticipant =
         com.fortnite.pronos.model.GameParticipant.builder()
-            .id(UUID.randomUUID())
             .game(legacyGameOptional.orElseThrow())
             .user(creatorOptional.orElseThrow())
             .creator(true)

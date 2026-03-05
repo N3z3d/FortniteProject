@@ -86,7 +86,14 @@ class LayeredArchitectureTest {
             "Adapters")
         .whereLayer("DTOs")
         .mayOnlyBeAccessedByLayers(
-            "Controllers", "Services", "UseCases", "Exceptions", "Config", "Application", "Domain")
+            "Controllers",
+            "Services",
+            "UseCases",
+            "Exceptions",
+            "Config",
+            "Application",
+            "Domain",
+            "Adapters") // External-API adapters (e.g. FortniteApiAdapter) use response DTOs
         .whereLayer("Config")
         .mayOnlyBeAccessedByLayers("Config", "Controllers", "Services", "UseCases", "Exceptions")
         .check(classes);

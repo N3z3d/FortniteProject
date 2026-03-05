@@ -8,17 +8,22 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.adapter.out.persistence.support.EntityReferenceFactory;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -33,12 +38,19 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
   private final GameRepository gameRepository;
   private final UserRepository userRepository;
   private final GameEntityMapper mapper;
+  private final GameParticipantRepository participantRepository;
+
+  @PersistenceContext private EntityManager entityManager;
 
   public GameRepositoryAdapter(
-      GameRepository gameRepository, UserRepository userRepository, GameEntityMapper mapper) {
+      GameRepository gameRepository,
+      UserRepository userRepository,
+      GameEntityMapper mapper,
+      GameParticipantRepository participantRepository) {
     this.gameRepository = gameRepository;
     this.userRepository = userRepository;
     this.mapper = mapper;
+    this.participantRepository = participantRepository;
   }
 
   @Override
@@ -51,9 +63,95 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
     Objects.requireNonNull(game, "Game cannot be null");
     User creator = findRequiredCreator(game.getCreatorId());
     Map<UUID, User> participantUsersById = resolveParticipantUsersById(game.getParticipants());
-    com.fortnite.pronos.model.Game entity = mapper.toEntity(game, creator, participantUsersById);
+    com.fortnite.pronos.model.Game entity = buildOrLoadEntity(game, creator, participantUsersById);
     com.fortnite.pronos.model.Game savedEntity = gameCrudRepository().save(entity);
     return mapper.toDomain(savedEntity);
+  }
+
+  /**
+   * Returns a managed JPA entity for the given domain game. If the game already exists in the
+   * database, the existing entity is loaded (so its participants are already in the Hibernate
+   * session), and only scalar fields are updated. New participants are appended to the managed
+   * collection. This avoids Hibernate 6.6's new strict behaviour that raises {@code
+   * StaleObjectStateException} when merging a transient entity with a pre-assigned UUID.
+   */
+  private com.fortnite.pronos.model.Game buildOrLoadEntity(
+      Game game, User creator, Map<UUID, User> participantUsersById) {
+    Optional<com.fortnite.pronos.model.Game> existing =
+        game.getId() != null ? gameRepository.findById(game.getId()) : Optional.empty();
+    if (existing.isPresent()) {
+      return updateExistingEntity(existing.get(), game, creator, participantUsersById);
+    }
+    return mapper.toEntity(game, creator, participantUsersById);
+  }
+
+  private com.fortnite.pronos.model.Game updateExistingEntity(
+      com.fortnite.pronos.model.Game entity,
+      Game domain,
+      User creator,
+      Map<UUID, User> participantUsersById) {
+    entity.setName(domain.getName());
+    entity.setDescription(domain.getDescription());
+    entity.setMaxParticipants(domain.getMaxParticipants());
+    entity.setStatus(com.fortnite.pronos.model.GameStatus.valueOf(domain.getStatus().name()));
+    entity.setCreatedAt(domain.getCreatedAt());
+    entity.setFinishedAt(domain.getFinishedAt());
+    entity.setDeletedAt(domain.getDeletedAt());
+    entity.setInvitationCode(domain.getInvitationCode());
+    entity.setInvitationCodeExpiresAt(domain.getInvitationCodeExpiresAt());
+    entity.setTradingEnabled(domain.isTradingEnabled());
+    entity.setMaxTradesPerTeam(domain.getMaxTradesPerTeam());
+    entity.setTradeDeadline(domain.getTradeDeadline());
+    entity.setCurrentSeason(domain.getCurrentSeason());
+    entity.setTranchesEnabled(domain.isTranchesEnabled());
+    entity.setTrancheSize(domain.getTrancheSize());
+    entity.setTeamSize(domain.getTeamSize());
+    entity.setCompetitionStart(domain.getCompetitionStart());
+    entity.setCompetitionEnd(domain.getCompetitionEnd());
+    entity.setCreator(creator);
+    addNewParticipantsToManagedEntity(entity, domain.getParticipants(), participantUsersById);
+    return entity;
+  }
+
+  /**
+   * Adds participants that are not yet in the managed entity's collection. Since the entity is
+   * already managed (loaded from DB), its participant list is in the Hibernate session. New
+   * participants (not found in the existing list) are appended without pre-assigned IDs so that
+   * Hibernate generates their UUID via {@code @GeneratedValue}.
+   */
+  private void addNewParticipantsToManagedEntity(
+      com.fortnite.pronos.model.Game managedEntity,
+      List<GameParticipant> domainParticipants,
+      Map<UUID, User> participantUsersById) {
+    if (domainParticipants == null || domainParticipants.isEmpty()) {
+      return;
+    }
+    List<UUID> existingUserIds =
+        managedEntity.getParticipants().stream()
+            .map(p -> p.getUser() != null ? p.getUser().getId() : null)
+            .filter(Objects::nonNull)
+            .toList();
+    for (GameParticipant domainParticipant : domainParticipants) {
+      if (domainParticipant == null || domainParticipant.getUserId() == null) {
+        continue;
+      }
+      if (!existingUserIds.contains(domainParticipant.getUserId())) {
+        User user = participantUsersById.get(domainParticipant.getUserId());
+        if (user == null) {
+          continue;
+        }
+        com.fortnite.pronos.model.GameParticipant newParticipant =
+            com.fortnite.pronos.model.GameParticipant.builder()
+                .game(managedEntity)
+                .user(user)
+                .draftOrder(domainParticipant.getDraftOrder())
+                .joinedAt(domainParticipant.getJoinedAt())
+                .lastSelectionTime(domainParticipant.getLastSelectionTime())
+                .creator(domainParticipant.isCreator())
+                .build();
+        managedEntity.getParticipants().add(newParticipant);
+      }
+    }
   }
 
   @Override
@@ -175,6 +273,11 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
     return mapper.toDomainList(gameRepository.findByCurrentSeasonWithFetch(season));
   }
 
+  @Override
+  public List<Game> findAllWithCompetitionPeriod() {
+    return mapper.toDomainList(gameRepository.findAllWithCompetitionPeriod());
+  }
+
   private User findRequiredCreator(UUID creatorId) {
     if (creatorId == null) {
       throw new IllegalArgumentException("Creator not found: null");
@@ -197,17 +300,12 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
           userCrudRepository()
               .findById(participant.getUserId())
               .orElseGet(
-                  () -> createUserReference(participant.getUserId(), participant.getUsername()));
+                  () ->
+                      EntityReferenceFactory.userRef(
+                          participant.getUserId(), participant.getUsername()));
       usersById.put(participant.getUserId(), user);
     }
     return usersById;
-  }
-
-  private User createUserReference(UUID userId, String username) {
-    User user = new User();
-    user.setId(userId);
-    user.setUsername(username);
-    return user;
   }
 
   private com.fortnite.pronos.model.GameStatus toEntityStatus(GameStatus status) {

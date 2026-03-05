@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.5</version>
         <relativePath/>
     </parent>
 
@@ -87,6 +87,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Rate Limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
         </dependency>
 
         <!-- Utils -->
@@ -239,7 +246,7 @@
                 <configuration>
                     <java>
                         <googleJavaFormat>
-                            <version>1.19.1</version>
+                            <version>1.19.2</version>
                             <style>GOOGLE</style>
                         </googleJavaFormat>
                         <removeUnusedImports />
@@ -343,6 +350,11 @@
                     <skipProvidedScope>true</skipProvidedScope>
                     <skipRuntimeScope>false</skipRuntimeScope>
                     <suppressionFile>owasp-suppression.xml</suppressionFile>
+                    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
                 </configuration>
                 <executions>
                     <execution>

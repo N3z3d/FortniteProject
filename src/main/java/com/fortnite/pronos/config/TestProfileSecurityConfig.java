@@ -1,6 +1,7 @@
 package com.fortnite.pronos.config;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -29,6 +30,7 @@ public class TestProfileSecurityConfig {
   }
 
   @Bean
+  @ConditionalOnMissingBean(SecurityFilterChain.class)
   public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.ignoringRequestMatchers("/actuator/**", "/api/**"))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

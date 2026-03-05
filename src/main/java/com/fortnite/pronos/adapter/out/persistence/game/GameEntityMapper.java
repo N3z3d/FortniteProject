@@ -8,12 +8,13 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.adapter.out.persistence.support.EntityReferenceFactory;
+import com.fortnite.pronos.adapter.out.persistence.support.MappingUtils;
 import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameRegionRule;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
-import com.fortnite.pronos.model.Draft;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
@@ -65,7 +66,7 @@ public class GameEntityMapper {
     entity.setCreator(creator);
 
     if (domain.getDraftId() != null) {
-      entity.setDraft(createDraftReference(domain.getDraftId()));
+      entity.setDraft(EntityReferenceFactory.draftRef(domain.getDraftId()));
     }
 
     entity.setRegionRules(toEntityRegionRules(domain.getRegionRules(), entity));
@@ -78,7 +79,9 @@ public class GameEntityMapper {
   /** Convenience overload used by tests or temporary callers during migration. */
   public Game toEntity(com.fortnite.pronos.domain.game.model.Game domain) {
     return toEntity(
-        domain, createUserReference(domain != null ? domain.getCreatorId() : null, null), Map.of());
+        domain,
+        EntityReferenceFactory.userRef(domain != null ? domain.getCreatorId() : null, null),
+        Map.of());
   }
 
   private List<com.fortnite.pronos.model.GameRegionRule> toEntityRegionRules(
@@ -127,7 +130,7 @@ public class GameEntityMapper {
       return Collections.emptyList();
     }
     return selectedPlayerIds.stream()
-        .map(this::createPlayerReference)
+        .map(EntityReferenceFactory::playerRef)
         .filter(Objects::nonNull)
         .toList();
   }
@@ -141,14 +144,8 @@ public class GameEntityMapper {
     if (resolvedUser != null) {
       return resolvedUser;
     }
-    return createUserReference(domainParticipant.getUserId(), domainParticipant.getUsername());
-  }
-
-  private Player createPlayerReference(UUID playerId) {
-    if (playerId == null) {
-      return null;
-    }
-    return Player.builder().id(playerId).build();
+    return EntityReferenceFactory.userRef(
+        domainParticipant.getUserId(), domainParticipant.getUsername());
   }
 
   private com.fortnite.pronos.model.GameRegionRule toEntityRegionRule(
@@ -165,22 +162,6 @@ public class GameEntityMapper {
     entity.setGame(parentEntity);
 
     return entity;
-  }
-
-  private Draft createDraftReference(UUID draftId) {
-    Draft draft = new Draft();
-    draft.setId(draftId);
-    return draft;
-  }
-
-  private User createUserReference(UUID userId, String username) {
-    if (userId == null) {
-      return null;
-    }
-    User user = new User();
-    user.setId(userId);
-    user.setUsername(username);
-    return user;
   }
 
   // ===============================
@@ -205,7 +186,7 @@ public class GameEntityMapper {
         entity.getName(),
         entity.getDescription(),
         entity.getCreator() != null ? entity.getCreator().getId() : null,
-        safeInt(entity.getMaxParticipants(), 2),
+        MappingUtils.safeInt(entity.getMaxParticipants(), 2),
         safeStatus(toDomainStatus(entity.getStatus())),
         entity.getCreatedAt(),
         entity.getFinishedAt(),
@@ -215,14 +196,14 @@ public class GameEntityMapper {
         domainRules,
         domainParticipants,
         entity.getDraft() != null ? entity.getDraft().getId() : null,
-        safeBool(entity.getTradingEnabled()),
-        safeInt(entity.getMaxTradesPerTeam(), 5),
+        MappingUtils.safeBool(entity.getTradingEnabled()),
+        MappingUtils.safeInt(entity.getMaxTradesPerTeam(), 5),
         entity.getTradeDeadline(),
-        safeInt(entity.getCurrentSeason(), java.time.Year.now().getValue()),
+        MappingUtils.safeInt(entity.getCurrentSeason(), java.time.Year.now().getValue()),
         toDomainDraftMode(entity.getDraftMode()),
-        safeInt(entity.getTeamSize(), 5),
-        safeInt(entity.getTrancheSize(), 10),
-        safeBool(entity.getTranchesEnabled()),
+        MappingUtils.safeInt(entity.getTeamSize(), 5),
+        MappingUtils.safeInt(entity.getTrancheSize(), 10),
+        MappingUtils.safeBool(entity.getTranchesEnabled()),
         entity.getCompetitionStart(),
         entity.getCompetitionEnd());
   }
@@ -287,7 +268,7 @@ public class GameEntityMapper {
         entity.getDraftOrder(),
         entity.getJoinedAt(),
         entity.getLastSelectionTime(),
-        safeBool(entity.getCreator()),
+        MappingUtils.safeBool(entity.getCreator()),
         selectedPlayerIds);
   }
 
@@ -297,7 +278,9 @@ public class GameEntityMapper {
       return null;
     }
     return new GameRegionRule(
-        entity.getId(), toDomainRegion(entity.getRegion()), safeInt(entity.getMaxPlayers(), 1));
+        entity.getId(),
+        toDomainRegion(entity.getRegion()),
+        MappingUtils.safeInt(entity.getMaxPlayers(), 1));
   }
 
   // ===============================
@@ -367,14 +350,6 @@ public class GameEntityMapper {
   // ===============================
   // PRIVATE HELPERS
   // ===============================
-
-  private static int safeInt(Integer value, int defaultValue) {
-    return value != null ? value : defaultValue;
-  }
-
-  private static boolean safeBool(Boolean value) {
-    return value != null && value;
-  }
 
   private static GameStatus safeStatus(GameStatus status) {
     return status != null ? status : GameStatus.CREATING;

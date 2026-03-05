@@ -47,6 +47,7 @@ public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthFilter;
   private final UserDetailsService userDetailsService;
   private final Environment environment;
+  private final RateLimitingFilter rateLimitingFilter;
   private final org.springframework.beans.factory.ObjectProvider<TestFallbackAuthenticationFilter>
       testFallbackAuthenticationFilter;
 
@@ -58,6 +59,7 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authenticationProvider(authenticationProvider())
+        .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .headers(this::configureSecurityHeaders);
 
@@ -109,6 +111,20 @@ public class SecurityConfig {
         .permitAll()
         .requestMatchers("/ws/**")
         .permitAll()
+        .requestMatchers(
+            "/",
+            "/index.html",
+            "/*.js",
+            "/*.css",
+            "/*.ico",
+            "/*.txt",
+            "/*.map",
+            "/*.webmanifest",
+            "/assets/**",
+            "/fonts/**",
+            "/media/**",
+            "/favicon.ico")
+        .permitAll()
         .requestMatchers("/api/users/**")
         .hasRole("ADMIN")
         .requestMatchers("/api/admin/**")
@@ -116,7 +132,7 @@ public class SecurityConfig {
         .requestMatchers("/api/**")
         .authenticated()
         .anyRequest()
-        .authenticated();
+        .permitAll(); // Static assets + SPA routes; APIs secured above
   }
 
   private void configureSecurityHeaders(HeadersConfigurer<HttpSecurity> headers) {
@@ -145,7 +161,9 @@ public class SecurityConfig {
         "http://localhost:4200",
         "http://localhost:4201",
         "http://127.0.0.1:4200",
-        "http://127.0.0.1:4201");
+        "http://127.0.0.1:4201",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080");
   }
 
   @Bean
