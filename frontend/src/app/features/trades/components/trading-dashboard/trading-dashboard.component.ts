@@ -13,6 +13,8 @@ import { TranslationService } from '../../../../core/services/translation.servic
 import { LoggerService } from '../../../../core/services/logger.service';
 import { secureRandomFloat, secureRandomPick } from '../../../../shared/utils/secure-random.util';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 @Component({
   selector: 'app-trading-dashboard',
   standalone: true,
@@ -178,7 +180,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     const filteredTrades$ = combineLatest([
       this.trades$,
       this.searchQuery$.pipe(
-        debounceTime(300),
+        debounceTime(SEARCH_DEBOUNCE_MS),
         startWith('')
       ),
       this.selectedFilter.asObservable()

@@ -93,6 +93,30 @@ public class Team {
     return owner != null ? owner.getId() : null;
   }
 
+  /**
+   * Delegating accessor for the owner's ID. Avoids caller chains team.getOwner().getId() (Law of
+   * Demeter).
+   */
+  public UUID getOwnerId() {
+    return owner != null ? owner.getId() : null;
+  }
+
+  /**
+   * Delegating accessor for the owner's username. Avoids caller chains
+   * team.getOwner().getUsername() (Law of Demeter).
+   */
+  public String getOwnerUsername() {
+    return owner != null ? owner.getUsername() : null;
+  }
+
+  /**
+   * Delegating accessor for the owner's email. Avoids caller chains team.getOwner().getEmail() (Law
+   * of Demeter).
+   */
+  public String getOwnerEmail() {
+    return owner != null ? owner.getEmail() : null;
+  }
+
   public void setUser(User user) {
     this.owner = user;
   }

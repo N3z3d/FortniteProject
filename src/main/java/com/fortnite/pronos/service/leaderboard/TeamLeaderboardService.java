@@ -75,8 +75,8 @@ public class TeamLeaderboardService {
           LeaderboardEntryDTO.builder()
               .teamId(team.getId())
               .teamName(team.getName())
-              .ownerId(team.getOwner().getId())
-              .ownerUsername(team.getOwner().getUsername())
+              .ownerId(team.getOwnerId())
+              .ownerUsername(team.getOwnerUsername())
               .totalPoints(totalPoints)
               .players(playerInfos)
               .build());
@@ -138,8 +138,8 @@ public class TeamLeaderboardService {
           LeaderboardEntryDTO.builder()
               .teamId(team.getId())
               .teamName(team.getName())
-              .ownerId(team.getOwner().getId())
-              .ownerUsername(team.getOwner().getUsername())
+              .ownerId(team.getOwnerId())
+              .ownerUsername(team.getOwnerUsername())
               .totalPoints(totalPoints)
               .players(playerInfos)
               .build());

@@ -27,6 +27,17 @@ public class TeamDto {
     private String tranche;
   }
 
+  private static int calculatePlayerSeasonScore(
+      com.fortnite.pronos.model.TeamPlayer tp, Integer season) {
+    if (tp.getPlayer() == null || tp.getPlayer().getScores() == null) {
+      return 0;
+    }
+    return tp.getPlayer().getScores().stream()
+        .filter(s -> java.util.Objects.equals(s.getSeason(), season))
+        .mapToInt(s -> s.getPoints())
+        .sum();
+  }
+
   public static TeamDto from(Team team) {
     if (team == null) {
       return null;
@@ -36,22 +47,13 @@ public class TeamDto {
     dto.id = team.getId();
     dto.name = team.getName();
     dto.season = team.getSeason();
-    dto.ownerUsername = team.getOwner() != null ? team.getOwner().getUsername() : null;
+    dto.ownerUsername = team.getOwnerUsername();
 
     if (team.getPlayers() != null) {
       dto.totalScore =
           team.getPlayers().stream()
               .filter(tp -> tp.getUntil() == null)
-              .mapToInt(
-                  tp -> {
-                    if (tp.getPlayer() == null || tp.getPlayer().getScores() == null) {
-                      return 0;
-                    }
-                    return tp.getPlayer().getScores().stream()
-                        .filter(s -> java.util.Objects.equals(s.getSeason(), team.getSeason()))
-                        .mapToInt(s -> s.getPoints())
-                        .sum();
-                  })
+              .mapToInt(tp -> calculatePlayerSeasonScore(tp, team.getSeason()))
               .sum();
 
       dto.players =

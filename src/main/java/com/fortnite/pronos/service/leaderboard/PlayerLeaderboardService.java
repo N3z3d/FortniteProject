@@ -120,13 +120,11 @@ public class PlayerLeaderboardService {
 
       playerTeamsMap
           .computeIfAbsent(playerId, key -> new ArrayList<>())
-          .add(
-              new TeamInfoDto(
-                  team.getId().toString(), team.getName(), team.getOwner().getUsername()));
+          .add(new TeamInfoDto(team.getId().toString(), team.getName(), team.getOwnerUsername()));
 
       playerPronostiqueurMap
           .computeIfAbsent(playerId, key -> new ArrayList<>())
-          .add(team.getOwner().getUsername());
+          .add(team.getOwnerUsername());
     }
   }
 

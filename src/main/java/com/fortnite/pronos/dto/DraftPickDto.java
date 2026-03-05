@@ -40,15 +40,15 @@ public class DraftPickDto {
             .playerId(draftPick.getPlayer().getId())
             .playerName(draftPick.getPlayer().getNickname())
             .playerRegion(draftPick.getPlayer().getRegion())
-            .pickerId(draftPick.getParticipant().getUser().getId())
-            .pickerName(draftPick.getParticipant().getUser().getUsername())
+            .pickerId(draftPick.getParticipant().getUserId())
+            .pickerName(draftPick.getParticipant().getUsername())
             .round(draftPick.getRound())
             .pick(draftPick.getPickNumber())
             .pickTime(draftPick.getSelectionTime())
             .build();
 
-    // Calculer l'overallPick
-    int participantCount = draftPick.getDraft().getGame().getParticipants().size();
+    // Calculer l'overallPick via le délégataire sur Draft (évite la chaîne 3 niveaux)
+    int participantCount = draftPick.getDraft().getGameParticipantCount();
     dto.setOverallPick(((draftPick.getRound() - 1) * participantCount) + draftPick.getPickNumber());
 
     return dto;

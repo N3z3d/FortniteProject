@@ -21,6 +21,7 @@ public class LeaderboardCacheService {
   private final ConcurrentHashMap<Integer, CachedLeaderboard> leaderboardCache =
       new ConcurrentHashMap<>();
   private static final long CACHE_DURATION_MINUTES = 15; // 15 minutes
+  private static final int DEFAULT_SEASON = 2025;
 
   /** Récupère le leaderboard depuis le cache */
   public List<LeaderboardEntryDTO> getCachedLeaderboard(Integer season) {
@@ -103,7 +104,7 @@ public class LeaderboardCacheService {
 
   /** Récupère la saison courante */
   private Integer getCurrentSeason() {
-    return 2025; // Saison par défaut pour le MVP
+    return DEFAULT_SEASON;
   }
 
   /** Obtient les statistiques du cache */

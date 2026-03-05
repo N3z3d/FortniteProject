@@ -24,6 +24,9 @@ import { PlayerCatalogueService } from '../../services/player-catalogue.service'
 
 const MAX_COMPARE = 2;
 const VIRTUAL_SCROLL_ITEM_SIZE = 80; // browse mode height in px
+const FILTER_DEBOUNCE_MS = 200;
+const SNACKBAR_DURATION_INFO_MS = 3_000;
+const SNACKBAR_DURATION_CONFIRM_MS = 4_000;
 
 @Component({
   selector: 'app-player-catalogue-page',
@@ -68,7 +71,7 @@ export class PlayerCataloguePageComponent implements OnInit {
   ngOnInit(): void {
     this.filter$
       .pipe(
-        debounceTime(200),
+        debounceTime(FILTER_DEBOUNCE_MS),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         switchMap(filter => {
           this.loading = true;
@@ -111,7 +114,7 @@ export class PlayerCataloguePageComponent implements OnInit {
       this.snackBar.open(
         `Comparaison limitée à ${MAX_COMPARE} joueurs`,
         'OK',
-        { duration: 3000 }
+        { duration: SNACKBAR_DURATION_INFO_MS }
       );
       return;
     }
@@ -127,7 +130,7 @@ export class PlayerCataloguePageComponent implements OnInit {
   }
 
   onReport(player: AvailablePlayer): void {
-    this.snackBar.open(`Signalement envoyé pour ${player.username}`, 'Fermer', { duration: 4000 });
+    this.snackBar.open(`Signalement envoyé pour ${player.username}`, 'Fermer', { duration: SNACKBAR_DURATION_CONFIRM_MS });
   }
 
   onReportEmpty(): void {
@@ -135,7 +138,7 @@ export class PlayerCataloguePageComponent implements OnInit {
     this.snackBar.open(
       `Signalement envoyé${pseudo ? ' pour ' + pseudo : ''}`,
       'Fermer',
-      { duration: 4000 }
+      { duration: SNACKBAR_DURATION_CONFIRM_MS }
     );
   }
 

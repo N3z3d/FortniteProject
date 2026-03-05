@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fortnite.pronos.dto.admin.AdminAlertDto;
 import com.fortnite.pronos.dto.admin.AdminAlertThresholdsDto;
+import com.fortnite.pronos.dto.admin.AdminUserDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
@@ -22,7 +23,6 @@ import com.fortnite.pronos.dto.admin.SystemMetricsDto;
 import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 import com.fortnite.pronos.dto.common.ApiResponse;
 import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.admin.AdminAlertService;
 import com.fortnite.pronos.service.admin.AdminDashboardService;
 import com.fortnite.pronos.service.admin.AdminVisitAnalyticsService;
@@ -37,12 +37,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
-  private static final int MIN_RECENT_ACTIVITY_HOURS = 1;
-  private static final int MAX_RECENT_ACTIVITY_HOURS = 168;
-  private static final int MIN_ALERT_HOURS = 1;
-  private static final int MAX_ALERT_HOURS = 168;
-  private static final int MIN_VISIT_ANALYTICS_HOURS = 1;
-  private static final int MAX_VISIT_ANALYTICS_HOURS = 168;
+  private static final int MIN_HOURS = 1;
+  private static final int MAX_HOURS_WINDOW = 168; // 7 days × 24 hours
+  private static final int MIN_RECENT_ACTIVITY_HOURS = MIN_HOURS;
+  private static final int MAX_RECENT_ACTIVITY_HOURS = MAX_HOURS_WINDOW;
+  private static final int MIN_ALERT_HOURS = MIN_HOURS;
+  private static final int MAX_ALERT_HOURS = MAX_HOURS_WINDOW;
+  private static final int MIN_VISIT_ANALYTICS_HOURS = MIN_HOURS;
+  private static final int MAX_VISIT_ANALYTICS_HOURS = MAX_HOURS_WINDOW;
   private static final String HOURS_VALIDATION_ERROR_MESSAGE =
       "Le parametre hours doit etre entre 1 et 168";
   private static final String VALIDATION_ERROR_CODE = "VALIDATION_ERROR";
@@ -78,7 +80,7 @@ public class AdminDashboardController {
   }
 
   @GetMapping("/users")
-  public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
+  public ResponseEntity<ApiResponse<List<AdminUserDto>>> getAllUsers() {
     log.info("Admin: fetching all users");
     return ResponseEntity.ok(ApiResponse.success(adminDashboardService.getAllUsers()));
   }

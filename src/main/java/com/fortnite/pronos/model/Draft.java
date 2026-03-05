@@ -161,6 +161,14 @@ public class Draft {
     return game != null ? game.getId() : null;
   }
 
+  /**
+   * Returns the number of participants in the associated game. Delegates to game to avoid violating
+   * the Law of Demeter in callers.
+   */
+  public int getGameParticipantCount() {
+    return game != null ? game.getTotalParticipantCount() : 0;
+  }
+
   public Status getStatus() {
     return status;
   }

@@ -19,6 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export interface PlayerFilter {
   searchTerm: string;
   region: string | null;
@@ -85,7 +87,7 @@ export class PlayerSearchFilterComponent implements OnInit, OnChanges, OnDestroy
   ngOnInit(): void {
     this.searchControl.valueChanges
       .pipe(
-        debounceTime(300),
+        debounceTime(SEARCH_DEBOUNCE_MS),
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef)
       )

@@ -23,6 +23,7 @@ import { SnakeOrderBarComponent, SnakeParticipant } from '../../../../shared/com
 import { AvailablePlayer, DraftBoardState } from '../../models/draft.interface';
 
 const TURN_CHANGED_EVENT = 'TURN_CHANGED';
+const PICK_CONFIRM_SNACKBAR_DURATION_MS = 3_000;
 
 @Component({
   selector: 'app-snake-draft-page',
@@ -224,9 +225,9 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
     const region = player.region ? String(player.region) : '';
     const rank = player.totalPoints ? `Rank ${player.totalPoints}` : '';
     this.snackBar.open(
-      `Tu as sÃ©lectionnÃ© ${player.username} â€” ${rank} ${region} âœ“`,
+      `Tu as sÃ©lectionnÃ© ${player.username} â€” ${rank} ${region} âœ”`,
       undefined,
-      { duration: 3000, panelClass: 'snack-pick-confirm' }
+      { duration: PICK_CONFIRM_SNACKBAR_DURATION_MS, panelClass: 'snack-pick-confirm' }
     );
   }
 }

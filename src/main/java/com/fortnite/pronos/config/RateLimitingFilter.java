@@ -23,11 +23,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
   private static final String AUTH_PATH_PREFIX = "/api/auth";
   private static final int MAX_REQUESTS = 5;
   private static final int WINDOW_SECONDS = 60;
+  private static final int HTTP_STATUS_TOO_MANY_REQUESTS = 429;
   private static final String RETRY_AFTER_VALUE = String.valueOf(WINDOW_SECONDS);
   private static final String TOO_MANY_REQUESTS_BODY =
       "{\"error\":\"Too Many Requests\","
-          + "\"message\":\"Rate limit exceeded. Try again in 60 seconds.\","
-          + "\"retryAfterSeconds\":60}";
+          + "\"message\":\"Rate limit exceeded. Try again in "
+          + WINDOW_SECONDS
+          + " seconds.\","
+          + "\"retryAfterSeconds\":"
+          + WINDOW_SECONDS
+          + "}";
 
   private final ConcurrentHashMap<String, Bucket> bucketsByIp = new ConcurrentHashMap<>();
 
@@ -62,7 +67,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
   }
 
   private void writeRateLimitResponse(HttpServletResponse response) throws IOException {
-    response.setStatus(429);
+    response.setStatus(HTTP_STATUS_TOO_MANY_REQUESTS);
     response.setContentType("application/json");
     response.setHeader("Retry-After", RETRY_AFTER_VALUE);
     response.getWriter().write(TOO_MANY_REQUESTS_BODY);

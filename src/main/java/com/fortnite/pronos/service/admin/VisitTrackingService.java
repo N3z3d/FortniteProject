@@ -36,6 +36,8 @@ public class VisitTrackingService {
   private static final int NAVIGATION_SPLIT_LIMIT = 2;
   private static final Pattern NAVIGATION_SEPARATOR_PATTERN =
       Pattern.compile(Pattern.quote(NAVIGATION_SEPARATOR));
+  private static final long ACTIVE_USER_WINDOW_MINUTES = 5;
+  private static final long ACTIVE_PAGE_WINDOW_MINUTES = 2;
 
   private final Deque<VisitEvent> events = new ConcurrentLinkedDeque<>();
   private final AtomicInteger eventCount = new AtomicInteger();
@@ -71,8 +73,8 @@ public class VisitTrackingService {
   }
 
   public RealTimeAnalyticsDto getRealTimeSnapshot() {
-    Instant fiveMinutesAgo = clock.instant().minus(Duration.ofMinutes(5));
-    Instant twoMinutesAgo = clock.instant().minus(Duration.ofMinutes(2));
+    Instant fiveMinutesAgo = clock.instant().minus(Duration.ofMinutes(ACTIVE_USER_WINDOW_MINUTES));
+    Instant twoMinutesAgo = clock.instant().minus(Duration.ofMinutes(ACTIVE_PAGE_WINDOW_MINUTES));
 
     List<VisitEvent> activeEvents =
         events.stream().filter(e -> !e.timestamp().isBefore(fiveMinutesAgo)).toList();

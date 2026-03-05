@@ -21,6 +21,11 @@ import {
   VisitAnalytics
 } from '../models/admin.models';
 
+const REAL_TIME_POLLING_INTERVAL_MS = 15_000;
+const MILLIS_PER_HOUR = 3_600_000;
+const MILLIS_PER_MINUTE = 60_000;
+const BYTES_PER_KILOBYTE = 1_024;
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
@@ -81,7 +86,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   private startRealTimePolling(): void {
-    timer(0, 15_000)
+    timer(0, REAL_TIME_POLLING_INTERVAL_MS)
       .pipe(
         switchMap(() => this.adminService.getRealTimeAnalytics()),
         takeUntil(this.destroy$)
@@ -123,14 +128,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   formatUptime(millis: number): string {
-    const hours = Math.floor(millis / 3600000);
-    const minutes = Math.floor((millis % 3600000) / 60000);
+    const hours = Math.floor(millis / MILLIS_PER_HOUR);
+    const minutes = Math.floor((millis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE);
     return `${hours}h ${minutes}m`;
   }
 
   formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
-    const k = 1024;
+    const k = BYTES_PER_KILOBYTE;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];

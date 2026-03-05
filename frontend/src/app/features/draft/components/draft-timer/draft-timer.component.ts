@@ -23,6 +23,9 @@ export type TimerState = 'warmup' | 'active' | 'warning' | 'urgent' | 'expired';
 const WARNING_THRESHOLD = 15;
 const URGENT_THRESHOLD = 5;
 const CANCEL_WINDOW = 5;
+const TICK_INTERVAL_MS = 1_000;
+const SECONDS_PER_MINUTE = 60;
+const PAD_LENGTH = 2;
 
 @Component({
   selector: 'app-draft-timer',
@@ -104,7 +107,7 @@ export class DraftTimerComponent implements OnChanges, OnDestroy {
     this.showAutopickToast = false;
     this.criticalAnnouncement = '';
 
-    this.timerSub = interval(1000)
+    this.timerSub = interval(TICK_INTERVAL_MS)
       .pipe(take(this.durationSeconds))
       .subscribe({
         next: () => {
@@ -139,7 +142,7 @@ export class DraftTimerComponent implements OnChanges, OnDestroy {
     this.showAutopickToast = true;
     this.cancelWindowSecondsLeft = CANCEL_WINDOW;
 
-    this.cancelSub = interval(1000)
+    this.cancelSub = interval(TICK_INTERVAL_MS)
       .pipe(take(CANCEL_WINDOW))
       .subscribe({
         next: () => {
@@ -154,8 +157,8 @@ export class DraftTimerComponent implements OnChanges, OnDestroy {
   }
 
   private formatSeconds(total: number): string {
-    const minutes = Math.floor(total / 60).toString().padStart(2, '0');
-    const seconds = (total % 60).toString().padStart(2, '0');
+    const minutes = Math.floor(total / SECONDS_PER_MINUTE).toString().padStart(PAD_LENGTH, '0');
+    const seconds = (total % SECONDS_PER_MINUTE).toString().padStart(PAD_LENGTH, '0');
     return `${minutes}:${seconds}`;
   }
 }

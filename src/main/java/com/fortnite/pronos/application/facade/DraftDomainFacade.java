@@ -164,9 +164,6 @@ public class DraftDomainFacade {
   }
 
   private int getParticipantCount(Draft draft) {
-    if (draft.getGame() != null) {
-      return draft.getGame().getTotalParticipantCount();
-    }
-    return 0;
+    return draft.getGameParticipantCount();
   }
 }

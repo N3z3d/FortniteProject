@@ -32,6 +32,8 @@ interface TradeProposalState {
   isValid: boolean;
 }
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 @Component({
   selector: 'app-trade-proposal',
   standalone: true,
@@ -156,7 +158,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private setupFilteredPlayers(): void {
     this.filteredAvailablePlayers$ = combineLatest([
       this.tradeState$,
-      this.searchQuery$.pipe(startWith(''), debounceTime(300))
+      this.searchQuery$.pipe(startWith(''), debounceTime(SEARCH_DEBOUNCE_MS))
     ]).pipe(
       map(([state, searchQuery]) =>
         TradeValidators.filterPlayersBySearch(state.availablePlayers, searchQuery)
@@ -165,7 +167,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
     this.filteredTargetPlayers$ = combineLatest([
       this.tradeState$,
-      this.searchQuery$.pipe(startWith(''), debounceTime(300))
+      this.searchQuery$.pipe(startWith(''), debounceTime(SEARCH_DEBOUNCE_MS))
     ]).pipe(
       map(([state, searchQuery]) =>
         TradeValidators.filterPlayersBySearch(state.targetTeamPlayers, searchQuery)

@@ -30,6 +30,7 @@ import { AvailablePlayer, DraftBoardState } from '../../models/draft.interface';
 export type SimultaneousPhase = 'submitting' | 'waiting' | 'reselecting' | 'done';
 
 const RESELECT_SECONDS = 45;
+const SNACKBAR_DURATION_MS = 3_000;
 
 /**
  * Page for simultaneous draft mode.
@@ -208,7 +209,7 @@ export class SimultaneousDraftPageComponent implements OnInit {
       this.phase = 'reselecting';
       this.lostSlotLabel = contestedName;
     } else if (amIWinner) {
-      this.snackBar.open(`Tu conserves ${contestedName} ✓`, undefined, { duration: 3000 });
+      this.snackBar.open(`Tu conserves ${contestedName} ✓`, undefined, { duration: SNACKBAR_DURATION_MS });
       this.phase = 'waiting';
     }
   }

@@ -43,7 +43,8 @@ public class PronostiqueurLeaderboardService {
 
   private Map<UUID, List<com.fortnite.pronos.model.Team>> groupTeamsByUser(
       List<com.fortnite.pronos.model.Team> teams) {
-    return teams.stream().collect(Collectors.groupingBy(team -> team.getOwner().getId()));
+    return teams.stream()
+        .collect(Collectors.groupingBy(com.fortnite.pronos.model.Team::getOwnerId));
   }
 
   private List<PronostiqueurLeaderboardEntryDTO> buildEntries(
@@ -60,14 +61,14 @@ public class PronostiqueurLeaderboardService {
       UUID userId,
       List<com.fortnite.pronos.model.Team> userTeams,
       Map<UUID, Integer> playerPointsMap) {
-    com.fortnite.pronos.model.User user = userTeams.get(0).getOwner();
+    com.fortnite.pronos.model.Team firstTeam = userTeams.get(0);
     TeamScoreSummary scoreSummary = calculateTeamScoreSummary(userTeams, playerPointsMap);
     int avgPointsPerTeam = userTeams.isEmpty() ? 0 : scoreSummary.totalPoints() / userTeams.size();
 
     return PronostiqueurLeaderboardEntryDTO.builder()
         .userId(userId)
-        .username(user.getUsername())
-        .email(user.getEmail())
+        .username(firstTeam.getOwnerUsername())
+        .email(firstTeam.getOwnerEmail())
         .totalPoints(scoreSummary.totalPoints())
         .totalTeams(userTeams.size())
         .avgPointsPerTeam(avgPointsPerTeam)

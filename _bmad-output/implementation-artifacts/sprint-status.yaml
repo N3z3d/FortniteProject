@@ -258,7 +258,7 @@ development_status:
   sprint3-a10-staging-deployment: deferred-sprint4
 
   # E2E Playwright — couverture fonctionnelle complète (smoke.spec.ts = 8 tests seulement)
-  sprint3-e2e-playwright-functional: backlog
+  sprint3-e2e-playwright-functional: done  # 4 fichiers spec, 17 tests: game-lifecycle (GAME-01/02/03/04), catalogue (CAT-01/02/03/04), admin (ADMIN-01/02/03/04 + AUTH-00), auth (AUTH-00/01/02/03)
 
   # API Fortnite scraping — vérification câblage complet (FortniteApiAdapter + clé .env)
   sprint3-api-fortnite-wiring-check: backlog
@@ -305,12 +305,21 @@ development_status:
   sprint3-a4-dry-violations-top10: done
 
   # A5 — Corriger les 12 violations Loi de Demeter
-  sprint3-a5-demeter-violations-top12: backlog
+  sprint3-a5-demeter-violations-top12: done  # DEM-001/003/004/006/007/008 corrigés (violations HAUTE), score Demeter 5.5->7/10
 
   # A6 — Migrer 5 services legacy les plus impactants JPA direct → domain ports
   sprint3-a6-jpa-legacy-migration-5-services: backlog
 
   # A9 — Résoudre les 25 findings LOW SonarQube (magic numbers S109)
-  sprint3-a9-sonarqube-magic-numbers: backlog
+  # DONE : ~28 magic numbers nommés en constantes (backend + frontend)
+  # Backend: VisitTrackingService (fenêtres real-time 5min/2min), RateLimitingFilter (HTTP 429 + body WINDOW_SECONDS),
+  #          AdminAlertService (seuil 500 serveur), AdminDashboardController (168h = 7 jours), LeaderboardCacheService (DEFAULT_SEASON)
+  # Frontend: AdminDashboardComponent (REAL_TIME_POLLING_INTERVAL_MS, MILLIS_PER_HOUR, MILLIS_PER_MINUTE, BYTES_PER_KILOBYTE),
+  #           AdminPipelinePageComponent (SNACKBAR_DURATION_SUCCESS/ERROR_MS, CORRECT_METADATA_DIALOG_WIDTH),
+  #           PlayerSearchFilterComponent (SEARCH_DEBOUNCE_MS), PlayerCataloguePageComponent (FILTER_DEBOUNCE_MS, SNACKBAR_DURATION_*),
+  #           SimultaneousDraftPageComponent (SNACKBAR_DURATION_MS), SnakeDraftPageComponent (PICK_CONFIRM_SNACKBAR_DURATION_MS),
+  #           DraftTimerComponent (TICK_INTERVAL_MS, SECONDS_PER_MINUTE, PAD_LENGTH),
+  #           TradingDashboardComponent + TradeProposalComponent (SEARCH_DEBOUNCE_MS)
+  sprint3-a9-sonarqube-magic-numbers: done
 
   sprint-3-retrospective-globale: optional
