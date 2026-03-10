@@ -12,6 +12,7 @@
 - [ ] File List reviewed and validated for completeness
 - [ ] Tests identified and mapped to ACs; gaps noted
 - [ ] Code quality review performed on changed files
+- [ ] E2E specs: No zombie variables (values captured but never asserted — e.g. `const x = await locator.textContent()` with no `expect(x)`)
 - [ ] Security review performed on changed files and dependencies
 - [ ] Outcome decided (Approve/Changes Requested/Blocked)
 - [ ] Review notes appended under "Senior Developer Review (AI)"

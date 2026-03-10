@@ -495,8 +495,8 @@ development_status:
 
   # P1 — Helper waitForPageReady(page, route) : extraire guard URL + loading wait en helper réutilisable
   # Réduire la duplication boilerplate dans chaque test CAT-0N / ADMIN-0N
-  sprint6-p1-e2e-helper-wait-for-page-ready: backlog
+  sprint6-p1-e2e-helper-wait-for-page-ready: done  # waitForPageReady() extracted — 11 call-sites refactored in admin.spec.ts + catalogue.spec.ts
 
   # P2 — Règle code review E2E : critère "variable capturée jamais assertée" dans checklist
   # Éviter le code zombie (variables read-but-never-asserted) dans les specs E2E
-  sprint6-p2-code-review-e2e-checklist-rule: backlog
+  sprint6-p2-code-review-e2e-checklist-rule: done  # checklist.md + project-context.md: zombie variable rule + waitForPageReady pattern

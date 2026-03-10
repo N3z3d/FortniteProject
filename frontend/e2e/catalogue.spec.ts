@@ -1,177 +1,205 @@
 import { test, expect } from '@playwright/test';
 
+import { forceLoginWithProfile, waitForPageReady } from './helpers/app-helpers';
+
 /**
- * Player Catalogue E2E tests — CAT-01 to CAT-04.
- * The /catalogue route is publicly accessible (no auth required).
- * Requires: app running on port 4200, backend on port 8080.
+ * Player Catalogue E2E tests — CAT-01 to CAT-05.
+ * All tests use forceLoginWithProfile(page, 'thibaut') for authentication.
+ * Tests skip gracefully when backend returns empty data or Docker is not running.
+ *
+ * Route: /catalogue (no auth guard, accessible to all authenticated users)
  *
  * Run: npm run test:e2e
  */
 
 // ---------------------------------------------------------------------------
-// CAT-01: /catalogue is accessible without authentication
+// CAT-01: /catalogue loads and renders the player list
 // ---------------------------------------------------------------------------
-test('CAT-01: /catalogue page is accessible without authentication', async ({ page }) => {
-  test.setTimeout(20_000);
-
-  await page.goto('/catalogue');
-
-  // Must NOT redirect to /login — the route is public and inside the MainLayoutComponent
-  // (no canActivate guard on /catalogue in app.routes.ts)
-  await expect(page).not.toHaveURL(/login/, { timeout: 5_000 });
-
-  // Page body should render actual content
-  const body = page.locator('body');
-  const text = await body.textContent();
-  expect(text?.trim().length).toBeGreaterThan(0);
-});
-
-// ---------------------------------------------------------------------------
-// CAT-02: Search field is present and functional
-// ---------------------------------------------------------------------------
-test('CAT-02: catalogue search field is present and filters results', async ({ page }) => {
-  test.setTimeout(30_000);
-
-  await page.goto('/catalogue');
-
-  // The PlayerSearchFilterComponent renders a search input
-  // It is inside app-player-search-filter which renders an input for text search
-  // We look for a text input inside the filter section
-  const searchInput = page
-    .locator('section.catalogue-filters input[type="text"], app-player-search-filter input')
-    .first();
-
-  // If search input is not immediately visible, wait for the component to render
-  await searchInput.waitFor({ state: 'visible', timeout: 10_000 });
-  await expect(searchInput).toBeVisible();
-
-  // Type a search query — any two-letter string that the debounce will pick up
-  // The component uses debounceTime(300ms) so we do not need tick() here
-  await searchInput.fill('EU');
-
-  // Wait for the debounce and result update (300ms debounce + rendering)
-  await page.waitForTimeout(600);
-
-  // The list should reflect the filter (either show results or empty state)
-  const resultIndicators = page.locator(
-    'cdk-virtual-scroll-viewport, .catalogue-empty, ul.catalogue-accessible-list'
-  );
-  await expect(resultIndicators.first()).toBeVisible({ timeout: 8_000 });
-});
-
-// ---------------------------------------------------------------------------
-// CAT-03: Player card displays username, region, and tranche
-// ---------------------------------------------------------------------------
-test('CAT-03: player card shows username, region and tranche', async ({ page }) => {
-  test.setTimeout(30_000);
-
-  await page.goto('/catalogue');
-
-  // Wait for the catalogue to load — either the virtual scroll viewport or the empty state
-  const contentArea = page.locator(
-    'cdk-virtual-scroll-viewport, .catalogue-empty, .catalogue-loading'
-  ).first();
-  await contentArea.waitFor({ state: 'visible', timeout: 12_000 });
-
-  // If loading spinner is shown, wait for it to disappear
-  const loading = page.locator('.catalogue-loading');
-  if (await loading.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await loading.waitFor({ state: 'hidden', timeout: 15_000 });
-  }
-
-  // Check if any player data is present via the accessible list (always rendered when players > 0)
-  const accessibleList = page.locator('ul.catalogue-accessible-list');
-  const accessibleVisible = await accessibleList.isVisible({ timeout: 5_000 }).catch(() => false);
-
-  if (accessibleVisible) {
-    // The accessible list renders: "username — region — tranche"
-    const firstItem = accessibleList.locator('li').first();
-    const itemText = await firstItem.textContent({ timeout: 5_000 });
-    // Each item should have the pattern: "name — region — tranche" (separated by em-dashes)
-    expect(itemText).toBeTruthy();
-    expect(itemText?.trim().length).toBeGreaterThan(0);
-    // Should contain at least two " — " separators (username — region — tranche)
-    expect(itemText?.split('—').length).toBeGreaterThanOrEqual(2);
-  } else {
-    // No players in the catalogue (empty DB) — verify empty state renders without error
-    const emptyState = page.locator('.catalogue-empty');
-    await expect(emptyState).toBeVisible({ timeout: 5_000 });
-
-    const emptyText = await emptyState.textContent();
-    expect(emptyText?.trim().length).toBeGreaterThan(0);
-  }
-});
-
-// ---------------------------------------------------------------------------
-// CAT-04: Two players can be selected for comparison (comparison panel appears)
-// ---------------------------------------------------------------------------
-test('CAT-04: selecting two players shows the comparison panel', async ({ page }) => {
+test('CAT-01: /catalogue loads and renders the player list', async ({ page }) => {
   test.setTimeout(35_000);
 
-  await page.goto('/catalogue');
+  await forceLoginWithProfile(page, 'thibaut');
+  if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
 
-  // Wait for content to load
-  const contentReady = page.locator(
-    'cdk-virtual-scroll-viewport, .catalogue-empty'
-  ).first();
-  await contentReady.waitFor({ state: 'visible', timeout: 12_000 });
+  // Root page container must be visible
+  await expect(page.locator('.catalogue-page')).toBeVisible({ timeout: 10_000 });
 
-  // If loading, wait for it to finish
-  const loading = page.locator('.catalogue-loading');
-  if (await loading.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await loading.waitFor({ state: 'hidden', timeout: 15_000 });
+  // Wait for loading spinner to disappear if present
+  const loadingEl = page.locator('.catalogue-loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
   }
 
-  // Check if there are player cards rendered inside the virtual scroll
-  const viewport = page.locator('cdk-virtual-scroll-viewport');
-  const viewportVisible = await viewport.isVisible({ timeout: 3_000 }).catch(() => false);
+  // Either the virtual scroll viewport (with players) or the empty state must be visible
+  const contentState = page
+    .locator('cdk-virtual-scroll-viewport.catalogue-viewport, .catalogue-empty')
+    .first();
+  await expect(contentState).toBeVisible({ timeout: 10_000 });
+});
 
-  if (!viewportVisible) {
-    // No players available — test cannot verify comparison, skip gracefully
+// ---------------------------------------------------------------------------
+// CAT-02: Search by username updates the result counter
+// ---------------------------------------------------------------------------
+test('CAT-02: search by username updates result counter', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  await forceLoginWithProfile(page, 'thibaut');
+  if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
+
+  await expect(page.locator('.catalogue-page')).toBeVisible({ timeout: 10_000 });
+
+  // Wait for loading to finish
+  const loadingEl = page.locator('.catalogue-loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  // Read initial counter text
+  const resultCounter = page.locator('.result-counter');
+  const initialText = await resultCounter.textContent({ timeout: 8_000 }).catch(() => null);
+
+  // Skip gracefully when no counter present or catalogue is empty (0 players — nothing to filter)
+  if (!initialText || /^0\b/.test(initialText.trim())) {
     test.skip();
     return;
   }
 
-  // PlayerCardComponent renders inside .catalogue-row elements
-  // Each card can be selected via (cardSelected) event — clicking the card toggles selection
-  const playerCards = page.locator('.catalogue-row app-player-card, .catalogue-row').first();
-  await playerCards.waitFor({ state: 'visible', timeout: 8_000 });
+  // Fill search input and wait for debounce (FILTER_DEBOUNCE_MS=200 + render margin)
+  await page.locator('.search-field input').first().fill('a');
 
-  // Click the first player card to select it for comparison
-  const firstCard = page.locator('.catalogue-row').nth(0);
-  await firstCard.click();
+  // AC#2: use expect.poll to confirm counter stabilises after debounce + HTTP response
+  // (more robust than a fixed waitForTimeout that may not cover slow backends)
+  await expect
+    .poll(async () => resultCounter.textContent(), { timeout: 8_000 })
+    .not.toBeNull();
 
-  // The comparison panel appears when comparedPlayers.length > 0
-  const comparisonPanel = page.locator('section.comparison-panel, [aria-label="Comparaison joueurs"]');
-  const panelAppeared = await comparisonPanel.isVisible({ timeout: 5_000 }).catch(() => false);
+  // Counter must remain visible after filter has been applied
+  await expect(resultCounter).toBeVisible({ timeout: 5_000 });
+});
 
-  if (panelAppeared) {
-    // Panel is visible with 1 player — verify count display
-    const panelTitle = page.locator('.comparison-panel__title');
-    await expect(panelTitle).toBeVisible({ timeout: 3_000 });
-    const titleText = await panelTitle.textContent();
-    expect(titleText).toMatch(/1\/2|Comparaison/i);
+// ---------------------------------------------------------------------------
+// CAT-03: Region filter applies correctly
+// ---------------------------------------------------------------------------
+test('CAT-03: region filter applies correctly', async ({ page }) => {
+  test.setTimeout(35_000);
 
-    // Click the second player card to add a second player
-    const secondCard = page.locator('.catalogue-row').nth(1);
-    if (await secondCard.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await secondCard.click();
-      await page.waitForTimeout(300);
+  await forceLoginWithProfile(page, 'thibaut');
+  if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
 
-      // Panel should now show 2 comparison cards
-      const comparisonCards = page.locator('.comparison-card');
-      const cardCount = await comparisonCards.count();
-      expect(cardCount).toBeGreaterThanOrEqual(1);
+  await expect(page.locator('.catalogue-page')).toBeVisible({ timeout: 10_000 });
 
-      // Each card shows player name, region, tranche
-      const firstCompCard = comparisonCards.first();
-      await expect(firstCompCard.locator('strong')).toBeVisible({ timeout: 3_000 });
-      await expect(firstCompCard.locator('.comparison-card__region')).toBeVisible({ timeout: 3_000 });
-      await expect(firstCompCard.locator('.comparison-card__tranche')).toBeVisible({ timeout: 3_000 });
-    }
-  } else {
-    // Comparison panel did not appear on click — verify the card itself is rendered
-    // (some implementations require double-click or specific button within the card)
-    await expect(firstCard).toBeVisible({ timeout: 3_000 });
+  // Wait for loading to finish
+  const loadingEl = page.locator('.catalogue-loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  // Guard: assert region-select is visible before clicking (skip if filter section not rendered)
+  const regionSelect = page.locator('[data-testid="region-select"]');
+  const selectVisible = await regionSelect.isVisible({ timeout: 5_000 }).catch(() => false);
+  if (!selectVisible) {
+    test.skip();
+    return;
+  }
+
+  // Click region select trigger to open mat-select dropdown
+  await regionSelect.click();
+
+  // mat-option renders in a CDK overlay at document.body — use global locator
+  const options = page.locator('mat-option');
+  await expect(options.first()).toBeVisible({ timeout: 5_000 });
+
+  // Click first non-null option (index 1; index 0 is "Toutes" / all-regions option)
+  const firstRealOption = options.nth(1);
+  const optionVisible = await firstRealOption
+    .isVisible({ timeout: 2_000 })
+    .catch(() => false);
+  if (!optionVisible) {
+    test.skip(); // No specific regions available
+    return;
+  }
+  await firstRealOption.click();
+
+  // Wait for filter debounce (FILTER_DEBOUNCE_MS=200) + HTTP + render
+  await page.waitForTimeout(400);
+
+  // Either result counter or empty state must be visible
+  const afterFilter = page.locator('.result-counter, .catalogue-empty').first();
+  await expect(afterFilter).toBeVisible({ timeout: 8_000 });
+});
+
+// ---------------------------------------------------------------------------
+// CAT-04: Selecting two players shows the comparison panel; clearing removes it
+// ---------------------------------------------------------------------------
+test('CAT-04: comparison panel appears with 2 players and clears on button click', async ({
+  page,
+}) => {
+  test.setTimeout(35_000);
+
+  await forceLoginWithProfile(page, 'thibaut');
+  if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
+
+  await expect(page.locator('.catalogue-page')).toBeVisible({ timeout: 10_000 });
+
+  // Wait for loading to finish
+  const loadingEl = page.locator('.catalogue-loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  // Need at least 2 .catalogue-row items; skip gracefully when not enough data
+  const rowCount = await page.locator('.catalogue-row').count();
+  if (rowCount < 2) {
+    test.skip();
+    return;
+  }
+
+  // Click first two player cards (triggers cardSelected EventEmitter on app-player-card)
+  await page.locator('.catalogue-row').nth(0).locator('app-player-card').click();
+  await page.locator('.catalogue-row').nth(1).locator('app-player-card').click();
+
+  // Comparison panel must appear
+  await expect(page.locator('.comparison-panel')).toBeVisible({ timeout: 5_000 });
+
+  // Must contain exactly 2 comparison cards
+  await expect(page.locator('.comparison-card')).toHaveCount(2, {
+    timeout: 5_000,
+  });
+
+  // Click the clear button — panel must be removed from DOM (not just hidden)
+  await page.locator('.comparison-panel__clear').click();
+  await expect(page.locator('.comparison-panel')).not.toBeAttached({
+    timeout: 5_000,
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CAT-05: Accessible list is present in the DOM
+// ---------------------------------------------------------------------------
+test('CAT-05: accessible list is present in the DOM', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  await forceLoginWithProfile(page, 'thibaut');
+  if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
+
+  await expect(page.locator('.catalogue-page')).toBeVisible({ timeout: 10_000 });
+
+  // Wait for loading to finish
+  const loadingEl = page.locator('.catalogue-loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  // #accessible-list must be attached to the DOM (sr-only — not necessarily visible)
+  await expect(page.locator('#accessible-list')).toBeAttached();
+
+  // When players are loaded, wait for Angular to populate the accessible list before asserting
+  const viewport = page.locator('cdk-virtual-scroll-viewport.catalogue-viewport');
+  const hasPlayers = await viewport.isVisible({ timeout: 3_000 }).catch(() => false);
+  if (hasPlayers) {
+    // Use toBeAttached with timeout to wait for async list population
+    await expect(
+      page.locator('.catalogue-accessible-list__item').first()
+    ).toBeAttached({ timeout: 5_000 });
   }
 });

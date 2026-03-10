@@ -59,6 +59,26 @@ async function getPersistedInvitationCode(
   return game.invitationCode?.trim() ?? '';
 }
 
+/**
+ * Navigates to `route`, waits for Angular routing to settle, then returns
+ * `true` if the final URL contains `route`.
+ *
+ * Returns `false` when the router redirected elsewhere (e.g. guard → /login).
+ * Callers should call `test.skip()` on false to skip gracefully.
+ *
+ * @example
+ * if (!await waitForPageReady(page, '/catalogue')) { test.skip(); return; }
+ */
+export async function waitForPageReady(
+  page: Page,
+  route: string,
+  waitMs = 2_000
+): Promise<boolean> {
+  await page.goto(route);
+  await page.waitForTimeout(waitMs);
+  return page.url().includes(route);
+}
+
 export async function waitForLoginPage(page: Page): Promise<void> {
   await page.goto('/login');
   await page
@@ -176,26 +196,12 @@ async function performRealProfileLogin(
     localStorage.removeItem('autoLogin');
   });
 
-  const profileButton = page
-    .locator(
-      `fieldset.user-selection-section button:has-text("${username}"), button.user-profile-btn:has-text("${username}")`
-    )
-    .first();
+  const loginResp = await page.request.post(
+    `${DEFAULT_BACKEND_URL}/api/auth/login`,
+    { data: { username, password: 'Admin1234' } }
+  );
 
-  if (await profileButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await clickProfileButton(page, username);
-  } else {
-    const loginResp = await page.request.post(
-      `${DEFAULT_BACKEND_URL}/api/auth/login`,
-      { data: { username, password: 'Admin1234' } }
-    );
-
-    if (!loginResp.ok()) {
-      throw new Error(
-        `forceLoginWithProfile failed for ${username}: ${loginResp.status()} ${await loginResp.text()}`
-      );
-    }
-
+  if (loginResp.ok()) {
     const body = await loginResp.json() as {
       token?: string;
       user?: { id?: string; email?: string; role?: string };
@@ -226,6 +232,21 @@ async function performRealProfileLogin(
       { user: storedProfile, token: jwtToken, jwtUserData: body.user ?? null }
     );
     await page.goto('/games');
+  } else {
+    const profileButton = page
+      .locator(
+        `fieldset.user-selection-section button:has-text("${username}"), button.user-profile-btn:has-text("${username}")`
+      )
+      .first();
+    const canUseProfileButton = await profileButton.isVisible({ timeout: 3_000 }).catch(() => false);
+
+    if (!canUseProfileButton) {
+      throw new Error(
+        `forceLoginWithProfile failed for ${username}: ${loginResp.status()} ${await loginResp.text()}`
+      );
+    }
+
+    await clickProfileButton(page, username);
   }
 
   await page.waitForURL(/\/games/, { timeout: 15_000 });

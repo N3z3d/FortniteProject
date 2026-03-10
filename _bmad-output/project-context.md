@@ -257,6 +257,8 @@ Une story est **done** uniquement si **tous** les critères ci-dessous sont sati
 | `@Service` avec > 7 deps | Déléguer vers services existants |
 | Soft delete non filtré sur Game | Toujours filtrer `deletedAt IS NULL` via `@Query` |
 | Commit sans spotless | Lancer `mvn spotless:apply` d'abord |
+| Variable zombie dans spec E2E | `const x = await locator.textContent()` sans `expect(x)` → signalé en code review |
+| Boilerplate goto+wait+URL-check dans E2E | Utiliser `waitForPageReady(page, route)` depuis `e2e/helpers/app-helpers.ts` |
 
 ---
 

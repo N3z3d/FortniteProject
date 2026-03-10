@@ -1,8 +1,10 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+
+import { loginAsAdmin, waitForPageReady } from './helpers/app-helpers';
 
 /**
- * Admin Panel E2E tests — ADMIN-01 to ADMIN-04.
- * ADMIN-02/03/04 require an account with ADMIN role (E2E_ADMIN_USER / E2E_ADMIN_PASS env vars).
+ * Admin Panel E2E tests — ADMIN-01 to ADMIN-09.
+ * ADMIN-02..09 require an account with ADMIN role (E2E_ADMIN_USER / E2E_ADMIN_PASS env vars).
  * If these env vars are not set, admin-specific tests are skipped gracefully.
  *
  * Env vars:
@@ -13,62 +15,6 @@ import { test, expect, Page } from '@playwright/test';
  *
  * Run: npm run test:e2e
  */
-
-// ---------------------------------------------------------------------------
-// Helper: login using profile-button click (the app shows pre-registered profiles)
-// ---------------------------------------------------------------------------
-async function loginWithFirstProfile(page: Page): Promise<void> {
-  await page.goto('/login');
-  const profileBtn = page.locator('fieldset.user-selection-section button, button.user-profile-btn').first();
-  await profileBtn.waitFor({ state: 'visible', timeout: 10_000 });
-  await profileBtn.click();
-  await page.waitForURL(/\/games/, { timeout: 12_000 });
-}
-
-// ---------------------------------------------------------------------------
-// Helper: login with the admin profile (looks for a button containing "admin" text)
-// ---------------------------------------------------------------------------
-async function loginAsAdmin(page: Page): Promise<boolean> {
-  await page.goto('/login');
-
-  // Wait for profile buttons to appear
-  const profileBtns = page.locator('fieldset.user-selection-section button, button.user-profile-btn');
-  await profileBtns.first().waitFor({ state: 'visible', timeout: 10_000 });
-
-  // Try to find a profile button whose text includes "admin" (case-insensitive)
-  const adminBtn = page.locator(
-    'fieldset.user-selection-section button:has-text("admin"), button.user-profile-btn:has-text("admin")'
-  ).first();
-
-  const adminVisible = await adminBtn.isVisible({ timeout: 3_000 }).catch(() => false);
-
-  if (adminVisible) {
-    await adminBtn.click();
-    await page.waitForURL(/\/games/, { timeout: 12_000 });
-    return true;
-  }
-
-  // Fallback: use the alternative login form with E2E_ADMIN_USER env var
-  const adminIdentifier = process.env['E2E_ADMIN_USER'];
-  if (!adminIdentifier) {
-    return false;
-  }
-
-  // Toggle the alternative login form
-  const showAltBtn = page.locator('button.show-alternative').first();
-  if (await showAltBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await showAltBtn.click();
-  }
-
-  const identifierInput = page.locator('input[formcontrolname="identifier"]').first();
-  await identifierInput.waitFor({ state: 'visible', timeout: 5_000 });
-  await identifierInput.fill(adminIdentifier);
-
-  const submitBtn = page.locator('button[type="submit"]').first();
-  await submitBtn.click();
-  await page.waitForURL(/\/games/, { timeout: 12_000 });
-  return true;
-}
 
 // ---------------------------------------------------------------------------
 // ADMIN-01: /admin redirects to /login when not authenticated
@@ -97,18 +43,8 @@ test('ADMIN-02: admin user can access dashboard and see metrics', async ({ page 
     return;
   }
 
-  await page.goto('/admin');
-
-  // The AdminGuard checks for ADMIN role — if not admin, it redirects away
-  // Give the page time to either render the dashboard or redirect
-  await page.waitForTimeout(3_000);
-  const url = page.url();
-
-  if (!url.includes('/admin')) {
-    // Not an admin user — skip this test
-    test.skip();
-    return;
-  }
+  // Give the guard extra time (3 s) to either render the dashboard or redirect
+  if (!await waitForPageReady(page, '/admin', 3_000)) { test.skip(); return; }
 
   // Admin dashboard component renders .admin-dashboard
   const dashboard = page.locator('.admin-dashboard');
@@ -150,15 +86,7 @@ test('ADMIN-03: admin pipeline page shows identity list', async ({ page }) => {
     return;
   }
 
-  await page.goto('/admin/pipeline');
-
-  // Check if redirect occurred (not an admin)
-  await page.waitForTimeout(2_000);
-  const url = page.url();
-  if (!url.includes('/admin/pipeline')) {
-    test.skip();
-    return;
-  }
+  if (!await waitForPageReady(page, '/admin/pipeline')) { test.skip(); return; }
 
   // Pipeline page renders .pipeline-page with header
   const pipelineHeader = page.locator('.pipeline-header, header[role="banner"]').first();
@@ -200,14 +128,7 @@ test('ADMIN-04: /admin/users displays user management page', async ({ page }) =>
     return;
   }
 
-  await page.goto('/admin/users');
-
-  await page.waitForTimeout(2_000);
-  const url = page.url();
-  if (!url.includes('/admin/users')) {
-    test.skip();
-    return;
-  }
+  if (!await waitForPageReady(page, '/admin/users')) { test.skip(); return; }
 
   // Admin user list renders .user-list container
   const userList = page.locator('.user-list');
@@ -243,4 +164,170 @@ test('ADMIN-04: /admin/users displays user management page', async ({ page }) =>
   if (await searchInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
     await expect(searchInput).toBeVisible();
   }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-05: /admin/games shows the games supervision page
+// ---------------------------------------------------------------------------
+test('ADMIN-05: /admin/games displays games supervision page', async ({
+  page,
+}) => {
+  test.setTimeout(35_000);
+
+  const loggedIn = await loginAsAdmin(page);
+  if (!loggedIn) {
+    test.skip();
+    return;
+  }
+
+  if (!await waitForPageReady(page, '/admin/games')) { test.skip(); return; }
+
+  const title = page.locator('.supervision-page__title, h1').first();
+  await expect(title).toContainText(/Supervision des parties/i, {
+    timeout: 10_000,
+  });
+
+  const count = page.locator('.supervision-page__count');
+  await expect(count).toBeVisible({ timeout: 10_000 });
+
+  const afterLoad = page.locator('table.supervision-table, .supervision-table__empty').first();
+  await expect(afterLoad).toBeVisible({ timeout: 10_000 });
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-06: Admin accesses /admin via profile dropdown in the navbar
+// ---------------------------------------------------------------------------
+test('ADMIN-06: admin can reach /admin via profile dropdown menu', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  const loggedIn = await loginAsAdmin(page);
+  if (!loggedIn) {
+    test.skip();
+    return;
+  }
+
+  // Navigate to a page that renders the main-layout navbar; wait for network to settle
+  await page.goto('/games');
+  await page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => {});
+  await page.waitForTimeout(500);
+
+  // Open the profile dropdown menu (mat-menu trigger inside .user-section)
+  const profileTrigger = page.locator('.user-section button[mat-button]').first();
+  await expect(profileTrigger).toBeVisible({ timeout: 8_000 });
+  await profileTrigger.click();
+
+  // mat-menu renders in a CDK overlay portal — locate .admin-menu-item globally
+  const adminMenuItem = page.locator('.admin-menu-item');
+  await expect(adminMenuItem).toBeVisible({ timeout: 5_000 });
+  await adminMenuItem.click();
+
+  // Assert landing on /admin root (anchored regex to avoid matching /admin/*)
+  await page.waitForURL(/\/admin$/, { timeout: 10_000 });
+
+  // Guard: if redirected away from admin (session expiry, guard rejection), skip gracefully
+  if (!page.url().includes('/admin')) {
+    test.skip();
+    return;
+  }
+
+  await expect(page.locator('.admin-dashboard')).toBeVisible({ timeout: 10_000 });
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-07: /admin/database shows the DB Explorer page
+// ---------------------------------------------------------------------------
+test('ADMIN-07: /admin/database displays DB Explorer page', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  const loggedIn = await loginAsAdmin(page);
+  if (!loggedIn) {
+    test.skip();
+    return;
+  }
+
+  if (!await waitForPageReady(page, '/admin/database')) { test.skip(); return; }
+
+  // Root container must be visible
+  const dbExplorer = page.locator('.db-explorer');
+  await expect(dbExplorer).toBeVisible({ timeout: 10_000 });
+
+  // Page title must be present (AC#2 explicit requirement)
+  await expect(page.locator('.db-explorer__title')).toBeVisible({ timeout: 5_000 });
+
+  // SQL query section is always present (not conditionally rendered)
+  const querySection = page.locator('.db-explorer__query-section');
+  await expect(querySection).toBeVisible({ timeout: 10_000 });
+
+  // Wait for table loading to finish
+  const loadingEl = page.locator('.db-explorer__loading');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  // After loading: either a data table or an empty state
+  const afterLoad = page.locator('.db-explorer__table, .db-explorer__empty').first();
+  await expect(afterLoad).toBeVisible({ timeout: 10_000 });
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-08: /admin/logs shows the Logs page with at least 2 tabs
+// ---------------------------------------------------------------------------
+test('ADMIN-08: /admin/logs displays logs page with tab group', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  const loggedIn = await loginAsAdmin(page);
+  if (!loggedIn) {
+    test.skip();
+    return;
+  }
+
+  if (!await waitForPageReady(page, '/admin/logs')) { test.skip(); return; }
+
+  // Root container must be visible
+  const logsPage = page.locator('.logs-page');
+  await expect(logsPage).toBeVisible({ timeout: 10_000 });
+
+  // mat-tab-group must be present inside .logs-page
+  const tabGroup = logsPage.locator('mat-tab-group');
+  await expect(tabGroup).toBeVisible({ timeout: 10_000 });
+
+  // At least 2 tabs (scrape logs + audit entries) — wait for tab headers to render
+  const tabs = tabGroup.locator('[role="tab"]');
+  await expect(tabs.nth(1)).toBeVisible({ timeout: 5_000 });
+  const tabCount = await tabs.count();
+  expect(tabCount).toBeGreaterThanOrEqual(2);
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-09: /admin/errors shows the Error Journal page
+// ---------------------------------------------------------------------------
+test('ADMIN-09: /admin/errors displays Error Journal page', async ({ page }) => {
+  test.setTimeout(35_000);
+
+  const loggedIn = await loginAsAdmin(page);
+  if (!loggedIn) {
+    test.skip();
+    return;
+  }
+
+  if (!await waitForPageReady(page, '/admin/errors')) { test.skip(); return; }
+
+  // Root container must be visible
+  const container = page.locator('.error-journal-container');
+  await expect(container).toBeVisible({ timeout: 10_000 });
+
+  // Page header must be visible
+  const pageHeader = container.locator('.page-header');
+  await expect(pageHeader).toBeVisible({ timeout: 5_000 });
+
+  // Wait for loading spinner to disappear if present
+  const loadingEl = container.locator('.loading-container');
+  if (await loadingEl.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await loadingEl.waitFor({ state: 'hidden', timeout: 12_000 });
+  }
+
+  // After loading: stats-grid (data present), error-container (API failure),
+  // or filters-bar (always rendered in non-loading/non-error branch, covers empty-data case)
+  const afterLoad = container.locator('.stats-grid, .error-container, .filters-bar').first();
+  await expect(afterLoad).toBeVisible({ timeout: 10_000 });
 });
