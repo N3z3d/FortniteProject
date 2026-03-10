@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { UserContextService } from '../services/user-context.service';
+import { AuthService } from '../services/auth.service';
 
 const trimTrailingSlashes = (value: string): string => {
   let normalizedValue = value;
@@ -21,28 +21,16 @@ const isApiRequest = (url: string): boolean => {
 };
 
 export const AuthInterceptor: HttpInterceptorFn = (request, next) => {
-  const userContextService = inject(UserContextService);
-  const currentUser = userContextService.getCurrentUser() || userContextService.getLastUser();
-  const fallbackDevUser = !environment.production && environment.enableFallbackData
-    ? environment.defaultDevUser
-    : null;
-  const username = (currentUser?.username || fallbackDevUser || '').trim();
+  const authService = inject(AuthService);
+  const token = authService.getToken();
 
-  // Leave non-API calls or anonymous users untouched
-  if (!username || !isApiRequest(request.url)) {
+  if (!token || !isApiRequest(request.url)) {
     return next(request);
   }
 
-  const params = request.params.has('user')
-    ? request.params
-    : request.params.set('user', username);
-
-  const modifiedRequest = request.clone({
-    params,
-    setHeaders: {
-      'X-Test-User': username
-    }
-  });
-
-  return next(modifiedRequest);
+  return next(
+    request.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    })
+  );
 };

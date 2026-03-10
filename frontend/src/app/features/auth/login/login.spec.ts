@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -25,6 +25,7 @@ describe('LoginComponent', () => {
     userContextService.getCurrentUser.and.returnValue(null);
     userContextService.attemptAutoLogin.and.returnValue(null);
     userContextService.getAvailableProfiles.and.returnValue([]);
+    userContextService.login.and.returnValue(of(undefined));
 
     route = {
       queryParams: of({}),
@@ -59,34 +60,31 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('navigates to returnUrl after login when provided', fakeAsync(() => {
+  it('navigates to returnUrl after login when provided', () => {
     (route.snapshot as any).queryParams = { returnUrl: '/games/test-game-id' };
 
     component.selectUser({ id: '1', username: 'Thibaut', email: 'thibaut@test.com' } as any);
-    tick(800);
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/games/test-game-id');
-  }));
+  });
 
-  it('defaults to /games after login when returnUrl is missing', fakeAsync(() => {
+  it('defaults to /games after login when returnUrl is missing', () => {
     (route.snapshot as any).queryParams = {};
 
     component.selectUser({ id: '1', username: 'Thibaut', email: 'thibaut@test.com' } as any);
-    tick(800);
 
     expect(router.navigate).toHaveBeenCalledWith(['/games'], {
       queryParams: { welcome: 'true', user: 'Thibaut' }
     });
-  }));
+  });
 
-  it('defaults to /games after login when returnUrl is unsafe', fakeAsync(() => {
+  it('defaults to /games after login when returnUrl is unsafe', () => {
     (route.snapshot as any).queryParams = { returnUrl: 'https://example.com/phish' };
 
     component.selectUser({ id: '1', username: 'Thibaut', email: 'thibaut@test.com' } as any);
-    tick(800);
 
     expect(router.navigate).toHaveBeenCalledWith(['/games'], {
       queryParams: { welcome: 'true', user: 'Thibaut' }
     });
-  }));
+  });
 });

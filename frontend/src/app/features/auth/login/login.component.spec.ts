@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
@@ -53,6 +53,7 @@ describe('LoginComponent', () => {
     userContextService.getAvailableProfiles.and.returnValue(mockProfiles);
     userContextService.getCurrentUser.and.returnValue(null);
     userContextService.attemptAutoLogin.and.returnValue(null);
+    userContextService.login.and.returnValue(of(undefined));
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, ReactiveFormsModule]
@@ -142,15 +143,10 @@ describe('LoginComponent', () => {
     expect(userContextService.attemptAutoLogin).not.toHaveBeenCalled();
   });
 
-  it('should handle user selection and login', fakeAsync(() => {
+  it('should handle user selection and login', () => {
     fixture.detectChanges();
 
     component.selectUser(mockProfiles[0]);
-
-    expect(component.isLoading).toBeTrue();
-    expect(accessibilityService.announceLoading).toHaveBeenCalledWith(true, 'authentication for Thibaut');
-
-    tick(800);
 
     expect(userContextService.login).toHaveBeenCalledWith(mockProfiles[0]);
     expect(component.isLoading).toBeFalse();
@@ -159,17 +155,16 @@ describe('LoginComponent', () => {
       ['/games'],
       { queryParams: { welcome: 'true', user: 'Thibaut' } }
     );
-  }));
+  });
 
-  it('should handle custom return URL after login', fakeAsync(() => {
+  it('should handle custom return URL after login', () => {
     activatedRoute.snapshot.queryParams = { returnUrl: '/dashboard' };
     fixture.detectChanges();
 
     component.selectUser(mockProfiles[0]);
-    tick(800);
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
-  }));
+  });
 
   it('should reject unsafe return URLs', () => {
     activatedRoute.snapshot.queryParams = { returnUrl: '//external.com/phishing' };
@@ -177,7 +172,11 @@ describe('LoginComponent', () => {
 
     component.selectUser(mockProfiles[0]);
 
-    expect(component['getSafeReturnUrl']()).toBe('/games');
+    // Navigates to /games because unsafe returnUrl is rejected
+    expect(router.navigate).toHaveBeenCalledWith(
+      ['/games'],
+      { queryParams: { welcome: 'true', user: 'Thibaut' } }
+    );
   });
 
   it('should toggle alternative login form', () => {
@@ -197,42 +196,36 @@ describe('LoginComponent', () => {
     expect(component.quickForm.get('identifier')?.hasError('required')).toBeTrue();
   });
 
-  it('should handle quick form submission with valid identifier', fakeAsync(() => {
+  it('should handle quick form submission with valid identifier', () => {
     fixture.detectChanges();
     component.quickForm.patchValue({ identifier: 'thibaut' });
 
     component.onQuickSubmit();
 
-    expect(component.isLoading).toBeTrue();
     expect(accessibilityService.announceLoading).toHaveBeenCalledWith(true, 'login attempt for thibaut');
-
-    tick(800);
-
     expect(userContextService.login).toHaveBeenCalled();
     expect(component.isLoading).toBeFalse();
     expect(accessibilityService.announceSuccess).toHaveBeenCalledWith('Login successful');
     expect(router.navigate).toHaveBeenCalledWith(['/games']);
-  }));
+  });
 
-  it('should find matching profile on quick submit', fakeAsync(() => {
+  it('should find matching profile on quick submit', () => {
     fixture.detectChanges();
     component.quickForm.patchValue({ identifier: 'alex' });
 
     component.onQuickSubmit();
-    tick(800);
 
     expect(userContextService.login).toHaveBeenCalledWith(mockProfiles[1]);
-  }));
+  });
 
-  it('should use first profile as fallback on quick submit', fakeAsync(() => {
+  it('should use first profile as fallback on quick submit', () => {
     fixture.detectChanges();
     component.quickForm.patchValue({ identifier: 'nonexistent' });
 
     component.onQuickSubmit();
-    tick(800);
 
     expect(userContextService.login).toHaveBeenCalledWith(mockProfiles[0]);
-  }));
+  });
 
   it('should not submit invalid quick form', () => {
     component.quickForm.patchValue({ identifier: '' });
@@ -273,6 +266,7 @@ describe('LoginComponent', () => {
     component.selectUser(mockProfiles[0]);
 
     expect(loggerService.info).toHaveBeenCalledWith('Login: user selected', { username: 'Thibaut' });
+    expect(loggerService.info).toHaveBeenCalledWith('Login: login succeeded', { username: 'Thibaut' });
   });
 
   it('should switch language via translation service', () => {

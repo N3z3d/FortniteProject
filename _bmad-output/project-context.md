@@ -2,9 +2,9 @@
 project_name: 'FortniteProject'
 user_name: 'Thibaut'
 date: '2026-02-21'
-sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'quality_rules', 'workflow_rules', 'anti_patterns']
+sections_completed: ['technology_stack', 'language_rules', 'framework_rules', 'testing_rules', 'quality_rules', 'workflow_rules', 'anti_patterns', 'definition_of_done']
 status: 'complete'
-rule_count: 42
+rule_count: 53
 optimized_for_llm: true
 ---
 
@@ -20,7 +20,7 @@ _Règles critiques et patterns que les agents IA doivent respecter lors de toute
 | Technologie | Version |
 |---|---|
 | Java | 21 |
-| Spring Boot | 3.3.0 |
+| Spring Boot | 3.4.5 |
 | Spring Security | (inclus Spring Boot) |
 | Spring Data JPA | (inclus Spring Boot) |
 | PostgreSQL driver | 42.7.3 |
@@ -39,7 +39,7 @@ _Règles critiques et patterns que les agents IA doivent respecter lors de toute
 | Angular CDK | ^20.0.0 |
 | RxJS | ~7.8.0 |
 | TypeScript | ~5.8.2 |
-| Karma + Jasmine | 6.4 / 5.7 |
+| Vitest | 3.x (Karma/Jasmine supprimés Sprint 3) |
 | Chart.js + ng2-charts | 4.5 / 8.0 |
 | STOMP.js + SockJS | 7.2.1 / 1.6.1 |
 | zone.js | ~0.15.0 |
@@ -159,11 +159,12 @@ frontend/src/app/
 - Préférer `async` pipe dans les templates pour éviter les memory leaks
 
 ### Tests Frontend
-- Framework : **Karma + Jasmine**
-- Commande CI : `npx ng test --watch=false --browsers=ChromeHeadless`
-- Baseline : **1805 tests** (0 échec pre-existing)
+- Framework : **Vitest** (Karma/Jasmine supprimés Sprint 3)
+- Commande CI unit : `npm run test:vitest` (depuis `frontend/`)
+- Commande CI e2e : `npm run test:e2e` (Playwright — requiert app sur :4200 + backend sur :8080)
+- Baseline : **2245 tests** (38 échecs pre-existing — Zone.js debounce dans 12 spec files non liés)
 - Coverage actuel : Lines 86.89%, Branches 73.36%, Functions 84.64%
-- Certains composants ont des fichiers `.tdd.spec.ts` ET `.spec.ts` — vérifier les deux
+- Certains composants ont des fichiers `.template.spec.ts` ET `.spec.ts` — vérifier les deux
 - Le **linter** modifie les fichiers automatiquement au save → relire avant d'éditer si du temps est passé
 
 ---
@@ -191,7 +192,38 @@ frontend/src/app/
 
 ---
 
-## 6. Workflow de Développement
+## 6. Definition of Done (DoD)
+
+Une story est **done** uniquement si **tous** les critères ci-dessous sont satisfaits :
+
+### Critères obligatoires
+
+| Critère | Règle |
+|---|---|
+| **Tests unitaires** | Tous les cas nominaux + ≥ 3 edge cases couverts ; 0 test rouge lié à la story |
+| **Pas de régression** | Suite complète verte avant merge (backend `mvn test` + frontend `npx ng test`) |
+| **Coverage** | ≥ 85% lignes sur le code modifié par la story |
+| **Sécurité** | Si nouveau `@RestController` → `SecurityConfig<ControllerName>AuthorizationTest` créé |
+| **i18n** | Toute string visible ajoutée dans les 4 fichiers (`fr.json`, `en.json`, `es.json`, `pt.json`) |
+| **Spotless** | `mvn spotless:apply` lancé avant tout commit backend |
+| **Taille** | Aucune classe > 500 lignes, aucune méthode > 50 lignes |
+| **File List** | Section "File List" de la story remplie avec tous les fichiers modifiés/créés/supprimés |
+| **Code review** | Workflow `bmad-bmm-code-review` exécuté — tous les findings HIGH/MEDIUM résolus avant passage en `done` |
+| **Sprint status** | Ticket passé à `done` dans `sprint-status.yaml` après code review validé |
+| **Loi de Demeter** | Aucune chaîne `a.getB().getC().doSomething()` introduite |
+| **Dockerfile** | Si `Dockerfile`, `tsconfig.app.json` ou `angular.json` modifié : `docker build . --target production` doit passer sans erreur |
+
+### Critères bloquants (HALT)
+
+- Code review non exécuté → NE PAS passer en `done` dans sprint-status.yaml
+- Story avec `[AI-Review][HIGH]` ou `[AI-Review][MEDIUM]` ouverts → NE PAS passer en `done`
+- Dev Agent Record `File List` vide → NE PAS passer en `review` (bloquer le workflow)
+- Test rouge dans la suite pre-existing → signaler, ne pas masquer
+- Nouveau `@Service` avec > 7 dépendances → refactoriser d'abord
+
+---
+
+## 7. Workflow de Développement
 
 ### Processus TDD obligatoire
 1. **Red** : écrire le test qui échoue
@@ -213,7 +245,7 @@ frontend/src/app/
 
 ---
 
-## 7. Pièges Connus à Éviter
+## 8. Pièges Connus à Éviter
 
 | Piège | Règle |
 |---|---|
@@ -241,4 +273,4 @@ frontend/src/app/
 - Mettre à jour lors de changements de stack technologique
 - Réviser trimestriellement pour supprimer les règles obsolètes
 
-_Last Updated: 2026-02-21_
+_Last Updated: 2026-03-10 — Sprint 3: Karma→Vitest, Spring Boot 3.3→3.4.5, baseline 2245 tests. Sprint 6 Q2: Code review obligatoire ajouté au DoD §6; File List bloquant ajouté aux critères HALT._

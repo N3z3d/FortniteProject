@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, map } from 'rxjs';
+import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
 export interface UserProfile {
   id: string;
@@ -19,18 +21,39 @@ export class UserContextService {
   private readonly AUTO_LOGIN_KEY = 'autoLogin';
   private readonly userChangedSubject = new BehaviorSubject<UserProfile | null>(null);
 
-  public readonly userChanged$: Observable<UserProfile | null> = this.userChangedSubject.asObservable();
+  public readonly userChanged$: Observable<UserProfile | null> =
+    this.userChangedSubject.asObservable();
 
-  constructor() {
+  constructor(private readonly authService: AuthService) {
     this.initializeFromStorage();
   }
 
   getAvailableProfiles(): UserProfile[] {
     return [
-      { id: '1', username: 'Thibaut', email: 'thibaut@test.com', role: 'Administrateur' },
-      { id: '2', username: 'Marcel', email: 'marcel@test.com', role: 'Joueur' },
-      { id: '3', username: 'Teddy', email: 'teddy@test.com', role: 'Joueur' },
-      { id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur' }
+      {
+        id: '1',
+        username: 'admin',
+        email: 'admin@fortnite-pronos.com',
+        role: 'Administrateur'
+      },
+      {
+        id: '2',
+        username: 'thibaut',
+        email: 'thibaut@fortnite-pronos.com',
+        role: 'Joueur'
+      },
+      {
+        id: '3',
+        username: 'marcel',
+        email: 'marcel@fortnite-pronos.com',
+        role: 'Joueur'
+      },
+      {
+        id: '4',
+        username: 'teddy',
+        email: 'teddy@fortnite-pronos.com',
+        role: 'Joueur'
+      }
     ];
   }
 
@@ -39,37 +62,46 @@ export class UserContextService {
     return storedUser ? JSON.parse(storedUser) : null;
   }
 
-  login(user: UserProfile): void {
-    // Add browser fingerprint and last login date
-    const enrichedUser = {
-      ...user,
-      lastLoginDate: new Date(),
-      browserFingerprint: this.generateBrowserFingerprint()
-    };
-    
-    sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(enrichedUser));
-    localStorage.setItem(this.LAST_USER_KEY, JSON.stringify(enrichedUser));
-    localStorage.setItem(this.AUTO_LOGIN_KEY, 'true');
-    
-    this.userChangedSubject.next(enrichedUser);
+  login(user: UserProfile): Observable<void> {
+    const password = environment.devUserPassword ?? '';
+    return this.authService.login(user.username, password).pipe(
+      map(() => {
+        const enrichedUser = {
+          ...user,
+          lastLoginDate: new Date(),
+          browserFingerprint: this.generateBrowserFingerprint()
+        };
+        sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(enrichedUser));
+        localStorage.setItem(this.LAST_USER_KEY, JSON.stringify(enrichedUser));
+        localStorage.setItem(this.AUTO_LOGIN_KEY, 'true');
+        this.userChangedSubject.next(enrichedUser);
+      })
+    );
   }
 
   logout(): void {
+    this.authService.clearToken();
     this.clearAllStorage();
     this.userChangedSubject.next(null);
   }
 
   private clearAllStorage(): void {
-    // Clear session storage
     sessionStorage.removeItem(this.STORAGE_KEY);
-
-    // Clear local storage to prevent auto-login
     localStorage.removeItem(this.LAST_USER_KEY);
     localStorage.removeItem(this.AUTO_LOGIN_KEY);
   }
 
   isLoggedIn(): boolean {
-    return this.getCurrentUser() !== null;
+    return this.authService.getToken() !== null;
+  }
+
+  isAdmin(): boolean {
+    const jwtUser = this.authService.getStoredUser();
+    if (jwtUser) {
+      return jwtUser.role === 'ADMIN';
+    }
+    // Fallback to profile role for sessions started before JWT migration
+    return this.getCurrentUser()?.role === 'Administrateur';
   }
 
   getUserById(id: string): UserProfile | undefined {
@@ -87,7 +119,6 @@ export class UserContextService {
     }
   }
 
-  // Auto-login functionality
   isAutoLoginEnabled(): boolean {
     return localStorage.getItem(this.AUTO_LOGIN_KEY) === 'true';
   }
@@ -107,19 +138,16 @@ export class UserContextService {
       return null;
     }
 
-    // Check if browser fingerprint matches
     const currentFingerprint = this.generateBrowserFingerprint();
     if (lastUser.browserFingerprint === currentFingerprint) {
-      // Auto login the user
-      this.login(lastUser);
+      // Subscribe to trigger the HTTP call (fire-and-forget — caller navigates optimistically)
+      this.login(lastUser).subscribe({ error: () => {} });
       return lastUser;
     }
 
     return null;
   }
 
-
-  // Browser fingerprinting (simple implementation)
   private generateBrowserFingerprint(): string {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -128,7 +156,7 @@ export class UserContextService {
       ctx.font = '14px Arial';
       ctx.fillText('Browser fingerprint', 2, 2);
     }
-    
+
     const fingerprint = [
       navigator.userAgent,
       navigator.language,
@@ -137,15 +165,14 @@ export class UserContextService {
       new Date().getTimezoneOffset(),
       canvas.toDataURL()
     ].join('|');
-    
-    // Simple hash function
+
     let hash = 0;
     for (let i = 0; i < fingerprint.length; i++) {
       const char = fingerprint.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = (hash << 5) - hash + char;
+      hash &= hash;
     }
-    
+
     return hash.toString(36);
   }
-} 
+}

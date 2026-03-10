@@ -4,7 +4,8 @@ export const environment = {
   apiBaseUrl: 'http://localhost:8080',
   wsUrl: 'ws://localhost:8080/ws',
   enableFallbackData: false,  // Enable explicitly for dev fallback data
-  defaultDevUser: 'Thibaut',
+  defaultDevUser: 'thibaut',
+  devUserPassword: 'Admin1234', // Dev only — seed password for profile login buttons (V1001 seed)
 
   // CDN configuration (disabled in development)
   cdn: {

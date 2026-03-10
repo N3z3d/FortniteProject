@@ -101,6 +101,11 @@ const PT_FLAG_SVG = toSvgDataUri(
           </button>
         </fieldset>
 
+        <!-- Login Error -->
+        <div *ngIf="loginError" class="login-error" role="alert" aria-live="assertive">
+          {{ loginError }}
+        </div>
+
         <!-- Loading State -->
         <div *ngIf="isLoading" class="user-loading" role="status" aria-live="polite">
           <mat-spinner diameter="48" aria-label="Loading indicator"></mat-spinner>
@@ -379,6 +384,16 @@ const PT_FLAG_SVG = toSvgDataUri(
       width: 100%;
     }
 
+    .login-error {
+      color: #f44336;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 1rem 0;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(244, 67, 54, 0.4);
+      border-radius: 8px;
+      background: rgba(244, 67, 54, 0.1);
+    }
+
     .show-alternative {
       color: rgba(255, 255, 255, 0.6);
       font-size: 0.9rem;
@@ -451,6 +466,7 @@ export class LoginComponent implements OnInit {
   showAlternative = false;
   availableProfiles: UserProfile[] = [];
   isSwitchingUser = false;
+  loginError: string | null = null;
 
   readonly languages: { code: SupportedLanguage; flagAsset: string; label: string }[] = [
     { code: 'fr', flagAsset: FR_FLAG_SVG, label: 'Fran\u00e7ais' },
@@ -520,29 +536,36 @@ export class LoginComponent implements OnInit {
   selectUser(profile: UserProfile): void {
     this.logger.info('Login: user selected', { username: profile.username });
     this.isLoading = true;
+    this.loginError = null;
 
     // Announce the login attempt
     this.accessibilityService.announceLoading(true, `authentication for ${profile.username}`);
 
-    // Connexion avec feedback visuel approprié
-    setTimeout(() => {
-      this.userContextService.login(profile);
-      this.logger.info('Login: login succeeded', { username: profile.username });
-      this.isLoading = false;
+    this.userContextService.login(profile).subscribe({
+      next: () => {
+        this.logger.info('Login: login succeeded', { username: profile.username });
+        this.isLoading = false;
 
-      // Announce successful login
-      this.accessibilityService.announceSuccess(`Login successful for ${profile.username}`);
-      this.accessibilityService.announceNavigation('Sélection de game');
+        // Announce successful login
+        this.accessibilityService.announceSuccess(`Login successful for ${profile.username}`);
+        this.accessibilityService.announceNavigation('Sélection de game');
 
-      const returnUrl = this.getSafeReturnUrl();
-      this.logger.info('Login: redirecting after login', { returnUrl });
+        const returnUrl = this.getSafeReturnUrl();
+        this.logger.info('Login: redirecting after login', { returnUrl });
 
-      if (returnUrl === '/games') {
-        this.router.navigate(['/games'], { queryParams: { welcome: 'true', user: profile.username } });
-      } else {
-        this.router.navigateByUrl(returnUrl);
+        if (returnUrl === '/games') {
+          this.router.navigate(['/games'], { queryParams: { welcome: 'true', user: profile.username } });
+        } else {
+          this.router.navigateByUrl(returnUrl);
+        }
+      },
+      error: (err) => {
+        this.logger.error('Login: login failed', err);
+        this.isLoading = false;
+        this.loginError = err?.error?.message ?? this.t.t('loginPage.loginError', 'Erreur de connexion. Vérifiez que le serveur est disponible.');
+        this.accessibilityService.announceFormErrors([this.loginError!]);
       }
-    }, 800); // Temps suffisant pour voir le feedback
+    });
   }
 
   private getSafeReturnUrl(): string {
@@ -587,13 +610,19 @@ export class LoginComponent implements OnInit {
         p.username.toLowerCase().includes(identifier.toLowerCase())
       ) || this.availableProfiles[0];
 
-      setTimeout(() => {
-        this.userContextService.login(matchingProfile);
-        this.isLoading = false;
-        this.accessibilityService.announceSuccess(`Login successful`);
-        this.accessibilityService.announceNavigation('Sélection de game');
-        this.router.navigate(['/games']);
-      }, 800);
+      this.userContextService.login(matchingProfile).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.accessibilityService.announceSuccess(`Login successful`);
+          this.accessibilityService.announceNavigation('Sélection de game');
+          this.router.navigate(['/games']);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.loginError = err?.error?.message ?? this.t.t('loginPage.loginError', 'Erreur de connexion. Vérifiez que le serveur est disponible.');
+          this.accessibilityService.announceFormErrors([this.loginError!]);
+        }
+      });
     } else {
       // Announce form validation errors
       this.onFormError();

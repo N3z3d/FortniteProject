@@ -41,7 +41,7 @@ tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 # Low findings counter (retro action G4b)
-low_findings_pending: 40
+low_findings_pending: 39
 
 development_status:
 
@@ -72,7 +72,7 @@ development_status:
   epic-3-retrospective: done
 
   epic-4: done
-  4-1-orchestration-draft-serpent: done
+  4-1-orchestration-draft-serpent: done  # runtime follow-up 2026-03-07 closed, see 4-1-orchestration-draft-serpent-runtime-incident-2026-03-07.md
   4-2-regles-de-tranche-et-recommandation: done
   4-3-soumission-simultanee-sans-conflit: done
   4-4-resolution-de-conflit-en-mode-simultane: done
@@ -81,9 +81,9 @@ development_status:
   epic-4-retrospective: done
 
   epic-5: done
-  5-1-swap-solo-vers-joueur-libre-valide: done
-  5-2-trade-mutuel-1v1-avec-acceptation-adverse: done
-  5-3-journal-d-audit-trades-swaps: done
+  5-1-swap-solo-vers-joueur-libre-valide: done  # runtime follow-up 2026-03-07 closed, see 5-1-swap-solo-vers-joueur-libre-valide-runtime-validation-2026-03-07.md
+  5-2-trade-mutuel-1v1-avec-acceptation-adverse: done  # runtime follow-up 2026-03-07 closed, see 5-2-trade-mutuel-1v1-avec-acceptation-adverse-runtime-validation-2026-03-07.md
+  5-3-journal-d-audit-trades-swaps: done  # runtime follow-up 2026-03-07 closed, see 5-3-journal-d-audit-trades-swaps-runtime-validation-2026-03-07.md
   epic-5-retrospective: done
 
   epic-6: done
@@ -94,9 +94,9 @@ development_status:
 
   epic-7: done
   7-1-dashboard-pipeline-par-region: done
-  7-2-resolution-manuelle-et-correction-fiche-joueur: done
-  7-3-alerting-escalant-et-logs-scraping-detailles: done
-  7-4-supervision-globale-des-parties-en-cours: done
+  7-2-resolution-manuelle-et-correction-fiche-joueur: done  # runtime follow-up 2026-03-07 closed, see 7-2-resolution-manuelle-et-correction-fiche-joueur-runtime-validation-2026-03-07.md
+  7-3-alerting-escalant-et-logs-scraping-detailles: done  # runtime follow-up 2026-03-07 closed, see 7-3-alerting-escalant-et-logs-scraping-detailles-runtime-validation-2026-03-07.md
+  7-4-supervision-globale-des-parties-en-cours: done  # runtime follow-up 2026-03-07 closed, see 7-4-supervision-globale-des-parties-en-cours-runtime-validation-2026-03-07.md
   epic-7-retrospective: done
 
   sprint-1-retrospective-globale: done
@@ -322,4 +322,181 @@ development_status:
   #           TradingDashboardComponent + TradeProposalComponent (SEARCH_DEBOUNCE_MS)
   sprint3-a9-sonarqube-magic-numbers: done
 
-  sprint-3-retrospective-globale: optional
+  sprint-3-retrospective-globale: done  # 2026-03-06 : score 7.4/10, 5 leçons, 7 action items Sprint 4
+
+  # ============================================================
+  # SPRINT 4 — Déploiement staging live + API Fortnite end-to-end + Tech debt critique
+  # 2026-03-06 — Objectif: staging public accessible + scraping Fortnite validé + pipeline CI/CD complet
+  # Issu de: retro Sprint 3 (7 action items) + items déférés Sprint 3 (4) + stretch goals Sprint 3 (4)
+  # Séquence critique: hébergement (1 seule fois) → secrets → DB prod → staging → CI/CD complet
+  # ============================================================
+
+  # Retro Sprint 3 complétée (2026-03-06)
+  sprint-3-retrospective-globale-action-tracking: done
+
+  # ----------------------------------------------------------
+  # Phase 0 — Décision hébergement (1 seule fois, binaire)
+  # NE PAS re-proposer si refus. Marquer deferred-sprint5 et passer à la suite.
+  # ----------------------------------------------------------
+
+  # Décision hébergement : Railway oui/non (une seule fois — si non → deferred-sprint5)
+  sprint4-decision-hebergement: deferred-future  # décision utilisateur 2026-03-08 retro Sprint4: report long terme explicite. Docker local = cible principale. A reprendre quand le besoin de staging public se fera sentir.
+
+  # ----------------------------------------------------------
+  # Phase 1 — Chemin critique vers staging
+  # Séquence: hébergement → secrets → DB prod → staging
+  # Chaque item dépend du précédent
+  # MISE EN VEILLE 2026-03-08 : report long terme décidé en retro Sprint 4.
+  # Ces items sont valides mais pas prioritaires. Docker local = cible opérationnelle.
+  # ----------------------------------------------------------
+
+  # Config secrets prod : JWT_SECRET, DB_PASSWORD, FORTNITE_API_KEY dans hébergeur choisi
+  sprint4-config-secrets-prod: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+
+  # PostgreSQL prod : managé (Supabase/Neon/RDS) ou Docker volume — provisioning
+  sprint4-db-prod-provisioning: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+
+  # Déploiement staging accessible publiquement (dépend: hébergement + secrets + DB)
+  sprint4-a10-staging-deployment: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+
+  # ----------------------------------------------------------
+  # Phase 2 — API Fortnite + E2E (P1 — indépendant du staging)
+  # ----------------------------------------------------------
+
+  # API Fortnite wiring check : valider FortniteApiAdapter + clé .env en Docker local
+  sprint4-api-fortnite-wiring-check: done
+
+  # E2E seed data : script de seed DB pour tests "warm start" (full-game-flow FULL-FLOW-06/07/08)
+  sprint4-e2e-seed-data: done  # code-review 2026-03-07 rerun: follow-ups fermés, contrat story/compose resynchronisé
+
+  # ----------------------------------------------------------
+  # Phase 2b — Stabilisation locale E2E (correct-course 2026-03-08)
+  # Priorité réelle après report explicite du staging/hosting
+  # ----------------------------------------------------------
+
+  epic-8: done
+  8-1-stabilisation-locale-e2e-critique: done
+  8-2-realignement-contrat-draft-serpent-front-back: done
+  8-3-couverture-e2e-locale-trade-swap: done
+  8-4-realignement-dashboard-trades-front-runtime: done
+  8-5-couverture-e2e-multi-trade-realtime: done
+  epic-8-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Phase 3 — CI/CD complet + Sécurité (dépend staging)
+  # ----------------------------------------------------------
+
+  # A3b — CI/CD complet : docker build + push registry + deploy staging automatique
+  sprint4-a3b-cicd-pipeline-complet: deferred-future  # dépend staging — mise en veille retro Sprint4. CI (tests) déjà opérationnel via A3a.
+
+  # SEC-R2 — Auth WebSocket : JWT token au handshake (obligatoire avant exposition publique)
+  sprint4-sec-r2-websocket-auth: deferred-future  # mise en veille retro Sprint4 — seulement nécessaire avant exposition publique
+
+  # ----------------------------------------------------------
+  # Phase 4 — Tech Debt critique (stretch — si capacity le permet)
+  # ----------------------------------------------------------
+
+  # A6 — Migrer 5 services legacy les plus impactants JPA direct → domain ports
+  sprint4-a6-jpa-legacy-migration-5-services: done
+
+  sprint-4-retrospective-globale: done  # 2026-03-08 — voir sprint-4-retro-2026-03-08.md
+
+  # ============================================================
+  # SPRINT 5 — Accessibilité des features + E2E en masse
+  # 2026-03-08 — Objectif: "Thibaut peut utiliser son app"
+  # Issu de: retro Sprint 4 + Party Mode UX admin (2026-03-08)
+  # Décision clé: Option B pure pour accès admin (menu profil dropdown)
+  # Séquence: P0 fixes → UX navbar+admin → E2E masse → P2 architecture
+  # ⛔ NE PAS RE-PROPOSER: hébergement/staging (deferred-future)
+  # ============================================================
+
+  # Retro Sprint 4 complétée (2026-03-08)
+  sprint-4-retrospective-globale-action-tracking: done
+
+  # ----------------------------------------------------------
+  # Phase 0 — Bugs bloquants (P0 — débloquer avant tout)
+  # ----------------------------------------------------------
+
+  # SpaController 404 : /admin/dashboard retourne 404 en accès direct (route 2 segments)
+  sprint5-fix-spa-controller-404: done
+
+  # ----------------------------------------------------------
+  # Phase 1 — Navigation & Accès Admin (P0 — décision Party Mode 2026-03-08)
+  # Décision unanime (8/8 agents): Option B pure
+  # Implémentation: menu profil dropdown avec lien "Administration" conditionnel isAdmin()
+  # ----------------------------------------------------------
+
+  # Navbar globale : Parties | Catalogue | 👤 Profil ▼ (avec Administration si isAdmin())
+  sprint5-ux-navbar-globale: done  # story file: sprint5-ux-navbar-globale.md (couvre aussi sprint5-ux-admin-profile-dropdown)
+
+  # Accès admin Option B : lien "⚙️ Administration" dans menu profil, conditionnel isAdmin()
+  # Séparateur visuel entre options joueur et options admin
+  sprint5-ux-admin-profile-dropdown: done  # covered by sprint5-ux-navbar-globale.md
+
+  # ----------------------------------------------------------
+  # Phase 2 — E2E en masse (P0 — priorité absolue Sprint 5)
+  # 0 couverture E2E sur admin et catalogue = angle mort critique
+  # ----------------------------------------------------------
+
+  # E2E Admin Panel : /admin/dashboard + /admin/pipeline + /admin/users + /admin/database + /admin/logs
+  # Smoke + navigation + CRUD basique + accès via menu profil dropdown
+  sprint5-e2e-admin-panel: done  # review fixes applied: F1(H) db-explorer__title, F2(H) guard after waitForURL, F3(M) tab count wait, F4(M) networkidle, F5(M) filters-bar fallback, F6-F8(L) comments+regex
+
+  # E2E Catalogue : /catalogue — liste joueurs, recherche, filtres région/tranche, comparaison, sparkline
+  # Cœur du produit — agrégation toutes infos API joueurs
+  sprint5-e2e-catalogue: done  # review fixes applied: H1 CAT-02 expect.poll+skip-on-zero, M1 CAT-05 toBeAttached, M2 CAT-03 isVisible guard, L1-L2 minor improvements
+
+  # ----------------------------------------------------------
+  # Phase 3 — Architecture (P2 — avant exposition publique)
+  # ----------------------------------------------------------
+
+  # UserContextService JWT : login mock sans JWT réel — gap architectural
+  # P2 pour Sprint 5, P0 avant toute exposition publique
+  sprint5-arch-usercontext-jwt: backlog
+
+  sprint-5-retrospective-globale: done  # 2026-03-10 — voir sprint-5-retro-2026-03-10.md — score 8.3/10, 4 action items Sprint 6
+
+  # ============================================================
+  # SPRINT 6 — "L'app est prête à être montrée"
+  # 2026-03-10 — Objectif: auth JWT réel + qualité process + maintenabilité E2E
+  # Issu de: retro Sprint 5 (4 action items: A1/Q1/Q2/P1-P2)
+  # Séquence: P0 JWT (bloquant avant exposition) → P1 qualité → P2 process
+  # ⛔ NE PAS RE-PROPOSER: hébergement/staging (deferred-future)
+  # ============================================================
+
+  # Retro Sprint 5 complétée (2026-03-10)
+  sprint-5-retrospective-globale-action-tracking: done
+
+  # ----------------------------------------------------------
+  # Phase 0 — Architecture JWT (P0 — bloquant avant exposition publique)
+  # UserContextService utilise un mock login sans JWT réel depuis Sprint 4
+  # Toute exposition publique requiert ce fix en prérequis
+  # ----------------------------------------------------------
+
+  # A1 — UserContextService JWT : remplacer le mock login par une vraie authentification JWT
+  # Reporté de sprint5-arch-usercontext-jwt (était P2 Sprint 5, P0 Sprint 6)
+  sprint6-arch-usercontext-jwt: done  # story file: sprint6-arch-usercontext-jwt.md
+
+  # ----------------------------------------------------------
+  # Phase 1 — Qualité / Tests (P1 — gaps de couverture identifiés en Sprint 5)
+  # ----------------------------------------------------------
+
+  # Q1 — Fermer les review follow-ups SpaController : 3 tests manquants CRITICAL/HIGH
+  # GET / → forward:/index.html, GET /admin/games → 200, GET /main.js → non-intercepté
+  sprint6-q1-spacontroller-review-followups: done  # +3 tests: GET /, GET /admin/games, GET /main.js — 11/11 green
+
+  # Q2 — Formaliser règle DoD review follow-ups dans project-context.md
+  # Avant done : tous les [ ] "Review Follow-ups (AI)" doivent être [x] ou convertis en ticket
+  sprint6-q2-dod-review-followups-rule: done  # project-context.md: code review DoD rule + bloquants + Vitest baseline + Spring Boot 3.4.5
+
+  # ----------------------------------------------------------
+  # Phase 2 — Amélioration process E2E (P2 — réduire la dette boilerplate)
+  # ----------------------------------------------------------
+
+  # P1 — Helper waitForPageReady(page, route) : extraire guard URL + loading wait en helper réutilisable
+  # Réduire la duplication boilerplate dans chaque test CAT-0N / ADMIN-0N
+  sprint6-p1-e2e-helper-wait-for-page-ready: backlog
+
+  # P2 — Règle code review E2E : critère "variable capturée jamais assertée" dans checklist
+  # Éviter le code zombie (variables read-but-never-asserted) dans les specs E2E
+  sprint6-p2-code-review-e2e-checklist-rule: backlog

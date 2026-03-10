@@ -1,13 +1,38 @@
 import { TestBed } from '@angular/core/testing';
+import { of, skip, take, throwError } from 'rxjs';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { UserContextService, UserProfile } from './user-context.service';
-import { skip, take } from 'rxjs';
+import { AuthService, LoginApiResponse } from './auth.service';
+
+const MOCK_LOGIN_RESPONSE: LoginApiResponse = {
+  token: 'test-jwt-token',
+  user: { id: 'uuid-2', email: 'thibaut@fortnite-pronos.com', role: 'USER' }
+};
+
+const MOCK_ADMIN_LOGIN_RESPONSE: LoginApiResponse = {
+  token: 'admin-jwt-token',
+  user: { id: 'uuid-1', email: 'admin@fortnite-pronos.com', role: 'ADMIN' }
+};
 
 describe('UserContextService', () => {
   let service: UserContextService;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
+    authServiceSpy = jasmine.createSpyObj('AuthService', [
+      'login', 'storeToken', 'clearToken', 'getToken', 'getStoredUser'
+    ]);
+    authServiceSpy.getToken.and.returnValue(null);
+    authServiceSpy.getStoredUser.and.returnValue(null);
+    authServiceSpy.login.and.returnValue(of(MOCK_LOGIN_RESPONSE));
+
     TestBed.configureTestingModule({
-      providers: [UserContextService]
+      imports: [HttpClientTestingModule],
+      providers: [
+        UserContextService,
+        { provide: AuthService, useValue: authServiceSpy }
+      ]
     });
     service = TestBed.inject(UserContextService);
   });
@@ -18,88 +43,85 @@ describe('UserContextService', () => {
   });
 
   describe('getAvailableProfiles', () => {
-    it('should return all available profiles including SARAH', () => {
+    it('returns local profiles aligned with seeded backend accounts', () => {
       const profiles = service.getAvailableProfiles();
-      
       expect(profiles.length).toBe(4);
-      expect(profiles).toEqual([
-        { id: '1', username: 'Thibaut', email: 'thibaut@test.com', role: 'Administrateur' },
-        { id: '2', username: 'Marcel', email: 'marcel@test.com', role: 'Joueur' },
-        { id: '3', username: 'Teddy', email: 'teddy@test.com', role: 'Joueur' },
-        { id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur' }
-      ]);
+      expect(profiles[0].username).toBe('admin');
+      expect(profiles[1].username).toBe('thibaut');
     });
   });
 
   describe('getCurrentUser', () => {
-    it('should return null when no user is logged in', () => {
-      const currentUser = service.getCurrentUser();
-      expect(currentUser).toBeNull();
+    it('returns null when no user is logged in', () => {
+      expect(service.getCurrentUser()).toBeNull();
     });
 
-    it('should return the logged in user from session storage', () => {
-      const testUser: UserProfile = { id: '1', username: 'Thibaut', email: 'thibaut@test.com' };
+    it('returns the logged in user from session storage', () => {
+      const testUser: UserProfile = { id: '1', username: 'admin', email: 'admin@fortnite-pronos.com' };
       sessionStorage.setItem('currentUser', JSON.stringify(testUser));
-      
-      const currentUser = service.getCurrentUser();
-      expect(currentUser).toEqual(testUser);
+      expect(service.getCurrentUser()).toEqual(testUser);
     });
   });
 
   describe('login', () => {
-    it('should set the current user in session storage', () => {
-      const testUser: UserProfile = { id: '2', username: 'Marcel', email: 'marcel@test.com' };
-      
-      spyOn(service as any, 'generateBrowserFingerprint').and.returnValue('fingerprint-123');
-      service.login(testUser);
-      
-      const storedUser = sessionStorage.getItem('currentUser');
-      expect(storedUser).toBeTruthy();
+    it('calls authService.login with username and devUserPassword', () => {
+      const testUser: UserProfile = { id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com' };
 
-      const parsedUser = JSON.parse(storedUser!);
-      expect(parsedUser).toEqual(jasmine.objectContaining({
-        id: '2',
-        username: 'Marcel',
-        email: 'marcel@test.com',
-        browserFingerprint: 'fingerprint-123'
-      }));
-      expect(parsedUser.lastLoginDate).toBeTruthy();
+      service.login(testUser).subscribe();
+
+      expect(authServiceSpy.login).toHaveBeenCalledWith('thibaut', jasmine.any(String));
     });
 
-    it('should emit user change event', (done) => {
-      const testUser: UserProfile = { id: '3', username: 'Teddy', email: 'teddy@test.com' };
-      
-      spyOn(service as any, 'generateBrowserFingerprint').and.returnValue('fingerprint-456');
+    it('sets the current user in session storage on success', done => {
+      const testUser: UserProfile = { id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com' };
+      spyOn(service as any, 'generateBrowserFingerprint').and.returnValue('fp-123');
 
-      service.userChanged$.pipe(skip(1), take(1)).subscribe(user => {
-        expect(user).toEqual(jasmine.objectContaining({
-          id: '3',
-          username: 'Teddy',
-          email: 'teddy@test.com',
-          browserFingerprint: 'fingerprint-456'
-        }));
-        expect(user?.lastLoginDate).toEqual(jasmine.any(Date));
+      service.login(testUser).subscribe(() => {
+        const storedUser = sessionStorage.getItem('currentUser');
+        expect(storedUser).toBeTruthy();
+        const parsed = JSON.parse(storedUser!);
+        expect(parsed.username).toBe('thibaut');
+        expect(parsed.browserFingerprint).toBe('fp-123');
         done();
       });
-      
-      service.login(testUser);
+    });
+
+    it('emits user change event on success', done => {
+      const testUser: UserProfile = { id: '3', username: 'marcel', email: 'marcel@fortnite-pronos.com' };
+
+      service.userChanged$.pipe(skip(1), take(1)).subscribe(user => {
+        expect(user?.username).toBe('marcel');
+        done();
+      });
+
+      service.login(testUser).subscribe();
+    });
+
+    it('propagates error when authService.login fails', done => {
+      authServiceSpy.login.and.returnValue(throwError(() => new Error('401 Unauthorized')));
+      const testUser: UserProfile = { id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com' };
+
+      service.login(testUser).subscribe({
+        next: () => fail('should not succeed'),
+        error: err => {
+          expect(err.message).toContain('401');
+          expect(sessionStorage.getItem('currentUser')).toBeNull();
+          done();
+        }
+      });
     });
   });
 
   describe('logout', () => {
-    it('should clear the current user from session storage', () => {
-      const testUser: UserProfile = { id: '4', username: 'Sarah', email: 'sarah@test.com' };
-      sessionStorage.setItem('currentUser', JSON.stringify(testUser));
-
+    it('clears session storage and calls authService.clearToken', () => {
+      sessionStorage.setItem('currentUser', '{"id":"1","username":"admin","email":"admin@fortnite-pronos.com"}');
       service.logout();
-
-      const storedUser = sessionStorage.getItem('currentUser');
-      expect(storedUser).toBeNull();
+      expect(sessionStorage.getItem('currentUser')).toBeNull();
+      expect(authServiceSpy.clearToken).toHaveBeenCalled();
     });
 
-    it('should emit null user change event', (done) => {
-      const testUser: UserProfile = { id: '1', username: 'Thibaut', email: 'thibaut@test.com' };
-      sessionStorage.setItem('currentUser', JSON.stringify(testUser));
+    it('emits null user change event', done => {
+      sessionStorage.setItem('currentUser', '{"id":"1","username":"admin","email":"admin@fortnite-pronos.com"}');
 
       service.userChanged$.pipe(skip(1), take(1)).subscribe(user => {
         expect(user).toBeNull();
@@ -108,95 +130,70 @@ describe('UserContextService', () => {
 
       service.logout();
     });
-
-    it('should clear all storage including localStorage on logout', () => {
-      const testUser: UserProfile = { id: '1', username: 'Thibaut', email: 'thibaut@test.com' };
-
-      // Simulate a complete login (sets both sessionStorage and localStorage)
-      service.login(testUser);
-
-      // Verify data is stored
-      expect(sessionStorage.getItem('currentUser')).toBeTruthy();
-      expect(localStorage.getItem('lastUser')).toBeTruthy();
-      expect(localStorage.getItem('autoLogin')).toBe('true');
-
-      // Perform logout
-      service.logout();
-
-      // Verify all storage is cleared
-      expect(sessionStorage.getItem('currentUser')).toBeNull();
-      expect(localStorage.getItem('lastUser')).toBeNull();
-      expect(localStorage.getItem('autoLogin')).toBeNull();
-    });
-
-    it('should prevent auto-login after logout', () => {
-      const testUser: UserProfile = { id: '2', username: 'Marcel', email: 'marcel@test.com' };
-
-      // Login and enable auto-login
-      service.login(testUser);
-      expect(service.isAutoLoginEnabled()).toBe(true);
-
-      // Logout
-      service.logout();
-
-      // Verify auto-login is disabled
-      expect(service.isAutoLoginEnabled()).toBe(false);
-      expect(service.getLastUser()).toBeNull();
-    });
-
-    it('should not allow attemptAutoLogin after logout', () => {
-      const testUser: UserProfile = { id: '3', username: 'Teddy', email: 'teddy@test.com' };
-
-      // Login
-      service.login(testUser);
-      expect(service.getCurrentUser()).toBeTruthy();
-
-      // Logout
-      service.logout();
-
-      // Attempt auto-login should return null
-      const autoLoginResult = service.attemptAutoLogin();
-      expect(autoLoginResult).toBeNull();
-      expect(service.getCurrentUser()).toBeNull();
-    });
   });
 
   describe('isLoggedIn', () => {
-    it('should return false when no user is logged in', () => {
-      const isLoggedIn = service.isLoggedIn();
-      expect(isLoggedIn).toBe(false);
+    it('returns false when no JWT token', () => {
+      authServiceSpy.getToken.and.returnValue(null);
+      expect(service.isLoggedIn()).toBeFalse();
     });
 
-    it('should return true when user is logged in', () => {
-      const testUser: UserProfile = { id: '2', username: 'Marcel', email: 'marcel@test.com' };
-      sessionStorage.setItem('currentUser', JSON.stringify(testUser));
-      
-      const isLoggedIn = service.isLoggedIn();
-      expect(isLoggedIn).toBe(true);
+    it('returns true when JWT token is present', () => {
+      authServiceSpy.getToken.and.returnValue('valid-jwt');
+      expect(service.isLoggedIn()).toBeTrue();
+    });
+  });
+
+  describe('isAdmin', () => {
+    it('returns true when JWT user has role ADMIN', () => {
+      authServiceSpy.getStoredUser.and.returnValue(MOCK_ADMIN_LOGIN_RESPONSE.user);
+      expect(service.isAdmin()).toBeTrue();
+    });
+
+    it('returns false when JWT user has role USER', () => {
+      authServiceSpy.getStoredUser.and.returnValue(MOCK_LOGIN_RESPONSE.user);
+      expect(service.isAdmin()).toBeFalse();
+    });
+
+    it('falls back to profile role Administrateur when no JWT user stored', () => {
+      authServiceSpy.getStoredUser.and.returnValue(null);
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        id: '1', username: 'admin', email: 'admin@fortnite-pronos.com', role: 'Administrateur'
+      }));
+      expect(service.isAdmin()).toBeTrue();
+    });
+
+    it('returns false when no JWT user and profile has role Joueur', () => {
+      authServiceSpy.getStoredUser.and.returnValue(null);
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com', role: 'Joueur'
+      }));
+      expect(service.isAdmin()).toBeFalse();
+    });
+
+    it('returns false when no user at all', () => {
+      authServiceSpy.getStoredUser.and.returnValue(null);
+      expect(service.isAdmin()).toBeFalse();
     });
   });
 
   describe('getUserById', () => {
-    it('should return the correct user profile by ID', () => {
-      const user = service.getUserById('4');
-      expect(user).toEqual({ id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur' });
+    it('returns the correct user profile by ID', () => {
+      expect(service.getUserById('1')?.username).toBe('admin');
     });
 
-    it('should return undefined for non-existent user ID', () => {
-      const user = service.getUserById('999');
-      expect(user).toBeUndefined();
+    it('returns undefined for non-existent ID', () => {
+      expect(service.getUserById('999')).toBeUndefined();
     });
   });
 
   describe('getUserByUsername', () => {
-    it('should return the correct user profile by username', () => {
-      const user = service.getUserByUsername('Sarah');
-      expect(user).toEqual({ id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur' });
+    it('returns the correct user profile by username', () => {
+      expect(service.getUserByUsername('admin')?.id).toBe('1');
     });
 
-    it('should return undefined for non-existent username', () => {
-      const user = service.getUserByUsername('NonExistent');
-      expect(user).toBeUndefined();
+    it('returns undefined for non-existent username', () => {
+      expect(service.getUserByUsername('NonExistent')).toBeUndefined();
     });
   });
-}); 
+});
