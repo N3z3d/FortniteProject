@@ -516,7 +516,7 @@ sprint-7:
   description: "Stabilisation qualité tests + démo-able locale"
   goal: "CI vert avec Vitest + docker push GHCR + ≤5 failures qualifiées + app démo-able"
   start_date: "2026-03-11"
-  status: in-progress
+  status: done
 
   # Tracing des action items Sprint 6
   sprint-6-retrospective-globale-action-tracking: done
@@ -572,4 +572,4 @@ sprint-7:
   # Référencer les 2 patterns (A/B) dans la doc pour les futurs contributeurs
   sprint7-d1d2-micro-process-updates: done  # 2026-03-12: D1=checklist.md critère pre-existing failures; D2=template.md Pre-existing Gaps + project-context.md §Vitest patterns A/B + §Pre-existing Failures Baseline + baseline 2243/0
 
-  sprint-7-retrospective-globale: optional
+  sprint-7-retrospective-globale: done  # 2026-03-12 — voir sprint-7-retro-2026-03-12.md — score 9.3/10, 5 action items Sprint 8
