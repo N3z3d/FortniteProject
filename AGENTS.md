@@ -126,7 +126,7 @@
 
 
 
-\## Sortie attendue (obligatoire pour chaque demande à Claude)
+\## Sortie attendue (obligatoire pour chaque demande à Codex)
 
 1\) \*\*Plan bref\*\* (3–6 puces) décrivant l’approche.
 
