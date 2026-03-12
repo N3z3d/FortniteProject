@@ -573,3 +573,64 @@ sprint-7:
   sprint7-d1d2-micro-process-updates: done  # 2026-03-12: D1=checklist.md critère pre-existing failures; D2=template.md Pre-existing Gaps + project-context.md §Vitest patterns A/B + §Pre-existing Failures Baseline + baseline 2243/0
 
   sprint-7-retrospective-globale: done  # 2026-03-12 — voir sprint-7-retro-2026-03-12.md — score 9.3/10, 5 action items Sprint 8
+
+# ============================================================
+# SPRINT 8 — Solidité avant exposition publique
+# 2026-03-12 — Objectif: F2 validé + WebSocket auth sécurisé + E2E flux alternatifs + DoD process
+# Issu de: retro Sprint 7 (F2/S1/E1/C1/C2) + backlog sprint3-sec-r2-websocket-auth
+# ⛔ NE PAS RE-PROPOSER: hébergement/staging (deferred-future)
+# ============================================================
+
+sprint-8:
+  description: "Solidité avant exposition publique"
+  goal: "F2 done + SEC-R2 WebSocket auth + E2E flux alternatifs + DoD C1/C2"
+  start_date: "2026-03-12"
+  status: in-progress
+
+  # Tracing des action items Sprint 7
+  sprint-7-retrospective-globale-action-tracking: done
+  # F2→sprint8-f2-validation, S1→sprint8-sec-r2-websocket-auth, E1→sprint8-e1-e2e-flux-alternatifs, C1+C2→sprint8-c1c2-dod-process
+
+  # ----------------------------------------------------------
+  # Phase 0 — P0 : Valider F2 (priorité absolue — 1 push GitHub)
+  # ----------------------------------------------------------
+  # Fermer sprint7-f2-ci-vitest-et-docker-push définitivement
+  # Action: push sur main → CI GitHub Actions → Vitest step visible + GHCR push réussi
+  # Passer sprint7-f2 en done + A3b fermé depuis Sprint 3
+  # AC: badge CI vert sur main + image visible dans ghcr.io/<repo>
+
+  sprint8-f2-validation: backlog
+
+  # ----------------------------------------------------------
+  # Phase 1 — P1 : SEC-R2 WebSocket auth JWT (obligatoire avant exposition)
+  # ----------------------------------------------------------
+  # sprint3-sec-r2-websocket-auth en backlog depuis Sprint 3
+  # JWT token transmis au handshake WebSocket ou premier message STOMP
+  # Backend: intercepter le token STOMP CONNECT frame + valider via JwtUtil
+  # Frontend: AuthInterceptor déjà injecte Bearer sur /api/** — WebSocket requiert adaptation (SockJS ne supporte pas Authorization header)
+  # Pattern recommandé: query param ?token=<jwt> au handshake (acceptable en HTTPS) ou premier message STOMP
+  # AC: WS draft/trade rejeté sans JWT valide (401) ; avec JWT valide → connexion STOMP établie
+  # Tests: SecurityConfigWebSocketAuthorizationTest (anonymous→reject, valid JWT→accept)
+
+  sprint8-sec-r2-websocket-auth: backlog
+
+  # ----------------------------------------------------------
+  # Phase 2 — P2 : E2E flux alternatifs critiques
+  # ----------------------------------------------------------
+  # Couverture E2E actuelle: flux heureux uniquement (trade accepté, swap valide, draft vert)
+  # Flux manquants: trade refusé, swap invalide (mauvaise région, rang trop bon), draft complet 2 équipes
+  # Format: Playwright specs dans frontend/e2e/ — même pattern que trade-swap-flow.spec.ts
+  # AC: au moins 3 nouveaux scénarios E2E (TRADE-REJECT-01, SWAP-INVALID-01, DRAFT-FULL-01)
+
+  sprint8-e1-e2e-flux-alternatifs: backlog
+
+  # ----------------------------------------------------------
+  # Phase 3 — P3 : Critères DoD commits + CI (process C1/C2)
+  # ----------------------------------------------------------
+  # C1: "chaque story done = au moins 1 commit Git avant story suivante" → ajouter dans checklist.md
+  # C2: "story modifiant ci.yml → validation via push branche principale + CI vert visible" → ajouter dans checklist.md
+  # Scope: modification de checklist.md uniquement (~20 min)
+
+  sprint8-c1c2-dod-process: backlog
+
+  sprint-8-retrospective-globale: optional
