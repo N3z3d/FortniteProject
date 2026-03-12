@@ -15,4 +15,8 @@ public record PlayerIdentityEntryResponse(
     LocalDateTime resolvedAt,
     LocalDateTime rejectedAt,
     String rejectionReason,
-    LocalDateTime createdAt) {}
+    LocalDateTime createdAt,
+    String correctedUsername,
+    String correctedRegion,
+    String correctedBy,
+    LocalDateTime correctedAt) {}

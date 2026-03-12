@@ -1,0 +1,81 @@
+.game-leaderboard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+
+  .leaderboard-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .last-update {
+    font-size: 0.85rem;
+    color: var(--gaming-gray-light, #888);
+    margin-bottom: 0.75rem;
+  }
+}
+
+.leaderboard-loading,
+.leaderboard-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--gaming-gray-light, #888);
+}
+
+.leaderboard-error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--gaming-error, #e74c3c);
+
+  .retry-btn {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+  }
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.65rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gaming-gray-light, #888);
+  }
+
+  .rank-cell {
+    width: 4rem;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .delta-cell {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    &.positive {
+      color: var(--gaming-success, #2ecc71);
+    }
+
+    &.negative {
+      color: var(--gaming-error, #e74c3c);
+    }
+  }
+
+  .date-cell {
+    font-size: 0.85rem;
+    color: var(--gaming-gray-light, #888);
+  }
+}

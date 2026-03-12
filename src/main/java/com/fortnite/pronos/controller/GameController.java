@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fortnite.pronos.application.usecase.GameQueryUseCase;
 import com.fortnite.pronos.core.usecase.CreateGameUseCase;
+import com.fortnite.pronos.dto.ConfigureCompetitionPeriodRequest;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.DraftDto;
 import com.fortnite.pronos.dto.GameDto;
@@ -130,7 +131,7 @@ public class GameController {
       })
   @PostMapping("/join")
   public ResponseEntity<Map<String, Object>> joinGame(
-      @RequestBody JoinGameRequest request,
+      @Valid @RequestBody JoinGameRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
     log.info(
@@ -424,6 +425,53 @@ public class GameController {
 
     String newName = request == null ? null : request.sanitizedName();
     return handleRenameGame(id, user.getId(), newName);
+  }
+
+  @Operation(
+      summary = "Configure competition period",
+      description = "Sets the start and end dates of the competition period for a game")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Competition period configured"),
+        @ApiResponse(responseCode = "400", description = "Invalid date range"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "403", description = "Not authorized"),
+        @ApiResponse(responseCode = "404", description = "Game not found")
+      })
+  @PostMapping("/{id:" + UUID_PATH_PATTERN + "}/configure-period")
+  public ResponseEntity<GameDto> configureCompetitionPeriod(
+      @PathVariable UUID id,
+      @Valid @RequestBody ConfigureCompetitionPeriodRequest request,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    log.info(
+        "GameController: configureCompetitionPeriod requested - gameId={}, requestedUser={}",
+        id,
+        username != null ? username : "-");
+
+    User user = userResolver.resolve(username, httpRequest);
+    if (user == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
+    boolean isAdmin = User.UserRole.ADMIN.equals(user.getRole());
+    boolean isCreator = user.getId().equals(gameDto.getCreatorId());
+    if (!isAdmin && !isCreator) {
+      log.warn(
+          "GameController: configureCompetitionPeriod forbidden - gameId={}, userId={}",
+          id,
+          user.getId());
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    GameDto updated =
+        gameService.configureCompetitionPeriod(id, request.startDate(), request.endDate());
+    log.info(
+        "GameController: configureCompetitionPeriod succeeded - gameId={}, userId={}",
+        id,
+        user.getId());
+    return ResponseEntity.ok(updated);
   }
 
   private String normalizeInvitationCode(String invitationCode) {

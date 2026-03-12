@@ -1,0 +1,108 @@
+# ============================================================
+# DOCKER LOCAL — Stack complète pour développement local
+# Lance PostgreSQL + Backend (API + Angular statique) en un seul compose
+#
+# Usage :
+#   docker compose -f docker-compose.local.yml up --build
+#   puis ouvrir http://localhost:8080
+#
+# Rebuild complet (après un changement de code) :
+#   docker compose -f docker-compose.local.yml up --build --force-recreate
+#
+# Arrêter sans supprimer les données :
+#   docker compose -f docker-compose.local.yml down
+#
+# Supprimer les données (reset BDD complet) :
+#   docker compose -f docker-compose.local.yml down -v
+#
+# Reset complet + re-seed E2E (FULL-FLOW-01 à FULL-FLOW-05) :
+#   docker compose -f docker-compose.local.yml down -v && docker compose -f docker-compose.local.yml up --build
+#   → Le profil dev applique automatiquement db/seed/V1001__ (users + players)
+#   → Comptes seedés : admin/Admin1234 (ADMIN), thibaut/marcel/teddy/Admin1234 (USER)
+#
+# Lancer les tests E2E après démarrage :
+#   BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 \
+#   E2E_USER=thibaut@fortnite-pronos.com E2E_PASS=Admin1234 \
+#   npm run test:e2e --prefix frontend
+# ============================================================
+
+version: '3.8'
+
+services:
+
+  # ==========================================
+  # BASE DE DONNÉES PostgreSQL
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: fortnite-postgres-local
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: fortnite_pronos
+      POSTGRES_USER: fortnite_user
+      POSTGRES_PASSWORD: fortnite_pass
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortnite_user -d fortnite_pronos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # APPLICATION (Backend Spring Boot + Frontend Angular bundlé)
+  # Accessible sur http://localhost:8080
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+
+    container_name: fortnite-app-local
+    restart: unless-stopped
+
+    environment:
+      # Profil dev : credentials avec fallback, logs verbeux, seed activé
+      - SPRING_PROFILES_ACTIVE=dev
+
+      # Connexion BDD — pointe vers le service postgres du compose
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=fortnite_pronos
+      - DB_USERNAME=fortnite_user
+      - DB_PASSWORD=fortnite_pass
+
+      # API Fortnite live pour les validations locales Sprint 4
+      - FORTNITE_API_KEY=${FORTNITE_API_KEY}
+      - FORTNITE_API_URL=${FORTNITE_API_URL:-https://fortnite-api.com/v2/stats/br/v2}
+
+      # JVM allégée pour local (override les 2g/4g du Dockerfile prod)
+      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx768m -Djava.security.egd=file:/dev/./urandom
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+# ==========================================
+# VOLUMES (données persistées entre redémarrages)
+# ==========================================
+volumes:
+  postgres_local_data:
+    driver: local

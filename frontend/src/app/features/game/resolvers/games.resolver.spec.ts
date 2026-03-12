@@ -39,7 +39,7 @@ describe('gamesResolver', () => {
     });
   });
 
-  it('returns an empty array when no user is logged in', (done) => {
+  it('returns an empty array when no user is logged in', () => {
     userContextService.isLoggedIn.and.returnValue(false);
     userGamesStore.clear.and.stub();
 
@@ -51,11 +51,10 @@ describe('gamesResolver', () => {
       expect(games).toEqual([]);
       expect(userGamesStore.clear).toHaveBeenCalled();
       expect(userGamesStore.loadGames).not.toHaveBeenCalled();
-      done();
     });
   });
 
-  it('loads user games when a user is logged in', (done) => {
+  it('loads user games when a user is logged in', () => {
     userContextService.isLoggedIn.and.returnValue(true);
     userGamesStore.loadGames.and.returnValue(of(mockGames));
 
@@ -66,11 +65,10 @@ describe('gamesResolver', () => {
     result$.subscribe((games: Game[]) => {
       expect(userGamesStore.loadGames).toHaveBeenCalled();
       expect(games).toEqual(mockGames);
-      done();
     });
   });
 
-  it('falls back to an empty array on error', (done) => {
+  it('falls back to an empty array on error', () => {
     userContextService.isLoggedIn.and.returnValue(true);
     userGamesStore.loadGames.and.returnValue(throwError(() => new Error('network error')));
 
@@ -80,7 +78,6 @@ describe('gamesResolver', () => {
 
     result$.subscribe((games: Game[]) => {
       expect(games).toEqual([]);
-      done();
     });
   });
 });

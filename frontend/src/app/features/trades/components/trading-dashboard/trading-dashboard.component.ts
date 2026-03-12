@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, Subject, BehaviorSubject, combineLatest } from 'rxjs';
-import { takeUntil, map, startWith, debounceTime } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { Observable, Subject, BehaviorSubject, combineLatest, interval, of } from 'rxjs';
+import { takeUntil, map, startWith, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 
 import { MaterialModule } from '../../../../shared/material/material.module';
@@ -11,7 +12,9 @@ import { TradingService, TradeOffer, TradeStats } from '../../services/trading.s
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { TranslationService } from '../../../../core/services/translation.service';
 import { LoggerService } from '../../../../core/services/logger.service';
+import { GameSelectionService } from '../../../../core/services/game-selection.service';
 import { secureRandomFloat, secureRandomPick } from '../../../../shared/utils/secure-random.util';
+import { TradeDetailsComponent } from '../trade-details/trade-details.component';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -76,8 +79,10 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   public readonly userContextService = inject(UserContextService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
   private readonly uiFeedback = inject(UiErrorFeedbackService);
   private readonly logger = inject(LoggerService);
+  private readonly gameSelectionService = inject(GameSelectionService);
   public readonly t = inject(TranslationService);
 
   // Game context
@@ -143,24 +148,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Extract gameId from parent route (/games/{gameId}/trades)
-    this.route.parent?.params.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      this.gameId = params['id'] || null;
-      this.loadInitialData();
-    });
-
-    // Fallback: also check own route params
-    this.route.params.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      if (params['gameId'] && !this.gameId) {
-        this.gameId = params['gameId'];
-        this.loadInitialData();
-      }
-    });
-
+    this.subscribeToGameContext();
     this.setupAutoRefresh();
     this.handleNotifications();
   }
@@ -175,8 +163,6 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   private setupFilteredTrades(): void {
-    const userId = this.userContextService.getCurrentUser()?.id;
-
     const filteredTrades$ = combineLatest([
       this.trades$,
       this.searchQuery$.pipe(
@@ -204,9 +190,9 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
           case 'pending':
             return filtered.filter(t => t.status === 'pending');
           case 'sent':
-            return filtered.filter(t => t.fromUserId === userId);
+            return filtered.filter(trade => this.isCurrentUserTradeSender(trade));
           case 'received':
-            return filtered.filter(t => t.toUserId === userId);
+            return filtered.filter(trade => this.isCurrentUserTradeReceiver(trade));
           case 'completed':
             return filtered.filter(t => ['accepted', 'rejected'].includes(t.status));
           default:
@@ -221,11 +207,11 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     );
 
     this.sentTrades$ = filteredTrades$.pipe(
-      map(trades => trades.filter(t => t.fromUserId === userId))
+      map(trades => trades.filter(trade => this.isCurrentUserTradeSender(trade)))
     );
 
     this.receivedTrades$ = filteredTrades$.pipe(
-      map(trades => trades.filter(t => t.toUserId === userId))
+      map(trades => trades.filter(trade => this.isCurrentUserTradeReceiver(trade)))
     );
 
     this.completedTrades$ = filteredTrades$.pipe(
@@ -250,10 +236,11 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   private setupAutoRefresh(): void {
-    // Refresh data every 30 seconds
-    setInterval(() => {
-      this.refreshData(false);
-    }, 30000);
+    interval(30000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.refreshData(false);
+      });
   }
 
   private handleNotifications(): void {
@@ -263,7 +250,7 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
     ).subscribe(trades => {
       const pendingForUser = trades.filter(trade => 
         trade.status === 'pending' && 
-        trade.toUserId === this.userContextService.getCurrentUser()?.id
+        this.isCurrentUserTradeReceiver(trade)
       );
 
       if (pendingForUser.length > 0) {
@@ -301,9 +288,14 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   onViewTradeDetails(trade: TradeOffer): void {
-    if (this.gameId) {
-      this.router.navigate(['/games', this.gameId, 'trades', trade.id]);
-    }
+    this.dialog.open(TradeDetailsComponent, {
+      width: '960px',
+      maxWidth: '95vw',
+      data: {
+        trade,
+        allowActions: true
+      }
+    });
   }
 
   onTradeCardKeydown(event: KeyboardEvent, trade: TradeOffer): void {
@@ -428,18 +420,27 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   }
 
   canAcceptTrade(trade: TradeOffer): boolean {
-    const userId = this.userContextService.getCurrentUser()?.id;
-    return trade.status === 'pending' && trade.toUserId === userId;
+    return trade.status === 'pending' && this.isCurrentUserTradeReceiver(trade);
   }
 
   canRejectTrade(trade: TradeOffer): boolean {
-    const userId = this.userContextService.getCurrentUser()?.id;
-    return trade.status === 'pending' && trade.toUserId === userId;
+    return trade.status === 'pending' && this.isCurrentUserTradeReceiver(trade);
   }
 
   canWithdrawTrade(trade: TradeOffer): boolean {
-    const userId = this.userContextService.getCurrentUser()?.id;
-    return trade.status === 'pending' && trade.fromUserId === userId;
+    return trade.status === 'pending' && this.isCurrentUserTradeSender(trade);
+  }
+
+  isCurrentUserTradeSender(trade: TradeOffer): boolean {
+    return this.isCurrentUserIdentity(trade.fromUserId, trade.fromUserName);
+  }
+
+  isCurrentUserTradeReceiver(trade: TradeOffer): boolean {
+    return this.isCurrentUserIdentity(trade.toUserId, trade.toUserName);
+  }
+
+  getCompletedTradeCounterpartName(trade: TradeOffer): string {
+    return this.isCurrentUserTradeSender(trade) ? trade.toUserName : trade.fromUserName;
   }
 
   private showTradeNotification(count: number): void {
@@ -490,5 +491,48 @@ export class TradingDashboardComponent implements OnInit, OnDestroy {
   // TrackBy function for performance optimization
   trackByTradeId(index: number, trade: TradeOffer): string {
     return trade.id;
+  }
+
+  private subscribeToGameContext(): void {
+    const parentParams$ = this.route.parent?.params ?? of({});
+
+    combineLatest([
+      parentParams$.pipe(startWith(this.route.parent?.snapshot.params ?? {})),
+      this.route.params.pipe(startWith(this.route.snapshot.params ?? {}))
+    ])
+      .pipe(
+        map(([parentParams, routeParams]) => {
+          const parentGameId = (parentParams as Record<string, string | undefined>)['id'];
+          if (parentGameId) {
+            return parentGameId;
+          }
+
+          const routeGameId = (routeParams as Record<string, string | undefined>)['gameId'];
+          if (routeGameId) {
+            return routeGameId;
+          }
+
+          return this.gameSelectionService.getSelectedGame()?.id ?? null;
+        }),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(gameId => {
+        this.gameId = gameId;
+        this.loadInitialData();
+      });
+  }
+
+  private isCurrentUserIdentity(userId: string, username: string): boolean {
+    const currentUser = this.userContextService.getCurrentUser();
+    if (!currentUser) {
+      return false;
+    }
+
+    if (currentUser.id === userId) {
+      return true;
+    }
+
+    return currentUser.username.trim().toLowerCase() === username.trim().toLowerCase();
   }
 }

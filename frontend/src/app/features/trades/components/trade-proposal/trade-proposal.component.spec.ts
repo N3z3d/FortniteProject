@@ -11,6 +11,7 @@ import { UserContextService } from '../../../../core/services/user-context.servi
 import { TranslationService } from '../../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../../core/services/logger.service';
+import { GameSelectionService } from '../../../../core/services/game-selection.service';
 
 describe('TradeProposalComponent', () => {
   let fixture: ComponentFixture<TradeProposalComponent>;
@@ -79,6 +80,8 @@ describe('TradeProposalComponent', () => {
     loggerSpy = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
     const dialogSpy = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    const gameSelectionServiceSpy = jasmine.createSpyObj<GameSelectionService>('GameSelectionService', ['getSelectedGame']);
+    gameSelectionServiceSpy.getSelectedGame.and.returnValue({ id: 'selected-game', name: 'Selected Game' } as any);
 
     await TestBed.configureTestingModule({
       imports: [TradeProposalComponent, NoopAnimationsModule],
@@ -90,11 +93,15 @@ describe('TradeProposalComponent', () => {
         { provide: LoggerService, useValue: loggerSpy },
         { provide: MatDialog, useValue: dialogSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: GameSelectionService, useValue: gameSelectionServiceSpy },
         {
           provide: ActivatedRoute,
           useValue: {
-            parent: { params: of({ id: 'game-1' }) },
-            snapshot: { queryParamMap: { get: () => null } }
+            snapshot: { queryParamMap: { get: () => null }, paramMap: { get: () => null } },
+            parent: {
+              params: of({ id: 'game-1' }),
+              snapshot: { paramMap: { get: (key: string) => key === 'id' ? 'game-1' : null } }
+            }
           }
         }
       ]
@@ -165,12 +172,11 @@ describe('TradeProposalComponent', () => {
       expect(tradingServiceSpy.getTeams).not.toHaveBeenCalled();
     });
 
-    it('emits initial trade state', (done) => {
+    it('emits initial trade state', () => {
       component.tradeState$.subscribe(state => {
         expect(state.offeredPlayers).toEqual([]);
         expect(state.requestedPlayers).toEqual([]);
         expect(state.selectedTeam).toBeNull();
-        done();
       });
     });
   });
@@ -180,7 +186,7 @@ describe('TradeProposalComponent', () => {
     const playerB = mockPlayer('p2', 'Player B', 800);
     const targetPlayerC = mockPlayer('p3', 'Target C', 600);
 
-    it('addToOffered moves player from available to offered', (done) => {
+    it('addToOffered moves player from available to offered', () => {
       fixture.detectChanges();
 
       // Set initial state with available players
@@ -194,11 +200,10 @@ describe('TradeProposalComponent', () => {
       component.tradeState$.subscribe(state => {
         expect(state.offeredPlayers).toContain(playerA);
         expect(state.availablePlayers).not.toContain(playerA);
-        done();
       });
     });
 
-    it('removeFromOffered moves player back to available', (done) => {
+    it('removeFromOffered moves player back to available', () => {
       fixture.detectChanges();
 
       (component as any).updateTradeState({
@@ -211,11 +216,10 @@ describe('TradeProposalComponent', () => {
       component.tradeState$.subscribe(state => {
         expect(state.offeredPlayers).not.toContain(playerA);
         expect(state.availablePlayers).toContain(playerA);
-        done();
       });
     });
 
-    it('addToRequested moves player from target to requested', (done) => {
+    it('addToRequested moves player from target to requested', () => {
       fixture.detectChanges();
 
       (component as any).updateTradeState({
@@ -228,11 +232,10 @@ describe('TradeProposalComponent', () => {
       component.tradeState$.subscribe(state => {
         expect(state.requestedPlayers).toContain(targetPlayerC);
         expect(state.targetTeamPlayers).not.toContain(targetPlayerC);
-        done();
       });
     });
 
-    it('removeFromRequested moves player back to target team', (done) => {
+    it('removeFromRequested moves player back to target team', () => {
       fixture.detectChanges();
 
       (component as any).updateTradeState({
@@ -245,7 +248,6 @@ describe('TradeProposalComponent', () => {
       component.tradeState$.subscribe(state => {
         expect(state.requestedPlayers).not.toContain(targetPlayerC);
         expect(state.targetTeamPlayers).toContain(targetPlayerC);
-        done();
       });
     });
 
@@ -265,32 +267,29 @@ describe('TradeProposalComponent', () => {
   });
 
   describe('drag and drop', () => {
-    it('onDragStarted sets drag state to dragging', (done) => {
+    it('onDragStarted sets drag state to dragging', () => {
       component.onDragStarted();
 
       component.dragState.subscribe(state => {
         expect(state).toBe('dragging');
-        done();
       });
     });
 
-    it('onDragEnded sets drag state to idle', (done) => {
+    it('onDragEnded sets drag state to idle', () => {
       component.onDragStarted();
       component.onDragEnded();
 
       component.dragState.subscribe(state => {
         expect(state).toBe('idle');
-        done();
       });
     });
   });
 
   describe('search', () => {
-    it('onSearchChange updates search subject', (done) => {
+    it('onSearchChange updates search subject', () => {
       component.searchQuery$.subscribe(query => {
         if (query === 'test') {
           expect(query).toBe('test');
-          done();
         }
       });
 
@@ -323,12 +322,12 @@ describe('TradeProposalComponent', () => {
   describe('navigation', () => {
     it('onCancel navigates to trades page', () => {
       component.onCancel();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/trades']);
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/games', 'game-1', 'trades']);
     });
   });
 
   describe('onClearTrade', () => {
-    it('moves all offered and requested players back', (done) => {
+    it('moves all offered and requested players back', () => {
       fixture.detectChanges();
 
       const offered = mockPlayer('p1', 'Offered');
@@ -348,7 +347,6 @@ describe('TradeProposalComponent', () => {
         expect(state.requestedPlayers).toEqual([]);
         expect(state.availablePlayers).toContain(offered);
         expect(state.targetTeamPlayers).toContain(requested);
-        done();
       });
     });
   });

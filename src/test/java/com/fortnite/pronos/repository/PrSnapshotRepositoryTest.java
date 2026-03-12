@@ -71,6 +71,20 @@ class PrSnapshotRepositoryTest {
   }
 
   @Test
+  void findsSnapshotForUpsertByBusinessKey() {
+    Player player = savePlayer("lookup");
+    LocalDate date = LocalDate.parse("2025-01-10");
+    PrSnapshot snapshot = buildSnapshot(player, PrRegion.EU, date, null, 108022, 1);
+    prSnapshotRepository.saveAndFlush(snapshot);
+
+    PrSnapshot found = prSnapshotRepository.findForUpsert(player.getId(), "EU", date).orElseThrow();
+
+    assertThat(found.getPlayer().getId()).isEqualTo(player.getId());
+    assertThat(found.getRegion()).isEqualTo(PrRegion.EU);
+    assertThat(found.getSnapshotDate()).isEqualTo(date);
+  }
+
+  @Test
   void rejectsMissingPlayer() {
     PrSnapshot snapshot =
         buildSnapshot(null, PrRegion.EU, LocalDate.parse("2025-01-10"), null, 1, 1);

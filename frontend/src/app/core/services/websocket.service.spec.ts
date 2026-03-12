@@ -42,10 +42,9 @@ describe('WebSocketService', () => {
     expect(service.tradeNotifications).toBeDefined();
   });
 
-  it('should initially be disconnected', (done) => {
+  it('should initially be disconnected', () => {
     service.isConnected$.pipe(take(1)).subscribe(connected => {
       expect(connected).toBeFalse();
-      done();
     });
   });
 

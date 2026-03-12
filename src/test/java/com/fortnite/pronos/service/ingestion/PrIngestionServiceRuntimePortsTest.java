@@ -67,9 +67,7 @@ class PrIngestionServiceRuntimePortsTest {
               }
               return run;
             });
-    when(prSnapshotRepository.findById(any())).thenReturn(Optional.empty());
-    when(prSnapshotRepository.save(any(PrSnapshot.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(prSnapshotRepository.findForUpsert(any(), any(), any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -95,6 +93,7 @@ class PrIngestionServiceRuntimePortsTest {
     assertThat(result.scoresWritten()).isEqualTo(1);
     verify(playerRepository).findByNickname("pixie");
     verify(playerRepository).save(any(Player.class));
+    verify(prSnapshotRepository).persist(any(PrSnapshot.class));
     verify(scoreRepository).findByPlayerAndSeason(any(Player.class), eq(2025));
     verify(scoreRepository).save(any(Score.class));
   }

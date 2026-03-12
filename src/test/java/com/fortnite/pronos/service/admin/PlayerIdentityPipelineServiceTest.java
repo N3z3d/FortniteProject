@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,10 +24,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
+import com.fortnite.pronos.domain.player.identity.model.MetadataCorrection;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
+import com.fortnite.pronos.domain.player.identity.model.RegionalStatRow;
 import com.fortnite.pronos.domain.port.out.EpicIdValidatorPort;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
+import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
 import com.fortnite.pronos.exception.InvalidEpicIdException;
 import com.fortnite.pronos.exception.PlayerIdentityNotFoundException;
@@ -62,7 +66,8 @@ class PlayerIdentityPipelineServiceTest {
         LocalDateTime.now(),
         null,
         null,
-        LocalDateTime.now().minusDays(1));
+        LocalDateTime.now().minusDays(1),
+        new MetadataCorrection(null, null, null, null));
   }
 
   @Nested
@@ -219,6 +224,75 @@ class PlayerIdentityPipelineServiceTest {
   }
 
   @Nested
+  @DisplayName("getRegionalStats")
+  class GetRegionalStats {
+
+    private static final LocalDateTime LAST_EU = LocalDateTime.of(2025, 2, 28, 8, 0);
+    private static final LocalDateTime LAST_NAW = LocalDateTime.of(2025, 2, 27, 20, 0);
+
+    @Test
+    @DisplayName("groups rows by region and sums counts per status")
+    void whenMultipleRegions_groupsCorrectly() {
+      when(identityRepository.countByRegionAndStatus())
+          .thenReturn(
+              List.of(
+                  new RegionalStatRow("EU", IdentityStatus.UNRESOLVED, 10L),
+                  new RegionalStatRow("EU", IdentityStatus.RESOLVED, 90L),
+                  new RegionalStatRow("NAW", IdentityStatus.UNRESOLVED, 3L),
+                  new RegionalStatRow("NAW", IdentityStatus.REJECTED, 5L)));
+      when(identityRepository.findLastIngestedAtByRegion())
+          .thenReturn(Map.of("EU", LAST_EU, "NAW", LAST_NAW));
+
+      List<PipelineRegionalStatsDto> result = service.getRegionalStats();
+
+      assertThat(result).hasSize(2);
+      PipelineRegionalStatsDto eu =
+          result.stream().filter(r -> "EU".equals(r.region())).findFirst().orElseThrow();
+      assertThat(eu.unresolvedCount()).isEqualTo(10L);
+      assertThat(eu.resolvedCount()).isEqualTo(90L);
+      assertThat(eu.rejectedCount()).isEqualTo(0L);
+      assertThat(eu.totalCount()).isEqualTo(100L);
+      assertThat(eu.lastIngestedAt()).isEqualTo(LAST_EU);
+    }
+
+    @Test
+    @DisplayName("returns empty list when no entries exist")
+    void whenNoEntries_returnsEmpty() {
+      when(identityRepository.countByRegionAndStatus()).thenReturn(List.of());
+      when(identityRepository.findLastIngestedAtByRegion()).thenReturn(Map.of());
+
+      assertThat(service.getRegionalStats()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("region with only resolved entries has unresolvedCount zero")
+    void whenOnlyResolved_unresolvedIsZero() {
+      when(identityRepository.countByRegionAndStatus())
+          .thenReturn(List.of(new RegionalStatRow("BR", IdentityStatus.RESOLVED, 50L)));
+      when(identityRepository.findLastIngestedAtByRegion())
+          .thenReturn(Map.of("BR", LocalDateTime.now()));
+
+      List<PipelineRegionalStatsDto> result = service.getRegionalStats();
+
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).unresolvedCount()).isEqualTo(0L);
+      assertThat(result.get(0).resolvedCount()).isEqualTo(50L);
+    }
+
+    @Test
+    @DisplayName("lastIngestedAt is null when region has no entry in date map")
+    void whenDateMissing_lastIngestedAtIsNull() {
+      when(identityRepository.countByRegionAndStatus())
+          .thenReturn(List.of(new RegionalStatRow("ME", IdentityStatus.UNRESOLVED, 2L)));
+      when(identityRepository.findLastIngestedAtByRegion()).thenReturn(Map.of());
+
+      List<PipelineRegionalStatsDto> result = service.getRegionalStats();
+
+      assertThat(result.get(0).lastIngestedAt()).isNull();
+    }
+  }
+
+  @Nested
   @DisplayName("reject")
   class Reject {
 
@@ -263,6 +337,51 @@ class PlayerIdentityPipelineServiceTest {
 
       assertThatThrownBy(() -> service.reject(pid, null, "admin"))
           .isInstanceOf(PlayerIdentityNotFoundException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("correctMetadata")
+  class CorrectMetadata {
+
+    @Test
+    @DisplayName("persists corrected username and region and returns updated response")
+    void persistsCorrectedFields() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "OldName");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(identityRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+      PlayerIdentityEntryResponse result = service.correctMetadata(pid, "NewName", "NAW", "admin");
+
+      assertThat(result.correctedUsername()).isEqualTo("NewName");
+      assertThat(result.correctedRegion()).isEqualTo("NAW");
+      assertThat(result.correctedBy()).isEqualTo("admin");
+      assertThat(result.correctedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("throws PlayerIdentityNotFoundException when entry does not exist")
+    void throwsWhenEntryMissing() {
+      UUID pid = UUID.randomUUID();
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> service.correctMetadata(pid, "X", "EU", "admin"))
+          .isInstanceOf(PlayerIdentityNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("when only region provided, correctedUsername remains null")
+    void onlyRegionCorrected() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Player");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(identityRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+      PlayerIdentityEntryResponse result = service.correctMetadata(pid, null, "BR", "admin");
+
+      assertThat(result.correctedRegion()).isEqualTo("BR");
+      assertThat(result.correctedUsername()).isNull();
     }
   }
 }

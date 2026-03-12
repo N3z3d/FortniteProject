@@ -3,13 +3,14 @@ package com.fortnite.pronos.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,7 +62,7 @@ class GameIncidentControllerTest {
         .reporterUsername(username)
         .incidentType(IncidentType.CHEATING)
         .description("Suspected aimbot")
-        .timestamp(LocalDateTime.now())
+        .timestamp(OffsetDateTime.now())
         .build();
   }
 
@@ -73,6 +74,7 @@ class GameIncidentControllerTest {
   }
 
   @Nested
+  @DisplayName("Report Incident")
   class ReportIncident {
 
     @Test
@@ -112,6 +114,7 @@ class GameIncidentControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Incidents")
   class GetIncidents {
 
     @Test

@@ -1,6 +1,6 @@
 # Story 3.2: Invitations par lien/code et join flow
 
-Status: review
+Status: done
 
 ## Story
 
@@ -193,3 +193,16 @@ claude-sonnet-4-6
 - `src/test/java/com/fortnite/pronos/service/game/GameParticipantServiceTddTest.java` (NEW — 8 tests)
 - `src/test/java/com/fortnite/pronos/service/game/GameParticipantServiceTest.java` (MODIFIED — setInvitationCode fix)
 - `src/test/java/com/fortnite/pronos/service/game/GameCreationServiceTest.java` (MODIFIED — +RegenerateInvitationCode nested class, 3 tests)
+
+## Review Follow-ups (AI — post-code-review fixes)
+
+### Fix appliqué (H1)
+
+**H1 — FIXED**: `GameParticipantService.validateUserCanLeaveGame()` et `removeUserFromGame()` utilisaient `IllegalStateException` (capturée par le handler 4.3 → 409 `DRAFT_WINDOW_VIOLATION`). Remplacé par `InvalidGameStateException` (→ 409 `INVALID_GAME_STATE`, sémantiquement correct).
+
+### Action items
+
+- [ ] **[AI-Review][Medium][M1]** : AC#4 (rate limiting `InvitationCodeAttemptGuard`) non testé dans ce sprint. Ajouter un test d'intégration vérifiant que la 16ème tentative sur `POST /api/games/join-with-code` retourne 429.
+- [ ] **[AI-Review][Low][L1]** : `InvalidInvitationCodeException` manque de `serialVersionUID` — ajouter `private static final long serialVersionUID = 1L`.
+- [ ] **[AI-Review][Low][L2]** : `GameParticipantServiceTddTest` manque de `@DisplayName` sur les méthodes de test — inconsistant avec les autres fichiers tests du projet.
+- [ ] **[AI-Review][Low][L3]** : Story Dev Notes indiquent le mauvais chemin `exception/handler/DomainExceptionHandler.java` — chemin réel : `config/DomainExceptionHandler.java`.

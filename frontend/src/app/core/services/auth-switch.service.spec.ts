@@ -38,12 +38,12 @@ describe('AuthSwitchService', () => {
   it('switchUser returns mock response in dev mode', fakeAsync(() => {
     let response: AuthSwitchResponse | undefined;
 
-    service.switchUser('Thibaut').subscribe(result => (response = result));
+    service.switchUser('thibaut').subscribe(result => (response = result));
     tick(300);
 
     expect(response?.success).toBeTrue();
-    expect(response?.username).toBe('Thibaut');
-    expect(response?.message).toContain('Thibaut');
+    expect(response?.username).toBe('thibaut');
+    expect(response?.message).toContain('thibaut');
     expect(translationService.t).toHaveBeenCalledWith(
       'authSwitch.messages.switchSuccess',
       'Switched to {username} successfully'
@@ -57,7 +57,7 @@ describe('AuthSwitchService', () => {
     service.canSwitchToUser('').subscribe(value => (result = value));
     expect(result).toBeFalse();
 
-    service.canSwitchToUser('Thibaut').subscribe(value => (result = value));
+    service.canSwitchToUser('admin').subscribe(value => (result = value));
     expect(result).toBeTrue();
 
     service.canSwitchToUser('Unknown').subscribe(value => (result = value));
@@ -70,7 +70,7 @@ describe('AuthSwitchService', () => {
     service.getAvailableUsers().subscribe(result => (users = result));
     tick(200);
 
-    expect(users).toEqual(['Thibaut', 'Marcel', 'Teddy', 'Sarah']);
+    expect(users).toEqual(['admin', 'thibaut', 'marcel', 'teddy']);
   }));
 
   it('notifyUserSwitch returns mock response in dev mode', fakeAsync(() => {
@@ -98,7 +98,7 @@ describe('AuthSwitchService', () => {
     environment.production = true;
 
     let response: AuthSwitchResponse | undefined;
-    service.switchUser('Marcel').subscribe(result => (response = result));
+    service.switchUser('marcel').subscribe(result => (response = result));
 
     const request = httpMock.expectOne('http://localhost:8080/api/auth/switch');
     expect(request.request.method).toBe('POST');
@@ -107,7 +107,7 @@ describe('AuthSwitchService', () => {
     tick(300);
 
     expect(response?.success).toBeTrue();
-    expect(response?.username).toBe('Marcel');
+    expect(response?.username).toBe('marcel');
     expect(logger.warn).toHaveBeenCalled();
   }));
 
@@ -120,7 +120,7 @@ describe('AuthSwitchService', () => {
     const request = httpMock.expectOne('http://localhost:8080/api/auth/available-users');
     request.flush('fail', { status: 500, statusText: 'Server Error' });
 
-    expect(users).toEqual(['Thibaut', 'Marcel', 'Teddy', 'Sarah']);
+    expect(users).toEqual(['admin', 'thibaut', 'marcel', 'teddy']);
   });
 
   it('validateUserSession returns true on production error', () => {
@@ -149,7 +149,7 @@ describe('AuthSwitchService', () => {
   it('handleSwitchError returns fallback response and logs activity', fakeAsync(() => {
     let response: AuthSwitchResponse | undefined;
 
-    (service as any).handleSwitchError({ message: 'boom' }, 'Sarah')
+    (service as any).handleSwitchError({ message: 'boom' }, 'teddy')
       .subscribe((result: AuthSwitchResponse) => (response = result));
 
     tick();
@@ -157,6 +157,6 @@ describe('AuthSwitchService', () => {
     expect(logger.error).toHaveBeenCalled();
     expect(logger.debug).toHaveBeenCalled();
     expect(response?.success).toBeFalse();
-    expect(response?.message).toContain('Sarah');
+    expect(response?.message).toContain('teddy');
   }));
 });

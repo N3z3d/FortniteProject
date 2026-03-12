@@ -1,6 +1,7 @@
 package com.fortnite.pronos.domain.port.out;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,6 +59,8 @@ public interface GameRepositoryPort {
 
   List<Game> findByStatusNot(GameStatus status);
 
+  List<Game> findByStatusInWithFetch(Collection<GameStatus> statuses);
+
   Optional<Game> findByInvitationCodeWithFetch(String invitationCode);
 
   Optional<Game> findById(UUID gameId);
@@ -73,6 +76,8 @@ public interface GameRepositoryPort {
   long count();
 
   void deleteAll();
+
+  List<Game> findAll();
 
   List<Game> findAllByOrderByCreatedAtDesc();
 

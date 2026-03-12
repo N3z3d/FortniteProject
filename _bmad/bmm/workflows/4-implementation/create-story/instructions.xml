@@ -260,6 +260,9 @@
   <step n="5" goal="Create comprehensive story file">
     <critical>📝 CREATE ULTIMATE STORY FILE - The developer's master implementation guide!</critical>
 
+    <!-- CONTROLLER SECURITY MANDATE — Do NOT skip this check -->
+    <critical>🔐 SECURITY TASK MANDATE: Before writing the Tasks section, scan the story requirements and epic context for ANY mention of creating a new @RestController, REST endpoint, or API controller. If found, the story MUST include a dedicated Security Task (see template Task N block). Failing to include it = critical quality failure caught by checklist. Pattern: SecurityConfig{ControllerName}AuthorizationTest using @WebMvcTest + @WithMockUser. Add the security test file to Project Structure Notes and File List section.</critical>
+
     <action>Initialize from template.md:
     {default_output_file}</action>
     <template-output file="{default_output_file}">story_header</template-output>

@@ -1,5 +1,7 @@
 import { test, expect, Page } from '@playwright/test';
 
+import { clearForcedAuth, forceLoginWithProfile } from './helpers/app-helpers';
+
 /**
  * Auth E2E tests — AUTH-01 to AUTH-03.
  * The app uses a profile-selection login (no traditional email/password registration form).
@@ -28,11 +30,7 @@ async function waitForLoginPage(page: Page): Promise<void> {
 // Helper: login using first available profile
 // ---------------------------------------------------------------------------
 async function loginWithFirstProfile(page: Page): Promise<void> {
-  await waitForLoginPage(page);
-  const profileBtn = page.locator('fieldset.user-selection-section button, button.user-profile-btn').first();
-  await profileBtn.waitFor({ state: 'visible', timeout: 10_000 });
-  await profileBtn.click();
-  await page.waitForURL(/\/games/, { timeout: 12_000 });
+  await forceLoginWithProfile(page, 'thibaut');
 }
 
 // ---------------------------------------------------------------------------
@@ -40,7 +38,7 @@ async function loginWithFirstProfile(page: Page): Promise<void> {
 // This simulates a logout without relying on the UI logout button being found
 // ---------------------------------------------------------------------------
 async function clearSession(page: Page): Promise<void> {
-  // Navigate with switchUser=true which clears the session via logout()
+  await clearForcedAuth(page);
   await page.goto('/login?switchUser=true');
   await page.waitForURL(/\/login/, { timeout: 5_000 });
 }
@@ -185,6 +183,7 @@ test('AUTH-03: logout redirects to /login and clears session', async ({ page }) 
   await expect(page.locator('.user-controlled-login, form')).toBeVisible({ timeout: 5_000 });
 
   // Attempting to navigate to a protected route should redirect to login
+  await page.context().setExtraHTTPHeaders({});
   await page.goto('/games');
   await page.waitForURL(/login|games/, { timeout: 8_000 });
 

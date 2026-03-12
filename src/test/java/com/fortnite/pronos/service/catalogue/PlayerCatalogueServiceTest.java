@@ -94,6 +94,7 @@ class PlayerCatalogueServiceTest {
       assertThat(dto.region()).isEqualTo("EU");
       assertThat(dto.tranche()).isEqualTo("1-100");
       assertThat(dto.locked()).isTrue();
+      assertThat(dto.currentSeason()).isEqualTo(2025);
     }
   }
 

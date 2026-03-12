@@ -4,6 +4,7 @@ import { Observable, of, map, switchMap, catchError, filter, throwError } from '
 import { environment } from '../../../environments/environment';
 import { LoggerService } from './logger.service';
 import { secureRandomId } from '../../shared/utils/secure-random.util';
+import { TeamDeltaLeaderboardEntry } from '../../features/leaderboard/models/team-delta-leaderboard.model';
 
 export type Region = 'EU' | 'NAW' | 'BR' | 'ASIA' | 'OCE' | 'NAC' | 'ME';
 
@@ -460,6 +461,18 @@ export class LeaderboardService {
           message: error?.message,
           timestamp: new Date().toISOString()
         });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /** Returns the game leaderboard ordered by delta PR descending. */
+  getGameDeltaLeaderboard(gameId: string): Observable<TeamDeltaLeaderboardEntry[]> {
+    const url = `${environment.apiUrl}/api/games/${gameId}/leaderboard`;
+    this.logger.debug('LeaderboardService.getGameDeltaLeaderboard called', { gameId, url });
+    return this.http.get<TeamDeltaLeaderboardEntry[]>(url).pipe(
+      catchError(error => {
+        this.logger.error('LeaderboardService: failed to load game delta leaderboard', error);
         return throwError(() => error);
       })
     );

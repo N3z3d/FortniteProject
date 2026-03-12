@@ -17,6 +17,10 @@ public final class PlayerIdentityEntry {
   private LocalDateTime rejectedAt;
   private String rejectionReason;
   private final LocalDateTime createdAt;
+  private String correctedUsername;
+  private String correctedRegion;
+  private String correctedBy;
+  private LocalDateTime correctedAt;
 
   public PlayerIdentityEntry(
       UUID playerId, String playerUsername, String playerRegion, LocalDateTime createdAt) {
@@ -29,7 +33,6 @@ public final class PlayerIdentityEntry {
     this.createdAt = createdAt;
   }
 
-  @SuppressWarnings("java:S107")
   public static PlayerIdentityEntry restore(
       UUID id,
       UUID playerId,
@@ -42,7 +45,8 @@ public final class PlayerIdentityEntry {
       LocalDateTime resolvedAt,
       LocalDateTime rejectedAt,
       String rejectionReason,
-      LocalDateTime createdAt) {
+      LocalDateTime createdAt,
+      MetadataCorrection metadataCorrection) {
     PlayerIdentityEntry entry =
         new PlayerIdentityEntry(playerId, playerUsername, playerRegion, createdAt);
     entry.id = id;
@@ -53,6 +57,10 @@ public final class PlayerIdentityEntry {
     entry.resolvedAt = resolvedAt;
     entry.rejectedAt = rejectedAt;
     entry.rejectionReason = rejectionReason;
+    entry.correctedUsername = metadataCorrection.correctedUsername();
+    entry.correctedRegion = metadataCorrection.correctedRegion();
+    entry.correctedBy = metadataCorrection.correctedBy();
+    entry.correctedAt = metadataCorrection.correctedAt();
     return entry;
   }
 
@@ -69,6 +77,13 @@ public final class PlayerIdentityEntry {
     this.resolvedBy = rejectedBy;
     this.rejectedAt = LocalDateTime.now();
     this.status = IdentityStatus.REJECTED;
+  }
+
+  public void correctMetadata(String newUsername, String newRegion, String correctedBy) {
+    if (newUsername != null) this.correctedUsername = newUsername;
+    if (newRegion != null) this.correctedRegion = newRegion;
+    this.correctedBy = correctedBy;
+    this.correctedAt = LocalDateTime.now();
   }
 
   public UUID getId() {
@@ -117,5 +132,21 @@ public final class PlayerIdentityEntry {
 
   public LocalDateTime getCreatedAt() {
     return createdAt;
+  }
+
+  public String getCorrectedUsername() {
+    return correctedUsername;
+  }
+
+  public String getCorrectedRegion() {
+    return correctedRegion;
+  }
+
+  public String getCorrectedBy() {
+    return correctedBy;
+  }
+
+  public LocalDateTime getCorrectedAt() {
+    return correctedAt;
   }
 }

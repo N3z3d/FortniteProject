@@ -2,7 +2,7 @@ package com.fortnite.pronos.service.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +30,7 @@ class GameIncidentServiceTest {
         .reporterUsername("player1")
         .incidentType(type)
         .description("Test description")
-        .timestamp(LocalDateTime.now())
+        .timestamp(OffsetDateTime.now())
         .build();
   }
 

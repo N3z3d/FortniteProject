@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { UserStatsDialogComponent } from './user-stats-dialog.component';
 import { TranslationService } from '../../../core/services/translation.service';
@@ -42,17 +42,20 @@ describe('UserStatsDialogComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('should create and load stats', fakeAsync(() => {
+  it('should create and load stats', async () => {
+    vi.useFakeTimers();
     spyOn(Math, 'random').and.returnValue(0.1);
 
     fixture.detectChanges();
     expect(component.loading).toBeTrue();
 
-    tick(800);
+    vi.advanceTimersByTime(800);
+    await Promise.resolve();
 
     expect(component.loading).toBeFalse();
     expect(component.stats).toBeTruthy();
-  }));
+    vi.useRealTimers();
+  });
 
   it('closes dialog on close', () => {
     component.onClose();

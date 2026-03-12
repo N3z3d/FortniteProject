@@ -137,8 +137,11 @@ public class GameDraftService {
             draft, participant, player, draft.getCurrentRound(), draft.getCurrentPick());
 
     com.fortnite.pronos.model.DraftPick savedPick = draftPickRepository.save(newPick);
+    participant.addSelectedPlayer(player);
+    participant.updateLastSelectionTime();
+    gameParticipantRepository.save(participant);
 
-    // Avancer le draft (pas de parallélisme, avance séquentielle)
+    // Avancer le draft (pas de parallÃ©lisme, avance sÃ©quentielle)
     draftService.nextPick(draft, domainGame.getMaxParticipants());
 
     log.info(

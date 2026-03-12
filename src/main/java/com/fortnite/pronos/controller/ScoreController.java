@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +51,7 @@ public class ScoreController {
   @PostMapping("/player/{playerId}")
   public ResponseEntity<Void> updatePlayerScore(
       @PathVariable UUID playerId,
-      @RequestBody ScoreUpdateRequest request,
+      @Valid @RequestBody ScoreUpdateRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
     HttpStatus authorizationStatus = resolveWriteAuthorizationStatus(username, httpRequest);
@@ -61,7 +64,7 @@ public class ScoreController {
 
   @PostMapping("/batch")
   public ResponseEntity<Void> updateBatchPlayerScores(
-      @RequestBody BatchScoreUpdateRequest request,
+      @Valid @RequestBody BatchScoreUpdateRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
     HttpStatus authorizationStatus = resolveWriteAuthorizationStatus(username, httpRequest);
@@ -126,7 +129,11 @@ public class ScoreController {
   }
 
   // DTOs for request bodies
-  record ScoreUpdateRequest(int points, OffsetDateTime timestamp) {}
+  record ScoreUpdateRequest(
+      int points, @NotNull(message = "Le timestamp est requis") OffsetDateTime timestamp) {}
 
-  record BatchScoreUpdateRequest(Map<UUID, Integer> playerScores, OffsetDateTime timestamp) {}
+  record BatchScoreUpdateRequest(
+      @NotEmpty(message = "La liste des scores ne peut pas être vide")
+          Map<UUID, Integer> playerScores,
+      @NotNull(message = "Le timestamp est requis") OffsetDateTime timestamp) {}
 }

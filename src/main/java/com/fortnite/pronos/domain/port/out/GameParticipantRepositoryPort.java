@@ -48,6 +48,8 @@ public interface GameParticipantRepositoryPort {
 
   List<GameParticipant> findByGameIdOrderByDraftOrderAsc(UUID gameId);
 
+  Optional<GameParticipant> findById(UUID participantId);
+
   GameParticipant save(GameParticipant participant);
 
   void delete(GameParticipant participant);

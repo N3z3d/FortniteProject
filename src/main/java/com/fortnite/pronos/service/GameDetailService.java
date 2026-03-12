@@ -16,6 +16,7 @@ import com.fortnite.pronos.domain.draft.model.Draft;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
@@ -46,6 +47,7 @@ public class GameDetailService implements GameDetailUseCase {
 
   private final GameDomainRepositoryPort gameRepository;
   private final DraftDomainRepositoryPort draftRepository;
+  private final DraftPickRepositoryPort draftPickRepository;
   private final PlayerDomainRepositoryPort playerRepository;
   private final ScoreRepositoryPort scoreRepository;
   private final UserRepositoryPort userRepository;
@@ -56,7 +58,9 @@ public class GameDetailService implements GameDetailUseCase {
     Game game = findGameOrThrow(gameId);
     List<GameParticipant> participants = game.getParticipants();
     Optional<Draft> draft = draftRepository.findByGameId(gameId);
-    return buildGameDetailDto(game, participants, draft);
+    Map<UUID, List<UUID>> selectedPlayerIdsByParticipant =
+        resolveSelectedPlayerIdsByParticipant(participants, draft);
+    return buildGameDetailDto(game, participants, draft, selectedPlayerIdsByParticipant);
   }
 
   private Game findGameOrThrow(UUID gameId) {
@@ -66,7 +70,10 @@ public class GameDetailService implements GameDetailUseCase {
   }
 
   private GameDetailDto buildGameDetailDto(
-      Game game, List<GameParticipant> participants, Optional<Draft> draft) {
+      Game game,
+      List<GameParticipant> participants,
+      Optional<Draft> draft,
+      Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     return GameDetailDto.builder()
         .gameId(game.getId())
         .gameName(game.getName())
@@ -77,9 +84,11 @@ public class GameDetailService implements GameDetailUseCase {
         .maxParticipants(game.getMaxParticipants())
         .createdAt(game.getCreatedAt())
         .updatedAt(game.getCreatedAt())
-        .participants(buildParticipantInfos(participants, game.getCreatorId()))
+        .participants(
+            buildParticipantInfos(
+                participants, game.getCreatorId(), selectedPlayerIdsByParticipant))
         .draftInfo(draft.map(this::buildDraftInfo).orElse(null))
-        .statistics(buildStatistics(participants, game))
+        .statistics(buildStatistics(participants, game, selectedPlayerIdsByParticipant))
         .build();
   }
 
@@ -106,15 +115,23 @@ public class GameDetailService implements GameDetailUseCase {
   }
 
   private List<ParticipantInfo> buildParticipantInfos(
-      List<GameParticipant> participants, UUID creatorId) {
+      List<GameParticipant> participants,
+      UUID creatorId,
+      Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     return participants.stream()
-        .map(participant -> buildParticipantInfo(participant, creatorId))
+        .map(
+            participant ->
+                buildParticipantInfo(participant, creatorId, selectedPlayerIdsByParticipant))
         .toList();
   }
 
-  private ParticipantInfo buildParticipantInfo(GameParticipant participant, UUID creatorId) {
+  private ParticipantInfo buildParticipantInfo(
+      GameParticipant participant,
+      UUID creatorId,
+      Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     Optional<com.fortnite.pronos.model.User> user = findUser(participant.getUserId());
-    List<PlayerInfo> selectedPlayers = buildPlayerInfos(participant);
+    List<PlayerInfo> selectedPlayers =
+        buildPlayerInfos(resolveSelectedPlayerIds(participant, selectedPlayerIdsByParticipant));
 
     return ParticipantInfo.builder()
         .participantId(participant.getId())
@@ -157,8 +174,7 @@ public class GameDetailService implements GameDetailUseCase {
             && creatorId.equals(participant.getUserId()));
   }
 
-  private List<PlayerInfo> buildPlayerInfos(GameParticipant participant) {
-    List<UUID> selectedPlayerIds = participant.getSelectedPlayerIds();
+  private List<PlayerInfo> buildPlayerInfos(List<UUID> selectedPlayerIds) {
     if (selectedPlayerIds == null || selectedPlayerIds.isEmpty()) {
       return Collections.emptyList();
     }
@@ -209,14 +225,19 @@ public class GameDetailService implements GameDetailUseCase {
         .pausedAt(null)
         .currentRound(draft.getCurrentRound())
         .currentPick(draft.getCurrentPick())
+        .totalRounds(draft.getTotalRounds())
         .currentPickerUsername(null)
         .build();
   }
 
-  private GameStatistics buildStatistics(List<GameParticipant> participants, Game game) {
+  private GameStatistics buildStatistics(
+      List<GameParticipant> participants,
+      Game game,
+      Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     int totalParticipants = calculateTotalParticipants(participants, game.getCreatorId());
-    int totalPlayers = calculateTotalPlayers(participants);
-    Map<String, Integer> regionDistribution = calculateRegionDistribution(participants);
+    int totalPlayers = calculateTotalPlayers(participants, selectedPlayerIdsByParticipant);
+    Map<String, Integer> regionDistribution =
+        calculateRegionDistribution(participants, selectedPlayerIdsByParticipant);
     double averagePlayersPerParticipant =
         totalParticipants > 0 ? (double) totalPlayers / totalParticipants : 0.0;
     int remainingSlots = Math.max(0, game.getMaxParticipants() - totalParticipants);
@@ -241,19 +262,22 @@ public class GameDetailService implements GameDetailUseCase {
     return creatorAlreadyCounted ? participantsCount : participantsCount + 1;
   }
 
-  private int calculateTotalPlayers(List<GameParticipant> participants) {
+  private int calculateTotalPlayers(
+      List<GameParticipant> participants, Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     return participants.stream()
-        .map(GameParticipant::getSelectedPlayerIds)
+        .map(participant -> resolveSelectedPlayerIds(participant, selectedPlayerIdsByParticipant))
         .filter(ids -> ids != null)
         .mapToInt(List::size)
         .sum();
   }
 
-  private Map<String, Integer> calculateRegionDistribution(List<GameParticipant> participants) {
+  private Map<String, Integer> calculateRegionDistribution(
+      List<GameParticipant> participants, Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
     Map<String, Integer> distribution = new HashMap<>();
 
     for (GameParticipant participant : participants) {
-      List<UUID> selectedPlayerIds = participant.getSelectedPlayerIds();
+      List<UUID> selectedPlayerIds =
+          resolveSelectedPlayerIds(participant, selectedPlayerIdsByParticipant);
       if (selectedPlayerIds == null) {
         continue;
       }
@@ -292,5 +316,51 @@ public class GameDetailService implements GameDetailUseCase {
 
   private boolean hasText(String value) {
     return value != null && !value.trim().isEmpty();
+  }
+
+  private Map<UUID, List<UUID>> resolveSelectedPlayerIdsByParticipant(
+      List<GameParticipant> participants, Optional<Draft> draft) {
+    Map<UUID, List<UUID>> selectedPlayerIdsByParticipant = new HashMap<>();
+    UUID draftId = draft.map(Draft::getId).orElse(null);
+
+    for (GameParticipant participant : participants) {
+      if (participant.getId() == null) {
+        continue;
+      }
+      selectedPlayerIdsByParticipant.put(
+          participant.getId(), loadSelectedPlayerIds(participant, draftId));
+    }
+
+    return selectedPlayerIdsByParticipant;
+  }
+
+  private List<UUID> loadSelectedPlayerIds(GameParticipant participant, UUID draftId) {
+    List<UUID> participantSelectedPlayerIds =
+        normalizePlayerIds(participant.getSelectedPlayerIds());
+    if (draftId == null || participant.getId() == null) {
+      return participantSelectedPlayerIds;
+    }
+
+    List<UUID> draftPickPlayerIds =
+        normalizePlayerIds(
+            draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+                draftId, participant.getId()));
+    if (draftPickPlayerIds.isEmpty() && !participantSelectedPlayerIds.isEmpty()) {
+      return participantSelectedPlayerIds;
+    }
+    return draftPickPlayerIds;
+  }
+
+  private List<UUID> resolveSelectedPlayerIds(
+      GameParticipant participant, Map<UUID, List<UUID>> selectedPlayerIdsByParticipant) {
+    if (participant.getId() == null) {
+      return normalizePlayerIds(participant.getSelectedPlayerIds());
+    }
+    return selectedPlayerIdsByParticipant.getOrDefault(
+        participant.getId(), normalizePlayerIds(participant.getSelectedPlayerIds()));
+  }
+
+  private List<UUID> normalizePlayerIds(List<UUID> playerIds) {
+    return playerIds != null ? playerIds : Collections.emptyList();
   }
 }

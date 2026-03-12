@@ -2,6 +2,7 @@ package com.fortnite.pronos.adapter.out.persistence.player;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,13 @@ public interface RankSnapshotJpaRepository extends JpaRepository<RankSnapshotEnt
           + "ORDER BY r.snapshotDate ASC")
   List<RankSnapshotEntity> findByPlayerSince(
       @Param("playerId") UUID playerId, @Param("since") LocalDate since);
+
+  @Query(
+      "SELECT r FROM RankSnapshotEntity r "
+          + "WHERE r.playerId = :playerId "
+          + "AND r.snapshotDate <= :date "
+          + "ORDER BY r.snapshotDate DESC "
+          + "LIMIT 1")
+  Optional<RankSnapshotEntity> findLatestOnOrBefore(
+      @Param("playerId") UUID playerId, @Param("date") LocalDate date);
 }

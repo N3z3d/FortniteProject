@@ -19,6 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.HikariPoolMXBean;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TradeRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
+import com.fortnite.pronos.dto.admin.AdminUserDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
@@ -27,18 +31,15 @@ import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
 import com.fortnite.pronos.model.Trade;
 import com.fortnite.pronos.model.User;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.TradeRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class AdminDashboardServiceTest {
 
-  @Mock private UserRepository userRepository;
-  @Mock private GameRepository gameRepository;
-  @Mock private TradeRepository tradeRepository;
+  @Mock private UserRepositoryPort userRepository;
+  @Mock private GameRepositoryPort gameRepository;
+  @Mock private TradeRepositoryPort tradeRepository;
   @Mock private MeterRegistry meterRegistry;
   @Mock private DataSource dataSource;
 
@@ -253,7 +254,7 @@ class AdminDashboardServiceTest {
 
       when(userRepository.findAll()).thenReturn(List.of(user1, user2));
 
-      List<User> result = service.getAllUsers();
+      List<AdminUserDto> result = service.getAllUsers();
 
       assertThat(result).hasSize(2);
     }
@@ -262,7 +263,7 @@ class AdminDashboardServiceTest {
     void shouldReturnEmptyListWhenNoUsers() {
       when(userRepository.findAll()).thenReturn(List.of());
 
-      List<User> result = service.getAllUsers();
+      List<AdminUserDto> result = service.getAllUsers();
 
       assertThat(result).isEmpty();
     }

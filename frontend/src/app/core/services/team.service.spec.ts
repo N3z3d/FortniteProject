@@ -109,6 +109,18 @@ describe('TeamService', () => {
     req.flush([sampleTeam]);
   });
 
+  it('falls back to seeded thibaut username when no current user is available', () => {
+    userContext.getCurrentUser.and.returnValue(null);
+
+    service.getUserTeams(undefined, 2026).subscribe();
+
+    const req = httpMock.expectOne((request) => request.url === `${environment.apiUrl}/api/teams/user`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('user')).toBe('thibaut');
+    expect(req.request.params.get('year')).toBe('2026');
+    req.flush([sampleTeam]);
+  });
+
   it('gets teams by game or falls back to season list', () => {
     service.getTeamsByGame('').subscribe();
 

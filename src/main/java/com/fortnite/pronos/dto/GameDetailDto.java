@@ -73,6 +73,7 @@ public class GameDetailDto {
     private LocalDateTime pausedAt;
     private Integer currentRound;
     private Integer currentPick;
+    private Integer totalRounds;
     private String currentPickerUsername;
   }
 

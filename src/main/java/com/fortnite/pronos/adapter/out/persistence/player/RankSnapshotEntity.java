@@ -11,10 +11,10 @@ import lombok.Setter;
 
 @Entity
 @Table(
-    name = "pr_snapshots",
+    name = "rank_snapshots",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uq_pr_snapshots_player_region_date",
+            name = "uq_rank_snapshots_player_region_date",
             columnNames = {"player_id", "region", "snapshot_date"}))
 @Getter
 @Setter

@@ -91,7 +91,8 @@ class DraftWorkflowIntegrationTest {
 
   private Player createTestPlayer(String username, Player.Region region) {
     Player player = new Player();
-    player.setId(UUID.randomUUID());
+    // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it; pre-assigning causes
+    // Hibernate 6.6 to call merge() for an unknown row and throw StaleObjectStateException.
     player.setUsername(username);
     player.setNickname(username);
     player.setRegion(region);
@@ -102,7 +103,8 @@ class DraftWorkflowIntegrationTest {
 
   private Game createTestGame(String name, User creator, int maxParticipants) {
     Game game = new Game();
-    game.setId(UUID.randomUUID());
+    // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it; pre-assigning causes
+    // Hibernate 6.6 to call merge() for an unknown row and throw StaleObjectStateException.
     game.setName(name);
     game.setCreator(creator);
     game.setMaxParticipants(maxParticipants);
@@ -113,7 +115,7 @@ class DraftWorkflowIntegrationTest {
 
   private GameParticipant createTestParticipant(Game game, User user, int draftOrder) {
     GameParticipant participant = new GameParticipant();
-    participant.setId(UUID.randomUUID());
+    // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it.
     participant.setGame(game);
     participant.setUser(user);
     participant.setDraftOrder(draftOrder);

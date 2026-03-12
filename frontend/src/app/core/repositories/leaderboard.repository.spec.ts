@@ -36,7 +36,7 @@ describe('LeaderboardRepository', () => {
   });
 
   describe('HttpLeaderboardRepository', () => {
-    it('should fetch leaderboard from API', (done) => {
+    it('should fetch leaderboard from API', () => {
       const mockData = [
         {
           rank: 1,
@@ -56,7 +56,6 @@ describe('LeaderboardRepository', () => {
       httpRepo.getLeaderboard({ season: 2025 }).subscribe(data => {
         expect(data.length).toBe(1);
         expect(data[0].rank).toBe(1);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard?season=2025`);
@@ -64,13 +63,12 @@ describe('LeaderboardRepository', () => {
       req.flush(mockData);
     });
 
-    it('should throw error when API fails', (done) => {
+    it('should throw error when API fails', () => {
       httpRepo.getLeaderboard({ season: 2025 }).subscribe({
         next: () => fail('Should have failed'),
         error: (error) => {
           expect(error).toBeDefined();
           expect(loggerService.error).toHaveBeenCalled();
-          done();
         }
       });
 
@@ -78,12 +76,11 @@ describe('LeaderboardRepository', () => {
       req.error(new ProgressEvent('Network error'));
     });
 
-    it('should fetch stats with season parameter', (done) => {
+    it('should fetch stats with season parameter', () => {
       const mockStats = { totalTeams: 5, totalPlayers: 50 };
 
       httpRepo.getStats(2025).subscribe(data => {
         expect(data).toEqual(mockStats);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/stats?season=2025`);
@@ -93,27 +90,24 @@ describe('LeaderboardRepository', () => {
   });
 
   describe('MockLeaderboardRepository', () => {
-    it('should return empty leaderboard', (done) => {
+    it('should return empty leaderboard', () => {
       mockRepo.getLeaderboard({ season: 2025 }).subscribe(data => {
         expect(data).toEqual([]);
         expect(loggerService.warn).toHaveBeenCalled();
-        done();
       });
     });
 
-    it('should return empty stats', (done) => {
+    it('should return empty stats', () => {
       mockRepo.getStats(2025).subscribe(data => {
         expect(data.totalTeams).toBe(0);
         expect(data.totalPlayers).toBe(0);
-        done();
       });
     });
 
-    it('should return empty region distribution', (done) => {
+    it('should return empty region distribution', () => {
       mockRepo.getRegionDistribution().subscribe(data => {
         expect(data['EU']).toBe(0);
         expect(data['NAC']).toBe(0);
-        done();
       });
     });
   });

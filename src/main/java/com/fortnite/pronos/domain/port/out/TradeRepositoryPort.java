@@ -14,6 +14,10 @@ public interface TradeRepositoryPort {
 
   Optional<Trade> findById(UUID id);
 
+  List<Trade> findAll();
+
+  long count();
+
   Trade save(Trade trade);
 
   List<Trade> findByTeamId(UUID teamId);

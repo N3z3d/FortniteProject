@@ -36,7 +36,7 @@ describe('DashboardRepository', () => {
   });
 
   describe('HttpDashboardRepository', () => {
-    it('should map statistics response and include season progress', (done) => {
+    it('should map statistics response and include season progress', () => {
       const apiResponse = {
         totalTeams: 10,
         totalPlayers: 20,
@@ -54,7 +54,6 @@ describe('DashboardRepository', () => {
         expect(stats.seasonProgress).toEqual(jasmine.any(Number));
         expect(stats.seasonProgress).toBeGreaterThanOrEqual(0);
         expect(stats.seasonProgress).toBeLessThanOrEqual(100);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/stats?season=2025&gameId=game-1`);
@@ -62,48 +61,45 @@ describe('DashboardRepository', () => {
       req.flush(apiResponse);
     });
 
-    it('should request stats without gameId when not provided', (done) => {
+    it('should request stats without gameId when not provided', () => {
       httpRepo.getStatistics('').subscribe(stats => {
         expect(stats.totalTeams).toBe(0);
         expect(stats.mostActiveTeam).toBe('');
         expect(stats.seasonProgress).toEqual(jasmine.any(Number));
         expect(stats.seasonProgress).toBeGreaterThanOrEqual(0);
         expect(stats.seasonProgress).toBeLessThanOrEqual(100);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/stats?season=2025`);
       req.flush({});
     });
 
-    it('should unwrap leaderboard data responses', (done) => {
+    it('should unwrap leaderboard data responses', () => {
       const leaderboard = [
         { teamId: 't1', teamName: 'Alpha', totalPoints: 10 }
       ];
 
       httpRepo.getLeaderboard('game-1').subscribe(data => {
         expect(data).toEqual(leaderboard);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard?season=2025&gameId=game-1`);
       req.flush({ data: leaderboard });
     });
 
-    it('should normalize region distribution', (done) => {
+    it('should normalize region distribution', () => {
       httpRepo.getRegionDistribution('').subscribe(data => {
         expect(data['EU']).toBe(2);
         expect(data['NAW']).toBe(1);
         expect(data['NAC']).toBe(0);
         expect(Object.keys(data).length).toBe(7);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/distribution/regions`);
       req.flush({ EU: 2, NAW: 1 });
     });
 
-    it('should aggregate dashboard data and build teams', (done) => {
+    it('should aggregate dashboard data and build teams', () => {
       const leaderboard = [
         { teamId: 't1', teamName: 'Alpha', totalPoints: 10, ownerName: 'Owner', players: [{ id: 1 }] },
         { id: 't2', teamName: 'Beta', ownerName: 'Owner 2' }
@@ -119,7 +115,6 @@ describe('DashboardRepository', () => {
         }));
         expect(data.teams[1].id).toBe('t2');
         expect(data.teams[1].totalPoints).toBe(0);
-        done();
       });
 
       const statsReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/stats?season=2025&gameId=game-1`);
@@ -137,13 +132,12 @@ describe('DashboardRepository', () => {
       regionReq.flush({ EU: 1 });
     });
 
-    it('should surface errors and log them', (done) => {
+    it('should surface errors and log them', () => {
       httpRepo.getLeaderboard('game-1').subscribe({
         next: () => fail('Expected error'),
         error: (error) => {
           expect(error).toBeDefined();
           expect(loggerService.error).toHaveBeenCalled();
-          done();
         }
       });
 
@@ -153,7 +147,7 @@ describe('DashboardRepository', () => {
   });
 
   describe('MockDashboardRepository', () => {
-    it('should return empty dashboard data', (done) => {
+    it('should return empty dashboard data', () => {
       mockRepo.getDashboardData('game-1').subscribe(data => {
         expect(data.statistics.seasonProgress).toEqual(jasmine.any(Number));
         expect(data.statistics.seasonProgress).toBeGreaterThanOrEqual(0);
@@ -161,11 +155,10 @@ describe('DashboardRepository', () => {
         expect(data.leaderboard).toEqual([]);
         expect(data.regionDistribution['EU']).toBe(0);
         expect(loggerService.warn).toHaveBeenCalled();
-        done();
       });
     });
 
-    it('should return empty stats and region distribution', (done) => {
+    it('should return empty stats and region distribution', () => {
       mockRepo.getStatistics('game-1').subscribe(stats => {
         expect(stats.totalTeams).toBe(0);
         expect(stats.seasonProgress).toEqual(jasmine.any(Number));
@@ -176,7 +169,6 @@ describe('DashboardRepository', () => {
       mockRepo.getRegionDistribution('game-1').subscribe(distribution => {
         expect(distribution['ME']).toBe(0);
         expect(loggerService.warn).toHaveBeenCalled();
-        done();
       });
     });
   });

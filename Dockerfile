@@ -14,7 +14,7 @@ WORKDIR /app/frontend
 
 # Install dependencies first (for better caching)
 COPY frontend/package*.json ./
-RUN npm ci --only=production --silent
+RUN npm ci --silent
 
 # Copy source code and build
 COPY frontend/ ./
@@ -36,14 +36,15 @@ WORKDIR /app
 
 # Copy Maven configuration first (for better caching)
 COPY pom.xml ./
+COPY .mvn/ .mvn/
 RUN mvn dependency:go-offline -B
 
 # Copy source code and build
 COPY src/ src/
-COPY --from=frontend-builder /app/frontend/dist/frontend src/main/resources/static/
+COPY --from=frontend-builder /app/frontend/dist/frontend/browser src/main/resources/static/
 
-# Build the application (skip tests for production build)
-RUN mvn clean package -DskipTests -B
+# Normalize line endings (Windows CRLF → LF) then build
+RUN mvn spotless:apply -q -B && mvn package -DskipTests -B
 
 # ==========================================
 # STAGE 3: Production Runtime
@@ -89,7 +90,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM optimizations for containers (500+ users)
-ENV JAVA_OPTS="-server \
+# JAVA_TOOL_OPTIONS is read natively by the JVM — no shell expansion needed
+ENV JAVA_TOOL_OPTIONS="-server \
     -Xms2g \
     -Xmx4g \
     -XX:+UseG1GC \
@@ -102,7 +104,6 @@ ENV JAVA_OPTS="-server \
     -XX:+UseTLAB \
     -XX:+ResizeTLAB \
     -XX:+PerfDisableSharedMem \
-    -XX:+UseTransparentHugePages \
     -Djava.security.egd=file:/dev/./urandom \
     -Djava.awt.headless=true \
     -Dfile.encoding=UTF-8 \
@@ -112,5 +113,5 @@ ENV JAVA_OPTS="-server \
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV LOGGING_LEVEL_ROOT=INFO
 
-# Application entry point
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
+# Application entry point — exec form (no shell, no injection risk)
+ENTRYPOINT ["java", "-jar", "app.jar"]

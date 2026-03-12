@@ -1,5 +1,6 @@
 package com.fortnite.pronos.application.usecase;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.fortnite.pronos.dto.CreateGameRequest;
@@ -20,4 +21,6 @@ public interface GameCreationUseCase {
   GameDto regenerateInvitationCode(UUID gameId, String duration);
 
   GameDto renameGame(UUID gameId, String newName);
+
+  GameDto configureCompetitionPeriod(UUID gameId, LocalDate startDate, LocalDate endDate);
 }

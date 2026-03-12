@@ -1,5 +1,5 @@
 import { ElementRef, Renderer2, RendererFactory2 } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { PremiumInteractionsService } from './premium-interactions.service';
 
 class MockRenderer implements Renderer2 {
@@ -91,7 +91,7 @@ describe('PremiumInteractionsService', () => {
     service = TestBed.inject(PremiumInteractionsService);
   });
 
-  it('initMagneticButton registers listeners and applies hover styles', fakeAsync(() => {
+  it('initMagneticButton registers listeners and applies hover styles', () => {
     const element = document.createElement('button');
     spyOn(element, 'getBoundingClientRect').and.returnValue({
       left: 0,
@@ -119,9 +119,10 @@ describe('PremiumInteractionsService', () => {
     expect(renderer.addClass).toHaveBeenCalledWith(element, 'magnetic-hover');
     expect(renderer.setStyle).toHaveBeenCalledWith(element, 'transform', jasmine.any(String));
     expect(renderer.removeClass).toHaveBeenCalledWith(element, 'magnetic-hover');
-  }));
+  });
 
-  it('createRipple adds and removes ripple element', fakeAsync(() => {
+  it('createRipple adds and removes ripple element', async () => {
+    vi.useFakeTimers();
     const element = document.createElement('button');
     spyOn(element, 'getBoundingClientRect').and.returnValue({
       left: 5,
@@ -138,11 +139,14 @@ describe('PremiumInteractionsService', () => {
     service.createRipple(new ElementRef(element), new MouseEvent('click', { clientX: 15, clientY: 25 }));
 
     expect(renderer.appendChild).toHaveBeenCalled();
-    tick(600);
+    vi.advanceTimersByTime(600);
+    await Promise.resolve();
     expect(renderer.removeChild).toHaveBeenCalled();
-  }));
+    vi.useRealTimers();
+  });
 
-  it('initSpringButton reacts to press and release', fakeAsync(() => {
+  it('initSpringButton reacts to press and release', async () => {
+    vi.useFakeTimers();
     const element = document.createElement('button');
     spyOn(element, 'getBoundingClientRect').and.returnValue({
       left: 0,
@@ -169,13 +173,15 @@ describe('PremiumInteractionsService', () => {
     );
 
     up();
-    tick(300);
+    vi.advanceTimersByTime(300);
+    await Promise.resolve();
     expect(renderer.setStyle).toHaveBeenCalledWith(
       element,
       'transform',
       jasmine.stringContaining('scale(1)')
     );
-  }));
+    vi.useRealTimers();
+  });
 
   it('initParallaxCard updates transform on mouse move and resets on leave', () => {
     const element = document.createElement('div');
@@ -238,7 +244,8 @@ describe('PremiumInteractionsService', () => {
     expect(window.scrollTo).not.toHaveBeenCalled();
   });
 
-  it('typewriterEffect writes text and resolves', fakeAsync(() => {
+  it('typewriterEffect writes text and resolves', async () => {
+    vi.useFakeTimers();
     const element = document.createElement('span');
     const ref = new ElementRef(element);
     let resolved = false;
@@ -247,23 +254,28 @@ describe('PremiumInteractionsService', () => {
       resolved = true;
     });
 
-    tick(30);
+    vi.advanceTimersByTime(30);
+    await Promise.resolve();
 
     expect(element.textContent).toBe('Hi');
     expect(resolved).toBeTrue();
-  }));
+    vi.useRealTimers();
+  });
 
-  it('showGamingNotification appends and removes notification', fakeAsync(() => {
+  it('showGamingNotification appends and removes notification', async () => {
+    vi.useFakeTimers();
     service.showGamingNotification('Victory', 'success');
 
     const notification = document.body.querySelector('.gaming-notification') as HTMLElement;
     expect(notification).not.toBeNull();
     expect(notification.classList.contains('notification-success')).toBeTrue();
 
-    tick(3500);
+    vi.advanceTimersByTime(3500);
+    await Promise.resolve();
 
     expect(document.body.querySelector('.gaming-notification')).toBeNull();
-  }));
+    vi.useRealTimers();
+  });
 
   it('addShimmerEffect adds overlay and removeShimmerEffect removes it', () => {
     const element = document.createElement('div');
@@ -279,7 +291,7 @@ describe('PremiumInteractionsService', () => {
   it('addContextualFeedback wires click to particle explosion', () => {
     const element = document.createElement('button');
     const ref = new ElementRef(element);
-    const explosionSpy = spyOn<any>(service, 'createParticleExplosion');
+    const explosionSpy = spyOn<any>(service, 'createParticleExplosion').and.callFake(() => undefined);
 
     service.addContextualFeedback(ref, 'high');
 

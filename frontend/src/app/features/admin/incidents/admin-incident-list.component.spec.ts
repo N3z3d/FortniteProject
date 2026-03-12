@@ -125,8 +125,7 @@ describe('AdminIncidentListComponent', () => {
   });
 
   it('should unsubscribe on destroy', () => {
-    const nextSpy = spyOn(component['destroy$'], 'next').and.callThrough();
     component.ngOnDestroy();
-    expect(nextSpy).toHaveBeenCalled();
+    expect(component['destroy$'].isStopped).toBeTrue();
   });
 });

@@ -158,7 +158,7 @@ describe('GameCommandService', () => {
     expect(announcerSpy.announce).toHaveBeenCalledWith('Join success', 'polite');
   });
 
-  it('shows backend message on join conflict', done => {
+  it('shows backend message on join conflict', () => {
     service.joinGame('game-1').subscribe({
       next: () => fail('expected error'),
       error: () => {
@@ -167,7 +167,6 @@ describe('GameCommandService', () => {
           'games.detail.actions.joinError',
           { duration: 5000 }
         );
-        done();
       }
     });
 
@@ -196,7 +195,7 @@ describe('GameCommandService', () => {
     expect(announcerSpy.announce).toHaveBeenCalledWith('Game deleted', 'polite');
   });
 
-  it('shows translated delete error snackbar on failure', done => {
+  it('shows translated delete error snackbar on failure', () => {
     service.deleteGame('game-1').subscribe({
       next: () => fail('expected error'),
       error: () => {
@@ -206,7 +205,6 @@ describe('GameCommandService', () => {
           'games.detail.actions.deleteError',
           { duration: 5000 }
         );
-        done();
       }
     });
 
@@ -232,12 +230,11 @@ describe('GameCommandService', () => {
     httpMock.expectOne(`${apiBaseUrl}/games/game-1/archive`).flush(successResponse);
   });
 
-  it('returns translated archive error', done => {
+  it('returns translated archive error', () => {
     service.archiveGame('game-1').subscribe({
       next: () => fail('expected error'),
       error: error => {
         expect(error.message).toBe('Archive failed');
-        done();
       }
     });
 
@@ -258,7 +255,7 @@ describe('GameCommandService', () => {
     expect(announcerSpy.announce).toHaveBeenCalledWith('Draft resumed', 'polite');
   });
 
-  it('maps 401 with translated message in shared error handler', done => {
+  it('maps 401 with translated message in shared error handler', () => {
     const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
 
     service.createGame(createRequest).subscribe({
@@ -266,7 +263,6 @@ describe('GameCommandService', () => {
       error: error => {
         expect(error.message).toBe('Unauthorized');
         expect(loggerSpy.error).toHaveBeenCalled();
-        done();
       }
     });
 
@@ -276,14 +272,13 @@ describe('GameCommandService', () => {
     });
   });
 
-  it('uses generic translated message for HTTP 500 error payloads', done => {
+  it('uses generic translated message for HTTP 500 error payloads', () => {
     const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
 
     service.createGame(createRequest).subscribe({
       next: () => fail('expected error'),
       error: error => {
         expect(error.message).toBe('Server error');
-        done();
       }
     });
 
@@ -293,14 +288,13 @@ describe('GameCommandService', () => {
     );
   });
 
-  it('keeps user-safe backend message for HTTP 400 validation error', done => {
+  it('keeps user-safe backend message for HTTP 400 validation error', () => {
     const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
 
     service.createGame(createRequest).subscribe({
       next: () => fail('expected error'),
       error: error => {
         expect(error.message).toBe('Game name already exists');
-        done();
       }
     });
 

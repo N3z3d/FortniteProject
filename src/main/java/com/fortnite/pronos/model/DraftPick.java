@@ -5,9 +5,32 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
+import org.hibernate.annotations.ColumnTransformer;
+
 @Entity
 @Table(name = "draft_picks")
 public class DraftPick {
+
+  public enum DraftRegionSlot {
+    EU,
+    NAC,
+    NAW,
+    BR,
+    ASIA,
+    OCE,
+    ME;
+
+    static DraftRegionSlot fromPlayerRegion(Player.Region region) {
+      if (region == null) {
+        return null;
+      }
+      try {
+        return DraftRegionSlot.valueOf(region.name());
+      } catch (IllegalArgumentException ex) {
+        return null;
+      }
+    }
+  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,9 +44,17 @@ public class DraftPick {
   @JoinColumn(name = "participant_id", nullable = false)
   private GameParticipant participant;
 
+  @Column(name = "participant", nullable = false)
+  private String participantLabel;
+
   @ManyToOne
   @JoinColumn(name = "player_id", nullable = false)
   private Player player;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "region_slot", nullable = false, columnDefinition = "draft_region_slot")
+  @ColumnTransformer(write = "CAST(? AS draft_region_slot)")
+  private DraftRegionSlot regionSlot;
 
   @Column(name = "round_number", nullable = false)
   private Integer round;
@@ -54,10 +85,26 @@ public class DraftPick {
       Draft draft, GameParticipant participant, Player player, Integer round, Integer pickNumber) {
     this();
     this.draft = draft;
-    this.participant = participant;
-    this.player = player;
+    setParticipant(participant);
+    setPlayer(player);
     this.round = round;
     this.pickNumber = pickNumber;
+  }
+
+  @PrePersist
+  @PreUpdate
+  void syncLegacyColumns() {
+    this.participantLabel = resolveParticipantLabel(participant);
+    this.regionSlot = resolveRegionSlot(player);
+    if (createdAt == null) {
+      createdAt = LocalDateTime.now();
+    }
+    if (selectionTime == null) {
+      selectionTime = LocalDateTime.now();
+    }
+    if (autoPick == null) {
+      autoPick = false;
+    }
   }
 
   // Méthodes utilitaires
@@ -96,6 +143,7 @@ public class DraftPick {
 
   public void setParticipant(GameParticipant participant) {
     this.participant = participant;
+    this.participantLabel = resolveParticipantLabel(participant);
   }
 
   public Player getPlayer() {
@@ -104,6 +152,23 @@ public class DraftPick {
 
   public void setPlayer(Player player) {
     this.player = player;
+    this.regionSlot = resolveRegionSlot(player);
+  }
+
+  public String getParticipantLabel() {
+    return participantLabel;
+  }
+
+  public void setParticipantLabel(String participantLabel) {
+    this.participantLabel = participantLabel;
+  }
+
+  public DraftRegionSlot getRegionSlot() {
+    return regionSlot;
+  }
+
+  public void setRegionSlot(DraftRegionSlot regionSlot) {
+    this.regionSlot = regionSlot;
   }
 
   public Integer getRound() {
@@ -154,6 +219,27 @@ public class DraftPick {
     this.createdAt = createdAt;
   }
 
+  private String resolveParticipantLabel(GameParticipant currentParticipant) {
+    if (currentParticipant == null) {
+      return null;
+    }
+    String username = currentParticipant.getUsername();
+    if (username != null && !username.isBlank()) {
+      return username;
+    }
+    UUID userId = currentParticipant.getUserId();
+    if (userId != null) {
+      return userId.toString();
+    }
+    return currentParticipant.getId() != null ? currentParticipant.getId().toString() : null;
+  }
+
+  private DraftRegionSlot resolveRegionSlot(Player currentPlayer) {
+    return currentPlayer == null
+        ? null
+        : DraftRegionSlot.fromPlayerRegion(currentPlayer.getRegion());
+  }
+
   @Override
   public String toString() {
     return "DraftPick{"
@@ -163,8 +249,12 @@ public class DraftPick {
         + (draft != null ? draft.getId() : "null")
         + ", participant="
         + (participant != null ? participant.getUsername() : "null")
+        + ", participantLabel="
+        + participantLabel
         + ", player="
         + (player != null ? player.getNickname() : "null")
+        + ", regionSlot="
+        + regionSlot
         + ", round="
         + round
         + ", pickNumber="

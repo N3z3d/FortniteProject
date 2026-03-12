@@ -7,10 +7,16 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TradeRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
+import com.fortnite.pronos.dto.admin.AdminUserDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
+import com.fortnite.pronos.model.Game;
+import com.fortnite.pronos.model.GameStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,16 +24,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdminDashboardService {
 
-  private final com.fortnite.pronos.repository.UserRepository userRepository;
-  private final com.fortnite.pronos.repository.GameRepository gameRepository;
-  private final com.fortnite.pronos.repository.TradeRepository tradeRepository;
+  private final UserRepositoryPort userRepository;
+  private final GameRepositoryPort gameRepository;
+  private final TradeRepositoryPort tradeRepository;
   private final AdminSystemMetricsService systemMetricsService;
   private final AdminRecentActivityService recentActivityService;
   private final AdminGameCatalogService gameCatalogService;
 
   public DashboardSummaryDto getDashboardSummary() {
     Map<String, Long> gamesByStatus = new LinkedHashMap<>();
-    Arrays.stream(com.fortnite.pronos.model.GameStatus.values())
+    Arrays.stream(GameStatus.values())
         .forEach(s -> gamesByStatus.put(s.name(), gameRepository.countByStatus(s)));
 
     return DashboardSummaryDto.builder()
@@ -46,11 +52,11 @@ public class AdminDashboardService {
     return recentActivityService.getRecentActivity(hours);
   }
 
-  public List<com.fortnite.pronos.model.User> getAllUsers() {
+  public List<AdminUserDto> getAllUsers() {
     return gameCatalogService.getAllUsers();
   }
 
-  public List<com.fortnite.pronos.model.Game> getAllGames(String status) {
+  public List<Game> getAllGames(String status) {
     return gameCatalogService.getAllGames(status);
   }
 

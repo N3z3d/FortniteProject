@@ -134,7 +134,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('canTrade', () => {
-    it('validates trade successfully when all conditions are met', (done) => {
+    it('validates trade successfully when all conditions are met', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -162,7 +162,6 @@ describe('LeaderboardService', () => {
         expect(validation.isValid).toBe(true);
         expect(validation.newTeamState).toBeDefined();
         expect(validation.newTeamState?.tradesRemaining).toBe(2);
-        done();
       });
 
       const teamReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1`);
@@ -172,7 +171,7 @@ describe('LeaderboardService', () => {
       playerReq.flush(playerIn);
     });
 
-    it('rejects trade when no trades remaining', (done) => {
+    it('rejects trade when no trades remaining', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -199,7 +198,6 @@ describe('LeaderboardService', () => {
       service.canTrade('t1', 'p1', 'p2').subscribe(validation => {
         expect(validation.isValid).toBe(false);
         expect(validation.reason).toBe('Plus de trades disponibles');
-        done();
       });
 
       const teamReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1`);
@@ -209,7 +207,7 @@ describe('LeaderboardService', () => {
       playerReq.flush(playerIn);
     });
 
-    it('rejects trade when incoming player rank is above 10', (done) => {
+    it('rejects trade when incoming player rank is above 10', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -236,7 +234,6 @@ describe('LeaderboardService', () => {
       service.canTrade('t1', 'p1', 'p2').subscribe(validation => {
         expect(validation.isValid).toBe(false);
         expect(validation.reason).toBe('Le joueur entrant doit être top 10 de sa région');
-        done();
       });
 
       const teamReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1`);
@@ -246,7 +243,7 @@ describe('LeaderboardService', () => {
       playerReq.flush(playerIn);
     });
 
-    it('throws error when player not found in team', (done) => {
+    it('throws error when player not found in team', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -260,7 +257,6 @@ describe('LeaderboardService', () => {
       service.canTrade('t1', 'p999', 'p2').subscribe({
         error: (err) => {
           expect(err.message).toBe("Joueur sortant non trouvé dans l'équipe");
-          done();
         }
       });
 
@@ -270,7 +266,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('executeTrade', () => {
-    it('executes valid trade successfully', (done) => {
+    it('executes valid trade successfully', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -297,7 +293,6 @@ describe('LeaderboardService', () => {
 
       service.executeTrade('t1', 'p1', 'p2').subscribe(result => {
         expect(result.tradesRemaining).toBe(2);
-        done();
       });
 
       const teamReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1`);
@@ -313,7 +308,7 @@ describe('LeaderboardService', () => {
       tradeReq.flush(updatedTeam);
     });
 
-    it('throws error when validation fails', (done) => {
+    it('throws error when validation fails', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -340,7 +335,6 @@ describe('LeaderboardService', () => {
       service.executeTrade('t1', 'p1', 'p2').subscribe({
         error: (err) => {
           expect(err.message).toBe('Plus de trades disponibles');
-          done();
         }
       });
 
@@ -353,7 +347,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('getTeamMovements', () => {
-    it('fetches and sorts team movements by timestamp descending', (done) => {
+    it('fetches and sorts team movements by timestamp descending', () => {
       const movements = [
         { id: 'm1', type: 'TRADE' as const, description: 'Trade 1', timestamp: '2025-01-01' },
         { id: 'm2', type: 'SCORE_UPDATE' as const, description: 'Score', timestamp: '2025-01-03' },
@@ -365,7 +359,6 @@ describe('LeaderboardService', () => {
         expect(result[0].id).toBe('m2');
         expect(result[1].id).toBe('m3');
         expect(result[2].id).toBe('m1');
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1/movements`);
@@ -374,12 +367,11 @@ describe('LeaderboardService', () => {
   });
 
   describe('updatePlayerPoints', () => {
-    it('posts point update with correct payload', (done) => {
+    it('posts point update with correct payload', () => {
       const movement = { id: 'm1', type: 'SCORE_UPDATE' as const, description: 'Points added', timestamp: '2025-01-01' };
 
       service.updatePlayerPoints('p1', 50, 'Tournament win').subscribe(result => {
         expect(result.id).toBe('m1');
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1/points`);
@@ -392,7 +384,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('searchAvailablePlayers', () => {
-    it('searches players with all criteria', (done) => {
+    it('searches players with all criteria', () => {
       const players = [
         {
           id: 'p1',
@@ -412,7 +404,6 @@ describe('LeaderboardService', () => {
       service.searchAvailablePlayers({ region: 'EU', tranche: '3', minRank: 10, minPoints: 500 }).subscribe(result => {
         expect(result.length).toBe(1);
         expect(result[0].id).toBe('p1');
-        done();
       });
 
       const req = httpMock.expectOne(request => {
@@ -426,7 +417,7 @@ describe('LeaderboardService', () => {
       req.flush(players);
     });
 
-    it('filters out unavailable players', (done) => {
+    it('filters out unavailable players', () => {
       const players = [
         {
           id: 'p1',
@@ -459,7 +450,6 @@ describe('LeaderboardService', () => {
       service.searchAvailablePlayers({ region: 'EU' }).subscribe(result => {
         expect(result.length).toBe(1);
         expect(result[0].id).toBe('p1');
-        done();
       });
 
       const req = httpMock.expectOne(request => {
@@ -471,7 +461,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('getRegionRankings', () => {
-    it('fetches and sorts region rankings by rank ascending', (done) => {
+    it('fetches and sorts region rankings by rank ascending', () => {
       const players = [
         {
           id: 'p3',
@@ -505,7 +495,6 @@ describe('LeaderboardService', () => {
         expect(result.length).toBe(2);
         expect(result[0].rank).toBe(2);
         expect(result[1].rank).toBe(10);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/rankings/EU`);
@@ -514,7 +503,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('isPlayerEligibleForSpecial', () => {
-    it('returns true when player meets all eligibility criteria', (done) => {
+    it('returns true when player meets all eligibility criteria', () => {
       const player = {
         id: 'p1',
         nickname: 'Player1',
@@ -531,14 +520,13 @@ describe('LeaderboardService', () => {
 
       service.isPlayerEligibleForSpecial('p1').subscribe(result => {
         expect(result).toBe(true);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1`);
       req.flush(player);
     });
 
-    it('returns false when player rank is above 10', (done) => {
+    it('returns false when player rank is above 10', () => {
       const player = {
         id: 'p1',
         nickname: 'Player1',
@@ -555,17 +543,15 @@ describe('LeaderboardService', () => {
 
       service.isPlayerEligibleForSpecial('p1').subscribe(result => {
         expect(result).toBe(false);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1`);
       req.flush(player);
     });
 
-    it('returns false when player request fails', (done) => {
+    it('returns false when player request fails', () => {
       service.isPlayerEligibleForSpecial('p1').subscribe(result => {
         expect(result).toBe(false);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1`);
@@ -574,7 +560,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('updatePlayerAvailability', () => {
-    it('patches player availability', (done) => {
+    it('patches player availability', () => {
       const updatedPlayer = {
         id: 'p1',
         nickname: 'Player1',
@@ -591,7 +577,6 @@ describe('LeaderboardService', () => {
 
       service.updatePlayerAvailability('p1', false).subscribe(result => {
         expect(result.isAvailable).toBe(false);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1/availability`);
@@ -603,13 +588,12 @@ describe('LeaderboardService', () => {
   });
 
   describe('getPlayerStats', () => {
-    it('fetches player stats', (done) => {
+    it('fetches player stats', () => {
       const stats = { totalPoints: 600, tournamentsPlayed: 5, averagePlacement: 10, winRate: 0.2 };
 
       service.getPlayerStats('p1').subscribe(result => {
         expect(result.totalPoints).toBe(600);
         expect(result.tournamentsPlayed).toBe(5);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1/stats`);
@@ -618,7 +602,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('getTopPerformersByRegion', () => {
-    it('fetches top 10 performers by default', (done) => {
+    it('fetches top 10 performers by default', () => {
       const players = Array.from({ length: 15 }, (_, i) => ({
         id: `p${i}`,
         nickname: `Player${i}`,
@@ -636,14 +620,13 @@ describe('LeaderboardService', () => {
       service.getTopPerformersByRegion('EU').subscribe(result => {
         expect(result.length).toBe(10);
         expect(result[0].id).toBe('p0');
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/rankings/EU`);
       req.flush(players);
     });
 
-    it('fetches custom number of top performers', (done) => {
+    it('fetches custom number of top performers', () => {
       const players = Array.from({ length: 10 }, (_, i) => ({
         id: `p${i}`,
         nickname: `Player${i}`,
@@ -660,7 +643,6 @@ describe('LeaderboardService', () => {
 
       service.getTopPerformersByRegion('NAW', 5).subscribe(result => {
         expect(result.length).toBe(5);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/rankings/NAW`);
@@ -669,7 +651,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('updatePlayerPointsWithValidation', () => {
-    it('updates points after validation', (done) => {
+    it('updates points after validation', () => {
       const player = {
         id: 'p1',
         nickname: 'Player1',
@@ -687,7 +669,6 @@ describe('LeaderboardService', () => {
 
       service.updatePlayerPointsWithValidation('p1', 50, 'Tournament win').subscribe(result => {
         expect(result.id).toBe('m1');
-        done();
       });
 
       const playerReq = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/players/p1`);
@@ -697,7 +678,7 @@ describe('LeaderboardService', () => {
       updateReq.flush(movement);
     });
 
-    it('throws error when points would become negative', (done) => {
+    it('throws error when points would become negative', () => {
       const player = {
         id: 'p1',
         nickname: 'Player1',
@@ -715,7 +696,6 @@ describe('LeaderboardService', () => {
       service.updatePlayerPointsWithValidation('p1', -100, 'Penalty').subscribe({
         error: (err) => {
           expect(err.message).toBe('Les points ne peuvent pas être négatifs');
-          done();
         }
       });
 
@@ -725,7 +705,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('getTeamDetails', () => {
-    it('fetches team details', (done) => {
+    it('fetches team details', () => {
       const team = {
         id: 't1',
         name: 'Team A',
@@ -739,7 +719,6 @@ describe('LeaderboardService', () => {
       service.getTeamDetails('t1').subscribe(result => {
         expect(result.id).toBe('t1');
         expect(result.players.length).toBe(1);
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard/teams/t1`);
@@ -748,7 +727,7 @@ describe('LeaderboardService', () => {
   });
 
   describe('getPronostiqueurLeaderboard', () => {
-    it('fetches pronostiqueur leaderboard with season filter', (done) => {
+    it('fetches pronostiqueur leaderboard with season filter', () => {
       const entries = [
         {
           userId: 'u1',
@@ -768,7 +747,6 @@ describe('LeaderboardService', () => {
       service.getPronostiqueurLeaderboard(2025).subscribe(result => {
         expect(result.length).toBe(1);
         expect(result[0].userId).toBe('u1');
-        done();
       });
 
       const req = httpMock.expectOne(request => {
@@ -778,10 +756,9 @@ describe('LeaderboardService', () => {
       req.flush(entries);
     });
 
-    it('returns empty array on error', (done) => {
+    it('returns empty array on error', () => {
       service.getPronostiqueurLeaderboard(2025).subscribe(result => {
         expect(result).toEqual([]);
-        done();
       });
 
       const req = httpMock.expectOne(request => {
@@ -792,8 +769,47 @@ describe('LeaderboardService', () => {
     });
   });
 
+  describe('getGameDeltaLeaderboard', () => {
+    it('fetches game delta leaderboard for a given gameId', () => {
+      const entries = [
+        {
+          rank: 1,
+          participantId: 'p1',
+          username: 'alice',
+          deltaPr: 500,
+          periodStart: '2025-01-01',
+          periodEnd: '2025-12-31',
+          computedAt: '2025-12-31T08:00:00'
+        }
+      ];
+
+      service.getGameDeltaLeaderboard('game-42').subscribe(result => {
+        expect(result.length).toBe(1);
+        expect(result[0].username).toBe('alice');
+        expect(result[0].deltaPr).toBe(500);
+        expect(result[0].rank).toBe(1);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/games/game-42/leaderboard`);
+      expect(req.request.method).toBe('GET');
+      req.flush(entries);
+    });
+
+    it('propagates error when game delta leaderboard fails', () => {
+      service.getGameDeltaLeaderboard('game-42').subscribe({
+        error: (err) => {
+          expect(err).toBeDefined();
+          expect(logger.error).toHaveBeenCalled();
+        }
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/games/game-42/leaderboard`);
+      req.error(new ProgressEvent('Network error'));
+    });
+  });
+
   describe('getTeamLeaderboard', () => {
-    it('fetches team leaderboard successfully', (done) => {
+    it('fetches team leaderboard successfully', () => {
       const teams = [
         { id: 't1', name: 'Team A', totalPoints: 500 },
         { id: 't2', name: 'Team B', totalPoints: 400 }
@@ -802,7 +818,6 @@ describe('LeaderboardService', () => {
       service.getTeamLeaderboard().subscribe(result => {
         expect(result.length).toBe(2);
         expect(result[0].id).toBe('t1');
-        done();
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/leaderboard`);
@@ -811,12 +826,11 @@ describe('LeaderboardService', () => {
       expect(logger.debug).toHaveBeenCalled();
     });
 
-    it('logs error and throws on failure', (done) => {
+    it('logs error and throws on failure', () => {
       service.getTeamLeaderboard().subscribe({
         error: (err) => {
           expect(err).toBeDefined();
           expect(logger.error).toHaveBeenCalled();
-          done();
         }
       });
 

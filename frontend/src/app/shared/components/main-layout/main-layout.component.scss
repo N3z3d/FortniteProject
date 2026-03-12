@@ -657,3 +657,30 @@
     }
   }
 }
+
+// === Global Navigation (Sprint 5) ===
+.global-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  button.nav-link--active {
+    color: var(--nexus-gold, #f0b90b);
+    font-weight: 600;
+  }
+}
+
+.admin-menu-item {
+  color: var(--nexus-gold-light, #f5cc4a);
+
+  mat-icon {
+    color: var(--nexus-gold-light, #f5cc4a);
+  }
+}
+
+@media (max-width: 768px) {
+  .global-navigation .nav-label,
+  .user-section .nav-label {
+    display: none;
+  }
+}

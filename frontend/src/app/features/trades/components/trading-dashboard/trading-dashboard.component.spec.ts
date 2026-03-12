@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { of, BehaviorSubject, throwError } from 'rxjs';
 import { TradingDashboardComponent } from './trading-dashboard.component';
 import { TradingService, TradeOffer, TradeStats } from '../../services/trading.service';
@@ -9,6 +10,7 @@ import { UserContextService } from '../../../../core/services/user-context.servi
 import { TranslationService } from '../../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../../core/services/logger.service';
+import { GameSelectionService } from '../../../../core/services/game-selection.service';
 
 describe('TradingDashboardComponent', () => {
     let component: TradingDashboardComponent;
@@ -19,6 +21,7 @@ describe('TradingDashboardComponent', () => {
     let router: Router;
     let uiFeedback: jasmine.SpyObj<UiErrorFeedbackService>;
     let logger: jasmine.SpyObj<LoggerService>;
+    let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
 
     const mockTrades: TradeOffer[] = [
         {
@@ -73,6 +76,8 @@ describe('TradingDashboardComponent', () => {
     const paramsSubject = new BehaviorSubject({ id: 'game123' });
 
     beforeEach(async () => {
+        paramsSubject.next({ id: 'game123' });
+
         tradingService = jasmine.createSpyObj('TradingService', [
             'getTrades', 'getTradingStats', 'acceptTradeOffer', 'rejectTradeOffer',
             'withdrawTradeOffer', 'clearAllCaches'
@@ -101,6 +106,8 @@ describe('TradingDashboardComponent', () => {
             'showInfoMessage'
         ]);
         logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+        gameSelectionService = jasmine.createSpyObj('GameSelectionService', ['getSelectedGame']);
+        gameSelectionService.getSelectedGame.and.returnValue({ id: 'selected-game', name: 'Selected Game' } as any);
 
         await TestBed.configureTestingModule({
             imports: [
@@ -114,11 +121,16 @@ describe('TradingDashboardComponent', () => {
                 { provide: TranslationService, useValue: translationService },
                 { provide: UiErrorFeedbackService, useValue: uiFeedback },
                 { provide: LoggerService, useValue: logger },
+                { provide: GameSelectionService, useValue: gameSelectionService },
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        parent: { params: paramsSubject.asObservable() },
-                        params: of({})
+                        params: of({}),
+                        snapshot: { paramMap: { get: () => null } },
+                        parent: {
+                            params: paramsSubject.asObservable(),
+                            snapshot: { paramMap: { get: (key: string) => key === 'id' ? paramsSubject.value.id : null } }
+                        }
                     }
                 }
             ]
@@ -153,6 +165,31 @@ describe('TradingDashboardComponent', () => {
         it('should load initial data on init', () => {
             expect(tradingService.getTrades).toHaveBeenCalledWith('game123');
             expect(tradingService.getTradingStats).toHaveBeenCalledWith('game123');
+        });
+
+        it('should fallback to selected game when route params do not expose a game id', async () => {
+            const route = TestBed.inject(ActivatedRoute) as any;
+            route.parent = null;
+            route.params = of({});
+            route.snapshot = { paramMap: { get: () => null } };
+
+            const secondFixture = TestBed.createComponent(TradingDashboardComponent);
+            secondFixture.detectChanges();
+
+            expect(tradingService.getTrades).toHaveBeenCalledWith('selected-game');
+            expect(tradingService.getTradingStats).toHaveBeenCalledWith('selected-game');
+
+            secondFixture.destroy();
+        });
+
+        it('should reload trades when the parent game route id changes', () => {
+            tradingService.getTrades.calls.reset();
+            tradingService.getTradingStats.calls.reset();
+
+            paramsSubject.next({ id: 'game456' });
+
+            expect(tradingService.getTrades).toHaveBeenCalledWith('game456');
+            expect(tradingService.getTradingStats).toHaveBeenCalledWith('game456');
         });
 
         it('should log warning and skip loading when gameId is missing', () => {
@@ -222,11 +259,12 @@ describe('TradingDashboardComponent', () => {
     });
 
     describe('onViewTradeDetails', () => {
-        it('should navigate to trade details page', () => {
-            const navigateSpy = spyOn(router, 'navigate');
+        it('should open the runtime trade details dialog', () => {
+            const dialog = (component as any).dialog as MatDialog;
+            spyOn(dialog, 'open');
             (component as any).gameId = 'game123';
             component.onViewTradeDetails(mockTrades[0]);
-            expect(navigateSpy).toHaveBeenCalledWith(['/games', 'game123', 'trades', '1']);
+            expect(dialog.open).toHaveBeenCalled();
         });
     });
 
@@ -414,6 +452,17 @@ describe('TradingDashboardComponent', () => {
                 expect(component.canAcceptTrade(trade as TradeOffer)).toBe(true);
             });
 
+            it('should fallback to username when draft trade ids differ from local profile ids', () => {
+                const trade = {
+                    ...mockTrades[0],
+                    toUserId: 'backend-user-thibaut',
+                    toUserName: 'TestUser',
+                    status: 'pending'
+                };
+
+                expect(component.canAcceptTrade(trade as TradeOffer)).toBe(true);
+            });
+
             it('should return false if user is not receiver', () => {
                 const trade = { ...mockTrades[0], toUserId: 'user3', status: 'pending' };
                 expect(component.canAcceptTrade(trade as TradeOffer)).toBe(false);
@@ -430,6 +479,19 @@ describe('TradingDashboardComponent', () => {
         describe('trackByTradeId', () => {
             it('should return trade id', () => {
                 expect(component.trackByTradeId(0, mockTrades[0])).toBe('1');
+            });
+        });
+
+        describe('getCompletedTradeCounterpartName', () => {
+            it('should show the counterpart username when sender is resolved by username fallback', () => {
+                const trade = {
+                    ...mockTrades[1],
+                    fromUserId: 'backend-user-test',
+                    fromUserName: 'TestUser',
+                    toUserName: 'User Two'
+                };
+
+                expect(component.getCompletedTradeCounterpartName(trade as TradeOffer)).toBe('User Two');
             });
         });
     });

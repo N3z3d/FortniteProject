@@ -1,0 +1,59 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test outputs
+target/surefire-reports/
+frontend/coverage/
+frontend/playwright-report/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+frontend/node_modules/
+frontend/.angular/
+frontend/dist/
+frontend/coverage/
+frontend/.cache/
+
+# Maven
+target/
+
+# Logs
+*.log
+logs/
+
+# BMAD artifacts
+_bmad/
+_bmad-output/
+
+# Kubernetes (pas nécessaire dans le contexte de build)
+k8s/
+
+# Scripts
+scripts/
+*.sh
+
+# Docker files (not needed in context)
+docker-compose*.yml
+Dockerfile*
+.dockerignore

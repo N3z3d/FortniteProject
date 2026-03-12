@@ -7,11 +7,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { WebSocketService, TradeNotification } from '../../../core/services/websocket.service';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
 import { TradingService, TradeOffer } from '../services/trading.service';
 
 export interface Trade {
@@ -56,20 +57,25 @@ export class TradeListComponent implements OnInit, OnDestroy {
   trades: Trade[] = [];
   filteredTrades: Trade[] = [];
   isLoading = true;
+  errorMessage: string | null = null;
   searchTerm = '';
   activeTab: 'ALL' | 'PENDING' | 'HISTORY' = 'ALL';
+  private gameId: string | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
     private readonly logger: LoggerService,
     private readonly tradingService: TradingService,
     public readonly t: TranslationService,
-    private readonly webSocketService: WebSocketService
+    private readonly webSocketService: WebSocketService,
+    private readonly gameSelectionService: GameSelectionService
   ) { }
 
   ngOnInit(): void {
+    this.gameId = this.resolveGameId();
     this.loadTrades();
     this.subscribeToTradeNotifications();
   }
@@ -122,8 +128,18 @@ export class TradeListComponent implements OnInit, OnDestroy {
 
   private loadTrades(): void {
     this.isLoading = true;
+    this.errorMessage = null;
 
-    this.tradingService.getTrades().pipe(
+    if (!this.gameId) {
+      this.logger.warn('TradeList: missing gameId, cannot load trades');
+      this.trades = [];
+      this.filteredTrades = [];
+      this.errorMessage = this.t.t('trades.errors.loadTrades');
+      this.isLoading = false;
+      return;
+    }
+
+    this.tradingService.getTrades(this.gameId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (tradeOffers: TradeOffer[]) => {
@@ -133,9 +149,9 @@ export class TradeListComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.logger.error('TradeList: failed to load trades', error);
-        // Fallback to mock data if API fails
-        this.trades = this.getMockTrades();
+        this.trades = [];
         this.applyFilters();
+        this.errorMessage = this.t.t('trades.errors.loadTrades');
         this.isLoading = false;
       }
     });
@@ -216,41 +232,16 @@ export class TradeListComponent implements OnInit, OnDestroy {
     return trade.id;
   }
 
-  private getMockTrades(): Trade[] {
-    return [
-      {
-        id: '1',
-        playerOut: { id: '1', username: 'Ninja', region: 'NA-EAST' },
-        playerIn: { id: '2', username: 'Tfue', region: 'NA-WEST' },
-        team: { id: '1', name: 'Team Alpha', owner: 'Thibaut' },
-        createdAt: new Date('2024-01-15T10:30:00'),
-        status: 'PENDING'
-      },
-      {
-        id: '2',
-        playerOut: { id: '3', username: 'Bugha', region: 'NA-EAST' },
-        playerIn: { id: '4', username: 'Aqua', region: 'EU' },
-        team: { id: '2', name: 'Team Beta', owner: 'Marcel' },
-        createdAt: new Date('2024-01-14T14:20:00'),
-        status: 'COMPLETED'
-      },
-      {
-        id: '3',
-        playerOut: { id: '5', username: 'Mongraal', region: 'EU' },
-        playerIn: { id: '6', username: 'Benjyfishy', region: 'EU' },
-        team: { id: '1', name: 'Team Alpha', owner: 'Thibaut' },
-        createdAt: new Date('2024-01-13T09:15:00'),
-        status: 'CANCELLED'
-      }
-    ];
-  }
-
   createNewTrade(): void {
-    this.router.navigate(['/trades/new']);
+    if (this.gameId) {
+      this.router.navigate(['/games', this.gameId, 'trades', 'create']);
+    }
   }
 
   viewTrade(tradeId: string): void {
-    this.router.navigate(['/trades', tradeId]);
+    if (this.gameId) {
+      this.router.navigate(['/games', this.gameId, 'trades', tradeId]);
+    }
   }
 
   cancelTrade(tradeId: string): void {
@@ -275,5 +266,19 @@ export class TradeListComponent implements OnInit, OnDestroy {
 
     const key = statusMap[statusKey] || translationKey;
     return this.t.t(key, status);
+  }
+
+  private resolveGameId(): string | null {
+    const parentGameId = this.route.parent?.snapshot.paramMap.get('id');
+    if (parentGameId) {
+      return parentGameId;
+    }
+
+    const routeGameId = this.route.snapshot.paramMap.get('gameId');
+    if (routeGameId) {
+      return routeGameId;
+    }
+
+    return this.gameSelectionService.getSelectedGame()?.id ?? null;
   }
 }

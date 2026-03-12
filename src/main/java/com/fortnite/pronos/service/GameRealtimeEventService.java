@@ -33,11 +33,7 @@ public class GameRealtimeEventService {
     emittersByUserId.computeIfAbsent(userId, ignored -> new CopyOnWriteArrayList<>()).add(emitter);
 
     emitter.onCompletion(() -> removeEmitter(userId, emitter));
-    emitter.onTimeout(
-        () -> {
-          emitter.complete();
-          removeEmitter(userId, emitter);
-        });
+    emitter.onTimeout(() -> completeAndRemoveEmitter(userId, emitter));
     emitter.onError(error -> removeEmitter(userId, emitter));
 
     sendEvent(userId, emitter, CONNECTED, null);
@@ -69,13 +65,25 @@ public class GameRealtimeEventService {
           SseEmitter.event()
               .name("game-event")
               .data(new GameRealtimeEvent(eventType, gameId, Instant.now())));
-    } catch (IOException ex) {
+    } catch (IOException | IllegalStateException ex) {
       log.debug(
           "GameRealtimeEventService: dropping stale emitter - userId={}, eventType={}, reason={}",
           userId,
           eventType,
           ex.getMessage());
+      completeAndRemoveEmitter(userId, emitter);
+    }
+  }
+
+  private void completeAndRemoveEmitter(UUID userId, SseEmitter emitter) {
+    try {
       emitter.complete();
+    } catch (RuntimeException ex) {
+      log.debug(
+          "GameRealtimeEventService: emitter completion ignored - userId={}, reason={}",
+          userId,
+          ex.getMessage());
+    } finally {
       removeEmitter(userId, emitter);
     }
   }

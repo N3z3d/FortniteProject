@@ -169,7 +169,7 @@ describe('GameQueryService', () => {
     expect(loggerSpy.warn).toHaveBeenCalled();
   });
 
-  it('surfaces errors when fallback is disabled', (done) => {
+  it('surfaces errors when fallback is disabled', () => {
     environment.enableFallbackData = false;
 
     service.getUserGames().subscribe({
@@ -177,7 +177,6 @@ describe('GameQueryService', () => {
       error: (error) => {
         expect(error).toBeTruthy();
         expect(loggerSpy.error).toHaveBeenCalled();
-        done();
       }
     });
 
@@ -185,12 +184,11 @@ describe('GameQueryService', () => {
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
   });
 
-  it('maps status 0 to translated network message for contextual calls', (done) => {
+  it('maps status 0 to translated network message for contextual calls', () => {
     service.getGameById('game-404').subscribe({
       next: () => fail('expected getGameById to error'),
       error: (error) => {
         expect(error.message).toBe('Network unavailable');
-        done();
       }
     });
 
@@ -198,12 +196,11 @@ describe('GameQueryService', () => {
     req.flush(null, { status: 0, statusText: 'Unknown Error' });
   });
 
-  it('maps 404 without backend payload to translated notFound message', (done) => {
+  it('maps 404 without backend payload to translated notFound message', () => {
     service.getGameById('missing').subscribe({
       next: () => fail('expected getGameById to error'),
       error: (error) => {
         expect(error.message).toBe('Game not found');
-        done();
       }
     });
 

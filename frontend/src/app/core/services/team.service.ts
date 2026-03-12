@@ -67,7 +67,7 @@ export class TeamService {
       return this.http.get<TeamDto[]>(`${this.apiUrl}/user/${userId}/season/${season}`);
     }
 
-    const username = this.userContextService.getCurrentUser()?.username || 'Thibaut';
+    const username = this.userContextService.getCurrentUser()?.username || 'thibaut';
     const params = new HttpParams().set('user', username).set('year', season.toString());
     return this.http.get<TeamDto[]>(`${this.apiUrl}/user`, { params });
   }

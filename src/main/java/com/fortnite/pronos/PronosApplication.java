@@ -11,7 +11,6 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
 
 import com.fortnite.pronos.util.LoggingUtils;
 
@@ -49,11 +48,6 @@ public class PronosApplication {
   public void onApplicationShutdown() {
     LoggingUtils.logApplicationShutdown("Fortnite Pronos API");
     log.info("[STOP] Application arretee proprement");
-  }
-
-  @Bean
-  public RestTemplate restTemplate() {
-    return new RestTemplate();
   }
 
   @Bean

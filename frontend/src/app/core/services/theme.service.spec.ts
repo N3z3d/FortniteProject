@@ -64,7 +64,9 @@ describe('ThemeService', () => {
   });
 
   it('handles localStorage errors gracefully', () => {
-    spyOn(localStorage, 'getItem').and.throwError('fail');
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('fail');
+    });
 
     const service = createService('browser');
 
@@ -72,6 +74,7 @@ describe('ThemeService', () => {
       error: jasmine.any(Error)
     }));
     expect(service.getCurrentTheme()).toBe('dark');
+    getItemSpy.mockRestore();
   });
 
   it('skips DOM and storage access on server platform', () => {

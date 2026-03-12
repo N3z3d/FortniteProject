@@ -16,6 +16,7 @@ import com.fortnite.pronos.dto.ConflictResolutionResponse;
 import com.fortnite.pronos.dto.SimultaneousStatusResponse;
 import com.fortnite.pronos.dto.SimultaneousSubmitRequest;
 import com.fortnite.pronos.service.draft.DraftSimultaneousService;
+import com.fortnite.pronos.service.draft.DraftTrancheService;
 
 /** REST API for simultaneous draft mode (anonymous submit + conflict resolution). */
 @RestController
@@ -23,9 +24,12 @@ import com.fortnite.pronos.service.draft.DraftSimultaneousService;
 public class DraftSimultaneousController {
 
   private final DraftSimultaneousService simultaneousService;
+  private final DraftTrancheService draftTrancheService;
 
-  public DraftSimultaneousController(DraftSimultaneousService simultaneousService) {
+  public DraftSimultaneousController(
+      DraftSimultaneousService simultaneousService, DraftTrancheService draftTrancheService) {
     this.simultaneousService = simultaneousService;
+    this.draftTrancheService = draftTrancheService;
   }
 
   /**
@@ -47,11 +51,13 @@ public class DraftSimultaneousController {
   /**
    * Submits an anonymous player pick for the current window.
    *
-   * <p>The chosen player is not broadcast to other participants until resolution.
+   * <p>Validates tranche floor rules before accepting the pick. The chosen player is not broadcast
+   * to other participants until resolution.
    */
   @PostMapping("/{draftId}/submit")
   public ResponseEntity<Void> submit(
       @PathVariable UUID draftId, @RequestBody SimultaneousSubmitRequest request) {
+    draftTrancheService.validatePickByDraftId(draftId, "GLOBAL", request.playerId());
     simultaneousService.submit(request.windowId(), request.participantId(), request.playerId());
     return ResponseEntity.ok().build();
   }

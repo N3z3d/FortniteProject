@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -16,27 +15,27 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * Configuration de sécurité pour le développement Permet l'accès non authentifié aux API pour
- * faciliter le développement
+ * Chaîne secondaire dédiée à la console H2. Elle ne doit pas entrer en conflit avec la chaîne
+ * principale JWT qui sécurise le profil dev.
  */
 @Configuration
-@EnableWebSecurity
-@Profile({"dev", "h2"})
+@Profile("h2")
 @Order(1)
 @SuppressWarnings({"java:S5738"})
 public class DevSecurityConfig {
 
-  /** Configuration de sécurité permissive pour le développement */
+  /** Configuration permissive limitée à la console H2. */
   @Bean
   public SecurityFilterChain devFilterChain(HttpSecurity http) throws Exception {
-    http
+    http.securityMatcher("/h2-console/**")
+
         // Désactiver CSRF pour les API REST
         .csrf(AbstractHttpConfigurer::disable)
 
         // Configuration CORS
         .cors(cors -> cors.configurationSource(devCorsConfigurationSource()))
 
-        // Permettre tous les accès en développement
+        // Permettre l'accès à la console H2
         .authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
 
         // Configuration des sessions

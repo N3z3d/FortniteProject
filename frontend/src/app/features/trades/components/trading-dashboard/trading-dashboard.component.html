@@ -426,7 +426,7 @@
 
                     <div class="trade-info">
                       <div class="trade-title">
-                        {{ trade.fromUserId === (userContextService.getCurrentUser()?.id) ? trade.toUserName : trade.fromUserName }}
+                        {{ getCompletedTradeCounterpartName(trade) }}
                       </div>
                       <div class="trade-details">
                         <span class="completion-date">{{ formatDate(trade.updatedAt) }}</span>

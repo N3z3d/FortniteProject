@@ -1,6 +1,7 @@
 package com.fortnite.pronos.repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -120,14 +121,13 @@ public interface GameRepository
   List<Game> findByCreatorWithFetch(@Param("creator") User creator);
 
   /** OPTIMISÉ: Récupère une game par ID avec toutes les relations */
-  @Query(
-      "SELECT DISTINCT g FROM Game g "
-          + "LEFT JOIN FETCH g.participants p "
-          + "LEFT JOIN FETCH p.user "
-          + "LEFT JOIN FETCH g.creator "
-          + "LEFT JOIN FETCH g.regionRules "
-          + "WHERE g.id = :gameId")
-  Optional<Game> findByIdWithFetch(@Param("gameId") UUID gameId);
+  @Override
+  Optional<Game> findById(UUID id);
+
+  /** Alias de findById — maintenu pour compatibilité des ports. */
+  default Optional<Game> findByIdWithFetch(UUID gameId) {
+    return findById(gameId);
+  }
 
   /** OPTIMISÉ: Trouve les games d'un utilisateur (créateur ou participant), exclut soft deleted */
   @Query(
@@ -150,6 +150,17 @@ public interface GameRepository
           + "AND g.deletedAt IS NULL "
           + "ORDER BY g.createdAt DESC")
   List<Game> findByStatusWithFetch(@Param("status") GameStatus status);
+
+  /** OPTIMISÉ: Trouve les parties par liste de statuts avec fetch (supervision admin) */
+  @Query(
+      "SELECT DISTINCT g FROM Game g "
+          + "LEFT JOIN FETCH g.participants p "
+          + "LEFT JOIN FETCH p.user "
+          + "LEFT JOIN FETCH g.creator "
+          + "WHERE g.status IN :statuses "
+          + "AND g.deletedAt IS NULL "
+          + "ORDER BY g.createdAt DESC")
+  List<Game> findByStatusInWithFetch(@Param("statuses") Collection<GameStatus> statuses);
 
   /** OPTIMISÉ: Trouve les games par créateur ID (exclut soft deleted) */
   @Query(
@@ -264,6 +275,14 @@ public interface GameRepository
               + "AND g.deletedAt IS NULL")
   Page<Game> findByNameContainingIgnoreCasePaginated(
       @Param("namePattern") String namePattern, Pageable pageable);
+
+  /** Finds games with both competition dates set (non-deleted). Used by scoring batch. */
+  @Query(
+      "SELECT g FROM Game g"
+          + " WHERE g.competitionStart IS NOT NULL"
+          + " AND g.competitionEnd IS NOT NULL"
+          + " AND g.deletedAt IS NULL")
+  List<Game> findAllWithCompetitionPeriod();
 
   /**
    * Port implementation: findAllGames - Maps domain Pagination to Spring Pageable (exclut soft

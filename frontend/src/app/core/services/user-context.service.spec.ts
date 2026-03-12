@@ -72,7 +72,7 @@ describe('UserContextService', () => {
       expect(authServiceSpy.login).toHaveBeenCalledWith('thibaut', jasmine.any(String));
     });
 
-    it('sets the current user in session storage on success', done => {
+    it('sets the current user in session storage on success', () => {
       const testUser: UserProfile = { id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com' };
       spyOn(service as any, 'generateBrowserFingerprint').and.returnValue('fp-123');
 
@@ -82,22 +82,20 @@ describe('UserContextService', () => {
         const parsed = JSON.parse(storedUser!);
         expect(parsed.username).toBe('thibaut');
         expect(parsed.browserFingerprint).toBe('fp-123');
-        done();
       });
     });
 
-    it('emits user change event on success', done => {
+    it('emits user change event on success', () => {
       const testUser: UserProfile = { id: '3', username: 'marcel', email: 'marcel@fortnite-pronos.com' };
 
       service.userChanged$.pipe(skip(1), take(1)).subscribe(user => {
         expect(user?.username).toBe('marcel');
-        done();
       });
 
       service.login(testUser).subscribe();
     });
 
-    it('propagates error when authService.login fails', done => {
+    it('propagates error when authService.login fails', () => {
       authServiceSpy.login.and.returnValue(throwError(() => new Error('401 Unauthorized')));
       const testUser: UserProfile = { id: '2', username: 'thibaut', email: 'thibaut@fortnite-pronos.com' };
 
@@ -106,7 +104,6 @@ describe('UserContextService', () => {
         error: err => {
           expect(err.message).toContain('401');
           expect(sessionStorage.getItem('currentUser')).toBeNull();
-          done();
         }
       });
     });
@@ -120,12 +117,11 @@ describe('UserContextService', () => {
       expect(authServiceSpy.clearToken).toHaveBeenCalled();
     });
 
-    it('emits null user change event', done => {
+    it('emits null user change event', () => {
       sessionStorage.setItem('currentUser', '{"id":"1","username":"admin","email":"admin@fortnite-pronos.com"}');
 
       service.userChanged$.pipe(skip(1), take(1)).subscribe(user => {
         expect(user).toBeNull();
-        done();
       });
 
       service.logout();

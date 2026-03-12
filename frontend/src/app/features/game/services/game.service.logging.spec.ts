@@ -36,7 +36,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
   }
 
   describe('getGameById with logging', () => {
-    it('logs request with requestId before API call', (done) => {
+    it('logs request with requestId before API call', () => {
       const gameId = 'game-123';
       const mockGame: Game = {
         id: gameId,
@@ -58,7 +58,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               requestId: jasmine.stringMatching(/^req_\d+_[a-z0-9]+$/)
             })
           );
-          done();
         }
       });
 
@@ -66,7 +65,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(mockGame);
     });
 
-    it('logs success with game details after API call', (done) => {
+    it('logs success with game details after API call', () => {
       const gameId = 'game-456';
       const mockGame: Game = {
         id: gameId,
@@ -89,7 +88,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               requestId: jasmine.any(String)
             })
           );
-          done();
         }
       });
 
@@ -97,7 +95,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(mockGame);
     });
 
-    it('logs detailed error context on HTTP failure', (done) => {
+    it('logs detailed error context on HTTP failure', () => {
       const gameId = 'nonexistent-game';
       const errorMessage = 'Game not found';
 
@@ -114,7 +112,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               timestamp: jasmine.any(String)
             })
           );
-          done();
         }
       });
 
@@ -122,7 +119,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(errorMessage, { status: 404, statusText: 'Not Found' });
     });
 
-    it('logs network error (status 0) with appropriate message', (done) => {
+    it('logs network error (status 0) with appropriate message', () => {
       const gameId = 'game-network-fail';
 
       service.getGameById(gameId).subscribe({
@@ -134,7 +131,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               errorMessage: jasmine.stringMatching(/errors\.network|Erreur de connexion|communication/)
             })
           );
-          done();
         }
       });
 
@@ -142,7 +138,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.error(new ProgressEvent('Network error'), { status: 0 });
     });
 
-    it('includes URL in error logs for debugging', (done) => {
+    it('includes URL in error logs for debugging', () => {
       const gameId = 'game-500';
 
       service.getGameById(gameId).subscribe({
@@ -153,7 +149,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               url: `${environment.apiUrl}/api/games/${gameId}`
             })
           );
-          done();
         }
       });
 
@@ -163,7 +158,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   describe('getGameParticipants with logging', () => {
-    it('logs request with correlation ID', (done) => {
+    it('logs request with correlation ID', () => {
       const gameId = 'game-789';
 
       service.getGameParticipants(gameId).subscribe({
@@ -175,7 +170,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               requestId: jasmine.stringMatching(/^req_/)
             })
           );
-          done();
         }
       });
 
@@ -183,7 +177,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.flush([]);
     });
 
-    it('logs participant count on success', (done) => {
+    it('logs participant count on success', () => {
       const gameId = 'game-participants';
       const mockParticipants = [
         { id: 'p1', username: 'user1', isCreator: true },
@@ -201,7 +195,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               requestId: jasmine.any(String)
             })
           );
-          done();
         }
       });
 
@@ -209,7 +202,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       req.flush(mockParticipants);
     });
 
-    it('logs error with context on participant fetch failure', (done) => {
+    it('logs error with context on participant fetch failure', () => {
       const gameId = 'game-error';
 
       service.getGameParticipants(gameId).subscribe({
@@ -223,7 +216,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
               timestamp: jasmine.any(String)
             })
           );
-          done();
         }
       });
 
@@ -233,7 +225,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
   });
 
   describe('Request ID generation', () => {
-    it('generates unique request IDs for concurrent requests', (done) => {
+    it('generates unique request IDs for concurrent requests', () => {
       const gameIds = ['game-1', 'game-2', 'game-3'];
       const requestIds: string[] = [];
 
@@ -252,7 +244,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
       const uniqueIds = new Set(requestIds);
       expect(uniqueIds.size).toBe(requestIds.length);
       expect(requestIds.length).toBe(gameIds.length);
-      done();
     });
   });
 
@@ -268,7 +259,7 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
     ];
 
     errorStatusCases.forEach(({ status, expectedFragment }) => {
-      it(`maps HTTP ${status} to a user-friendly message`, (done) => {
+      it(`maps HTTP ${status} to a user-friendly message`, () => {
         service.getGameById('test-game').subscribe({
           error: () => {
             expect(mockLogger.error).toHaveBeenCalledWith(
@@ -278,7 +269,6 @@ describe('GameQueryService - Enhanced Logging (JIRA-4A)', () => {
                 status
               })
             );
-            done();
           }
         });
 

@@ -49,6 +49,7 @@ export class AdminPipelineTableComponent implements OnChanges {
   @Input() mode: 'unresolved' | 'resolved' = 'unresolved';
   @Output() resolved = new EventEmitter<ResolvedEvent>();
   @Output() rejected = new EventEmitter<RejectedEvent>();
+  @Output() correctRequested = new EventEmitter<PlayerIdentityEntry>();
 
   readonly unresolvedColumns = ['playerUsername', 'playerRegion', 'epicId', 'actions'];
   readonly resolvedColumns = [
@@ -57,7 +58,8 @@ export class AdminPipelineTableComponent implements OnChanges {
     'epicId',
     'confidenceScore',
     'resolvedBy',
-    'status'
+    'status',
+    'actions'
   ];
 
   epicIdControls: Map<string, FormControl<string>> = new Map();
@@ -80,6 +82,10 @@ export class AdminPipelineTableComponent implements OnChanges {
 
   onReject(entry: PlayerIdentityEntry): void {
     this.rejected.emit({ playerId: entry.playerId });
+  }
+
+  onCorrect(entry: PlayerIdentityEntry): void {
+    this.correctRequested.emit(entry);
   }
 
   onKeydown(event: KeyboardEvent, entry: PlayerIdentityEntry): void {

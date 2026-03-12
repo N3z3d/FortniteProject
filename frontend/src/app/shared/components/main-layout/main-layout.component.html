@@ -22,7 +22,21 @@
         {{ t.t('layout.welcome') }}, {{ currentUser.username }} !
       </div>
 
-      <!-- Navigation Links -->
+      <!-- Global Navigation Links (always visible) -->
+      <nav class="global-navigation" id="main-navigation">
+        <button mat-button routerLink="/games" routerLinkActive="nav-link--active"
+                [attr.aria-label]="t.t('layout.nav.games')">
+          <mat-icon>sports_esports</mat-icon>
+          <span class="nav-label">{{ t.t('layout.nav.games') }}</span>
+        </button>
+        <button mat-button routerLink="/catalogue" routerLinkActive="nav-link--active"
+                [attr.aria-label]="t.t('layout.nav.catalogue')">
+          <mat-icon>people_alt</mat-icon>
+          <span class="nav-label">{{ t.t('layout.nav.catalogue') }}</span>
+        </button>
+      </nav>
+
+      <!-- Contextual Navigation Links (game-specific) -->
       <nav class="main-navigation" *ngIf="selectedGame">
         <button mat-button [routerLink]="['/games', selectedGame.id, 'dashboard']" routerLinkActive="active">
           <mat-icon>dashboard</mat-icon>
@@ -42,20 +56,37 @@
         </button>
       </nav>
 
-      <!-- User Actions -->
+      <!-- User Profile Dropdown -->
       <div class="user-section">
-        <button mat-icon-button [matTooltip]="t.t('navigation.profile')" routerLink="/profile"
-                [attr.aria-label]="t.t('navigation.profile')">
-          <mat-icon>account_circle</mat-icon>
+        <button mat-button [matMenuTriggerFor]="profileMenu"
+                [attr.aria-label]="'Menu ' + currentUser?.username">
+          <mat-icon aria-hidden="true">account_circle</mat-icon>
+          <span class="nav-label">{{ currentUser?.username }}</span>
+          <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
         </button>
-        <button mat-icon-button [matTooltip]="t.t('navigation.settings')" routerLink="/settings"
-                [attr.aria-label]="t.t('navigation.settings')">
-          <mat-icon>settings</mat-icon>
-        </button>
-        <button mat-stroked-button class="logout-btn logout-button" [matTooltip]="t.t('auth.logout')" (click)="logout()">
-          <mat-icon>logout</mat-icon>
-          <span>{{ t.t('auth.logout') }}</span>
-        </button>
+
+        <mat-menu #profileMenu="matMenu">
+          <button mat-menu-item [routerLink]="['/profile']">
+            <mat-icon>person</mat-icon>
+            {{ t.t('layout.nav.myProfile') }}
+          </button>
+          <button mat-menu-item [routerLink]="['/settings']">
+            <mat-icon>settings</mat-icon>
+            {{ t.t('layout.nav.settings') }}
+          </button>
+          @if (isAdmin()) {
+            <mat-divider></mat-divider>
+            <button mat-menu-item [routerLink]="['/admin']" class="admin-menu-item">
+              <mat-icon>admin_panel_settings</mat-icon>
+              {{ t.t('layout.nav.administration') }}
+            </button>
+          }
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            {{ t.t('layout.nav.logout') }}
+          </button>
+        </mat-menu>
       </div>
     </div>
   </header>

@@ -1,0 +1,49 @@
+<section class="game-leaderboard" aria-labelledby="leaderboard-title">
+  <h1 id="leaderboard-title" class="leaderboard-title">
+    {{ t.t('gameLeaderboard.title') }}
+  </h1>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="leaderboard-loading" role="status" aria-live="polite">
+    <span>{{ t.t('gameLeaderboard.loading') }}</span>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="!loading && error" class="leaderboard-error" role="alert">
+    <p>{{ t.t('gameLeaderboard.error') }}</p>
+    <button (click)="load()" class="retry-btn">{{ t.t('gameLeaderboard.retry') }}</button>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !error && entries.length === 0" class="leaderboard-empty">
+    <p>{{ t.t('gameLeaderboard.empty') }}</p>
+  </div>
+
+  <!-- Leaderboard table -->
+  <div *ngIf="!loading && !error && entries.length > 0" class="leaderboard-content">
+    <p *ngIf="lastUpdate" class="last-update">
+      {{ t.t('gameLeaderboard.lastUpdateAt').replace('{date}', lastUpdate) }}
+    </p>
+
+    <table class="leaderboard-table" aria-label="{{ t.t('gameLeaderboard.title') }}">
+      <thead>
+        <tr>
+          <th scope="col">{{ t.t('gameLeaderboard.rank') }}</th>
+          <th scope="col">{{ t.t('gameLeaderboard.participant') }}</th>
+          <th scope="col">{{ t.t('gameLeaderboard.deltaPr') }}</th>
+          <th scope="col">{{ t.t('gameLeaderboard.lastUpdate') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of entries; trackBy: trackByParticipantId">
+          <td class="rank-cell">{{ entry.rank }}</td>
+          <td class="username-cell">{{ entry.username }}</td>
+          <td class="delta-cell" [class.positive]="entry.deltaPr > 0" [class.negative]="entry.deltaPr < 0">
+            {{ formatDelta(entry.deltaPr) }}
+          </td>
+          <td class="date-cell">{{ formatComputedAt(entry.computedAt) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

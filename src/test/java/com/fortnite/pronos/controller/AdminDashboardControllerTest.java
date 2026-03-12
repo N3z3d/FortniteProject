@@ -6,8 +6,10 @@ import static org.mockito.Mockito.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import com.fortnite.pronos.dto.admin.AdminAlertDto;
+import com.fortnite.pronos.dto.admin.AdminUserDto;
 import com.fortnite.pronos.dto.admin.DashboardSummaryDto;
 import com.fortnite.pronos.dto.admin.RealTimeAnalyticsDto;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
@@ -23,7 +26,6 @@ import com.fortnite.pronos.dto.admin.SystemHealthDto;
 import com.fortnite.pronos.dto.admin.SystemMetricsDto;
 import com.fortnite.pronos.dto.admin.VisitAnalyticsDto;
 import com.fortnite.pronos.model.Game;
-import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.admin.AdminAlertService;
 import com.fortnite.pronos.service.admin.AdminDashboardService;
 import com.fortnite.pronos.service.admin.AdminVisitAnalyticsService;
@@ -45,6 +47,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Dashboard Summary")
   class GetDashboardSummary {
 
     @Test
@@ -68,6 +71,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get System Health")
   class GetSystemHealth {
 
     @Test
@@ -83,6 +87,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Recent Activity")
   class GetRecentActivity {
 
     @Test
@@ -129,22 +134,61 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get All Users")
   class GetAllUsers {
 
     @Test
     void shouldReturnUsersList() {
-      User user = new User();
-      user.setUsername("Admin");
-      when(adminDashboardService.getAllUsers()).thenReturn(List.of(user));
+      var dto =
+          AdminUserDto.builder()
+              .id(UUID.randomUUID())
+              .username("admin_user")
+              .email("admin@test.com")
+              .role("ADMIN")
+              .currentSeason(2025)
+              .deleted(false)
+              .build();
+      when(adminDashboardService.getAllUsers()).thenReturn(List.of(dto));
 
       var response = controller.getAllUsers();
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody().getData()).hasSize(1);
+      assertThat(response.getBody().getData().get(0).getUsername()).isEqualTo("admin_user");
+    }
+
+    @Test
+    void shouldReturnDeletedUsersInList() {
+      var active =
+          AdminUserDto.builder()
+              .id(UUID.randomUUID())
+              .username("active_user")
+              .email("active@test.com")
+              .role("USER")
+              .currentSeason(2025)
+              .deleted(false)
+              .build();
+      var deleted =
+          AdminUserDto.builder()
+              .id(UUID.randomUUID())
+              .username("deleted_user")
+              .email("deleted@test.com")
+              .role("USER")
+              .currentSeason(2025)
+              .deleted(true)
+              .build();
+      when(adminDashboardService.getAllUsers()).thenReturn(List.of(active, deleted));
+
+      var response = controller.getAllUsers();
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody().getData()).hasSize(2);
+      assertThat(response.getBody().getData().get(1).isDeleted()).isTrue();
     }
   }
 
   @Nested
+  @DisplayName("Get All Games")
   class GetAllGames {
 
     @Test
@@ -171,6 +215,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get System Metrics")
   class GetSystemMetrics {
 
     @Test
@@ -190,6 +235,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Visit Analytics")
   class GetVisitAnalytics {
 
     @Test
@@ -220,6 +266,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Real Time Analytics")
   class GetRealTimeAnalytics {
 
     @Test
@@ -259,6 +306,7 @@ class AdminDashboardControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Alerts")
   class GetAlerts {
 
     @Test

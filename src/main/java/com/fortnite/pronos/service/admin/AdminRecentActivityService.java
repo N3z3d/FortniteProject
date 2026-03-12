@@ -1,17 +1,18 @@
 package com.fortnite.pronos.service.admin;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
+import com.fortnite.pronos.domain.port.out.TradeRepositoryPort;
+import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.admin.RecentActivityDto;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.Trade;
-import com.fortnite.pronos.repository.GameRepository;
-import com.fortnite.pronos.repository.TradeRepository;
-import com.fortnite.pronos.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,15 +25,15 @@ class AdminRecentActivityService {
   private static final int TRADE_ID_PREFIX_LENGTH = 8;
   private static final String UNKNOWN_TRADE_ID = "unknown";
 
-  private final GameRepository gameRepository;
-  private final TradeRepository tradeRepository;
-  private final UserRepository userRepository;
+  private final GameRepositoryPort gameRepository;
+  private final TradeRepositoryPort tradeRepository;
+  private final UserRepositoryPort userRepository;
 
   RecentActivityDto getRecentActivity(int hours) {
     int effectiveHours = hours > 0 ? hours : DEFAULT_HOURS;
     LocalDateTime since = LocalDateTime.now().minusHours(effectiveHours);
 
-    List<Game> recentGames = gameRepository.findByCreatedAtAfter(since);
+    List<Game> recentGames = sortGamesByCreatedAtDesc(gameRepository.findByCreatedAtAfter(since));
     List<Trade> recentTrades = filterRecentTrades(since);
 
     return RecentActivityDto.builder()
@@ -47,6 +48,19 @@ class AdminRecentActivityService {
   private List<Trade> filterRecentTrades(LocalDateTime since) {
     return tradeRepository.findAll().stream()
         .filter(trade -> trade.getProposedAt() != null && trade.getProposedAt().isAfter(since))
+        .sorted(
+            Comparator.comparing(
+                    Trade::getProposedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed())
+        .toList();
+  }
+
+  private List<Game> sortGamesByCreatedAtDesc(List<Game> games) {
+    return games.stream()
+        .sorted(
+            Comparator.comparing(
+                    Game::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed())
         .toList();
   }
 

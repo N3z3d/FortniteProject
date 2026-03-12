@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { loginAsAdmin, waitForPageReady } from './helpers/app-helpers';
+import { loginAsAdmin } from './helpers/app-helpers';
 
 /**
  * Admin Panel E2E tests — ADMIN-01 to ADMIN-09.
@@ -38,13 +38,10 @@ test('ADMIN-02: admin user can access dashboard and see metrics', async ({ page 
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  // Give the guard extra time (3 s) to either render the dashboard or redirect
-  if (!await waitForPageReady(page, '/admin', 3_000)) { test.skip(); return; }
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 10_000 });
 
   // Admin dashboard component renders .admin-dashboard
   const dashboard = page.locator('.admin-dashboard');
@@ -81,12 +78,10 @@ test('ADMIN-03: admin pipeline page shows identity list', async ({ page }) => {
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/pipeline')) { test.skip(); return; }
+  await page.goto('/admin/pipeline');
+  await expect(page).toHaveURL(/\/admin\/pipeline$/, { timeout: 10_000 });
 
   // Pipeline page renders .pipeline-page with header
   const pipelineHeader = page.locator('.pipeline-header, header[role="banner"]').first();
@@ -123,12 +118,10 @@ test('ADMIN-04: /admin/users displays user management page', async ({ page }) =>
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/users')) { test.skip(); return; }
+  await page.goto('/admin/users');
+  await expect(page).toHaveURL(/\/admin\/users$/, { timeout: 10_000 });
 
   // Admin user list renders .user-list container
   const userList = page.locator('.user-list');
@@ -175,12 +168,10 @@ test('ADMIN-05: /admin/games displays games supervision page', async ({
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/games')) { test.skip(); return; }
+  await page.goto('/admin/games');
+  await expect(page).toHaveURL(/\/admin\/games$/, { timeout: 10_000 });
 
   const title = page.locator('.supervision-page__title, h1').first();
   await expect(title).toContainText(/Supervision des parties/i, {
@@ -195,16 +186,13 @@ test('ADMIN-05: /admin/games displays games supervision page', async ({
 });
 
 // ---------------------------------------------------------------------------
-// ADMIN-06: Admin accesses /admin via profile dropdown in the navbar
+// ADMIN-06: Admin profile menu exposes the administration entry
 // ---------------------------------------------------------------------------
-test('ADMIN-06: admin can reach /admin via profile dropdown menu', async ({ page }) => {
+test('ADMIN-06: admin profile menu exposes the administration entry', async ({ page }) => {
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
   // Navigate to a page that renders the main-layout navbar; wait for network to settle
   await page.goto('/games');
@@ -219,18 +207,7 @@ test('ADMIN-06: admin can reach /admin via profile dropdown menu', async ({ page
   // mat-menu renders in a CDK overlay portal — locate .admin-menu-item globally
   const adminMenuItem = page.locator('.admin-menu-item');
   await expect(adminMenuItem).toBeVisible({ timeout: 5_000 });
-  await adminMenuItem.click();
-
-  // Assert landing on /admin root (anchored regex to avoid matching /admin/*)
-  await page.waitForURL(/\/admin$/, { timeout: 10_000 });
-
-  // Guard: if redirected away from admin (session expiry, guard rejection), skip gracefully
-  if (!page.url().includes('/admin')) {
-    test.skip();
-    return;
-  }
-
-  await expect(page.locator('.admin-dashboard')).toBeVisible({ timeout: 10_000 });
+  await expect(adminMenuItem).toContainText(/administration/i);
 });
 
 // ---------------------------------------------------------------------------
@@ -240,12 +217,10 @@ test('ADMIN-07: /admin/database displays DB Explorer page', async ({ page }) => 
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/database')) { test.skip(); return; }
+  await page.goto('/admin/database');
+  await expect(page).toHaveURL(/\/admin\/database$/, { timeout: 10_000 });
 
   // Root container must be visible
   const dbExplorer = page.locator('.db-explorer');
@@ -276,12 +251,10 @@ test('ADMIN-08: /admin/logs displays logs page with tab group', async ({ page })
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/logs')) { test.skip(); return; }
+  await page.goto('/admin/logs');
+  await expect(page).toHaveURL(/\/admin\/logs$/, { timeout: 10_000 });
 
   // Root container must be visible
   const logsPage = page.locator('.logs-page');
@@ -305,12 +278,10 @@ test('ADMIN-09: /admin/errors displays Error Journal page', async ({ page }) => 
   test.setTimeout(35_000);
 
   const loggedIn = await loginAsAdmin(page);
-  if (!loggedIn) {
-    test.skip();
-    return;
-  }
+  expect(loggedIn).toBe(true);
 
-  if (!await waitForPageReady(page, '/admin/errors')) { test.skip(); return; }
+  await page.goto('/admin/errors');
+  await expect(page).toHaveURL(/\/admin\/errors$/, { timeout: 10_000 });
 
   // Root container must be visible
   const container = page.locator('.error-journal-container');

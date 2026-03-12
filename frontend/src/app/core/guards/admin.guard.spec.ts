@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AdminGuard } from './admin.guard';
+
 import { UserContextService } from '../services/user-context.service';
+import { AdminGuard } from './admin.guard';
 
 describe('AdminGuard', () => {
   let guard: AdminGuard;
@@ -9,7 +10,7 @@ describe('AdminGuard', () => {
   let router: jasmine.SpyObj<Router>;
 
   beforeEach(() => {
-    const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
+    const userContextSpy = jasmine.createSpyObj('UserContextService', ['isAdmin']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     TestBed.configureTestingModule({
@@ -29,44 +30,15 @@ describe('AdminGuard', () => {
     expect(guard).toBeTruthy();
   });
 
-  it('should allow access for Administrateur role', () => {
-    userContextService.getCurrentUser.and.returnValue({
-      id: '1', username: 'Thibaut', email: 'thibaut@test.com', role: 'Administrateur'
-    });
+  it('should allow access when the user context is admin', () => {
+    userContextService.isAdmin.and.returnValue(true);
 
     expect(guard.canActivate()).toBeTrue();
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  it('should deny access for Joueur role and redirect to /games', () => {
-    userContextService.getCurrentUser.and.returnValue({
-      id: '2', username: 'Marcel', email: 'marcel@test.com', role: 'Joueur'
-    });
-
-    expect(guard.canActivate()).toBeFalse();
-    expect(router.navigate).toHaveBeenCalledWith(['/games']);
-  });
-
-  it('should deny access when user is null', () => {
-    userContextService.getCurrentUser.and.returnValue(null);
-
-    expect(guard.canActivate()).toBeFalse();
-    expect(router.navigate).toHaveBeenCalledWith(['/games']);
-  });
-
-  it('should deny access for Modérateur role', () => {
-    userContextService.getCurrentUser.and.returnValue({
-      id: '4', username: 'Sarah', email: 'sarah@test.com', role: 'Modérateur'
-    });
-
-    expect(guard.canActivate()).toBeFalse();
-    expect(router.navigate).toHaveBeenCalledWith(['/games']);
-  });
-
-  it('should deny access when role is undefined', () => {
-    userContextService.getCurrentUser.and.returnValue({
-      id: '5', username: 'NoRole', email: 'norole@test.com'
-    });
+  it('should deny access for non-admin users and redirect to /games', () => {
+    userContextService.isAdmin.and.returnValue(false);
 
     expect(guard.canActivate()).toBeFalse();
     expect(router.navigate).toHaveBeenCalledWith(['/games']);

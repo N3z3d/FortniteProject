@@ -21,7 +21,7 @@ describe('DataSourceStrategy', () => {
     loggerService = TestBed.inject(LoggerService) as jasmine.SpyObj<LoggerService>;
   });
 
-  it('should use primary source when available', (done) => {
+  it('should use primary source when available', () => {
     const primaryData = { value: 'from-db' };
     const primary$ = of(primaryData);
     const fallback$ = of({ value: 'from-mock' });
@@ -31,11 +31,10 @@ describe('DataSourceStrategy', () => {
         expect(data).toEqual(primaryData);
         expect(strategy.isDatabaseAvailable()).toBe(true);
         expect(strategy.getCurrentStatus().type).toBe(DataSourceType.DATABASE);
-        done();
       });
   });
 
-  it('should fallback to secondary source when primary fails', (done) => {
+  it('should fallback to secondary source when primary fails', () => {
     const fallbackData = { value: 'from-mock' };
     const primary$ = throwError(() => new Error('DB connection failed'));
     const fallback$ = of(fallbackData);
@@ -46,11 +45,10 @@ describe('DataSourceStrategy', () => {
         expect(strategy.isDatabaseAvailable()).toBe(false);
         expect(strategy.getCurrentStatus().type).toBe(DataSourceType.MOCK);
         expect(loggerService.warn).toHaveBeenCalled();
-        done();
       });
   });
 
-  it('should surface error when fallback is disabled', (done) => {
+  it('should surface error when fallback is disabled', () => {
     const primary$ = throwError(() => new Error('DB connection failed'));
     const fallback$ = of({ value: 'from-mock' });
 
@@ -60,12 +58,11 @@ describe('DataSourceStrategy', () => {
         error: () => {
           expect(strategy.getCurrentStatus().type).toBe(DataSourceType.ERROR);
           expect(loggerService.error).toHaveBeenCalled();
-          done();
         }
       });
   });
 
-  it('should emit status updates via observable', (done) => {
+  it('should emit status updates via observable', () => {
     const primary$ = of({ value: 'test' });
     const fallback$ = of({ value: 'fallback' });
 
@@ -75,14 +72,13 @@ describe('DataSourceStrategy', () => {
       if (statusUpdateCount === 2) { // Initial + after primary success
         expect(status.type).toBe(DataSourceType.DATABASE);
         expect(status.isAvailable).toBe(true);
-        done();
       }
     });
 
     strategy.executeWithFallback(primary$, fallback$, 'test').subscribe();
   });
 
-  it('should fail when both sources fail', (done) => {
+  it('should fail when both sources fail', () => {
     const primary$ = throwError(() => new Error('Primary failed'));
     const fallback$ = throwError(() => new Error('Fallback failed'));
 
@@ -92,7 +88,6 @@ describe('DataSourceStrategy', () => {
         error: (error) => {
           expect(error.message).toContain('All data sources failed');
           expect(loggerService.error).toHaveBeenCalled();
-          done();
         }
       });
   });

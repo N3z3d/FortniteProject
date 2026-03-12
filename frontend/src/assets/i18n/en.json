@@ -36,7 +36,15 @@
     "home": "Home",
     "expand": "Expand",
     "collapse": "Collapse",
-    "code": "Code"
+    "code": "Code",
+    "nav": {
+      "games": "Games",
+      "catalogue": "Catalogue",
+      "myProfile": "My profile",
+      "settings": "Settings",
+      "logout": "Logout",
+      "administration": "Administration"
+    }
   },
   "auth": {
     "login": "Login",
@@ -1605,6 +1613,18 @@
         "other": "Other"
       }
     }
+  },
+  "gameLeaderboard": {
+    "title": "Game Leaderboard",
+    "loading": "Loading leaderboard…",
+    "error": "Failed to load leaderboard.",
+    "retry": "Retry",
+    "empty": "No data available for this game.",
+    "lastUpdateAt": "Last updated: {date}",
+    "rank": "Rank",
+    "participant": "Participant",
+    "deltaPr": "Delta PR",
+    "lastUpdate": "Updated at"
   },
   "authSwitch": {
     "messages": {

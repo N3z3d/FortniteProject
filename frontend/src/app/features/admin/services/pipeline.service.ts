@@ -5,14 +5,20 @@ import { environment } from '../../../../environments/environment';
 import {
   PlayerIdentityEntry,
   PipelineCount,
+  PipelineRegionalStats,
   ResolvePlayerRequest,
-  RejectPlayerRequest
+  RejectPlayerRequest,
+  CorrectMetadataRequest,
+  ScrapeLogEntry,
+  PipelineAlertStatus
 } from '../models/admin.models';
 
 @Injectable({ providedIn: 'root' })
 export class PipelineService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/api/admin/players`;
+  private readonly scrapeBaseUrl = `${environment.apiUrl}/api/admin/scraping`;
+  private readonly metaBaseUrl = `${environment.apiUrl}/api/meta`;
 
   getUnresolved(): Observable<PlayerIdentityEntry[]> {
     return this.http
@@ -42,5 +48,35 @@ export class PipelineService {
     return this.http
       .post<PlayerIdentityEntry>(`${this.baseUrl}/reject`, body)
       .pipe(catchError(() => of(null)));
+  }
+
+  getRegionalStatus(): Observable<PipelineRegionalStats[]> {
+    return this.http
+      .get<PipelineRegionalStats[]>(`${this.baseUrl}/pipeline/regional-status`)
+      .pipe(catchError(() => of([])));
+  }
+
+  correctMetadata(playerId: string, body: CorrectMetadataRequest): Observable<PlayerIdentityEntry | null> {
+    return this.http
+      .patch<PlayerIdentityEntry>(`${this.baseUrl}/${playerId}/metadata`, body)
+      .pipe(catchError(() => of(null)));
+  }
+
+  getScrapeLog(limit = 50): Observable<ScrapeLogEntry[]> {
+    return this.http
+      .get<ScrapeLogEntry[]>(`${this.scrapeBaseUrl}/logs?limit=${limit}`)
+      .pipe(catchError(() => of([])));
+  }
+
+  getUnresolvedAlertStatus(): Observable<PipelineAlertStatus | null> {
+    return this.http
+      .get<PipelineAlertStatus>(`${this.scrapeBaseUrl}/alert`)
+      .pipe(catchError(() => of(null)));
+  }
+
+  getAvailableRegions(): Observable<string[]> {
+    return this.http
+      .get<string[]>(`${this.metaBaseUrl}/regions`)
+      .pipe(catchError(() => of([])));
   }
 }

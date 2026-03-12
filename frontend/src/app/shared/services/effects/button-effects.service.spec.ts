@@ -137,7 +137,7 @@ describe('ButtonEffectsService', () => {
     service.initGlowEffect(elementRef, '#ff0000');
 
     listeners.get('mouseenter')?.(new MouseEvent('mouseenter'));
-    expect(button.style.boxShadow).toContain('rgba(255, 0, 0');
+    expect(button.style.boxShadow).toContain('#ff000040');
 
     listeners.get('mouseleave')?.(new MouseEvent('mouseleave'));
     expect(button.style.boxShadow).toBe('');

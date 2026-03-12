@@ -56,7 +56,7 @@ describe('DashboardFacade', () => {
     facade = TestBed.inject(DashboardFacade);
   });
 
-  it('should delegate getDashboardData through strategy', (done) => {
+  it('should delegate getDashboardData through strategy', () => {
     const primary$ = of({ statistics: {} as DashboardStats, leaderboard: [], regionDistribution: {}, teams: [] } as DashboardData);
     const fallback$ = of({ statistics: {} as DashboardStats, leaderboard: [], regionDistribution: {}, teams: [] } as DashboardData);
     const result = { statistics: {} as DashboardStats, leaderboard: [], regionDistribution: {}, teams: [] } as DashboardData;
@@ -67,7 +67,6 @@ describe('DashboardFacade', () => {
 
     facade.getDashboardData('game-1').subscribe(data => {
       expect(data).toBe(result);
-      done();
     });
 
     expect(httpRepo.getDashboardData).toHaveBeenCalledWith('game-1');
@@ -80,7 +79,7 @@ describe('DashboardFacade', () => {
     );
   });
 
-  it('should delegate getStatistics through strategy', (done) => {
+  it('should delegate getStatistics through strategy', () => {
     const primary$ = of({ totalTeams: 1 } as DashboardStats);
     const fallback$ = of({ totalTeams: 0 } as DashboardStats);
 
@@ -90,7 +89,6 @@ describe('DashboardFacade', () => {
 
     facade.getStatistics('game-1').subscribe(result => {
       expect(result.totalTeams).toBe(1);
-      done();
     });
 
     expect(strategy.executeWithFallback).toHaveBeenCalledWith(
@@ -101,7 +99,7 @@ describe('DashboardFacade', () => {
     );
   });
 
-  it('should delegate getLeaderboard through strategy', (done) => {
+  it('should delegate getLeaderboard through strategy', () => {
     const primary$ = of([{ teamId: 't1' }]);
     const fallback$ = of([{ teamId: 't2' }]);
 
@@ -111,7 +109,6 @@ describe('DashboardFacade', () => {
 
     facade.getLeaderboard('game-1').subscribe(result => {
       expect(result.length).toBe(1);
-      done();
     });
 
     expect(strategy.executeWithFallback).toHaveBeenCalledWith(
@@ -122,7 +119,7 @@ describe('DashboardFacade', () => {
     );
   });
 
-  it('should delegate getRegionDistribution through strategy', (done) => {
+  it('should delegate getRegionDistribution through strategy', () => {
     const primary$ = of({ EU: 1 });
     const fallback$ = of({ EU: 0 });
 
@@ -132,7 +129,6 @@ describe('DashboardFacade', () => {
 
     facade.getRegionDistribution('game-1').subscribe(result => {
       expect(result['EU']).toBe(1);
-      done();
     });
 
     expect(strategy.executeWithFallback).toHaveBeenCalledWith(

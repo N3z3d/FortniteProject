@@ -1,5 +1,6 @@
 package com.fortnite.pronos.service.game;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -109,6 +110,24 @@ public class GameCreationService implements GameCreationUseCase {
         gameId,
         newCode,
         savedGame.getInvitationCodeExpiresAt());
+    return GameDtoMapper.fromDomainGame(savedGame);
+  }
+
+  /** Configures the competition period (start and end dates) for a game. */
+  @Override
+  @Transactional
+  public GameDto configureCompetitionPeriod(UUID gameId, LocalDate startDate, LocalDate endDate) {
+    if (startDate == null || endDate == null) {
+      throw new InvalidGameRequestException("Competition start and end dates are required");
+    }
+    if (startDate.isAfter(endDate)) {
+      throw new InvalidGameRequestException("Competition start must be before or equal to end");
+    }
+    Game game = findDomainGameOrThrow(gameId);
+    game.setCompetitionStart(startDate);
+    game.setCompetitionEnd(endDate);
+    Game savedGame = saveDomainGame(game);
+    log.info("Competition period configured for game {}: {} to {}", gameId, startDate, endDate);
     return GameDtoMapper.fromDomainGame(savedGame);
   }
 

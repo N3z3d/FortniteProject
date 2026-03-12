@@ -1,0 +1,97 @@
+.user-list {
+  padding: 24px;
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &__error,
+  &__empty {
+    padding: 24px 0;
+    color: rgba(255, 255, 255, 0.7);
+
+    p {
+      margin-bottom: 12px;
+    }
+  }
+
+  &__filters {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  &__search {
+    flex: 1 1 240px;
+  }
+
+  &__filter-role,
+  &__filter-status {
+    flex: 0 1 160px;
+  }
+
+  &__count {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+  }
+
+  &__table {
+    width: 100%;
+  }
+
+  .username-cell {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.1);
+
+    &--admin {
+      background: rgba(255, 165, 0, 0.25);
+      color: #ffa500;
+    }
+
+    &--spectator {
+      background: rgba(100, 149, 237, 0.25);
+      color: #6495ed;
+    }
+
+    &--user {
+      background: rgba(144, 238, 144, 0.2);
+      color: #90ee90;
+    }
+  }
+
+  .status-badge {
+    font-size: 0.8125rem;
+    color: #90ee90;
+
+    &--deleted {
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+  }
+
+  .row--deleted {
+    opacity: 0.6;
+  }
+}

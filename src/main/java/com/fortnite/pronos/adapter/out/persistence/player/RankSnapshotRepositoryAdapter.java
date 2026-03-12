@@ -2,6 +2,7 @@ package com.fortnite.pronos.adapter.out.persistence.player;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -35,5 +36,10 @@ public class RankSnapshotRepositoryAdapter implements RankSnapshotRepositoryPort
   @Override
   public RankSnapshot save(RankSnapshot snapshot) {
     return mapper.toDomain(jpaRepository.save(mapper.toEntity(snapshot)));
+  }
+
+  @Override
+  public Optional<RankSnapshot> findLatestOnOrBefore(UUID playerId, LocalDate date) {
+    return jpaRepository.findLatestOnOrBefore(playerId, date).map(mapper::toDomain);
   }
 }

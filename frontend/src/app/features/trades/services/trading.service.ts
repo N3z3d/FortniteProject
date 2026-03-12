@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, forkJoin, of, throwError } from 'rxjs';
 import { map, catchError, tap, shareReplay, retry } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { LoggerService } from '../../../core/services/logger.service';
@@ -72,6 +72,36 @@ export interface TradeStats {
   receivedOffers: number;
 }
 
+interface DraftAuditTradeEntry {
+  id: string;
+  type: 'TRADE_PROPOSED' | 'TRADE_ACCEPTED' | 'TRADE_REJECTED';
+  occurredAt: string;
+  proposerParticipantId: string | null;
+  targetParticipantId: string | null;
+  playerOutId: string;
+  playerInId: string;
+}
+
+interface DraftTradeGameDetail {
+  participants: DraftTradeParticipant[];
+}
+
+interface DraftTradeParticipantUser {
+  userId: string;
+  username: string;
+}
+
+interface DraftTradeParticipant {
+  participantId: string;
+  username: string;
+  selectedPlayers?: DraftTradeSelectedPlayer[] | null;
+}
+
+interface DraftTradeSelectedPlayer {
+  playerId: string;
+  nickname: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -130,14 +160,19 @@ export class TradingService {
     }
 
     const url = gameId ? `${this.apiUrl}/game/${gameId}` : this.apiUrl;
+    const draftTrades$ = gameId ? this.getDraftTrades(gameId) : of<TradeOffer[]>([]);
 
-    return this.http.get<TradeOffer[]>(url).pipe(
-      map(trades => trades.map(trade => ({
-        ...trade,
-        createdAt: new Date(trade.createdAt),
-        updatedAt: new Date(trade.updatedAt),
-        expiresAt: new Date(trade.expiresAt)
-      }))),
+    return forkJoin({
+      legacyTrades: this.http
+        .get<TradeOffer[]>(url)
+        .pipe(map(trades => this.normalizeTradeDates(trades))),
+      draftTrades: draftTrades$
+    }).pipe(
+      map(({ legacyTrades, draftTrades }) =>
+        [...draftTrades, ...legacyTrades].sort(
+          (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime()
+        )
+      ),
       tap(trades => {
         this.setCache(cacheKey, trades);
         this.tradesSubject.next(trades);
@@ -181,7 +216,7 @@ export class TradingService {
       });
     }
 
-    return this.http.get<Team[]>(`${this.apiUrl}/teams?gameId=${gameId}`).pipe(
+    return this.http.get<Team[]>(`${environment.apiBaseUrl}/api/teams/game/${gameId}`).pipe(
       tap(teams => {
         this.setCache(cacheKey, teams);
         this.teamsSubject.next(teams);
@@ -358,8 +393,22 @@ export class TradingService {
     }
 
     const url = gameId ? `${this.apiUrl}/game/${gameId}/statistics` : `${this.apiUrl}/statistics`;
+    const draftTrades$ = gameId ? this.getDraftTrades(gameId) : of<TradeOffer[]>([]);
 
-    return this.http.get<TradeStats>(url).pipe(
+    return forkJoin({
+      legacyStats: this.http.get<TradeStats>(url),
+      draftTrades: draftTrades$
+    }).pipe(
+      map(({ legacyStats, draftTrades }) => ({
+        totalTrades: legacyStats.totalTrades + draftTrades.length,
+        successfulTrades:
+          legacyStats.successfulTrades +
+          draftTrades.filter(trade => trade.status === 'accepted').length,
+        pendingOffers:
+          legacyStats.pendingOffers +
+          draftTrades.filter(trade => trade.status === 'pending').length,
+        receivedOffers: legacyStats.receivedOffers
+      })),
       tap(stats => {
         this.setCache(cacheKey, stats);
         this.tradingStatsSubject.next(stats);
@@ -425,6 +474,164 @@ export class TradingService {
   }
 
   // Private helper methods
+  private getDraftTrades(gameId: string): Observable<TradeOffer[]> {
+    return forkJoin({
+      detail: this.http.get<DraftTradeGameDetail>(`${environment.apiBaseUrl}/api/games/${gameId}/details`),
+      participantUsers: this.http.get<DraftTradeParticipantUser[]>(
+        `${environment.apiBaseUrl}/api/games/${gameId}/participants`
+      ),
+      audit: this.http.get<DraftAuditTradeEntry[]>(`${environment.apiBaseUrl}/api/games/${gameId}/draft/audit`)
+    }).pipe(
+      map(({ detail, participantUsers, audit }) =>
+        this.mapDraftAuditTrades(detail, participantUsers, audit)
+      ),
+      catchError(() => of<TradeOffer[]>([]))
+    );
+  }
+
+  private mapDraftAuditTrades(
+    detail: DraftTradeGameDetail,
+    participantUsers: DraftTradeParticipantUser[],
+    auditEntries: DraftAuditTradeEntry[]
+  ): TradeOffer[] {
+    const participantNames = new Map(
+      (detail.participants ?? []).map(participant => [participant.participantId, participant.username])
+    );
+    const userIdsByNormalizedUsername = new Map(
+      (participantUsers ?? [])
+        .filter(participant => participant.username && participant.userId)
+        .map(participant => [participant.username.trim().toLowerCase(), participant.userId] as const)
+    );
+    const playerNames = new Map(
+      (detail.participants ?? []).flatMap(participant =>
+        (participant.selectedPlayers ?? []).map(player => [player.playerId, player.nickname] as const)
+      )
+    );
+    const groupedTrades = new Map<
+      string,
+      { proposed?: DraftAuditTradeEntry; terminal?: DraftAuditTradeEntry }
+    >();
+
+    const sortedEntries = [...auditEntries]
+      .filter(entry => entry.type.startsWith('TRADE_'))
+      .sort(
+        (left, right) =>
+          new Date(left.occurredAt).getTime() - new Date(right.occurredAt).getTime()
+      );
+
+    for (const entry of sortedEntries) {
+      const key = this.buildDraftTradeKey(entry);
+      const current = groupedTrades.get(key) ?? {};
+
+      if (entry.type === 'TRADE_PROPOSED') {
+        groupedTrades.set(key, { ...current, proposed: entry });
+        continue;
+      }
+
+      groupedTrades.set(key, { ...current, terminal: entry });
+    }
+
+    return Array.from(groupedTrades.values())
+      .filter(
+        (candidate): candidate is { proposed: DraftAuditTradeEntry; terminal?: DraftAuditTradeEntry } =>
+          Boolean(candidate.proposed)
+      )
+      .map(candidate =>
+        this.toDraftTradeOffer(candidate, participantNames, userIdsByNormalizedUsername, playerNames)
+      )
+      .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime());
+  }
+
+  private toDraftTradeOffer(
+    candidate: { proposed: DraftAuditTradeEntry; terminal?: DraftAuditTradeEntry },
+    participantNames: Map<string, string>,
+    userIdsByNormalizedUsername: Map<string, string>,
+    playerNames: Map<string, string>
+  ): TradeOffer {
+    const { proposed, terminal } = candidate;
+    const createdAt = new Date(proposed.occurredAt);
+    const updatedAt = new Date(terminal?.occurredAt ?? proposed.occurredAt);
+    const status = this.resolveDraftTradeStatus(terminal);
+    const fromUserName = participantNames.get(proposed.proposerParticipantId ?? '') ?? 'Unknown';
+    const toUserName = participantNames.get(proposed.targetParticipantId ?? '') ?? 'Unknown';
+    const fromUserId = this.resolveDraftTradeUserId(fromUserName, userIdsByNormalizedUsername)
+      ?? proposed.proposerParticipantId
+      ?? '';
+    const toUserId = this.resolveDraftTradeUserId(toUserName, userIdsByNormalizedUsername)
+      ?? proposed.targetParticipantId
+      ?? '';
+
+    return {
+      id: proposed.id,
+      fromTeamId: proposed.proposerParticipantId ?? '',
+      fromTeamName: `Roster ${fromUserName}`,
+      fromUserId,
+      fromUserName,
+      toTeamId: proposed.targetParticipantId ?? '',
+      toTeamName: `Roster ${toUserName}`,
+      toUserId,
+      toUserName,
+      offeredPlayers: [this.buildDraftTradePlayer(proposed.playerOutId, playerNames)],
+      requestedPlayers: [this.buildDraftTradePlayer(proposed.playerInId, playerNames)],
+      status,
+      createdAt,
+      updatedAt,
+      expiresAt: new Date(createdAt.getTime() + 72 * 60 * 60 * 1000),
+      message: 'Draft participant trade',
+      valueBalance: 0
+    };
+  }
+
+  private resolveDraftTradeUserId(
+    username: string,
+    userIdsByNormalizedUsername: Map<string, string>
+  ): string | null {
+    const normalizedUsername = username.trim().toLowerCase();
+    if (!normalizedUsername) {
+      return null;
+    }
+
+    return userIdsByNormalizedUsername.get(normalizedUsername) ?? null;
+  }
+
+  private buildDraftTradePlayer(playerId: string, playerNames: Map<string, string>): Player {
+    return {
+      id: playerId,
+      name: playerNames.get(playerId) ?? playerId,
+      region: '',
+      averageScore: 0,
+      totalScore: 0,
+      gamesPlayed: 0,
+      marketValue: 0
+    };
+  }
+
+  private buildDraftTradeKey(entry: DraftAuditTradeEntry): string {
+    return [
+      entry.proposerParticipantId ?? 'unknown-proposer',
+      entry.targetParticipantId ?? 'unknown-target',
+      entry.playerOutId,
+      entry.playerInId
+    ].join(':');
+  }
+
+  private resolveDraftTradeStatus(entry?: DraftAuditTradeEntry): TradeOffer['status'] {
+    if (!entry) {
+      return 'pending';
+    }
+
+    return entry.type === 'TRADE_ACCEPTED' ? 'accepted' : 'rejected';
+  }
+
+  private normalizeTradeDates(trades: TradeOffer[]): TradeOffer[] {
+    return trades.map(trade => ({
+      ...trade,
+      createdAt: new Date(trade.createdAt),
+      updatedAt: new Date(trade.updatedAt),
+      expiresAt: new Date(trade.expiresAt)
+    }));
+  }
+
   private updateTradeInList(updatedTrade: TradeOffer): void {
     const currentTrades = this.tradesSubject.value;
     const index = currentTrades.findIndex(trade => trade.id === updatedTrade.id);

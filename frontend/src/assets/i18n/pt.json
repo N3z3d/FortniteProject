@@ -36,7 +36,15 @@
     "home": "Início",
     "expand": "Expandir",
     "collapse": "Recolher",
-    "code": "Código"
+    "code": "Código",
+    "nav": {
+      "games": "Partidas",
+      "catalogue": "Catálogo",
+      "myProfile": "Meu perfil",
+      "settings": "Configurações",
+      "logout": "Sair",
+      "administration": "Administração"
+    }
   },
   "auth": {
     "login": "Entrar",
@@ -1605,6 +1613,18 @@
         "other": "Outro"
       }
     }
+  },
+  "gameLeaderboard": {
+    "title": "Classificação da partida",
+    "loading": "Carregando classificação…",
+    "error": "Falha ao carregar a classificação.",
+    "retry": "Tentar novamente",
+    "empty": "Sem dados disponíveis para esta partida.",
+    "lastUpdateAt": "Última atualização: {date}",
+    "rank": "Posição",
+    "participant": "Participante",
+    "deltaPr": "Delta PR",
+    "lastUpdate": "Atualizado em"
   },
   "authSwitch": {
     "messages": {

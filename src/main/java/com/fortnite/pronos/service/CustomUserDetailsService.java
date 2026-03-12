@@ -28,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     com.fortnite.pronos.model.User user =
         userRepository
             .findByEmail(username)
-            .or(() -> userRepository.findByUsername(username))
+            .or(() -> userRepository.findByUsernameIgnoreCase(username))
             .orElseThrow(
                 () -> {
                   log.warn("Utilisateur non trouvé: {}", username);
@@ -38,7 +38,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     log.debug("Utilisateur trouvé: {} avec le rôle: {}", user.getUsername(), user.getRole());
 
     return org.springframework.security.core.userdetails.User.builder()
-        .username(user.getEmail())
+        .username(user.getUsername())
         .password(user.getPassword())
         .authorities(
             Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))

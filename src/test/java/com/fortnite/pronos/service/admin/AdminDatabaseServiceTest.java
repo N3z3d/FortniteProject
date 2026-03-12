@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.persistence.EntityManager;
@@ -23,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fortnite.pronos.dto.admin.DbTableInfoDto;
+import com.fortnite.pronos.dto.admin.SqlQueryResultDto;
 import com.fortnite.pronos.model.Game;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -175,6 +178,100 @@ class AdminDatabaseServiceTest {
 
       assertThatThrownBy(() -> result.add(DbTableInfoDto.builder().tableName("x").build()))
           .isInstanceOf(UnsupportedOperationException.class);
+    }
+  }
+
+  @Nested
+  @org.junit.jupiter.api.DisplayName("ExecuteReadOnlyQuery")
+  class ExecuteReadOnlyQuery {
+
+    @Test
+    void shouldReturnResultForSelectQuery() {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("id", 1);
+      row.put("name", "Alice");
+      when(jdbcTemplate.queryForList(anyString())).thenReturn(List.of(row));
+
+      SqlQueryResultDto result = service.executeReadOnlyQuery("SELECT id, name FROM users");
+
+      assertThat(result.columns()).containsExactly("id", "name");
+      assertThat(result.rows()).hasSize(1);
+      assertThat(result.totalRows()).isEqualTo(1);
+      assertThat(result.truncated()).isFalse();
+    }
+
+    @Test
+    void shouldReturnEmptyColumnsWhenNoRows() {
+      when(jdbcTemplate.queryForList(anyString())).thenReturn(List.of());
+
+      SqlQueryResultDto result = service.executeReadOnlyQuery("SELECT * FROM users WHERE 1=0");
+
+      assertThat(result.columns()).isEmpty();
+      assertThat(result.rows()).isEmpty();
+      assertThat(result.truncated()).isFalse();
+    }
+
+    @Test
+    void shouldTruncateResultsWhenOver100Rows() {
+      List<Map<String, Object>> bigResult = new java.util.ArrayList<>();
+      for (int i = 0; i < 150; i++) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", i);
+        bigResult.add(row);
+      }
+      when(jdbcTemplate.queryForList(anyString())).thenReturn(bigResult);
+
+      SqlQueryResultDto result = service.executeReadOnlyQuery("SELECT id FROM large_table");
+
+      assertThat(result.rows()).hasSize(100);
+      assertThat(result.totalRows()).isEqualTo(100);
+      assertThat(result.truncated()).isTrue();
+    }
+
+    @Test
+    void shouldRejectInsertStatement() {
+      assertThatThrownBy(
+              () -> service.executeReadOnlyQuery("INSERT INTO users (name) VALUES ('hack')"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Only SELECT queries are allowed");
+    }
+
+    @Test
+    void shouldRejectDeleteStatement() {
+      assertThatThrownBy(() -> service.executeReadOnlyQuery("DELETE FROM users WHERE id=1"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Only SELECT queries are allowed");
+    }
+
+    @Test
+    void shouldRejectDropStatement() {
+      assertThatThrownBy(() -> service.executeReadOnlyQuery("DROP TABLE users"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Only SELECT queries are allowed");
+    }
+
+    @Test
+    void shouldRejectUpdateStatement() {
+      assertThatThrownBy(() -> service.executeReadOnlyQuery("UPDATE users SET name='x' WHERE id=1"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Only SELECT queries are allowed");
+    }
+
+    @Test
+    void shouldRejectCaseInsensitiveForbiddenKeyword() {
+      assertThatThrownBy(() -> service.executeReadOnlyQuery("delete from users"))
+          .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldStripLeadingWhitespaceBeforeValidation() {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("count", 5L);
+      when(jdbcTemplate.queryForList("SELECT count(*) FROM games")).thenReturn(List.of(row));
+
+      SqlQueryResultDto result = service.executeReadOnlyQuery("   SELECT count(*) FROM games   ");
+
+      assertThat(result.rows()).hasSize(1);
     }
   }
 }

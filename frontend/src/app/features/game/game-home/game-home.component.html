@@ -180,7 +180,7 @@
                 color="accent"
                 class="action-btn draft-btn"
                 *ngIf="game.status === 'DRAFTING'"
-                (click)="router.navigate(['/games', game.id, 'draft']); $event.stopPropagation()">
+                (click)="router.navigate(['/games', game.id, 'draft', 'snake']); $event.stopPropagation()">
                 <mat-icon>how_to_vote</mat-icon>
                 {{ t.t('games.home.enterDraft') }}
               </button>

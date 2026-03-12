@@ -9,6 +9,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.fortnite.pronos.exception.BusinessException;
 import com.fortnite.pronos.exception.DraftIncompleteException;
+import com.fortnite.pronos.exception.InvalidDraftStateException;
 import com.fortnite.pronos.exception.InvalidEpicIdException;
 import com.fortnite.pronos.exception.InvalidSwapException;
 import com.fortnite.pronos.exception.NotYourTurnException;
@@ -147,6 +148,46 @@ class DomainExceptionHandlerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(404);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getCode()).isEqualTo("PLAYER_IDENTITY_NOT_FOUND");
+  }
+
+  @Test
+  void handleInvalidDraftStateExceptionReturnsConflict() {
+    InvalidDraftStateException ex =
+        new InvalidDraftStateException("No active draft found for game: abc-123");
+
+    ResponseEntity<GlobalExceptionHandler.ErrorResponse> response =
+        handler.handleInvalidDraftState(ex, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(409);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo("INVALID_DRAFT_STATE");
+    assertThat(response.getBody().getMessage()).contains("No active draft");
+  }
+
+  @Test
+  void handleIllegalStateExceptionReturnsConflict() {
+    IllegalStateException ex = new IllegalStateException("Window is not OPEN: abc-123");
+
+    ResponseEntity<GlobalExceptionHandler.ErrorResponse> response =
+        handler.handleIllegalState(ex, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(409);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo("DRAFT_WINDOW_VIOLATION");
+    assertThat(response.getBody().getMessage()).contains("Window is not OPEN");
+  }
+
+  @Test
+  void handleIllegalStateExceptionAlreadySubmittedReturnsConflict() {
+    IllegalStateException ex =
+        new IllegalStateException("Participant p1 already submitted in window w1");
+
+    ResponseEntity<GlobalExceptionHandler.ErrorResponse> response =
+        handler.handleIllegalState(ex, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(409);
+    assertThat(response.getBody().getCode()).isEqualTo("DRAFT_WINDOW_VIOLATION");
+    assertThat(response.getBody().getMessage()).contains("already submitted");
   }
 
   @Test

@@ -1,0 +1,150 @@
+.db-explorer {
+  padding: 24px;
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &__error,
+  &__empty {
+    padding: 24px 0;
+    color: rgba(255, 255, 255, 0.7);
+
+    p {
+      margin-bottom: 12px;
+    }
+  }
+
+  &__count {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+  }
+
+  &__table {
+    width: 100%;
+  }
+
+  .table-name {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+  }
+
+  .row-count {
+    text-align: right;
+
+    &--error {
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+  }
+
+  &__query-section {
+    margin-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 24px;
+  }
+
+  &__query-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  &__query-hint {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 12px;
+  }
+
+  &__query-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: inherit;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.875rem;
+    padding: 10px 12px;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: rgba(103, 58, 183, 0.8);
+    }
+  }
+
+  &__query-actions {
+    margin-top: 10px;
+
+    .inline-spinner {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+  }
+
+  &__query-error {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(244, 67, 54, 0.12);
+    border: 1px solid rgba(244, 67, 54, 0.4);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #ef9a9a;
+  }
+
+  &__query-result {
+    margin-top: 16px;
+  }
+
+  &__result-meta {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+  }
+
+  &__result-table-wrapper {
+    overflow-x: auto;
+  }
+
+  &__result-table {
+    min-width: 400px;
+  }
+
+  .truncated-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: #ffe082;
+  }
+
+  .result-col-header {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .result-cell {
+    font-size: 0.8125rem;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

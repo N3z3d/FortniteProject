@@ -292,6 +292,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     this.gameSelectionService.setSelectedGame(null);
   }
 
+  isAdmin(): boolean {
+    return this.userContextService.isAdmin();
+  }
+
   // Permissions
   canManageDraft(): boolean {
     // Le draft n'est visible que pendant la phase de draft

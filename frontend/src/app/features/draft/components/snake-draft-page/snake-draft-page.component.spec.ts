@@ -44,10 +44,11 @@ describe('SnakeDraftPageComponent', () => {
     wsConnected$ = new Subject<boolean>();
     draftEvents$ = new Subject<DraftEventMessage>();
 
-    draftServiceSpy = jasmine.createSpyObj('DraftService', ['getDraftBoardState']);
-    draftServiceSpy.getDraftBoardState.and.returnValue(of(DRAFT_STATE));
+    draftServiceSpy = jasmine.createSpyObj('DraftService', ['getSnakeBoardState', 'submitSnakePick']);
+    draftServiceSpy.getSnakeBoardState.and.returnValue(of(DRAFT_STATE));
+    draftServiceSpy.submitSnakePick.and.returnValue(of(DRAFT_STATE));
 
-    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToDraft', 'publishDraftPick'], {
+    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToDraft'], {
       isConnected$: wsConnected$.asObservable(),
       draftEvents: draftEvents$.asObservable(),
     });
@@ -74,7 +75,7 @@ describe('SnakeDraftPageComponent', () => {
   // ===== INIT =====
 
   it('should load draft board state on init', () => {
-    expect(draftServiceSpy.getDraftBoardState).toHaveBeenCalledWith('game1');
+    expect(draftServiceSpy.getSnakeBoardState).toHaveBeenCalledWith('game1');
   });
 
   it('should subscribe to WebSocket draft events on init', () => {
@@ -163,11 +164,11 @@ describe('SnakeDraftPageComponent', () => {
 
   // ===== CONFIRM PICK =====
 
-  it('should publish pick via WebSocket on confirmPick', () => {
+  it('should submit pick via snake runtime service on confirmPick', () => {
     component.onPlayerSelect(PLAYERS[0]);
     component.confirmPick();
 
-    expect(wsServiceSpy.publishDraftPick).toHaveBeenCalledWith('game1', 'part1', 'p1');
+    expect(draftServiceSpy.submitSnakePick).toHaveBeenCalledWith('game1', 'p1');
   });
 
   it('should show narrative toast after pick confirmation', () => {
@@ -193,11 +194,29 @@ describe('SnakeDraftPageComponent', () => {
   it('should auto-pick recommended player on timer expired', () => {
     component.onTimerExpired();
 
-    expect(wsServiceSpy.publishDraftPick).toHaveBeenCalledWith(
+    expect(draftServiceSpy.submitSnakePick).toHaveBeenCalledWith(
       'game1',
-      'part1',
       component.recommendedPlayer!.id
     );
+  });
+
+  it('should ignore timer expiry when it is not my turn', () => {
+    draftServiceSpy.submitSnakePick.calls.reset();
+    component.isMyTurn = false;
+
+    component.onTimerExpired();
+
+    expect(draftServiceSpy.submitSnakePick).not.toHaveBeenCalled();
+  });
+
+  it('should ignore confirmPick when a pick is already pending', () => {
+    draftServiceSpy.submitSnakePick.calls.reset();
+    component.onPlayerSelect(PLAYERS[0]);
+    component.isPickPending = true;
+
+    component.confirmPick();
+
+    expect(draftServiceSpy.submitSnakePick).not.toHaveBeenCalled();
   });
 
   it('should cancel pick on onPickCancelled', () => {
@@ -229,11 +248,11 @@ describe('SnakeDraftPageComponent', () => {
   // ===== WEBSOCKET EVENTS =====
 
   it('should refresh draft state on TURN_CHANGED event', () => {
-    const callsBefore = draftServiceSpy.getDraftBoardState.calls.count();
+    const callsBefore = draftServiceSpy.getSnakeBoardState.calls.count();
 
     draftEvents$.next({ event: 'TURN_CHANGED', draftId: 'draft1' });
 
-    expect(draftServiceSpy.getDraftBoardState.calls.count()).toBeGreaterThan(callsBefore);
+    expect(draftServiceSpy.getSnakeBoardState.calls.count()).toBeGreaterThan(callsBefore);
   });
 
   // ===== SKIP LINK =====

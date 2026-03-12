@@ -208,6 +208,28 @@ describe('TradeDetailsComponent', () => {
         }));
     });
 
+    describe('identity fallback', () => {
+        it('should recognize receiver by username when ids differ', () => {
+            component.trade = {
+                ...mockTrade,
+                toUserId: 'backend-user',
+                toUserName: 'TestUser'
+            };
+
+            expect(component.isCurrentUserTradeReceiver()).toBe(true);
+        });
+
+        it('should recognize sender by username when ids differ', () => {
+            component.trade = {
+                ...mockTrade,
+                fromUserId: 'backend-user',
+                fromUserName: 'TestUser'
+            };
+
+            expect(component.isCurrentUserTradeSender()).toBe(true);
+        });
+    });
+
     describe('onCancelCounterOffer', () => {
         it('should hide counter form', () => {
             component.showCounterForm.next(true);

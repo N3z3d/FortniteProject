@@ -1,0 +1,69 @@
+<div class="supervision-page">
+  <header class="supervision-page__header">
+    <h1 class="supervision-page__title">Supervision des parties</h1>
+    <span class="supervision-page__count" *ngIf="!loading()">
+      {{ filteredGames().length }} partie(s) affichée(s)
+    </span>
+  </header>
+
+  <div *ngIf="loadError" class="supervision-error">
+    Impossible de charger les parties. Vérifiez votre connexion ou réessayez.
+  </div>
+
+  <div *ngIf="loading()" class="supervision-spinner">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+    <mat-tab-group (selectedIndexChange)="selectStatus(statusFilters[$event])">
+      <mat-tab label="Toutes"></mat-tab>
+      <mat-tab label="En création"></mat-tab>
+      <mat-tab label="En draft"></mat-tab>
+      <mat-tab label="Active"></mat-tab>
+    </mat-tab-group>
+
+    <table mat-table [dataSource]="filteredGames()" class="supervision-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Partie</th>
+        <td mat-cell *matCellDef="let game">{{ game.gameName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Statut</th>
+        <td mat-cell *matCellDef="let game">
+          <span class="status-badge" [ngClass]="statusClass(game.status)">
+            {{ game.status }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="participants">
+        <th mat-header-cell *matHeaderCellDef>Participants</th>
+        <td mat-cell *matCellDef="let game">
+          {{ game.participantCount }}/{{ game.maxParticipants }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="creator">
+        <th mat-header-cell *matHeaderCellDef>Créateur</th>
+        <td mat-cell *matCellDef="let game">{{ game.creatorUsername }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>Créée le</th>
+        <td mat-cell *matCellDef="let game">
+          {{ game.createdAt | date : 'dd/MM/yyyy HH:mm' }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell supervision-table__empty" colspan="5">
+          Aucune partie en cours.
+        </td>
+      </tr>
+    </table>
+  </ng-container>
+</div>

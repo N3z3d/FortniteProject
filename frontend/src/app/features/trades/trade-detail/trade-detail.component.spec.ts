@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { TradeDetailComponent } from './trade-detail.component';
@@ -65,21 +65,26 @@ describe('TradeDetailComponent', () => {
     expect(component.tradeId).toBe('');
   });
 
-  it('should load trade detail after timeout', fakeAsync(() => {
+  it('should load trade detail after timeout', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
 
     expect(component.isLoading).toBeTrue();
     expect(component.trade).toBeNull();
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.isLoading).toBeFalse();
     expect(component.trade).not.toBeNull();
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should load valid mock trade for id 1', fakeAsync(() => {
+  it('should load valid mock trade for id 1', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     const trade = component.trade!;
     expect(trade.id).toBe('1');
@@ -87,16 +92,20 @@ describe('TradeDetailComponent', () => {
     expect(trade.playerIn.username).toBe('Tfue');
     expect(trade.team.name).toBe('Team Alpha');
     expect(trade.status).toBe('PENDING');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should return null for invalid trade id', fakeAsync(() => {
+  it('should return null for invalid trade id', async () => {
+    vi.useFakeTimers();
     activatedRoute.snapshot.paramMap.get.and.returnValue('invalid');
 
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.trade).toBeNull();
-  }));
+    vi.useRealTimers();
+  });
 
   it('should complete trade and log action', () => {
     component.tradeId = '1';

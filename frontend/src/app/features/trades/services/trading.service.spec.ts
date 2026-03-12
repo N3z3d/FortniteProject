@@ -43,6 +43,26 @@ describe('TradingService', () => {
     ...overrides
   });
 
+  const makeDraftDetailResponse = () => ({
+    participants: [
+      {
+        participantId: 'participant-thibaut',
+        username: 'thibaut',
+        selectedPlayers: [{ playerId: 'player-out', nickname: 'Bugha' }]
+      },
+      {
+        participantId: 'participant-teddy',
+        username: 'teddy',
+        selectedPlayers: [{ playerId: 'player-in', nickname: 'Mero' }]
+      }
+    ]
+  });
+
+  const makeDraftParticipantUsersResponse = () => [
+    { userId: 'user-thibaut', username: 'thibaut' },
+    { userId: 'user-teddy', username: 'teddy' }
+  ];
+
   beforeEach(() => {
     logger = jasmine.createSpyObj<LoggerService>('LoggerService', ['debug', 'info', 'warn', 'error']);
 
@@ -70,9 +90,21 @@ describe('TradingService', () => {
       response = trades;
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1`);
-    expect(req.request.method).toBe('GET');
-    req.flush([rawTrade]);
+    const legacyReq = httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1`);
+    const detailReq = httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/details`);
+    const participantsReq = httpMock.expectOne(
+      `${environment.apiBaseUrl}/api/games/game-1/participants`
+    );
+    const auditReq = httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`);
+    expect(legacyReq.request.method).toBe('GET');
+    expect(detailReq.request.method).toBe('GET');
+    expect(participantsReq.request.method).toBe('GET');
+    expect(auditReq.request.method).toBe('GET');
+
+    legacyReq.flush([rawTrade]);
+    detailReq.flush({ participants: [] });
+    participantsReq.flush([]);
+    auditReq.flush([]);
 
     expect(response?.length).toBe(1);
     expect(response?.[0].createdAt instanceof Date).toBeTrue();
@@ -80,6 +112,58 @@ describe('TradingService', () => {
 
     service.getTrades('game-1').subscribe();
     httpMock.expectNone(`${environment.apiBaseUrl}/api/trades/game/game-1`);
+    httpMock.expectNone(`${environment.apiBaseUrl}/api/games/game-1/details`);
+    httpMock.expectNone(`${environment.apiBaseUrl}/api/games/game-1/participants`);
+    httpMock.expectNone(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`);
+  });
+
+  it('getTrades merges draft audit trades into the dashboard feed', () => {
+    let response: TradeOffer[] | undefined;
+
+    service.getTrades('game-1').subscribe(trades => {
+      response = trades;
+    });
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1`).flush([]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/details`).flush(
+      makeDraftDetailResponse()
+    );
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/participants`).flush(
+      makeDraftParticipantUsersResponse()
+    );
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`).flush([
+      {
+        id: 'proposal-1',
+        type: 'TRADE_PROPOSED',
+        occurredAt: '2026-03-09T10:00:00.000Z',
+        proposerParticipantId: 'participant-thibaut',
+        targetParticipantId: 'participant-teddy',
+        playerOutId: 'player-out',
+        playerInId: 'player-in'
+      },
+      {
+        id: 'terminal-1',
+        type: 'TRADE_ACCEPTED',
+        occurredAt: '2026-03-09T10:05:00.000Z',
+        proposerParticipantId: 'participant-thibaut',
+        targetParticipantId: 'participant-teddy',
+        playerOutId: 'player-out',
+        playerInId: 'player-in'
+      }
+    ]);
+
+    expect(response).toEqual([
+      jasmine.objectContaining({
+        id: 'proposal-1',
+        status: 'accepted',
+        fromUserId: 'user-thibaut',
+        fromUserName: 'thibaut',
+        toUserId: 'user-teddy',
+        toUserName: 'teddy',
+        offeredPlayers: [jasmine.objectContaining({ name: 'Bugha' })],
+        requestedPlayers: [jasmine.objectContaining({ name: 'Mero' })]
+      })
+    ]);
   });
 
   it('getTrades without gameId uses base endpoint', () => {
@@ -90,7 +174,32 @@ describe('TradingService', () => {
     req.flush([]);
   });
 
-  it('getTeams caches results and updates subject', () => {
+  it('getTrades surfaces the legacy endpoint failure instead of silently returning an empty list', () => {
+    let receivedError: unknown;
+
+    service.getTrades('game-1').subscribe({
+      error: error => {
+        receivedError = error;
+      }
+    });
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/details`).flush({
+        participants: []
+      });
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/participants`).flush([]);
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`).flush([]);
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1`).flush(
+        { message: 'boom' },
+        { status: 500, statusText: 'Server Error' }
+      );
+    }
+
+    expect(receivedError).toBeTruthy();
+    expect((service as any).errorSubject.value).toBe('Failed to load trades');
+  });
+
+  it('getTeams caches results and updates subject from the real teams endpoint', () => {
     const teams: Team[] = [
       {
         id: 'team-1',
@@ -106,14 +215,14 @@ describe('TradingService', () => {
 
     service.getTeams('game-1').subscribe();
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/teams?gameId=game-1`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/api/teams/game/game-1`);
     expect(req.request.method).toBe('GET');
     req.flush(teams);
 
     expect((service as any).teamsSubject.value.length).toBe(1);
 
     service.getTeams('game-1').subscribe();
-    httpMock.expectNone(`${environment.apiBaseUrl}/api/trades/teams?gameId=game-1`);
+    httpMock.expectNone(`${environment.apiBaseUrl}/api/teams/game/game-1`);
   });
 
   it('createTradeOffer updates trades and clears errors', () => {
@@ -185,22 +294,87 @@ describe('TradingService', () => {
     expect(resultDate instanceof Date).toBeTrue();
   });
 
-  it('getTradingStats emits error and sets errorSubject on failure', (done) => {
-    const url = `${environment.apiBaseUrl}/api/trades/game/game-1/statistics`;
+  it('getTradingStats aggregates draft trades with legacy stats', () => {
+    let stats: TradeStats | undefined;
+
+    service.getTradingStats('game-1').subscribe(result => {
+      stats = result;
+    });
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1/statistics`).flush({
+      totalTrades: 2,
+      successfulTrades: 1,
+      pendingOffers: 1,
+      receivedOffers: 0
+    });
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/details`).flush(
+      makeDraftDetailResponse()
+    );
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/participants`).flush(
+      makeDraftParticipantUsersResponse()
+    );
+    httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`).flush([
+      {
+        id: 'proposal-1',
+        type: 'TRADE_PROPOSED',
+        occurredAt: '2026-03-09T10:00:00.000Z',
+        proposerParticipantId: 'participant-thibaut',
+        targetParticipantId: 'participant-teddy',
+        playerOutId: 'player-out',
+        playerInId: 'player-in'
+      },
+      {
+        id: 'proposal-2',
+        type: 'TRADE_PROPOSED',
+        occurredAt: '2026-03-09T11:00:00.000Z',
+        proposerParticipantId: 'participant-thibaut',
+        targetParticipantId: 'participant-teddy',
+        playerOutId: 'player-out',
+        playerInId: 'player-in'
+      },
+      {
+        id: 'terminal-1',
+        type: 'TRADE_ACCEPTED',
+        occurredAt: '2026-03-09T10:05:00.000Z',
+        proposerParticipantId: 'participant-thibaut',
+        targetParticipantId: 'participant-teddy',
+        playerOutId: 'player-out',
+        playerInId: 'player-in'
+      }
+    ]);
+
+    expect(stats).toEqual({
+      totalTrades: 3,
+      successfulTrades: 2,
+      pendingOffers: 1,
+      receivedOffers: 0
+    });
+  });
+
+  it('getTradingStats surfaces the legacy statistics failure instead of silently returning zeros', () => {
+    let receivedError: unknown;
 
     service.getTradingStats('game-1').subscribe({
-      error: err => {
-        expect(err).toBeTruthy();
-        expect((service as any).errorSubject.value).toBe('Failed to load trading statistics');
-        done();
+      error: error => {
+        receivedError = error;
       }
     });
 
-    const req1 = httpMock.expectOne(url);
-    req1.flush('Boom', { status: 500, statusText: 'Server Error' });
-    const req2 = httpMock.expectOne(url);
-    req2.flush('Boom', { status: 500, statusText: 'Server Error' });
-    const req3 = httpMock.expectOne(url);
-    req3.flush('Boom', { status: 500, statusText: 'Server Error' });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/details`).flush(
+        makeDraftDetailResponse()
+      );
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/participants`).flush(
+        makeDraftParticipantUsersResponse()
+      );
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/games/game-1/draft/audit`).flush([]);
+      httpMock.expectOne(`${environment.apiBaseUrl}/api/trades/game/game-1/statistics`).flush(
+        { message: 'boom' },
+        { status: 500, statusText: 'Server Error' }
+      );
+    }
+
+    expect(receivedError).toBeTruthy();
+    expect((service as any).errorSubject.value).toBe('Failed to load trading statistics');
   });
 });

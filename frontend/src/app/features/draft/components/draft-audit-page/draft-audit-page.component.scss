@@ -1,0 +1,119 @@
+.audit-page {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.audit-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  &__icon {
+    font-size: 28px;
+    color: var(--color-accent, #ffd700);
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+.audit-loading,
+.audit-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.audit-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: rgba(244, 67, 54, 0.08);
+  border-left: 3px solid rgba(244, 67, 54, 0.5);
+  color: #f44336;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.875rem;
+  }
+
+  th {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+}
+
+.cell--date {
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cell--id {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  word-break: break-all;
+}
+
+.type-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &--swap {
+    background: rgba(33, 150, 243, 0.15);
+    color: #2196f3;
+  }
+
+  &--trade-proposed {
+    background: rgba(255, 160, 0, 0.15);
+    color: #ffa000;
+  }
+
+  &--trade-accepted {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4caf50;
+  }
+
+  &--trade-rejected {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+
+  &:focus {
+    left: 0;
+    top: 0;
+    z-index: 9999;
+    padding: 8px 16px;
+    background: var(--color-surface, #1e1e2e);
+    color: var(--color-accent, #ffd700);
+  }
+}

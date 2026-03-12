@@ -6,7 +6,12 @@ import com.fortnite.pronos.domain.player.model.Player;
 
 /** DTO representing a player entry in the catalogue view. Read-only, all authenticated roles. */
 public record CataloguePlayerDto(
-    UUID id, String nickname, String region, String tranche, boolean locked) {
+    UUID id,
+    String nickname,
+    String region,
+    String tranche,
+    boolean locked,
+    Integer currentSeason) {
 
   public static CataloguePlayerDto from(Player player) {
     return new CataloguePlayerDto(
@@ -14,6 +19,7 @@ public record CataloguePlayerDto(
         player.getNickname(),
         player.getRegionName(),
         player.getTranche(),
-        player.isLocked());
+        player.isLocked(),
+        player.getCurrentSeason());
   }
 }

@@ -337,7 +337,7 @@
 
         <mat-card-content>
           <p>{{ t.t('games.detail.draftInProgress') }}</p>
-          <button mat-raised-button color="primary" routerLink="/draft/{{ game.id }}">
+          <button mat-raised-button color="primary" [routerLink]="['/games', game.id, 'draft', 'snake']">
             <mat-icon>visibility</mat-icon>
             {{ t.t('games.detail.viewDraft') }}
           </button>

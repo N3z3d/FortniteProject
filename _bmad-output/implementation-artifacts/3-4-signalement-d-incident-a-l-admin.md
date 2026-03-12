@@ -1,6 +1,6 @@
 # Story 3.4: Signalement d'incident à l'admin
 
-Status: review
+Status: done
 
 ## Story
 
@@ -139,3 +139,21 @@ claude-sonnet-4-6
 - `frontend/src/assets/i18n/en.json` — MODIFIED
 - `frontend/src/assets/i18n/es.json` — MODIFIED
 - `frontend/src/assets/i18n/pt.json` — MODIFIED
+- `src/test/java/com/fortnite/pronos/service/admin/IncidentReportingServiceTest.java` — NEW (H1 fix, 3 tests)
+- `src/test/java/com/fortnite/pronos/config/SecurityConfigIncidentAuthorizationTest.java` — NEW (M1 fix, 5 tests)
+
+## Review Follow-ups (AI — post-code-review fixes)
+
+### Fixes appliqués
+
+**H1 — FIXED**: `IncidentReportingService` had no unit tests. Created `IncidentReportingServiceTest` with 3 tests covering: valid participant returns entry, unknown game throws `GameNotFoundException`, non-participant throws `UnauthorizedAccessException`.
+
+**M1 — FIXED**: No `@WebMvcTest` security test. Created `SecurityConfigIncidentAuthorizationTest` with 5 tests: unauthenticated blocked on POST/GET, non-admin blocked on `GET /api/admin/incidents`, admin can access, authenticated user is allowed through Spring Security on POST.
+
+**M2 — FIXED**: `IncidentEntry.timestamp` changed from `LocalDateTime` to `OffsetDateTime` (timezone-aware). Updated `IncidentReportingService` (`OffsetDateTime.now()`), `GameIncidentServiceTest`, `GameIncidentControllerTest`.
+
+### Action items
+
+- [ ] **[AI-Review][Low][L1]** : `GameIncidentService.clearAll()` is `public` but unused in production code or tests (tests use `new GameIncidentService()` fresh instance). Should be package-private to prevent accidental reset.
+- [ ] **[AI-Review][Low][L2]** : `AdminIncidentListComponent.applyFilters()` and `clearFilters()` call `loadData()` → HTTP roundtrip on every type dropdown change. Should store `allIncidents` as raw list and apply client-side type filtering without re-fetching.
+- [ ] **[AI-Review][Low][L3]** : `GameIncidentServiceTest` methods missing `@DisplayName` annotations — inconsistent with project convention.

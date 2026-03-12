@@ -70,16 +70,15 @@ describe('UserGamesStore', () => {
       expect(store.isLoading()).toBeFalse();
     });
 
-    it('emits empty games on games$', (done) => {
+    it('emits empty games on games$', () => {
       store.games$.subscribe(games => {
         expect(games).toEqual([]);
-        done();
       });
     });
   });
 
   describe('loadGames', () => {
-    it('fetches games from GameService', (done) => {
+    it('fetches games from GameService', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(games => {
@@ -87,7 +86,6 @@ describe('UserGamesStore', () => {
         expect(store.getGames()).toEqual(mockGames);
         expect(store.getGameCount()).toBe(2);
         expect(store.hasGames()).toBeTrue();
-        done();
       });
     });
 
@@ -99,30 +97,28 @@ describe('UserGamesStore', () => {
       expect(store.isLoading()).toBeFalse();
     });
 
-    it('returns cached games when cache is valid', (done) => {
+    it('returns cached games when cache is valid', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(() => {
         store.loadGames().subscribe(games => {
           expect(games).toEqual(mockGames);
           expect(gameServiceSpy.getUserGames).toHaveBeenCalledTimes(1);
-          done();
         });
       });
     });
 
-    it('fetches fresh data when forceRefresh is true', (done) => {
+    it('fetches fresh data when forceRefresh is true', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(() => {
         store.loadGames(true).subscribe(() => {
           expect(gameServiceSpy.getUserGames).toHaveBeenCalledTimes(2);
-          done();
         });
       });
     });
 
-    it('handles API errors gracefully', (done) => {
+    it('handles API errors gracefully', () => {
       const error = new Error('Network error');
       gameServiceSpy.getUserGames.and.returnValue(throwError(() => error));
 
@@ -130,12 +126,11 @@ describe('UserGamesStore', () => {
         error: (err) => {
           expect(err).toBe(error);
           expect(store.isLoading()).toBeFalse();
-          done();
         }
       });
     });
 
-    it('sets error state on API failure', (done) => {
+    it('sets error state on API failure', () => {
       const error = new Error('Network error');
       gameServiceSpy.getUserGames.and.returnValue(throwError(() => error));
 
@@ -143,13 +138,12 @@ describe('UserGamesStore', () => {
         error: () => {
           store.error$.subscribe(errorMsg => {
             expect(errorMsg).toBe('Network error');
-            done();
           });
         }
       });
     });
 
-    it('logs info on successful load', (done) => {
+    it('logs info on successful load', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(() => {
@@ -157,11 +151,10 @@ describe('UserGamesStore', () => {
           'UserGamesStore: games loaded from API',
           jasmine.objectContaining({ count: 2 })
         );
-        done();
       });
     });
 
-    it('logs error on failed load', (done) => {
+    it('logs error on failed load', () => {
       gameServiceSpy.getUserGames.and.returnValue(throwError(() => new Error('fail')));
 
       store.loadGames().subscribe({
@@ -170,20 +163,18 @@ describe('UserGamesStore', () => {
             'UserGamesStore: failed to load games',
             jasmine.any(Object)
           );
-          done();
         }
       });
     });
   });
 
   describe('refreshGames', () => {
-    it('forces a fresh fetch', (done) => {
+    it('forces a fresh fetch', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(() => {
         store.refreshGames().subscribe(() => {
           expect(gameServiceSpy.getUserGames).toHaveBeenCalledTimes(2);
-          done();
         });
       });
     });
@@ -197,12 +188,11 @@ describe('UserGamesStore', () => {
       expect(store.getGameCount()).toBe(2);
     });
 
-    it('emits updated games on games$', (done) => {
+    it('emits updated games on games$', () => {
       const sub = store.games$.subscribe(games => {
         if (games.length > 0) {
           expect(games).toEqual(mockGames);
           sub.unsubscribe();
-          done();
         }
       });
 
@@ -317,7 +307,7 @@ describe('UserGamesStore', () => {
   });
 
   describe('state$', () => {
-    it('emits complete state object', (done) => {
+    it('emits complete state object', () => {
       gameServiceSpy.getUserGames.and.returnValue(of(mockGames));
 
       store.loadGames().subscribe(() => {
@@ -326,7 +316,6 @@ describe('UserGamesStore', () => {
           expect(state.loading).toBeFalse();
           expect(state.error).toBeNull();
           expect(state.lastLoaded).toBeTruthy();
-          done();
         });
       });
     });

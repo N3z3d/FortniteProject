@@ -62,4 +62,16 @@ public class PlayerIdentityEntity {
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
+
+  @Column(name = "corrected_username")
+  private String correctedUsername;
+
+  @Column(name = "corrected_region")
+  private String correctedRegion;
+
+  @Column(name = "corrected_by")
+  private String correctedBy;
+
+  @Column(name = "corrected_at")
+  private LocalDateTime correctedAt;
 }

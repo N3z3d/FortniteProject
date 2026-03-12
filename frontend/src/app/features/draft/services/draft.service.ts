@@ -1,6 +1,13 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, throwError, timer } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subscription,
+  forkJoin,
+  throwError,
+  timer
+} from 'rxjs';
 import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
@@ -11,11 +18,14 @@ import {
   toSafeUserMessage
 } from '../../../core/utils/user-facing-error-message.util';
 import {
+  AvailablePlayer,
   Draft,
   DraftBoardState,
   DraftHistoryEntry,
   DraftInitializeRequest,
   DraftPick,
+  DraftProgress,
+  DraftParticipantInfo,
   DraftStatistics,
   DraftStatusInfo,
   GameParticipant,
@@ -36,11 +46,77 @@ export type {
   PlayerSelectionRequest
 } from '../models/draft.interface';
 
+interface CataloguePlayerDto {
+  id: string;
+  nickname: string;
+  region: string;
+  tranche: string;
+  locked: boolean;
+  currentSeason?: number | null;
+}
+
+interface SnakeTurnDto {
+  draftId: string;
+  region: string;
+  participantId: string;
+  round: number;
+  pickNumber: number;
+  reversed: boolean;
+}
+
+interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+}
+
+interface SnakeBoardPlayerDto {
+  playerId: string | null;
+  nickname: string;
+  region: string;
+  tranche: string;
+  currentScore: number;
+}
+
+interface SnakeBoardParticipantDto {
+  participantId: string;
+  username: string;
+  totalPlayers?: number;
+  selectedPlayers?: SnakeBoardPlayerDto[] | null;
+}
+
+interface SnakeBoardParticipantUserDto {
+  userId: string;
+  username: string;
+}
+
+interface SnakeBoardGameDetailDto {
+  gameId: string;
+  draftInfo?: {
+    draftId: string;
+    status: string;
+    currentRound?: number | null;
+    currentPick?: number | null;
+    totalRounds?: number | null;
+  } | null;
+  participants: SnakeBoardParticipantDto[];
+}
+
+interface SnakePickRequest {
+  playerId: string;
+  region: string;
+}
+
+const DEFAULT_CURRENT_SEASON = 2025;
+const DEFAULT_SNAKE_REGION = 'GLOBAL';
+const DEFAULT_SNAKE_PICK_DURATION_SECONDS = 60;
+
 @Injectable({
   providedIn: 'root'
 })
 export class DraftService implements OnDestroy {
   private readonly apiUrl = `${environment.apiUrl}/api/drafts`;
+  private readonly gamesApiUrl = `${environment.apiUrl}/api/games`;
+  private readonly playersApiUrl = `${environment.apiUrl}/players`;
 
   private draftStateSubject = new BehaviorSubject<DraftBoardState | null>(null);
   public draftState$ = this.draftStateSubject.asObservable().pipe(
@@ -77,6 +153,39 @@ export class DraftService implements OnDestroy {
       tap(state => this.updateDraftState(state)),
       catchError(this.handleError.bind(this))
     );
+  }
+
+  getSnakeBoardState(gameId: string): Observable<DraftBoardState> {
+    return forkJoin({
+      detail: this.loadSnakeGameDetail(gameId),
+      participantUsers: this.loadSnakeParticipantUsers(gameId),
+      availablePlayers: this.loadSnakeCataloguePlayers(),
+      turn: this.loadSnakeTurn(gameId),
+    }).pipe(
+      map(({ detail, participantUsers, availablePlayers, turn }) =>
+        this.buildSnakeBoardState(gameId, detail, participantUsers, availablePlayers, turn)
+      ),
+      tap(state => {
+        this.currentGameIdSubject.next(gameId);
+        this.updateDraftState(state);
+      }),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  submitSnakePick(
+    gameId: string,
+    playerId: string,
+    region = DEFAULT_SNAKE_REGION
+  ): Observable<DraftBoardState> {
+    const request: SnakePickRequest = { playerId, region };
+
+    return this.http
+      .post<ApiEnvelope<SnakeTurnDto>>(`${this.gamesApiUrl}/${gameId}/draft/snake/pick`, request)
+      .pipe(
+        switchMap(() => this.getSnakeBoardState(gameId)),
+        catchError(this.handleError.bind(this))
+      );
   }
 
   makePlayerSelection(gameId: string, playerId: string): Observable<DraftPick> {
@@ -248,6 +357,225 @@ export class DraftService implements OnDestroy {
   private handleDraftInitialization(gameId: string): void {
     this.currentGameIdSubject.next(gameId);
     this.startAutoRefresh(gameId);
+  }
+
+  private loadSnakeGameDetail(gameId: string): Observable<SnakeBoardGameDetailDto> {
+    return this.http.get<SnakeBoardGameDetailDto>(`${this.gamesApiUrl}/${gameId}/details`);
+  }
+
+  private loadSnakeParticipantUsers(gameId: string): Observable<SnakeBoardParticipantUserDto[]> {
+    return this.http.get<SnakeBoardParticipantUserDto[]>(`${this.gamesApiUrl}/${gameId}/participants`);
+  }
+
+  private loadSnakeCataloguePlayers(): Observable<AvailablePlayer[]> {
+    return this.http
+      .get<CataloguePlayerDto[]>(`${this.playersApiUrl}/catalogue`)
+      .pipe(map(players => players.map(player => this.mapSnakeCataloguePlayer(player))));
+  }
+
+  private loadSnakeTurn(gameId: string): Observable<SnakeTurnDto> {
+    const turnUrl = `${this.gamesApiUrl}/${gameId}/draft/snake/turn?region=${DEFAULT_SNAKE_REGION}`;
+    return this.http.get<ApiEnvelope<SnakeTurnDto>>(turnUrl).pipe(
+      map(response => response.data),
+      catchError((error: HttpErrorResponse) => this.initializeSnakeTurn(gameId, error))
+    );
+  }
+
+  private initializeSnakeTurn(
+    gameId: string,
+    error: HttpErrorResponse
+  ): Observable<SnakeTurnDto> {
+    if (error.status !== 404) {
+      return throwError(() => error);
+    }
+
+    return this.http
+      .post<ApiEnvelope<SnakeTurnDto>>(`${this.gamesApiUrl}/${gameId}/draft/snake/initialize`, {})
+      .pipe(map(response => response.data));
+  }
+
+  private buildSnakeBoardState(
+    gameId: string,
+    detail: SnakeBoardGameDetailDto,
+    participantUsers: SnakeBoardParticipantUserDto[],
+    availablePlayers: AvailablePlayer[],
+    turn: SnakeTurnDto
+  ): DraftBoardState {
+    const selectedPlayers = this.collectSelectedPlayers(detail.participants);
+    const currentParticipantId = this.resolveCurrentSnakeParticipantId(
+      detail.participants,
+      participantUsers,
+      turn.participantId
+    );
+    const currentParticipant = this.findCurrentSnakeParticipant(detail.participants, currentParticipantId);
+    const participants = detail.participants.map(participant =>
+      this.mapSnakeParticipant(participant, currentParticipant?.id)
+    );
+
+    return {
+      draft: this.buildSnakeDraftSummary(gameId, detail, turn),
+      gameId,
+      status: detail.draftInfo?.status ?? 'ACTIVE',
+      currentRound: turn.round,
+      currentPick: turn.pickNumber,
+      participants,
+      availablePlayers: availablePlayers.map(player =>
+        this.markSnakePlayerAvailability(player, selectedPlayers)
+      ),
+      selectedPlayers,
+      currentParticipant,
+      progress: this.buildSnakeProgress(detail, turn, participants.length),
+      rules: { timePerPick: DEFAULT_SNAKE_PICK_DURATION_SECONDS, snakeDraft: true },
+    };
+  }
+
+  private mapSnakeCataloguePlayer(player: CataloguePlayerDto): AvailablePlayer {
+    return {
+      id: player.id,
+      username: player.nickname,
+      nickname: player.nickname,
+      region: player.region,
+      tranche: player.tranche,
+      available: !player.locked,
+      currentSeason: player.currentSeason ?? DEFAULT_CURRENT_SEASON,
+      selected: false,
+    };
+  }
+
+  private collectSelectedPlayers(participants: SnakeBoardParticipantDto[]): Player[] {
+    return participants.flatMap(participant =>
+      (participant.selectedPlayers ?? [])
+        .filter((player): player is SnakeBoardPlayerDto & { playerId: string } => !!player.playerId)
+        .map(player => ({
+          id: player.playerId,
+          username: player.nickname,
+          nickname: player.nickname,
+          region: player.region,
+          tranche: player.tranche,
+          currentSeason: DEFAULT_CURRENT_SEASON,
+          totalPoints: player.currentScore,
+          selected: true,
+          available: false,
+        }))
+    );
+  }
+
+  private findCurrentSnakeParticipant(
+    participants: SnakeBoardParticipantDto[],
+    participantId?: string
+  ): GameParticipant | undefined {
+    const participant = participants.find(entry => entry.participantId === participantId);
+    return participant ? this.toSnakeGameParticipant(participant, true) : undefined;
+  }
+
+  private resolveCurrentSnakeParticipantId(
+    participants: SnakeBoardParticipantDto[],
+    participantUsers: SnakeBoardParticipantUserDto[],
+    currentUserId: string
+  ): string | undefined {
+    const currentUser = participantUsers.find(participant => participant.userId === currentUserId);
+    if (!currentUser) {
+      return undefined;
+    }
+
+    return participants.find(participant =>
+      this.usernamesMatch(participant.username, currentUser.username)
+    )?.participantId;
+  }
+
+  private usernamesMatch(left?: string | null, right?: string | null): boolean {
+    return !!left && !!right && left.toLowerCase() === right.toLowerCase();
+  }
+
+  private mapSnakeParticipant(
+    participant: SnakeBoardParticipantDto,
+    currentParticipantId?: string
+  ): DraftParticipantInfo {
+    return {
+      participant: this.toSnakeGameParticipant(
+        participant,
+        participant.participantId === currentParticipantId
+      ),
+      selections: [],
+      isCurrentTurn: participant.participantId === currentParticipantId,
+      timeRemaining: null,
+      hasTimedOut: false,
+    };
+  }
+
+  private toSnakeGameParticipant(
+    participant: SnakeBoardParticipantDto,
+    isCurrentTurn: boolean
+  ): GameParticipant {
+    const selectedPlayers = (participant.selectedPlayers ?? [])
+      .filter((player): player is SnakeBoardPlayerDto & { playerId: string } => !!player.playerId)
+      .map(player => ({
+        id: player.playerId,
+        username: player.nickname,
+        nickname: player.nickname,
+        region: player.region,
+        tranche: player.tranche,
+        currentSeason: DEFAULT_CURRENT_SEASON,
+        totalPoints: player.currentScore,
+        selected: true,
+        available: false,
+      }));
+
+    return {
+      id: participant.participantId,
+      username: participant.username,
+      selectedPlayers,
+      draftOrder: undefined,
+      isCurrentTurn,
+    };
+  }
+
+  private buildSnakeDraftSummary(
+    gameId: string,
+    detail: SnakeBoardGameDetailDto,
+    turn: SnakeTurnDto
+  ): DraftBoardState['draft'] {
+    return {
+      id: detail.draftInfo?.draftId ?? turn.draftId,
+      gameId,
+      status: detail.draftInfo?.status ?? 'ACTIVE',
+      currentRound: turn.round,
+      currentPick: turn.pickNumber,
+      totalRounds: detail.draftInfo?.totalRounds ?? undefined,
+    };
+  }
+
+  private markSnakePlayerAvailability(
+    player: AvailablePlayer,
+    selectedPlayers: Player[]
+  ): AvailablePlayer {
+    const isSelected = selectedPlayers.some(selectedPlayer => selectedPlayer.id === player.id);
+    return {
+      ...player,
+      selected: isSelected,
+      available: player.available !== false && !isSelected,
+    };
+  }
+
+  private buildSnakeProgress(
+    detail: SnakeBoardGameDetailDto,
+    turn: SnakeTurnDto,
+    participantCount: number
+  ): DraftProgress {
+    const totalRounds = Math.max(detail.draftInfo?.totalRounds ?? turn.round, 1);
+    const totalPicks = totalRounds * Math.max(participantCount, 1);
+    const completedPicks = Math.max(turn.pickNumber - 1, 0);
+    const progressPercentage = totalPicks > 0 ? Math.round((completedPicks / totalPicks) * 100) : 0;
+
+    return {
+      currentRound: turn.round,
+      currentPick: turn.pickNumber,
+      totalRounds,
+      totalPicks,
+      completedPicks,
+      progressPercentage,
+      estimatedTimeRemaining: null,
+    };
   }
 
   private updateDraftState(state: DraftBoardState): void {

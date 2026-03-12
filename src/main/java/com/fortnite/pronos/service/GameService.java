@@ -1,5 +1,6 @@
 package com.fortnite.pronos.service;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -52,8 +53,7 @@ public class GameService {
   public void deleteGame(UUID gameId) {
     Set<UUID> participants = getParticipantIdsOrEmpty(gameId);
     gameCreationService.deleteGame(gameId);
-    gameRealtimeEventService.publishToUsers(
-        participants, GameRealtimeEventService.GAME_DELETED, gameId);
+    publishRealtimeEventSafely(participants, GameRealtimeEventService.GAME_DELETED, gameId);
   }
 
   /** Regenerates the invitation code for a game (permanent by default) */
@@ -73,6 +73,14 @@ public class GameService {
   /** Renames a game */
   public GameDto renameGame(UUID gameId, String newName) {
     GameDto updatedGame = gameCreationService.renameGame(gameId, newName);
+    publishGameUpdate(gameId);
+    return updatedGame;
+  }
+
+  /** Configures the competition period for a game */
+  public GameDto configureCompetitionPeriod(UUID gameId, LocalDate startDate, LocalDate endDate) {
+    GameDto updatedGame =
+        gameCreationService.configureCompetitionPeriod(gameId, startDate, endDate);
     publishGameUpdate(gameId);
     return updatedGame;
   }
@@ -224,14 +232,26 @@ public class GameService {
   }
 
   private void publishGameUpdate(UUID gameId) {
-    gameRealtimeEventService.publishToUsers(
+    publishRealtimeEventSafely(
         getParticipantIdsOrEmpty(gameId), GameRealtimeEventService.GAME_UPDATED, gameId);
   }
 
   private void publishParticipantEvent(UUID gameId, UUID actorUserId, String eventType) {
     Set<UUID> recipients = new HashSet<>(getParticipantIdsOrEmpty(gameId));
     recipients.add(actorUserId);
-    gameRealtimeEventService.publishToUsers(recipients, eventType, gameId);
+    publishRealtimeEventSafely(recipients, eventType, gameId);
+  }
+
+  private void publishRealtimeEventSafely(Set<UUID> recipients, String eventType, UUID gameId) {
+    try {
+      gameRealtimeEventService.publishToUsers(recipients, eventType, gameId);
+    } catch (RuntimeException exception) {
+      log.debug(
+          "GameService: realtime event ignored - gameId={}, eventType={}, reason={}",
+          gameId,
+          eventType,
+          exception.getMessage());
+    }
   }
 
   private Set<UUID> getParticipantIdsOrEmpty(UUID gameId) {

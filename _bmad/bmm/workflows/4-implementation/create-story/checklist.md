@@ -145,6 +145,8 @@ You will systematically re-do the entire story creation process, but with a crit
 - **Security vulnerabilities:** Missing security requirements that could expose the system
 - **Performance disasters:** Missing requirements that could cause system failures
 
+> **🚨 CONTROLLER SECURITY RULE (MANDATORY):** If the story creates ANY `@RestController` class, the Tasks section MUST include a dedicated Security Task with `@WebMvcTest` authorization tests covering: anonymous → 401/403, non-admin → 403, admin → 200. Absence of this task = **CRITICAL MISS** that blocks story approval. The `SecurityConfig<ControllerName>AuthorizationTest` file must appear in the Dev Notes → Project Structure Notes and in the File List template.
+
 #### **3.3 File Structure DISASTERS**
 
 - **Wrong file locations:** Missing organization requirements that could break build processes

@@ -125,16 +125,16 @@ describe('GameHomeComponent (template)', () => {
     expect(component.selectedGame?.id).toBe('1');
   });
 
-  it('should not let the premium card overlay capture pointer events', () => {
+  it('should expose decorative and interactive layers on the same card', () => {
     component.ngOnInit();
     stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
-    const card: HTMLElement | null = fixture.nativeElement.querySelector('.premium-game-card');
-    expect(card).toBeTruthy();
-
-    const overlayStyles = window.getComputedStyle(card!, '::after');
-    expect(overlayStyles.pointerEvents).toBe('none');
+    const overlay: HTMLElement | null = fixture.nativeElement.querySelector('.premium-game-card .card-bg-effect');
+    const actions: HTMLElement | null = fixture.nativeElement.querySelector('.premium-game-card .game-card-actions');
+    expect(overlay).toBeTruthy();
+    expect(actions).toBeTruthy();
+    expect(actions?.querySelector('.detail-btn')).toBeTruthy();
   });
 
   it('should navigate to game details when clicking "Voir les détails"', () => {
@@ -158,6 +158,11 @@ describe('GameHomeComponent (template)', () => {
 
     const detailButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.detail-btn');
     expect(detailButton).toBeTruthy();
+    detailButton!.scrollIntoView = vi.fn();
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi.fn(() => detailButton)
+    });
     detailButton?.scrollIntoView();
 
     const rect = detailButton!.getBoundingClientRect();
@@ -184,7 +189,7 @@ describe('GameHomeComponent (template)', () => {
 
     draftButton?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/games', '2', 'draft']);
+    expect(router.navigate).toHaveBeenCalledWith(['/games', '2', 'draft', 'snake']);
   });
 
   it('should navigate to dashboard when clicking "Tableau de bord"', () => {
@@ -207,6 +212,11 @@ describe('GameHomeComponent (template)', () => {
 
     const dashboardButton: HTMLButtonElement | null = fixture.nativeElement.querySelector('.dashboard-btn');
     expect(dashboardButton).toBeTruthy();
+    dashboardButton!.scrollIntoView = vi.fn();
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi.fn(() => dashboardButton)
+    });
     dashboardButton?.scrollIntoView();
 
     const rect = dashboardButton!.getBoundingClientRect();

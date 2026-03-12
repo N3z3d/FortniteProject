@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -105,7 +105,7 @@ describe('MainLayoutComponent', () => {
     const accessibilityService = jasmine.createSpyObj('AccessibilityAnnouncerService', ['announceNavigation']);
     const focusManagementService = jasmine.createSpyObj('FocusManagementService', ['restoreFocusAfterNavigation']);
 
-    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout']);
+    userContextService = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'logout', 'isAdmin']);
     gameSelectionService = jasmine.createSpyObj(
       'GameSelectionService',
       ['setSelectedGame'],
@@ -131,6 +131,7 @@ describe('MainLayoutComponent', () => {
     userGamesStore.refreshGames.and.returnValue(of([]));
     navigationTrackingService.trackNavigation.and.returnValue(of(void 0));
     userContextService.getCurrentUser.and.returnValue(mockUser);
+    userContextService.isAdmin.and.returnValue(false);
 
     await TestBed.configureTestingModule({
       imports: [MainLayoutComponent, RouterTestingModule, NoopAnimationsModule],
@@ -258,17 +259,17 @@ describe('MainLayoutComponent', () => {
     expect(joinButton.textContent.trim()).toContain(component.t.t('games.home.joinWithCode'));
   });
 
-  it('should expose explicit aria-labels for profile and settings icon buttons', () => {
+  it('should expose explicit aria-label for profile menu trigger button', () => {
     component.ngOnInit();
     stateSubject.next({ ...initialState, games: mockGames });
     fixture.detectChanges();
 
-    const iconButtons = fixture.nativeElement.querySelectorAll(
-      '.user-section button[mat-icon-button]'
-    ) as NodeListOf<HTMLButtonElement>;
+    const triggerButton = fixture.nativeElement.querySelector(
+      '.user-section [mat-button]'
+    ) as HTMLButtonElement;
 
-    expect(iconButtons[0].getAttribute('aria-label')).toBe(component.t.t('navigation.profile'));
-    expect(iconButtons[1].getAttribute('aria-label')).toBe(component.t.t('navigation.settings'));
+    expect(triggerButton).toBeTruthy();
+    expect(triggerButton.getAttribute('aria-label')).toContain(mockUser.username);
   });
 
   it('should expose explicit aria-labels for sidebar icon controls', () => {
@@ -664,5 +665,53 @@ describe('MainLayoutComponent', () => {
     it('returns empty string when outlet is null', () => {
       expect(component.prepareRoute(null as any)).toBe('');
     });
+  });
+
+  describe('navbar globale — Sprint 5 (AC #11)', () => {
+    it('isAdmin() returns true when userContextService.isAdmin() is true', () => {
+      userContextService.isAdmin.and.returnValue(true);
+      expect(component.isAdmin()).toBeTrue();
+    });
+
+    it('isAdmin() returns false when userContextService.isAdmin() is false', () => {
+      userContextService.isAdmin.and.returnValue(false);
+      expect(component.isAdmin()).toBeFalse();
+    });
+
+    it('should show Parties and Catalogue links in global-navigation', () => {
+      fixture.detectChanges();
+      const globalNav = fixture.nativeElement.querySelector('.global-navigation');
+      expect(globalNav).toBeTruthy();
+      const gamesBtn = globalNav.querySelector('button[routerlink="/games"]');
+      const catalogueBtn = globalNav.querySelector('button[routerlink="/catalogue"]');
+      expect(gamesBtn).toBeTruthy();
+      expect(catalogueBtn).toBeTruthy();
+    });
+
+    it('should have profile menu trigger button in user-section', () => {
+      fixture.detectChanges();
+      const triggerButton = fixture.nativeElement.querySelector('.user-section button');
+      expect(triggerButton).toBeTruthy();
+    });
+
+    it('should show Administration link in dropdown when isAdmin() is true', fakeAsync(() => {
+      userContextService.isAdmin.and.returnValue(true);
+      fixture.detectChanges();
+      const triggerButton = fixture.nativeElement.querySelector('.user-section button');
+      triggerButton.click();
+      tick(0);
+      fixture.detectChanges();
+      expect(document.body.querySelector('.admin-menu-item')).toBeTruthy();
+    }));
+
+    it('should not show Administration link in dropdown when isAdmin() is false', fakeAsync(() => {
+      userContextService.isAdmin.and.returnValue(false);
+      fixture.detectChanges();
+      const triggerButton = fixture.nativeElement.querySelector('.user-section button');
+      triggerButton.click();
+      tick(0);
+      fixture.detectChanges();
+      expect(document.body.querySelector('.admin-menu-item')).toBeNull();
+    }));
   });
 });

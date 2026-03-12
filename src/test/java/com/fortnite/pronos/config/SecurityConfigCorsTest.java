@@ -18,12 +18,14 @@ class SecurityConfigCorsTest {
     JwtAuthenticationFilter jwtAuthFilter = mock(JwtAuthenticationFilter.class);
     UserDetailsService userDetailsService = mock(UserDetailsService.class);
     Environment environment = mock(Environment.class);
+    RateLimitingFilter rateLimitingFilter = mock(RateLimitingFilter.class);
     @SuppressWarnings("unchecked")
     ObjectProvider<TestFallbackAuthenticationFilter> fallbackProvider = mock(ObjectProvider.class);
 
     when(environment.getActiveProfiles()).thenReturn(activeProfiles);
 
-    return new SecurityConfig(jwtAuthFilter, userDetailsService, environment, fallbackProvider);
+    return new SecurityConfig(
+        jwtAuthFilter, userDetailsService, environment, rateLimitingFilter, fallbackProvider);
   }
 
   private CorsConfiguration loadCorsConfiguration(SecurityConfig securityConfig) {

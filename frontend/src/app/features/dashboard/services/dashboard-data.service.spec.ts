@@ -39,7 +39,7 @@ describe('DashboardDataService - TDD', () => {
   });
 
   describe('getGameStatistics', () => {
-    it('devrait récupérer les statistiques réelles depuis l\'API stats', (done) => {
+    it('devrait récupérer les statistiques réelles depuis l\'API stats', () => {
       // ARRANGE
       const gameId = 'test-game-id';
       const mockStatsResponse = {
@@ -58,7 +58,6 @@ describe('DashboardDataService - TDD', () => {
         expect(stats).toEqual(expectedStats);
         expect(stats.totalPlayers).toBe(147); // Doit être 147, pas 12
         expect(stats.totalTeams).toBe(3);
-        done();
       });
 
       // ASSERT - Vérifier l'appel HTTP (inclut gameId)
@@ -67,7 +66,7 @@ describe('DashboardDataService - TDD', () => {
       req.flush(mockStatsResponse);
     });
 
-    it('devrait retourner des statistiques vides en cas d\'erreur API', (done) => {
+    it('devrait retourner des statistiques vides en cas d\'erreur API', () => {
       // ARRANGE
       const gameId = 'test-game-id';
 
@@ -77,7 +76,6 @@ describe('DashboardDataService - TDD', () => {
         expect(stats.totalPlayers).toBe(0);
         expect(stats.totalTeams).toBe(0);
         expect(stats.totalPoints).toBe(0);
-        done();
       });
 
       // ASSERT - Simuler une erreur HTTP (inclut gameId)
@@ -129,7 +127,7 @@ describe('DashboardDataService - TDD', () => {
   });
 
   describe('Integration avec vraies données', () => {
-    it('devrait retourner des données cohérentes pour le dashboard', (done) => {
+    it('devrait retourner des données cohérentes pour le dashboard', () => {
       // ARRANGE
       const gameId = 'test-game';
       const mockStats = {
@@ -151,7 +149,6 @@ describe('DashboardDataService - TDD', () => {
         expect(data.statistics.totalPlayers).toBe(147); // Le vrai nombre !
         expect(data.statistics.totalTeams).toBe(3);
         expect(data.leaderboard.length).toBe(3);
-        done();
       });
 
       // Mock les appels HTTP (inclut gameId dans tous les endpoints)

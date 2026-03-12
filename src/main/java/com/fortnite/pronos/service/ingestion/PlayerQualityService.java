@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
@@ -37,10 +38,11 @@ public class PlayerQualityService {
   private final PrSnapshotQueryPort snapshotQuery;
 
   /**
-   * Runs the full daily quality job.
+   * Runs the full daily quality job. Triggered automatically every day at 03:00 UTC.
    *
    * @return summary of actions taken
    */
+  @Scheduled(cron = "0 0 3 * * *")
   public PlayerQualityJobResult runDailyQualityJob() {
     int regionsUpdated = computeAndUpdateMainRegions();
     int duplicates = detectDuplicateEpicIds();

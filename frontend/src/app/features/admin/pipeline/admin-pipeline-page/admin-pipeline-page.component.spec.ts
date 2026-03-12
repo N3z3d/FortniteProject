@@ -1,87 +1,37 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of, throwError } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 import { AdminPipelinePageComponent } from './admin-pipeline-page.component';
 import { PipelineService } from '../../services/pipeline.service';
-import { PlayerIdentityEntry, PipelineCount } from '../../models/admin.models';
-
-const UNRESOLVED: PlayerIdentityEntry = {
-  id: 'e1',
-  playerId: 'p1',
-  playerUsername: 'Bughaboo',
-  playerRegion: 'EU',
-  epicId: null,
-  status: 'UNRESOLVED',
-  confidenceScore: null,
-  resolvedBy: null,
-  resolvedAt: null,
-  rejectedAt: null,
-  rejectionReason: null,
-  createdAt: '2026-01-01T00:00:00'
-};
-
-const RESOLVED: PlayerIdentityEntry = {
-  id: 'e2',
-  playerId: 'p2',
-  playerUsername: 'Alpha',
-  playerRegion: 'NA',
-  epicId: 'alpha_fn',
-  status: 'RESOLVED',
-  confidenceScore: 90,
-  resolvedBy: 'admin',
-  resolvedAt: '2026-01-02T00:00:00',
-  rejectedAt: null,
-  rejectionReason: null,
-  createdAt: '2026-01-01T00:00:00'
-};
-
-const COUNT: PipelineCount = { unresolvedCount: 1, resolvedCount: 1 };
-
-function makePipelineServiceSpy(overrides: Partial<{
-  unresolved: PlayerIdentityEntry[];
-  resolved: PlayerIdentityEntry[];
-  count: PipelineCount;
-  resolveResult: PlayerIdentityEntry | null;
-  rejectResult: PlayerIdentityEntry | null;
-  failLoad: boolean;
-}> = {}): jasmine.SpyObj<PipelineService> {
-  const spy = jasmine.createSpyObj<PipelineService>('PipelineService', [
-    'getUnresolved',
-    'getResolved',
-    'getCount',
-    'resolvePlayer',
-    'rejectPlayer'
-  ]);
-  if (overrides.failLoad) {
-    spy.getUnresolved.and.returnValue(throwError(() => new Error('fail')));
-    spy.getResolved.and.returnValue(throwError(() => new Error('fail')));
-    spy.getCount.and.returnValue(throwError(() => new Error('fail')));
-  } else {
-    spy.getUnresolved.and.returnValue(of(overrides.unresolved ?? [UNRESOLVED]));
-    spy.getResolved.and.returnValue(of(overrides.resolved ?? [RESOLVED]));
-    spy.getCount.and.returnValue(of(overrides.count ?? COUNT));
-  }
-  const resolveResult = 'resolveResult' in overrides ? overrides.resolveResult! : RESOLVED;
-  const rejectResult = 'rejectResult' in overrides ? overrides.rejectResult! : ({ ...UNRESOLVED, status: 'REJECTED' } as PlayerIdentityEntry);
-  spy.resolvePlayer.and.returnValue(of(resolveResult));
-  spy.rejectPlayer.and.returnValue(of(rejectResult));
-  return spy;
-}
+import { PipelineRegionalStats } from '../../models/admin.models';
+import {
+  UNRESOLVED,
+  RESOLVED,
+  CRITICAL_ALERT,
+  WARNING_ALERT,
+  NONE_ALERT,
+  SAMPLE_LOG,
+  makePipelineServiceSpy
+} from './admin-pipeline-page.fixtures';
 
 describe('AdminPipelinePageComponent', () => {
   let fixture: ComponentFixture<AdminPipelinePageComponent>;
   let component: AdminPipelinePageComponent;
   let pipelineSpy: jasmine.SpyObj<PipelineService>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let dialogSpy: jasmine.SpyObj<MatDialog>;
 
   async function setupComponent(
     serviceOverrides: Parameters<typeof makePipelineServiceSpy>[0] = {}
   ): Promise<void> {
     pipelineSpy = makePipelineServiceSpy(serviceOverrides);
     snackBarSpy = jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+    dialogSpy = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(undefined) } as any);
 
     await TestBed.configureTestingModule({
       imports: [AdminPipelinePageComponent, NoopAnimationsModule],
@@ -89,6 +39,7 @@ describe('AdminPipelinePageComponent', () => {
     })
       .overrideProvider(PipelineService, { useValue: pipelineSpy })
       .overrideProvider(MatSnackBar, { useValue: snackBarSpy })
+      .overrideProvider(MatDialog, { useValue: dialogSpy })
       .compileComponents();
 
     fixture = TestBed.createComponent(AdminPipelinePageComponent);
@@ -97,160 +48,291 @@ describe('AdminPipelinePageComponent', () => {
   }
 
   describe('Initial load', () => {
-    it('calls getUnresolved, getResolved, getCount on init', fakeAsync(async () => {
+    it('calls getUnresolved, getResolved, getCount on init', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       expect(pipelineSpy.getUnresolved).toHaveBeenCalledTimes(1);
       expect(pipelineSpy.getResolved).toHaveBeenCalledTimes(1);
       expect(pipelineSpy.getCount).toHaveBeenCalledTimes(1);
-    }));
+    });
 
-    it('populates unresolvedEntries after load', fakeAsync(async () => {
+    it('populates unresolvedEntries after load', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       expect(component.unresolvedEntries).toEqual([UNRESOLVED]);
-    }));
+    });
 
-    it('populates resolvedEntries after load', fakeAsync(async () => {
+    it('populates resolvedEntries after load', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       expect(component.resolvedEntries).toEqual([RESOLVED]);
-    }));
+    });
 
-    it('loading signal is false after data loads', fakeAsync(async () => {
+    it('loading signal is false after data loads', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       expect(component.loading()).toBeFalse();
-    }));
+    });
 
-    it('shows error state when loading fails', fakeAsync(async () => {
+    it('sets dataLoadError when loading fails', async () => {
       await setupComponent({ failLoad: true });
-      tick();
       fixture.detectChanges();
-      // error() should be true but forkJoin error propagation — check component state
-      // Since services use catchError, the error block won't trigger; data will be empty
       expect(component.loading()).toBeFalse();
-    }));
+      expect(component.dataLoadError).toBeTrue();
+    });
+
+    it('shows partial error banner when dataLoadError is true', async () => {
+      await setupComponent({ failLoad: true });
+      fixture.detectChanges();
+      const banner = fixture.debugElement.query(By.css('.pipeline-error--partial'));
+      expect(banner).toBeTruthy();
+    });
   });
 
   describe('Inbox-zero', () => {
-    it('isInboxZero is true when unresolved is empty after loading', fakeAsync(async () => {
+    it('isInboxZero is true when unresolved is empty after loading', async () => {
       await setupComponent({ unresolved: [] });
-      tick();
       fixture.detectChanges();
       expect(component.isInboxZero).toBeTrue();
-    }));
+    });
 
-    it('isInboxZero is false when unresolved has entries', fakeAsync(async () => {
+    it('isInboxZero is false when unresolved has entries', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       expect(component.isInboxZero).toBeFalse();
-    }));
+    });
 
-    it('renders inbox-zero DOM element when queue is empty', fakeAsync(async () => {
+    it('renders inbox-zero DOM element when queue is empty', async () => {
       await setupComponent({ unresolved: [] });
-      tick();
       fixture.detectChanges();
       const el = fixture.debugElement.query(By.css('.pipeline-inbox-zero'));
       expect(el).toBeTruthy();
-    }));
+    });
   });
 
   describe('Resolve action', () => {
-    it('calls resolvePlayer service on onResolved event', fakeAsync(async () => {
+    it('calls resolvePlayer service on onResolved event', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       component.onResolved({ playerId: 'p1', epicId: 'bughaboo_fn' });
       expect(pipelineSpy.resolvePlayer).toHaveBeenCalledWith({
         playerId: 'p1',
         epicId: 'bughaboo_fn'
       });
-    }));
+    });
 
-    it('shows success snackbar after resolve', fakeAsync(async () => {
+    it('shows success snackbar after resolve', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       component.onResolved({ playerId: 'p1', epicId: 'bughaboo_fn' });
-      tick();
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         jasmine.stringContaining('bughaboo_fn'),
         'Fermer',
         jasmine.any(Object)
       );
-    }));
+    });
 
-    it('reloads data after successful resolve', fakeAsync(async () => {
+    it('reloads data after successful resolve', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       const callsBefore = pipelineSpy.getUnresolved.calls.count();
       component.onResolved({ playerId: 'p1', epicId: 'x' });
-      tick();
       expect(pipelineSpy.getUnresolved.calls.count()).toBeGreaterThan(callsBefore);
-    }));
+    });
 
-    it('shows error snackbar when resolve returns null', fakeAsync(async () => {
+    it('shows error snackbar when resolve returns null', async () => {
       await setupComponent({ resolveResult: null });
-      tick();
       fixture.detectChanges();
       component.onResolved({ playerId: 'p1', epicId: 'bad' });
-      tick();
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         jasmine.stringContaining('Erreur'),
         'Fermer',
         jasmine.any(Object)
       );
-    }));
+    });
   });
 
   describe('Reject action', () => {
-    it('calls rejectPlayer service on onRejected event', fakeAsync(async () => {
+    it('calls rejectPlayer service on onRejected event', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       component.onRejected({ playerId: 'p1' });
       expect(pipelineSpy.rejectPlayer).toHaveBeenCalledWith({
         playerId: 'p1',
         reason: undefined
       });
-    }));
+    });
 
-    it('shows snackbar after reject', fakeAsync(async () => {
+    it('shows snackbar after reject', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       component.onRejected({ playerId: 'p1' });
-      tick();
-      expect(snackBarSpy.open).toHaveBeenCalledWith('✗ Joueur rejeté', 'Fermer', jasmine.any(Object));
-    }));
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        '✗ Joueur rejeté',
+        'Fermer',
+        jasmine.any(Object)
+      );
+    });
+  });
+
+  describe('Correct metadata action', () => {
+    it('opens correct metadata dialog on onCorrectRequested', async () => {
+      await setupComponent();
+      fixture.detectChanges();
+      component.onCorrectRequested(UNRESOLVED);
+      expect(dialogSpy.open).toHaveBeenCalled();
+    });
+
+    it('calls correctMetadata service when dialog closes with result', async () => {
+      await setupComponent();
+      fixture.detectChanges();
+      dialogSpy.open.and.returnValue({ afterClosed: () => of({ newRegion: 'NAW' }) } as any);
+      component.onCorrectRequested(UNRESOLVED);
+      expect(pipelineSpy.correctMetadata).toHaveBeenCalledWith('p1', { newRegion: 'NAW' });
+    });
+
+    it('shows success snackbar after correction', async () => {
+      await setupComponent();
+      fixture.detectChanges();
+      dialogSpy.open.and.returnValue({ afterClosed: () => of({ newUsername: 'Fixed' }) } as any);
+      component.onCorrectRequested(UNRESOLVED);
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        jasmine.stringContaining('corrigée'),
+        'Fermer',
+        jasmine.any(Object)
+      );
+    });
+
+    it('does not call correctMetadata when dialog is dismissed', async () => {
+      await setupComponent();
+      fixture.detectChanges();
+      component.onCorrectRequested(UNRESOLVED);
+      expect(pipelineSpy.correctMetadata).not.toHaveBeenCalled();
+    });
   });
 
   describe('Refresh', () => {
-    it('reloads data on refresh call', fakeAsync(async () => {
+    it('reloads data on refresh call', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       const countBefore = pipelineSpy.getUnresolved.calls.count();
       component.refresh();
-      tick();
       expect(pipelineSpy.getUnresolved.calls.count()).toBeGreaterThan(countBefore);
-    }));
+    });
   });
 
   describe('Header', () => {
-    it('renders MODE ADMINISTRATION heading', fakeAsync(async () => {
+    it('renders MODE ADMINISTRATION heading', async () => {
       await setupComponent();
-      tick();
       fixture.detectChanges();
       const heading = fixture.debugElement.query(By.css('.pipeline-header__heading'));
       expect(heading.nativeElement.textContent).toContain('MODE ADMINISTRATION');
-    }));
+    });
+  });
+
+  describe('Scrape log', () => {
+    it('populates scrapeLog after load', async () => {
+      await setupComponent({ scrapeLog: [SAMPLE_LOG] });
+      fixture.detectChanges();
+      expect(component.scrapeLog).toEqual([SAMPLE_LOG]);
+    });
+
+    it('scrapeLog is empty array when service returns empty', async () => {
+      await setupComponent({ scrapeLog: [] });
+      fixture.detectChanges();
+      expect(component.scrapeLog).toEqual([]);
+    });
+  });
+
+  describe('Pipeline alert banner', () => {
+    it('shows alert banner when level is CRITICAL', async () => {
+      await setupComponent({ pipelineAlert: CRITICAL_ALERT });
+      fixture.detectChanges();
+      const banner = fixture.debugElement.query(By.css('.pipeline-alert-banner'));
+      expect(banner).toBeTruthy();
+    });
+
+    it('shows alert banner when level is WARNING', async () => {
+      await setupComponent({ pipelineAlert: WARNING_ALERT });
+      fixture.detectChanges();
+      const banner = fixture.debugElement.query(By.css('.pipeline-alert-banner'));
+      expect(banner).toBeTruthy();
+    });
+
+    it('does not show alert banner when level is NONE', async () => {
+      await setupComponent({ pipelineAlert: NONE_ALERT });
+      fixture.detectChanges();
+      const banner = fixture.debugElement.query(By.css('.pipeline-alert-banner'));
+      expect(banner).toBeNull();
+    });
+
+    it('alert banner shows elapsed hours from pipelineAlert', async () => {
+      await setupComponent({ pipelineAlert: CRITICAL_ALERT });
+      fixture.detectChanges();
+      const banner = fixture.debugElement.query(By.css('.pipeline-alert-banner'));
+      expect(banner.nativeElement.textContent).toContain('72');
+    });
+
+    it('alertLabel returns CRITIQUE for CRITICAL level', async () => {
+      await setupComponent();
+      expect((component as any).alertLabel('CRITICAL')).toContain('CRITIQUE');
+    });
+
+    it('alertLabel returns ATTENTION for WARNING level', async () => {
+      await setupComponent();
+      expect((component as any).alertLabel('WARNING')).toContain('ATTENTION');
+    });
+  });
+
+  describe('Alert error', () => {
+    it('sets alertError when getUnresolvedAlertStatus fails', async () => {
+      await setupComponent({ failAlert: true });
+      fixture.detectChanges();
+      expect(component.alertError).toBeTrue();
+    });
+
+    it('shows alert error indicator when alertError is true', async () => {
+      await setupComponent({ failAlert: true });
+      fixture.detectChanges();
+      const el = fixture.debugElement.query(By.css('.pipeline-alert-error'));
+      expect(el).toBeTruthy();
+    });
+  });
+
+  describe('Regional stats', () => {
+    const EU_REGION: PipelineRegionalStats = {
+      region: 'EU',
+      unresolvedCount: 3,
+      resolvedCount: 10,
+      rejectedCount: 1,
+      totalCount: 14,
+      lastIngestedAt: '2026-02-01T10:00:00'
+    };
+
+    it('calls getRegionalStatus on init', async () => {
+      await setupComponent({ regional: [EU_REGION] });
+      fixture.detectChanges();
+      expect(pipelineSpy.getRegionalStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it('populates regionalStats after successful load', async () => {
+      await setupComponent({ regional: [EU_REGION] });
+      fixture.detectChanges();
+      expect(component.regionalStats).toEqual([EU_REGION]);
+    });
+
+    it('sets regionalError true when regional load fails', async () => {
+      await setupComponent({ failRegional: true });
+      fixture.detectChanges();
+      expect(component.regionalError).toBeTrue();
+    });
+
+    it('regional stats tab is visible even when main data load fails', async () => {
+      await setupComponent({ failLoad: true });
+      fixture.detectChanges();
+      expect(component.loading()).toBeFalse();
+      expect(component.dataLoadError).toBeTrue();
+      expect(component.regionalStats).toBeDefined();
+    });
   });
 });

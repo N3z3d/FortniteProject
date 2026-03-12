@@ -19,6 +19,7 @@ export interface AuthSwitchResponse {
   providedIn: 'root'
 })
 export class AuthSwitchService {
+  private static readonly DEV_USERS = ['admin', 'thibaut', 'marcel', 'teddy'];
   private readonly baseUrl = environment.apiBaseUrl || 'http://localhost:8081';
 
   constructor(
@@ -85,8 +86,7 @@ export class AuthSwitchService {
     }
 
     // Mock validation - in production this would check backend permissions
-    const allowedUsers = ['Thibaut', 'Marcel', 'Teddy', 'Sarah'];
-    return of(allowedUsers.includes(username));
+    return of(AuthSwitchService.DEV_USERS.includes(username));
   }
 
   /**
@@ -95,13 +95,13 @@ export class AuthSwitchService {
    */
   getAvailableUsers(): Observable<string[]> {
     if (!environment.production) {
-      return of(['Thibaut', 'Marcel', 'Teddy', 'Sarah']).pipe(delay(200));
+      return of(AuthSwitchService.DEV_USERS).pipe(delay(200));
     }
 
     return this.http.get<string[]>(`${this.baseUrl}/api/auth/available-users`).pipe(
       catchError(() => {
         // Fallback to mock data if API fails
-        return of(['Thibaut', 'Marcel', 'Teddy', 'Sarah']);
+        return of(AuthSwitchService.DEV_USERS);
       })
     );
   }
@@ -196,10 +196,10 @@ export class AuthSwitchService {
    */
   private generateMockUserId(username: string): string {
     const userMap: { [key: string]: string } = {
-      'Thibaut': '1',
-      'Marcel': '2',
-      'Teddy': '3',
-      'Sarah': '4'
+      'admin': '1',
+      'thibaut': '2',
+      'marcel': '3',
+      'teddy': '4'
     };
     return userMap[username] || secureRandomId();
   }

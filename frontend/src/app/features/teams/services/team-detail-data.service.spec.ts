@@ -74,7 +74,7 @@ describe('TeamDetailDataService', () => {
   });
 
   describe('loadMyTeam', () => {
-    it('should load user team successfully', (done) => {
+    it('should load user team successfully', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
@@ -85,22 +85,20 @@ describe('TeamDetailDataService', () => {
         expect(result.team?.players.length).toBe(2);
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBeNull();
-        done();
       });
     });
 
-    it('should handle case-insensitive username matching', (done) => {
+    it('should handle case-insensitive username matching', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadMyTeam('TESTUSER').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeTruthy();
         expect(result.team?.owner?.username).toBe('testuser');
         expect(result.error).toBeNull();
-        done();
       });
     });
 
-    it('should return error when user has no team', (done) => {
+    it('should return error when user has no team', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadMyTeam('nonexistent').subscribe((result: TeamLoadResult) => {
@@ -108,11 +106,10 @@ describe('TeamDetailDataService', () => {
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBe('teams.detail.notFoundForUser');
         expect(translationServiceSpy.t).toHaveBeenCalledWith('teams.detail.notFoundForUser');
-        done();
       });
     });
 
-    it('should handle error when loading teams fails', (done) => {
+    it('should handle error when loading teams fails', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
         throwError(() => new Error('API Error'))
       );
@@ -125,13 +122,12 @@ describe('TeamDetailDataService', () => {
           'TeamDetailDataService: failed to load teams for user',
           jasmine.objectContaining({ username: 'testuser' })
         );
-        done();
       });
     });
   });
 
   describe('loadTeamById', () => {
-    it('should load team by ID successfully', (done) => {
+    it('should load team by ID successfully', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadTeamById('team1').subscribe((result: TeamLoadResult) => {
@@ -140,22 +136,20 @@ describe('TeamDetailDataService', () => {
         expect(result.team?.owner?.username).toBe('testuser');
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBeNull();
-        done();
       });
     });
 
-    it('should return error when team not found', (done) => {
+    it('should return error when team not found', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadTeamById('nonexistent').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.allTeams.length).toBe(2);
         expect(result.error).toBe('teams.detail.notFound');
-        done();
       });
     });
 
-    it('should handle error when loading teams fails', (done) => {
+    it('should handle error when loading teams fails', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
         throwError(() => new Error('API Error'))
       );
@@ -168,7 +162,6 @@ describe('TeamDetailDataService', () => {
           'TeamDetailDataService: failed to load team by id',
           jasmine.objectContaining({ teamId: 'team1' })
         );
-        done();
       });
     });
   });
@@ -227,7 +220,7 @@ describe('TeamDetailDataService', () => {
   });
 
   describe('data mapping', () => {
-    it('should correctly map all player fields', (done) => {
+    it('should correctly map all player fields', () => {
       const detailedPlayer = {
         playerId: 'p1',
         nickname: 'TestPlayer',
@@ -252,23 +245,21 @@ describe('TeamDetailDataService', () => {
         expect(player.region).toBe('BR');
         expect(player.points).toBe(1500);
         expect(player.tranche).toBe('TRANCHE_3');
-        done();
       });
     });
 
-    it('should preserve all teams in allTeams array', (done) => {
+    it('should preserve all teams in allTeams array', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.allTeams).toEqual(mockAllTeams);
         expect(result.allTeams.length).toBe(2);
-        done();
       });
     });
   });
 
   describe('error handling', () => {
-    it('should provide user-friendly error message on network failure', (done) => {
+    it('should provide user-friendly error message on network failure', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(
         throwError(() => ({ status: 0, message: 'Network Error' }))
       );
@@ -276,28 +267,25 @@ describe('TeamDetailDataService', () => {
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.error).toBe('teams.detail.dataUnavailable');
-        done();
       });
     });
 
-    it('should handle null or undefined username gracefully', (done) => {
+    it('should handle null or undefined username gracefully', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of(mockAllTeams));
 
       service.loadMyTeam('').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.error).toBeTruthy();
-        done();
       });
     });
 
-    it('should handle empty teams array', (done) => {
+    it('should handle empty teams array', () => {
       leaderboardServiceSpy.getTeamLeaderboard.and.returnValue(of([]));
 
       service.loadMyTeam('testuser').subscribe((result: TeamLoadResult) => {
         expect(result.team).toBeNull();
         expect(result.allTeams).toEqual([]);
         expect(result.error).toBe('teams.detail.notFoundForUser');
-        done();
       });
     });
   });

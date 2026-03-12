@@ -44,15 +44,17 @@ validation-rules:
 - [ ] **End-to-End Tests:** End-to-end tests created for critical user flows when story requirements specify them
 - [ ] **Test Coverage:** Tests cover acceptance criteria and edge cases from story Dev Notes
 - [ ] **Regression Prevention:** ALL existing tests pass (no regressions introduced)
+- [ ] **Pre-existing Failures Documented:** If any known pre-existing test failures remain (RED TDD, Zone.js/fakeAsync, integration data), they MUST be listed in the story's "Pre-existing Gaps / Known Issues" section with count, class names, and root cause. A story CANNOT move to `review` with undocumented failures. See `project-context.md` §Pre-existing failures for the current baseline.
 - [ ] **Code Quality:** Linting and static checks pass when configured in project
 - [ ] **Test Framework Compliance:** Tests use project's testing frameworks and patterns from Dev Notes
+- [ ] **🔐 CONTROLLER SECURITY TEST (MANDATORY):** If story created any `@RestController` → `SecurityConfig{ControllerName}AuthorizationTest` exists in `src/test/.../config/` using `@WebMvcTest + @WithMockUser`, covering anonymous→401/403, non-admin→403, admin→200. File must be present in File List. Absence = story cannot move to review.
 
 ## 📝 Documentation & Tracking
 
 - [ ] **File List Complete:** File List includes EVERY new, modified, or deleted file (paths relative to repo root)
 - [ ] **Dev Agent Record Updated:** Contains relevant Implementation Notes and/or Debug Log for this work
 - [ ] **Change Log Updated:** Change Log includes clear summary of what changed and why
-- [ ] **Review Follow-ups:** All review follow-up tasks (marked [AI-Review]) completed and corresponding review items marked resolved (if applicable)
+- [ ] **Review Follow-ups (MANDATORY):** If story was previously in `review` or `in-progress` via code-review, a `### Review Follow-ups (AI)` subsection MUST exist in Tasks/Subtasks. All `[AI-Review]` items must be completed `[x]` or explicitly deferred with rationale. A story with open `[AI-Review][HIGH]` or `[AI-Review][MEDIUM]` items CANNOT move to `review` status.
 - [ ] **Story Structure Compliance:** Only permitted sections of story file were modified
 
 ## 🔚 Final Status Verification

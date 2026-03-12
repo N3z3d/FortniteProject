@@ -58,8 +58,14 @@
         <p>{{ t.t('trades.list.loadingTrades') }}</p>
     </div>
 
+    <div class="empty-state error-state" *ngIf="!isLoading && errorMessage">
+        <mat-icon class="empty-icon">error_outline</mat-icon>
+        <h3>{{ t.t('trades.errorTitle') }}</h3>
+        <p>{{ errorMessage }}</p>
+    </div>
+
     <!-- Empty State -->
-    <div class="empty-state" *ngIf="!isLoading && filteredTrades.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && !errorMessage && filteredTrades.length === 0">
         <mat-icon class="empty-icon">swap_horiz</mat-icon>
         <h3>{{ t.t('trades.list.noTradeFound') }}</h3>
         <p *ngIf="searchTerm">{{ t.t('trades.list.noResultsFor') }} "{{ searchTerm }}"</p>
@@ -73,7 +79,7 @@
     </div>
 
     <!-- Trades Grid -->
-    <div class="trades-grid" *ngIf="!isLoading && filteredTrades.length > 0">
+    <div class="trades-grid" *ngIf="!isLoading && !errorMessage && filteredTrades.length > 0">
         <div class="trade-card" *ngFor="let trade of filteredTrades; trackBy: trackByTradeId"
             [class.pending]="trade.status === 'PENDING'" [class.completed]="trade.status === 'COMPLETED'"
             [class.cancelled]="trade.status === 'CANCELLED'">

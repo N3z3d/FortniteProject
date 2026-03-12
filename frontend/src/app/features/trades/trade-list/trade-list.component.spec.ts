@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { TradeListComponent, Trade } from './trade-list.component';
 import { LoggerService } from '../../../core/services/logger.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import { WebSocketService, TradeNotification } from '../../../core/services/websocket.service';
 import { TradingService, TradeOffer } from '../services/trading.service';
+import { GameSelectionService } from '../../../core/services/game-selection.service';
 
 describe('TradeListComponent', () => {
   let component: TradeListComponent;
@@ -16,6 +17,7 @@ describe('TradeListComponent', () => {
   let translationService: jasmine.SpyObj<TranslationService>;
   let webSocketService: jasmine.SpyObj<WebSocketService>;
   let tradeNotificationsSubject: Subject<TradeNotification>;
+  let gameSelectionService: jasmine.SpyObj<GameSelectionService>;
 
   beforeEach(async () => {
     router = jasmine.createSpyObj('Router', ['navigate']);
@@ -23,6 +25,8 @@ describe('TradeListComponent', () => {
     tradingService = jasmine.createSpyObj('TradingService', ['getTrades']);
     translationService = jasmine.createSpyObj('TranslationService', ['t']);
     translationService.t.and.callFake((key: string, fallback?: string) => fallback || key);
+    gameSelectionService = jasmine.createSpyObj('GameSelectionService', ['getSelectedGame']);
+    gameSelectionService.getSelectedGame.and.returnValue({ id: 'selected-game', name: 'Selected Game' } as any);
 
     tradeNotificationsSubject = new Subject<TradeNotification>();
     webSocketService = jasmine.createSpyObj('WebSocketService', ['connect'], {
@@ -53,10 +57,18 @@ describe('TradeListComponent', () => {
       imports: [TradeListComponent],
       providers: [
         { provide: Router, useValue: router },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            parent: { snapshot: { paramMap: { get: (key: string) => key === 'id' ? 'game-1' : null } } },
+            snapshot: { paramMap: { get: () => null } }
+          }
+        },
         { provide: LoggerService, useValue: logger },
         { provide: TradingService, useValue: tradingService },
         { provide: TranslationService, useValue: translationService },
-        { provide: WebSocketService, useValue: webSocketService }
+        { provide: WebSocketService, useValue: webSocketService },
+        { provide: GameSelectionService, useValue: gameSelectionService }
       ]
     }).compileComponents();
 
@@ -78,7 +90,7 @@ describe('TradeListComponent', () => {
     fixture.detectChanges();
     tick();
 
-    expect(tradingService.getTrades).toHaveBeenCalled();
+    expect(tradingService.getTrades).toHaveBeenCalledWith('game-1');
     expect(component.isLoading).toBeFalse();
     expect(component.trades.length).toBeGreaterThan(0);
   }));
@@ -170,14 +182,15 @@ describe('TradeListComponent', () => {
     expect(logger.error).toHaveBeenCalledWith('TradeList: WebSocket notification error', jasmine.any(Error));
   }));
 
-  it('should fall back to mock data on trades loading error', fakeAsync(() => {
+  it('should expose an explicit error instead of falling back to mock data on trades loading error', fakeAsync(() => {
     tradingService.getTrades.and.returnValue(throwError(() => new Error('API error')));
 
     fixture.detectChanges();
     tick();
 
     expect(logger.error).toHaveBeenCalledWith('TradeList: failed to load trades', jasmine.any(Error));
-    expect(component.trades.length).toBeGreaterThan(0); // Mock data loaded
+    expect(component.trades).toEqual([]);
+    expect(component.errorMessage).toBeTruthy();
     expect(component.isLoading).toBeFalse();
   }));
 
@@ -249,15 +262,17 @@ describe('TradeListComponent', () => {
   }));
 
   it('should navigate to create trade', () => {
+    (component as any).gameId = 'game-1';
     component.createNewTrade();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/trades/new']);
+    expect(router.navigate).toHaveBeenCalledWith(['/games', 'game-1', 'trades', 'create']);
   });
 
   it('should navigate to trade detail', () => {
+    (component as any).gameId = 'game-1';
     component.viewTrade('123');
 
-    expect(router.navigate).toHaveBeenCalledWith(['/trades', '123']);
+    expect(router.navigate).toHaveBeenCalledWith(['/games', 'game-1', 'trades', '123']);
   });
 
   it('should cancel trade', fakeAsync(() => {

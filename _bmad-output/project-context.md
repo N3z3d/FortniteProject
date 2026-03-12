@@ -162,10 +162,72 @@ frontend/src/app/
 - Framework : **Vitest** (Karma/Jasmine supprimés Sprint 3)
 - Commande CI unit : `npm run test:vitest` (depuis `frontend/`)
 - Commande CI e2e : `npm run test:e2e` (Playwright — requiert app sur :4200 + backend sur :8080)
-- Baseline : **2245 tests** (38 échecs pre-existing — Zone.js debounce dans 12 spec files non liés)
+- Baseline : **2243 tests, 0 failure** (Zone.js débounce fixes appliqués Sprint 7-Z1)
 - Coverage actuel : Lines 86.89%, Branches 73.36%, Functions 84.64%
 - Certains composants ont des fichiers `.template.spec.ts` ET `.spec.ts` — vérifier les deux
 - Le **linter** modifie les fichiers automatiquement au save → relire avant d'éditer si du temps est passé
+
+### Conversion fakeAsync → Vitest (Pattern A et B)
+
+`fakeAsync()`+`tick()` est incompatible avec Vitest/jsdom. Deux patterns selon le cas :
+
+**Pattern A** — Observable synchrone (spy retourne `of(value)`) :
+```typescript
+// AVANT (incompatible Vitest)
+it('should load', fakeAsync(() => {
+  component.ngOnInit();
+  tick(300);
+  fixture.detectChanges();
+  expect(component.data).toBeTruthy();
+}));
+
+// APRÈS
+it('should load', async () => {
+  component.ngOnInit();
+  fixture.detectChanges();
+  expect(component.data).toBeTruthy();
+});
+```
+
+**Pattern B** — `debounceTime()` réel (le service utilise vraiment debounceTime) :
+```typescript
+// AVANT (incompatible Vitest)
+it('should debounce search', fakeAsync(() => {
+  component.searchControl.setValue('test');
+  tick(300);
+  fixture.detectChanges();
+  expect(service.search).toHaveBeenCalledWith('test');
+}));
+
+// APRÈS
+it('should debounce search', async () => {
+  vi.useFakeTimers();
+  component.searchControl.setValue('test');
+  vi.advanceTimersByTime(300);
+  fixture.detectChanges();
+  expect(service.search).toHaveBeenCalledWith('test');
+  vi.useRealTimers();
+});
+```
+
+> `vi` est global dans ce projet (`globals: true` dans `vitest.config.mts`) — pas besoin d'import.
+> Retirer les imports `fakeAsync`, `tick` de `@angular/core/testing` si plus aucun usage dans le fichier.
+
+### Pre-existing Failures Baseline
+
+Toute nouvelle story DOIT documenter les failures pré-existantes dans "Pre-existing Gaps / Known Issues" :
+
+**Backend** (exclus du CI via `-Dexcludes`) :
+- `GameDataIntegrationTest` — 4 failures, fixtures DB absentes en CI
+- `FortniteTrackerServiceTddTest` — 6 failures, API externe non mockée (RED TDD intentionnel)
+- `PlayerServiceTddTest` — 1 failure, RED TDD intentionnel
+- `ScoreCalculationServiceTddTest` — 2 failures, RED TDD intentionnel
+- `ScoreServiceTddTest` — 3 failures, RED TDD intentionnel
+- `GameStatisticsServiceTddTest` — 1 NPE pré-existante non liée aux stories
+
+**Frontend** : 0 failure pré-existante (baseline Sprint 7 — 2243/2243 verts)
+
+**Règle** : si une story introduit un nouveau test rouge involontaire → c'est une régression à corriger.
 
 ---
 
@@ -201,7 +263,7 @@ Une story est **done** uniquement si **tous** les critères ci-dessous sont sati
 | Critère | Règle |
 |---|---|
 | **Tests unitaires** | Tous les cas nominaux + ≥ 3 edge cases couverts ; 0 test rouge lié à la story |
-| **Pas de régression** | Suite complète verte avant merge (backend `mvn test` + frontend `npx ng test`) |
+| **Pas de régression** | Suite complète verte avant merge (backend `mvn verify -Dexcludes=<pre-existing>` + frontend `npm run test:vitest`) |
 | **Coverage** | ≥ 85% lignes sur le code modifié par la story |
 | **Sécurité** | Si nouveau `@RestController` → `SecurityConfig<ControllerName>AuthorizationTest` créé |
 | **i18n** | Toute string visible ajoutée dans les 4 fichiers (`fr.json`, `en.json`, `es.json`, `pt.json`) |
@@ -275,4 +337,4 @@ Une story est **done** uniquement si **tous** les critères ci-dessous sont sati
 - Mettre à jour lors de changements de stack technologique
 - Réviser trimestriellement pour supprimer les règles obsolètes
 
-_Last Updated: 2026-03-10 — Sprint 3: Karma→Vitest, Spring Boot 3.3→3.4.5, baseline 2245 tests. Sprint 6 Q2: Code review obligatoire ajouté au DoD §6; File List bloquant ajouté aux critères HALT._
+_Last Updated: 2026-03-12 — Sprint 7 D1/D2: Patterns fakeAsync→Vitest (A/B) ajoutés §4 Tests Frontend; baseline 2243/0 failures; Pre-existing Failures Baseline documentée; DoD §6 mis à jour; checklist dev-story critère pre-existing failures ajouté; template create-story annoté._

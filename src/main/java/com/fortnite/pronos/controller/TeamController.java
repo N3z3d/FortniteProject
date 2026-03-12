@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -138,7 +142,7 @@ public class TeamController {
       })
   @PostMapping
   public ResponseEntity<TeamDto> createTeam(
-      @Parameter(description = "Team creation request", required = true) @RequestBody
+      @Parameter(description = "Team creation request", required = true) @Valid @RequestBody
           CreateTeamRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
@@ -184,7 +188,7 @@ public class TeamController {
   public ResponseEntity<TeamDto> addPlayerToTeam(
       @Parameter(description = "User ID", required = true) @PathVariable UUID userId,
       @Parameter(description = "Season", required = true) @PathVariable int season,
-      @Parameter(description = "Add player request", required = true) @RequestBody
+      @Parameter(description = "Add player request", required = true) @Valid @RequestBody
           AddPlayerRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
@@ -270,9 +274,14 @@ public class TeamController {
   }
 
   // DTOs for requests
-  record CreateTeamRequest(UUID userId, String name, int season) {}
+  record CreateTeamRequest(
+      UUID userId,
+      @NotBlank(message = "Le nom de l'équipe est requis") String name,
+      @Min(value = 2020, message = "La saison doit être >= 2020") int season) {}
 
-  record AddPlayerRequest(UUID playerId, int position) {}
+  record AddPlayerRequest(
+      @NotNull(message = "L'ID du joueur est requis") UUID playerId,
+      @Min(value = 0, message = "La position doit être >= 0") int position) {}
 
-  record RemovePlayerRequest(UUID playerId) {}
+  record RemovePlayerRequest(@NotNull(message = "L'ID du joueur est requis") UUID playerId) {}
 }

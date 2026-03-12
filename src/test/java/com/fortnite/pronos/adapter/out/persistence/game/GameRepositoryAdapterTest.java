@@ -28,6 +28,7 @@ import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.User;
+import com.fortnite.pronos.repository.GameParticipantRepository;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -36,6 +37,7 @@ class GameRepositoryAdapterTest {
 
   @Mock private GameRepository gameRepository;
   @Mock private UserRepository userRepository;
+  @Mock private GameParticipantRepository participantRepository;
 
   private GameRepositoryAdapter adapter;
   private CrudRepository<Game, UUID> gameCrudRepository;
@@ -43,7 +45,9 @@ class GameRepositoryAdapterTest {
 
   @BeforeEach
   void setUp() {
-    adapter = new GameRepositoryAdapter(gameRepository, userRepository, new GameEntityMapper());
+    adapter =
+        new GameRepositoryAdapter(
+            gameRepository, userRepository, new GameEntityMapper(), participantRepository);
     gameCrudRepository = gameRepository;
     userCrudRepository = userRepository;
   }

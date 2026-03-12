@@ -74,3 +74,10 @@ backend-live.*
 backend-run.*
 frontend-live.*
 frontend/test-output.txt
+
+# Playwright / Vitest generated output
+frontend/playwright-report/
+frontend/test-results/
+frontend/vitest-ci.log
+frontend/vitest-z1-report.json
+tmp_npm_audit_*.json

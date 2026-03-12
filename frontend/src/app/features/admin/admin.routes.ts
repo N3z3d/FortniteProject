@@ -24,5 +24,27 @@ export const ADMIN_ROUTES: Routes = [
       import('./incidents/admin-incident-list.component').then(
         c => c.AdminIncidentListComponent
       )
+  },
+  {
+    path: 'games',
+    loadComponent: () =>
+      import(
+        './games-supervision/admin-games-supervision/admin-games-supervision.component'
+      ).then(c => c.AdminGamesSupervisionComponent)
+  },
+  {
+    path: 'database',
+    loadComponent: () =>
+      import('./db-explorer/admin-db-explorer.component').then(c => c.AdminDbExplorerComponent)
+  },
+  {
+    path: 'users',
+    loadComponent: () =>
+      import('./user-list/admin-user-list.component').then(c => c.AdminUserListComponent)
+  },
+  {
+    path: 'logs',
+    loadComponent: () =>
+      import('./logs/admin-logs.component').then(c => c.AdminLogsComponent)
   }
 ];

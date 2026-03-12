@@ -5,12 +5,14 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api")
 public class HomeController {
 
-  @GetMapping("/")
+  @GetMapping("/home")
   public ResponseEntity<Map<String, Object>> home() {
     Map<String, Object> response = new HashMap<>();
     response.put("message", "Bienvenue sur Fortnite Pronos API");
@@ -27,7 +29,7 @@ public class HomeController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/api")
+  @GetMapping
   public ResponseEntity<Map<String, Object>> apiInfo() {
     Map<String, Object> response = new HashMap<>();
     response.put("name", "Fortnite Pronos API");

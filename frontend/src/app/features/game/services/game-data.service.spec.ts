@@ -152,30 +152,27 @@ describe('GameDataService', () => {
   });
 
   describe('getGameById edge cases', () => {
-    it('rejects empty gameId with validation error', (done) => {
+    it('rejects empty gameId with validation error', () => {
       service.getGameById('').subscribe({
         error: (err) => {
           expect(err.message).toBe('Validation error');
-          done();
         }
       });
     });
 
-    it('rejects whitespace-only gameId', (done) => {
+    it('rejects whitespace-only gameId', () => {
       service.getGameById('   ').subscribe({
         error: (err) => {
           expect(err.message).toBe('Validation error');
-          done();
         }
       });
     });
 
-    it('maps 401 to unauthorized message', (done) => {
+    it('maps 401 to unauthorized message', () => {
       service.getGameById('g-1').subscribe({
         error: (err) => {
           expect(err.message).toBe('Unauthorized');
           expect(err.status).toBe(401);
-          done();
         }
       });
 
@@ -183,12 +180,11 @@ describe('GameDataService', () => {
         .flush(null, { status: 401, statusText: 'Unauthorized' });
     });
 
-    it('maps 403 to forbidden message', (done) => {
+    it('maps 403 to forbidden message', () => {
       service.getGameById('g-1').subscribe({
         error: (err) => {
           expect(err.message).toBe('Forbidden');
           expect(err.status).toBe(403);
-          done();
         }
       });
 
@@ -196,11 +192,10 @@ describe('GameDataService', () => {
         .flush(null, { status: 403, statusText: 'Forbidden' });
     });
 
-    it('uses backend error message when provided', (done) => {
+    it('uses backend error message when provided', () => {
       service.getGameById('g-1').subscribe({
         error: (err) => {
           expect(err.message).toBe('Game is archived');
-          done();
         }
       });
 
@@ -208,11 +203,10 @@ describe('GameDataService', () => {
         .flush({ message: 'Game is archived' }, { status: 400, statusText: 'Bad Request' });
     });
 
-    it('does not use fallback for 404 errors', (done) => {
+    it('does not use fallback for 404 errors', () => {
       service.getGameById('nonexistent').subscribe({
         error: (err) => {
           expect(err.message).toBe('Resource not found');
-          done();
         }
       });
 
@@ -222,16 +216,15 @@ describe('GameDataService', () => {
   });
 
   describe('getGameParticipants', () => {
-    it('rejects empty gameId with validation error', (done) => {
+    it('rejects empty gameId with validation error', () => {
       service.getGameParticipants('').subscribe({
         error: (err) => {
           expect(err.message).toBe('Validation error');
-          done();
         }
       });
     });
 
-    it('maps API participants correctly', (done) => {
+    it('maps API participants correctly', () => {
       const apiParticipants = [
         { id: 'p1', username: 'User1', joinedAt: '2025-01-01T00:00:00Z', isCreator: true },
         { id: 'p2', username: 'User2', joinedAt: '2025-01-01T01:00:00Z', isCreator: false }
@@ -241,34 +234,31 @@ describe('GameDataService', () => {
         expect(participants.length).toBe(2);
         expect(participants[0].username).toBe('User1');
         expect(participants[1].isCreator).toBeFalse();
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/game-1/participants`)
         .flush(apiParticipants);
     });
 
-    it('returns empty array for non-array response', (done) => {
+    it('returns empty array for non-array response', () => {
       service.getGameParticipants('game-1').subscribe(participants => {
         expect(participants).toEqual([]);
         expect(loggerSpy.warn).toHaveBeenCalledWith(
           'GameDataService: participants payload is not an array',
           jasmine.objectContaining({ gameId: 'game-1' })
         );
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/game-1/participants`)
         .flush({ data: [] });
     });
 
-    it('surfaces error for 404 when fallback disabled', (done) => {
+    it('surfaces error for 404 when fallback disabled', () => {
       environment.enableFallbackData = false;
 
       service.getGameParticipants('game-1').subscribe({
         error: (err) => {
           expect(err.message).toBe('Resource not found');
-          done();
         }
       });
 
@@ -278,7 +268,7 @@ describe('GameDataService', () => {
   });
 
   describe('getUserGames', () => {
-    it('maps array of API games', (done) => {
+    it('maps array of API games', () => {
       const apiGames = [
         { id: 'g1', name: 'Game1', creatorUsername: 'U1', maxParticipants: 4, status: 'CREATING', createdAt: '2025-01-01', currentParticipantCount: 1 },
         { id: 'g2', name: 'Game2', creatorUsername: 'U2', maxParticipants: 8, status: 'ACTIVE', createdAt: '2025-01-02', currentParticipantCount: 3 }
@@ -288,22 +278,20 @@ describe('GameDataService', () => {
         expect(games.length).toBe(2);
         expect(games[0].creatorName).toBe('U1');
         expect(games[1].participantCount).toBe(3);
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/my-games`).flush(apiGames);
     });
 
-    it('returns empty array for non-array response', (done) => {
+    it('returns empty array for non-array response', () => {
       service.getUserGames().subscribe(games => {
         expect(games).toEqual([]);
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/my-games`).flush({ items: [] });
     });
 
-    it('filters out games that fail to map', (done) => {
+    it('filters out games that fail to map', () => {
       const apiGames = [
         { id: 'g1', name: 'Good Game', creatorUsername: 'U1', maxParticipants: 4, status: 'CREATING', createdAt: '2025-01-01', currentParticipantCount: 1 },
         null
@@ -312,13 +300,12 @@ describe('GameDataService', () => {
       service.getUserGames().subscribe(games => {
         expect(games.length).toBe(1);
         expect(games[0].name).toBe('Good Game');
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/my-games`).flush(apiGames);
     });
 
-    it('handles HTTP error', (done) => {
+    it('handles HTTP error', () => {
       service.getUserGames().subscribe({
         error: (err) => {
           expect(err.message).toBe('Generic error');
@@ -326,7 +313,6 @@ describe('GameDataService', () => {
             'GameDataService: HTTP request failed',
             jasmine.objectContaining({ status: 418, message: 'Generic error' })
           );
-          done();
         }
       });
 
@@ -336,22 +322,20 @@ describe('GameDataService', () => {
   });
 
   describe('verifyGameExists', () => {
-    it('returns true when game exists', (done) => {
+    it('returns true when game exists', () => {
       const apiGame = { id: 'g1', name: 'Game', creatorUsername: 'U', maxParticipants: 4, status: 'CREATING', createdAt: '2025-01-01', currentParticipantCount: 1 };
 
       service.verifyGameExists('g1').subscribe(exists => {
         expect(exists).toBeTrue();
-        done();
       });
 
       httpMock.expectOne(`${apiBaseUrl}/games/g1`).flush(apiGame);
     });
 
-    it('throws not found error when game is missing', (done) => {
+    it('throws not found error when game is missing', () => {
       service.verifyGameExists('missing').subscribe({
         error: (err) => {
           expect(err.message).toBe('Resource not found');
-          done();
         }
       });
 
@@ -359,11 +343,10 @@ describe('GameDataService', () => {
         .flush(null, { status: 404, statusText: 'Not Found' });
     });
 
-    it('rejects empty gameId', (done) => {
+    it('rejects empty gameId', () => {
       service.verifyGameExists('').subscribe({
         error: (err) => {
           expect(err.message).toBe('Validation error');
-          done();
         }
       });
     });

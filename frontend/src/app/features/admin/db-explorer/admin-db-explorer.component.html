@@ -1,0 +1,112 @@
+<div class="db-explorer">
+  <h2 class="db-explorer__title">Explorateur Base de Données</h2>
+
+  @if (loading()) {
+    <div class="db-explorer__loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Chargement des tables...</span>
+    </div>
+  } @else if (loadError) {
+    <div class="db-explorer__error">
+      <p>Impossible de charger les informations de la base de données.</p>
+      <button mat-raised-button color="primary" (click)="loadTables()">Réessayer</button>
+    </div>
+  } @else if (tables().length === 0) {
+    <div class="db-explorer__empty">
+      <p>Aucune table disponible.</p>
+    </div>
+  } @else {
+    <p class="db-explorer__count">{{ tables().length }} table(s) — triées par nombre de lignes décroissant</p>
+    <table mat-table [dataSource]="tables()" class="db-explorer__table">
+
+      <ng-container matColumnDef="tableName">
+        <th mat-header-cell *matHeaderCellDef>Table</th>
+        <td mat-cell *matCellDef="let row" class="table-name">{{ row.tableName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="entityName">
+        <th mat-header-cell *matHeaderCellDef>Entité JPA</th>
+        <td mat-cell *matCellDef="let row">{{ row.entityName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="rowCount">
+        <th mat-header-cell *matHeaderCellDef>Lignes</th>
+        <td mat-cell *matCellDef="let row" class="row-count" [class.row-count--error]="row.rowCount < 0">
+          {{ row.rowCount < 0 ? '—' : (row.rowCount | number) }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="sizeDescription">
+        <th mat-header-cell *matHeaderCellDef>Taille</th>
+        <td mat-cell *matCellDef="let row">{{ row.sizeDescription }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  }
+
+  <div class="db-explorer__query-section">
+    <h3 class="db-explorer__query-title">Requête SQL (lecture seule)</h3>
+    <p class="db-explorer__query-hint">Seules les requêtes SELECT sont autorisées. Résultat limité à 100 lignes.</p>
+
+    <textarea
+      class="db-explorer__query-input"
+      [(ngModel)]="sqlQuery"
+      placeholder="SELECT * FROM games LIMIT 10"
+      rows="4"
+      [attr.aria-label]="'Saisir une requête SQL SELECT'">
+    </textarea>
+
+    <div class="db-explorer__query-actions">
+      <button
+        mat-raised-button
+        color="accent"
+        [disabled]="!sqlQuery.trim() || queryLoading()"
+        (click)="executeQuery()">
+        @if (queryLoading()) {
+          <mat-spinner diameter="16" class="inline-spinner"></mat-spinner>
+          Exécution...
+        } @else {
+          Exécuter
+        }
+      </button>
+    </div>
+
+    @if (queryError) {
+      <div class="db-explorer__query-error" role="alert">
+        <strong>Erreur :</strong> {{ queryError }}
+      </div>
+    }
+
+    @if (queryResult(); as result) {
+      <div class="db-explorer__query-result">
+        <p class="db-explorer__result-meta">
+          {{ result.totalRows }} ligne(s) retournée(s)
+          @if (result.truncated) {
+            <span class="truncated-badge">tronqué à 100</span>
+          }
+        </p>
+
+        @if (result.columns.length === 0) {
+          <p class="db-explorer__empty">La requête n'a retourné aucune ligne.</p>
+        } @else {
+          <div class="db-explorer__result-table-wrapper">
+            <table mat-table [dataSource]="result.rows" class="db-explorer__table db-explorer__result-table">
+
+              @for (col of result.columns; track col) {
+                <ng-container [matColumnDef]="col">
+                  <th mat-header-cell *matHeaderCellDef class="result-col-header">{{ col }}</th>
+                  <td mat-cell *matCellDef="let row" class="result-cell">{{ getCellValue(row, col) }}</td>
+                </ng-container>
+              }
+
+              <tr mat-header-row *matHeaderRowDef="result.columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: result.columns;"></tr>
+            </table>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

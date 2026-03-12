@@ -146,8 +146,8 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
       return actions;
     }
 
-    const isReceiver = this.trade.toUserId === this.currentUserId;
-    const isSender = this.trade.fromUserId === this.currentUserId;
+    const isReceiver = this.isCurrentUserTradeReceiver();
+    const isSender = this.isCurrentUserTradeSender();
 
     if (isReceiver) {
       actions.push({
@@ -393,6 +393,14 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
     return hoursUntilExpiry < 24 && hoursUntilExpiry > 0;
   }
 
+  isCurrentUserTradeReceiver(): boolean {
+    return this.matchesCurrentUser(this.trade.toUserId, this.trade.toUserName);
+  }
+
+  isCurrentUserTradeSender(): boolean {
+    return this.matchesCurrentUser(this.trade.fromUserId, this.trade.fromUserName);
+  }
+
   // Dialog management
   onClose(): void {
     this.dialogRef.close();
@@ -446,5 +454,18 @@ export class TradeDetailsComponent implements OnInit, OnDestroy {
 
   trackByTimelineIndex(index: number, item: TradeTimeline): number {
     return index;
+  }
+
+  private matchesCurrentUser(userId: string, username: string): boolean {
+    if (this.currentUserId === userId) {
+      return true;
+    }
+
+    const currentUsername = this.userContextService.getCurrentUser()?.username?.trim().toLowerCase();
+    if (!currentUsername) {
+      return false;
+    }
+
+    return currentUsername === username.trim().toLowerCase();
   }
 }

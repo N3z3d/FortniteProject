@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
@@ -172,6 +174,20 @@ class PlayerQualityServiceTest {
       PlayerQualityJobResult result = service.runDailyQualityJob();
 
       assertThat(result.staleUnresolvedAlerted()).isZero();
+    }
+  }
+
+  @Nested
+  @DisplayName("Scheduling — activation")
+  class SchedulingActivation {
+
+    @Test
+    @DisplayName("runDailyQualityJob is annotated with @Scheduled(cron = '0 0 3 * * *')")
+    void runDailyQualityJobHasScheduledAnnotation() throws NoSuchMethodException {
+      Method method = PlayerQualityService.class.getMethod("runDailyQualityJob");
+      Scheduled scheduled = method.getAnnotation(Scheduled.class);
+      assertThat(scheduled).as("@Scheduled annotation must be present").isNotNull();
+      assertThat(scheduled.cron()).isEqualTo("0 0 3 * * *");
     }
   }
 }

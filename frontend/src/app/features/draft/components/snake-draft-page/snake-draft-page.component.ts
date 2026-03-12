@@ -91,8 +91,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
   }
 
   onTimerExpired(): void {
-    if (!this.recommendedPlayer || !this.gameId) return;
-    this.isPickPending = true;
+    if (!this.recommendedPlayer || !this.gameId || !this.isMyTurn || this.isPickPending) return;
     this.doConfirmPick(this.recommendedPlayer);
   }
 
@@ -107,18 +106,28 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
   }
 
   private doConfirmPick(player: AvailablePlayer): void {
-    const myParticipant = this.getMyParticipant();
-    if (!myParticipant || !this.gameId) return;
+    if (!this.gameId || !this.isMyTurn || this.isPickPending) return;
 
-    this.wsService.publishDraftPick(this.gameId, myParticipant.id, player.id);
-    this.showNarrativeToast(player);
-    this.selectedPlayer = null;
-    this.isPickPending = false;
+    this.isPickPending = true;
+    this.draftService
+      .submitSnakePick(this.gameId, player.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: state => {
+          this.applyDraftState(state);
+          this.showNarrativeToast(player);
+          this.selectedPlayer = null;
+          this.isPickPending = false;
+        },
+        error: () => {
+          this.isPickPending = false;
+        },
+      });
   }
 
   private loadDraftState(gameId: string): void {
     this.draftService
-      .getDraftBoardState(gameId)
+      .getSnakeBoardState(gameId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(state => this.applyDraftState(state));
   }
@@ -151,7 +160,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
   private handleDraftEvent(event: { event: string; draftId: string }): void {
     if (event.event === TURN_CHANGED_EVENT && this.gameId) {
       this.draftService
-        .getDraftBoardState(this.gameId)
+        .getSnakeBoardState(this.gameId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(state => this.applyDraftState(state));
     }
@@ -173,7 +182,10 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
 
   private computeIsMyTurn(state: DraftBoardState): boolean {
     const username = this.userContext.getCurrentUser()?.username;
-    return !!username && state.currentParticipant?.username === username;
+    return (
+      !!username &&
+      state.currentParticipant?.username?.toLowerCase() === username.toLowerCase()
+    );
   }
 
   private extractRegions(state: DraftBoardState): string[] {
@@ -216,19 +228,13 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  private getMyParticipant(): SnakeParticipant | null {
-    const username = this.userContext.getCurrentUser()?.username;
-    return this.participants.find(p => p.username === username) ?? null;
-  }
-
   private showNarrativeToast(player: AvailablePlayer): void {
     const region = player.region ? String(player.region) : '';
     const rank = player.totalPoints ? `Rank ${player.totalPoints}` : '';
     this.snackBar.open(
-      `Tu as sÃ©lectionnÃ© ${player.username} â€” ${rank} ${region} âœ”`,
+      `Tu as selectionne ${player.username} - ${rank} ${region}`.trim(),
       undefined,
       { duration: PICK_CONFIRM_SNACKBAR_DURATION_MS, panelClass: 'snack-pick-confirm' }
     );
   }
 }
-

@@ -223,7 +223,6 @@ describe('CreateGameComponent', () => {
     component.addRegionRule('NAC', 2);
 
     const entries = component.getRegionRulesEntries();
-    expect(entries).toContain(['EU', 3]);
-    expect(entries).toContain(['NAC', 2]);
+    expect(entries).toEqual(jasmine.arrayContaining([['EU', 3], ['NAC', 2]]));
   });
 }); 

@@ -108,11 +108,13 @@ class AuthenticationFlowIntegrationTest {
       return;
     }
 
-    // Then - L'authentification doit échouer (401, 403, 400 ou 500 si user not found)
+    // Then - L'authentification doit échouer (401, 403, 400, 429 ou 500 si user not found).
+    // 429 TOO_MANY_REQUESTS is also valid: the rate limiter correctly rejects the request.
     assertTrue(
         response.getStatusCode() == HttpStatus.UNAUTHORIZED
             || response.getStatusCode() == HttpStatus.FORBIDDEN
             || response.getStatusCode() == HttpStatus.BAD_REQUEST
+            || response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS
             || response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR,
         "Les credentials invalides doivent être rejetés, got: " + response.getStatusCode());
   }
@@ -141,11 +143,13 @@ class AuthenticationFlowIntegrationTest {
         return;
       }
 
-      // Then - L'injection doit être bloquée (user not found = rejected)
+      // Then - L'injection doit être bloquée (user not found = rejected).
+      // 429 TOO_MANY_REQUESTS is also valid: rate limiter correctly rejects the request.
       assertTrue(
           response.getStatusCode() == HttpStatus.UNAUTHORIZED
               || response.getStatusCode() == HttpStatus.BAD_REQUEST
               || response.getStatusCode() == HttpStatus.FORBIDDEN
+              || response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS
               || response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR,
           "L'injection SQL doit être bloquée: "
               + maliciousInput
@@ -178,11 +182,13 @@ class AuthenticationFlowIntegrationTest {
         return;
       }
 
-      // Then - L'attaque XSS doit être bloquée (user not found = rejected)
+      // Then - L'attaque XSS doit être bloquée (user not found = rejected).
+      // 429 TOO_MANY_REQUESTS is also valid: rate limiter correctly rejects the request.
       assertTrue(
           response.getStatusCode() == HttpStatus.UNAUTHORIZED
               || response.getStatusCode() == HttpStatus.BAD_REQUEST
               || response.getStatusCode() == HttpStatus.FORBIDDEN
+              || response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS
               || response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR,
           "L'attaque XSS doit être bloquée: " + xssInput + ", got: " + response.getStatusCode());
     }

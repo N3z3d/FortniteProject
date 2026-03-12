@@ -1,0 +1,89 @@
+<div class="user-list">
+  <h2 class="user-list__title">Gestion des Utilisateurs</h2>
+
+  @if (loading()) {
+    <div class="user-list__loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Chargement des utilisateurs...</span>
+    </div>
+  } @else if (loadError) {
+    <div class="user-list__error">
+      <p>Impossible de charger la liste des utilisateurs.</p>
+      <button mat-raised-button color="primary" (click)="loadUsers()">Réessayer</button>
+    </div>
+  } @else {
+    <div class="user-list__filters">
+      <mat-form-field appearance="outline" class="user-list__search">
+        <mat-label>Rechercher</mat-label>
+        <input matInput [formControl]="searchControl" placeholder="Nom ou email..." />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="user-list__filter-role">
+        <mat-label>Rôle</mat-label>
+        <mat-select [formControl]="roleFilter">
+          <mat-option value="ALL">Tous</mat-option>
+          <mat-option value="USER">Utilisateur</mat-option>
+          <mat-option value="ADMIN">Admin</mat-option>
+          <mat-option value="SPECTATOR">Spectateur</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="user-list__filter-status">
+        <mat-label>Statut</mat-label>
+        <mat-select [formControl]="statusFilter">
+          <mat-option value="ALL">Tous</mat-option>
+          <mat-option value="ACTIVE">Actifs</mat-option>
+          <mat-option value="DELETED">Supprimés</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (filteredUsers.length === 0) {
+      <div class="user-list__empty">
+        <p>Aucun utilisateur ne correspond aux filtres sélectionnés.</p>
+      </div>
+    } @else {
+      <p class="user-list__count">
+        {{ filteredUsers.length }} utilisateur(s) sur {{ allUsers().length }} au total
+      </p>
+      <table mat-table [dataSource]="filteredUsers" class="user-list__table">
+
+        <ng-container matColumnDef="username">
+          <th mat-header-cell *matHeaderCellDef>Nom d'utilisateur</th>
+          <td mat-cell *matCellDef="let row" class="username-cell">{{ row.username }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let row">{{ row.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Rôle</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="role-badge" [class]="'role-badge--' + row.role.toLowerCase()">
+              {{ row.role }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="season">
+          <th mat-header-cell *matHeaderCellDef>Saison</th>
+          <td mat-cell *matCellDef="let row">{{ row.currentSeason }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="status-badge" [class.status-badge--deleted]="row.deleted">
+              {{ row.deleted ? 'Supprimé' : 'Actif' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row--deleted]="row.deleted"></tr>
+      </table>
+    }
+  }
+</div>

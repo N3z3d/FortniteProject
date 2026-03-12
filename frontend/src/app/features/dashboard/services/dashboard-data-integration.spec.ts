@@ -54,7 +54,7 @@ describe('DashboardDataService - Integration TDD', () => {
   }
 
   describe('Validation des données réelles', () => {
-    it('devrait recevoir 147 joueurs depuis l\'API backend (pas 12)', (done) => {
+    it('devrait recevoir 147 joueurs depuis l\'API backend (pas 12)', () => {
       // ARRANGE
       const gameId = 'test-game-id';
       
@@ -82,9 +82,6 @@ describe('DashboardDataService - Integration TDD', () => {
         expect(stats.totalPlayers).not.toBe(12); // Plus jamais 12 !
         expect(stats.totalTeams).toBe(3);
         expect(stats.totalPoints).toBeGreaterThan(6604); // Plus de points avec plus de joueurs
-        
-        
-        done();
       });
 
       // ASSERT - Mock the expected API call (inclut gameId)
@@ -93,7 +90,7 @@ describe('DashboardDataService - Integration TDD', () => {
       req.flush(expectedApiResponse);
     });
 
-    it('devrait gérer le cas où le backend retourne encore 12 joueurs (régression)', (done) => {
+    it('devrait gérer le cas où le backend retourne encore 12 joueurs (régression)', () => {
       // ARRANGE - Cas de régression
       const gameId = 'test-game-id';
       const regressionResponse = {
@@ -107,9 +104,6 @@ describe('DashboardDataService - Integration TDD', () => {
       service.getGameStatistics(gameId).subscribe(stats => {
         // ASSERT - Ce test détecte une régression
         expect(stats.totalPlayers).toBe(12);
-        
-        
-        done();
       });
 
       const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);
@@ -118,7 +112,7 @@ describe('DashboardDataService - Integration TDD', () => {
   });
 
   describe('Validation de l\'intégration complète', () => {
-    it('devrait retourner des données cohérentes entre les différents endpoints', (done) => {
+    it('devrait retourner des données cohérentes entre les différents endpoints', () => {
       // ARRANGE
       const gameId = 'test-game-id';
       
@@ -140,9 +134,6 @@ describe('DashboardDataService - Integration TDD', () => {
         const totalPlayersInTeams = data.leaderboard.reduce((sum, team) => 
           sum + (team.players?.length || 0), 0);
         expect(totalPlayersInTeams).toBeCloseTo(147, -1); // Tolérance de ±10
-        
-        
-        done();
       });
 
       // Mock all endpoints (inclut gameId)
@@ -157,7 +148,7 @@ describe('DashboardDataService - Integration TDD', () => {
   });
 
   describe('Tests de performance et log analysis', () => {
-    it('devrait logger les performances et identifier les goulots d\'étranglement', (done) => {
+    it('devrait logger les performances et identifier les goulots d\'étranglement', () => {
       // ARRANGE
       const gameId = 'test-game-id';
       const startTime = performance.now();
@@ -170,10 +161,6 @@ describe('DashboardDataService - Integration TDD', () => {
         // ASSERT - Performance monitoring
         expect(duration).toBeLessThan(5000); // Max 5 seconds
         expect(stats.totalPlayers).toBeGreaterThan(12); // Au minimum plus que 12
-        
-        
-        
-        done();
       });
 
       const req = httpMock.expectOne(`${apiUrl}/leaderboard/stats?season=2025&gameId=${gameId}`);

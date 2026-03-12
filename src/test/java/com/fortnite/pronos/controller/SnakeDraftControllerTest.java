@@ -11,6 +11,7 @@ import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,10 +19,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import com.fortnite.pronos.dto.PlayerRecommendResponse;
 import com.fortnite.pronos.dto.SnakePickRequest;
 import com.fortnite.pronos.dto.SnakeTurnResponse;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.UserResolver;
+import com.fortnite.pronos.service.draft.DraftTrancheService;
 import com.fortnite.pronos.service.draft.SnakeDraftService;
 import com.fortnite.pronos.service.game.GameDraftService;
 
@@ -31,6 +34,7 @@ class SnakeDraftControllerTest {
   @Mock private SnakeDraftService snakeDraftService;
   @Mock private GameDraftService gameDraftService;
   @Mock private UserResolver userResolver;
+  @Mock private DraftTrancheService draftTrancheService;
   @Mock private HttpServletRequest httpRequest;
 
   private SnakeDraftController controller;
@@ -41,7 +45,9 @@ class SnakeDraftControllerTest {
 
   @BeforeEach
   void setUp() {
-    controller = new SnakeDraftController(snakeDraftService, gameDraftService, userResolver);
+    controller =
+        new SnakeDraftController(
+            snakeDraftService, gameDraftService, userResolver, draftTrancheService);
   }
 
   private User stubUser() {
@@ -56,6 +62,7 @@ class SnakeDraftControllerTest {
   }
 
   @Nested
+  @DisplayName("Initialize Cursors")
   class InitializeCursors {
 
     @Test
@@ -83,6 +90,7 @@ class SnakeDraftControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Current Turn")
   class GetCurrentTurn {
 
     @Test
@@ -107,10 +115,38 @@ class SnakeDraftControllerTest {
   }
 
   @Nested
+  @DisplayName("Recommend")
+  class Recommend {
+
+    @Test
+    void whenPlayerAvailable_returns200() {
+      PlayerRecommendResponse recommended =
+          new PlayerRecommendResponse(UUID.randomUUID(), "Best Player", "EU", "11-20", 11);
+      when(draftTrancheService.recommendPlayer(gameId, "GLOBAL"))
+          .thenReturn(Optional.of(recommended));
+
+      var response = controller.recommend(gameId, "GLOBAL");
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertThat(response.getBody().getData().tranche()).isEqualTo("11-20");
+    }
+
+    @Test
+    void whenNoPlayerAvailable_returns404() {
+      when(draftTrancheService.recommendPlayer(gameId, "GLOBAL")).thenReturn(Optional.empty());
+
+      var response = controller.recommend(gameId, "GLOBAL");
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @Nested
+  @DisplayName("Process Pick")
   class ProcessPick {
 
     @Test
-    void whenUserTurn_returns200WithNextTurn() {
+    void whenUserTurn_returns200WithNextTurnAndValidatePickCalled() {
       UUID nextParticipantId = UUID.randomUUID();
       SnakeTurnResponse nextTurn =
           new SnakeTurnResponse(draftId, "GLOBAL", nextParticipantId, 1, 2, false);
@@ -125,6 +161,7 @@ class SnakeDraftControllerTest {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(response.getBody().getData().participantId()).isEqualTo(nextParticipantId);
+      verify(draftTrancheService).validatePick(gameId, "GLOBAL", request.getPlayerId());
       verify(gameDraftService).selectPlayer(gameId, userId, request.getPlayerId());
     }
 

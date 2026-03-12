@@ -1,6 +1,6 @@
 # Story 4.1: Orchestration draft serpent
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,7 +20,7 @@ so that le draft reste équitable jusqu'à complétion de toutes les équipes.
 
 4. **Given** c'est le tour du dernier participant du round 1 (pick N), **When** il soumet son pick, **Then** le curseur passe au round 2 (`pickNumber=1`, `reversed=true`) — l'ordre s'inverse (C→B→A pour un draft à 3 participants).
 
-5. **Given** ce n'est PAS le tour du participant (mauvais `participantId`), **When** il appelle `POST /api/games/{gameId}/draft/snake/pick`, **Then** le système répond 403 FORBIDDEN.
+5. **Given** ce n'est PAS le tour du participant (mauvais `participantId`), **When** il appelle `POST /api/games/{gameId}/draft/snake/pick`, **Then** le système répond 409 CONFLICT (code: `NOT_YOUR_TURN`) — `NotYourTurnException` mappée intentionnellement à 409 par JIRA-AUDIT-009 (état conflictuel, sémantiquement correct).
 
 6. **Given** un utilisateur non authentifié, **When** il appelle `POST /api/games/{gameId}/draft/snake/initialize` ou `POST /api/games/{gameId}/draft/snake/pick`, **Then** le système répond 401 UNAUTHORIZED.
 
@@ -186,3 +186,19 @@ claude-sonnet-4-6
 - `src/main/java/com/fortnite/pronos/controller/SnakeDraftController.java` — NEW
 - `src/test/java/com/fortnite/pronos/service/draft/SnakeDraftServiceTest.java` — NEW
 - `src/test/java/com/fortnite/pronos/controller/SnakeDraftControllerTest.java` — NEW
+- `src/test/java/com/fortnite/pronos/config/SecurityConfigSnakeDraftAuthorizationTest.java` — NEW (M2 fix, 5 tests)
+
+## Review Follow-ups (AI — post-code-review fixes)
+
+### Fixes appliqués
+
+**M1 — FIXED**: AC#5 disait 403 mais `NotYourTurnException` → 409 CONFLICT (délibéré par JIRA-AUDIT-009, sémantiquement correct). Story AC#5 mise à jour pour refléter 409.
+
+**M2 — FIXED**: Créé `SecurityConfigSnakeDraftAuthorizationTest` (5 tests): unauthenticated bloqué sur initialize/pick/turn, authenticated passe Spring Security sur initialize (userResolver retourne null → 401), authenticated peut GET turn.
+
+### Action items
+
+- [ ] **[AI-Review][Medium][M3]** : `processPick()` — cursor advance (`validateAndAdvance`) et pick recording (`selectPlayer`) sont dans des transactions Spring séparées. Si `selectPlayer()` échoue après l'avance du curseur, l'état est incohérent. Envisager de déplacer les deux opérations dans un seul `@Service @Transactional`.
+- [ ] **[AI-Review][Low][L1]** : `SnakeDraftControllerTest` — aucun `@DisplayName` sur les méthodes de test (inconsistant avec `SnakeDraftServiceTest`).
+- [ ] **[AI-Review][Low][L2]** : `buildShuffledParticipantIds()` utilise `p.getUser().getId()` — violation de la Loi de Demeter. Utiliser `p.getUserId()` si exposé par le modèle `GameParticipant`, sinon ajouter la méthode.
+- [ ] **[AI-Review][Low][L3]** : `initializeCursors()` ne vérifie pas si la liste de participants est vide — `getOrInitTurn()` avec un `snakeOrder` vide pourrait produire un comportement indéfini.

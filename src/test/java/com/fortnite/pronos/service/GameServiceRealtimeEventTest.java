@@ -1,5 +1,6 @@
 package com.fortnite.pronos.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -68,6 +69,26 @@ class GameServiceRealtimeEventTest {
 
     gameService.joinGame(participantId, joinGameRequest);
 
+    verify(gameRealtimeEventService)
+        .publishToUsers(
+            Set.of(creatorId, participantId), GameRealtimeEventService.GAME_JOINED, gameId);
+  }
+
+  @Test
+  void shouldIgnoreRealtimePublishFailureAfterSuccessfulJoin() {
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+    gameDto.setParticipants(Map.of(creatorId, "creator", participantId, "participant"));
+    when(gameParticipantService.joinGame(participantId, joinGameRequest)).thenReturn(true);
+    when(gameQueryService.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+    org.mockito.Mockito.doThrow(new IllegalStateException("stale async context"))
+        .when(gameRealtimeEventService)
+        .publishToUsers(
+            Set.of(creatorId, participantId), GameRealtimeEventService.GAME_JOINED, gameId);
+
+    boolean joined = gameService.joinGame(participantId, joinGameRequest);
+
+    assertThat(joined).isTrue();
     verify(gameRealtimeEventService)
         .publishToUsers(
             Set.of(creatorId, participantId), GameRealtimeEventService.GAME_JOINED, gameId);

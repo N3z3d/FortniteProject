@@ -13,6 +13,7 @@ import { LoggerService } from '../../../../core/services/logger.service';
 import { TradingService, TradeOffer, Player, Team } from '../../services/trading.service';
 import { UserContextService } from '../../../../core/services/user-context.service';
 import { TranslationService } from '../../../../core/services/translation.service';
+import { GameSelectionService } from '../../../../core/services/game-selection.service';
 import { TradeBusinessService } from '../../services/trade-business.service';
 import { TradeValidators } from '../../utils/trade-validators';
 import {
@@ -62,6 +63,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   private readonly logger = inject(LoggerService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly gameSelectionService = inject(GameSelectionService);
   public readonly t = inject(TranslationService);
 
   @ViewChild('playerSearch', { static: false }) playerSearchInput?: ElementRef<HTMLInputElement>;
@@ -132,15 +134,10 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Extract gameId from parent route (/games/{gameId}/trades/create)
-    this.route.parent?.params.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      this.gameId = params['id'] || null;
-      if (this.gameId) {
-        this.loadInitialData();
-      }
-    });
+    this.gameId = this.resolveGameId();
+    if (this.gameId) {
+      this.loadInitialData();
+    }
 
     this.setupFormSubscriptions();
     this.handleRouteParams();
@@ -373,7 +370,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       
       // Navigate back to dashboard after a delay
       setTimeout(() => {
-        this.router.navigate(['/trades']);
+        this.navigateToTradesDashboard();
       }, 2000);
       
     } catch (error) {
@@ -471,7 +468,7 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
 
   // Navigation
   onCancel(): void {
-    this.router.navigate(['/trades']);
+    this.navigateToTradesDashboard();
   }
 
   onClearTrade(): void {
@@ -489,5 +486,30 @@ export class TradeProposalComponent implements OnInit, OnDestroy {
       availablePlayers: newAvailable,
       targetTeamPlayers: newTargetPlayers
     });
+  }
+
+  private navigateToTradesDashboard(): void {
+    this.gameId ??= this.resolveGameId();
+
+    if (!this.gameId) {
+      this.logger.warn('TradeProposalComponent: missing gameId, cannot navigate to trades dashboard');
+      return;
+    }
+
+    this.router.navigate(['/games', this.gameId, 'trades']);
+  }
+
+  private resolveGameId(): string | null {
+    const parentGameId = this.route.parent?.snapshot.paramMap.get('id');
+    if (parentGameId) {
+      return parentGameId;
+    }
+
+    const routeGameId = this.route.snapshot.paramMap.get('gameId');
+    if (routeGameId) {
+      return routeGameId;
+    }
+
+    return this.gameSelectionService.getSelectedGame()?.id ?? null;
   }
 }

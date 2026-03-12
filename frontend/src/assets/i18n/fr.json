@@ -36,7 +36,15 @@
     "home": "Accueil",
     "expand": "Déplier",
     "collapse": "Replier",
-    "code": "Code"
+    "code": "Code",
+    "nav": {
+      "games": "Parties",
+      "catalogue": "Catalogue",
+      "myProfile": "Mon profil",
+      "settings": "Paramètres",
+      "logout": "Déconnexion",
+      "administration": "Administration"
+    }
   },
   "auth": {
     "login": "Connexion",
@@ -1605,6 +1613,18 @@
         "other": "Autre"
       }
     }
+  },
+  "gameLeaderboard": {
+    "title": "Classement de la partie",
+    "loading": "Chargement du classement…",
+    "error": "Impossible de charger le classement.",
+    "retry": "Réessayer",
+    "empty": "Aucune donnée disponible pour cette partie.",
+    "lastUpdateAt": "Dernière mise à jour : {date}",
+    "rank": "Rang",
+    "participant": "Participant",
+    "deltaPr": "Delta PR",
+    "lastUpdate": "Mise à jour"
   },
   "authSwitch": {
     "messages": {

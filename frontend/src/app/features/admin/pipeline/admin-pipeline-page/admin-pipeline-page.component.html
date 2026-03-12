@@ -20,21 +20,40 @@
       <mat-spinner diameter="48"></mat-spinner>
     </div>
 
-    <!-- Error state -->
-    <div *ngIf="error() && !loading()" class="pipeline-error" role="alert">
-      <mat-icon>error_outline</mat-icon>
-      <p>Erreur lors du chargement de la pipeline.</p>
-      <button mat-button (click)="refresh()">Réessayer</button>
-    </div>
+    <!-- Content (always shown once loading is done) -->
+    <ng-container *ngIf="!loading()">
 
-    <!-- Content -->
-    <ng-container *ngIf="!loading() && !error()">
+      <!-- Partial load error banner -->
+      <div *ngIf="dataLoadError" class="pipeline-error--partial" role="alert">
+        <mat-icon>warning_amber</mat-icon>
+        <span>Certaines données n'ont pas pu être chargées. Les informations affichées peuvent être incomplètes.</span>
+      </div>
 
       <!-- Inbox-zero state -->
       <div *ngIf="isInboxZero" class="pipeline-inbox-zero" role="status" aria-label="Pipeline vide">
         <mat-icon class="pipeline-inbox-zero__icon">task_alt</mat-icon>
         <h2 class="pipeline-inbox-zero__title">Pipeline vide !</h2>
         <p class="pipeline-inbox-zero__text">Tous les joueurs ont été traités. Revenez plus tard.</p>
+      </div>
+
+      <!-- Alert banner -->
+      <div *ngIf="pipelineAlert && pipelineAlert.level !== 'NONE'"
+           class="pipeline-alert-banner"
+           [class.pipeline-alert-banner--critical]="pipelineAlert.level === 'CRITICAL'"
+           [class.pipeline-alert-banner--warning]="pipelineAlert.level === 'WARNING'"
+           role="alert"
+           aria-atomic="true">
+        <mat-icon>warning</mat-icon>
+        <span class="pipeline-alert-banner__text">
+          {{ alertLabel(pipelineAlert.level) }}
+          — {{ pipelineAlert.unresolvedCount }} joueur(s) non résolus depuis {{ pipelineAlert.elapsedHours }}h
+        </span>
+      </div>
+
+      <!-- Alert error indicator -->
+      <div *ngIf="alertError" class="pipeline-alert-error" role="alert" aria-atomic="true">
+        <mat-icon>error_outline</mat-icon>
+        <span>Impossible de charger le statut d'alerte pipeline.</span>
       </div>
 
       <mat-tab-group class="pipeline-tabs" animationDuration="200ms">
@@ -57,7 +76,8 @@
               [entries]="unresolvedEntries"
               mode="unresolved"
               (resolved)="onResolved($event)"
-              (rejected)="onRejected($event)">
+              (rejected)="onRejected($event)"
+              (correctRequested)="onCorrectRequested($event)">
             </app-admin-pipeline-table>
           </section>
         </mat-tab>
@@ -78,8 +98,97 @@
           <section class="pipeline-section" aria-label="Joueurs traités">
             <app-admin-pipeline-table
               [entries]="resolvedEntries"
-              mode="resolved">
+              mode="resolved"
+              (correctRequested)="onCorrectRequested($event)">
             </app-admin-pipeline-table>
+          </section>
+        </mat-tab>
+
+        <!-- Regional stats tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">public</mat-icon>
+            Statut par région
+          </ng-template>
+
+          <section class="pipeline-section pipeline-section--regional" aria-label="Statut pipeline par région">
+
+            <div *ngIf="regionalError" class="regional-error" role="alert">
+              <mat-icon>error_outline</mat-icon>
+              <p>Impossible de charger les statistiques régionales.</p>
+              <button mat-button (click)="refresh()">Réessayer</button>
+            </div>
+
+            <table *ngIf="!regionalError" class="regional-table" role="table" aria-label="Statistiques par région">
+              <thead>
+                <tr>
+                  <th scope="col">Région</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Non résolus</th>
+                  <th scope="col">Résolus</th>
+                  <th scope="col">Rejetés</th>
+                  <th scope="col">Dernière ingestion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of regionalStats" [class.has-unresolved]="row.unresolvedCount > 0">
+                  <td class="cell--region">{{ row.region }}</td>
+                  <td>{{ row.totalCount }}</td>
+                  <td class="cell--unresolved">{{ row.unresolvedCount }}</td>
+                  <td class="cell--resolved">{{ row.resolvedCount }}</td>
+                  <td class="cell--rejected">{{ row.rejectedCount }}</td>
+                  <td class="cell--date">{{ row.lastIngestedAt ? (row.lastIngestedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                </tr>
+                <tr *ngIf="regionalStats.length === 0">
+                  <td colspan="6" class="regional-empty">Aucune donnée régionale disponible.</td>
+                </tr>
+              </tbody>
+            </table>
+
+          </section>
+        </mat-tab>
+
+        <!-- Scraping logs tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">receipt_long</mat-icon>
+            Logs scraping
+          </ng-template>
+
+          <section class="pipeline-section pipeline-section--scraping" aria-label="Logs des runs de scraping">
+            <table class="regional-table scraping-table" role="table" aria-label="Logs scraping">
+              <thead>
+                <tr>
+                  <th scope="col">Source</th>
+                  <th scope="col">Statut</th>
+                  <th scope="col">Début</th>
+                  <th scope="col">Fin</th>
+                  <th scope="col">Lignes</th>
+                  <th scope="col">Erreur</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let log of scrapeLog">
+                  <td class="cell--region">{{ log.source }}</td>
+                  <td>
+                    <span class="status-chip"
+                          [class.status--success]="log.status === 'SUCCESS'"
+                          [class.status--failed]="log.status === 'FAILED'"
+                          [class.status--partial]="log.status === 'PARTIAL'"
+                          [class.status--running]="log.status === 'RUNNING'">
+                      {{ log.status }}
+                    </span>
+                  </td>
+                  <td class="cell--date">{{ log.startedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="cell--date">{{ log.finishedAt ? (log.finishedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ log.totalRowsWritten ?? '—' }}</td>
+                  <td class="cell--error">{{ log.errorMessage ?? '—' }}</td>
+                </tr>
+                <tr *ngIf="scrapeLog.length === 0">
+                  <td colspan="6" class="regional-empty">Aucun log de scraping disponible.</td>
+                </tr>
+              </tbody>
+            </table>
           </section>
         </mat-tab>
 

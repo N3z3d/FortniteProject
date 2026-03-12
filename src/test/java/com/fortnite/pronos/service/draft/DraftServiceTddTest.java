@@ -78,6 +78,7 @@ class DraftServiceTddTest {
     testGame.setId(UUID.randomUUID());
     testGame.setName("Test Fantasy League");
     testGame.setMaxParticipants(4);
+    testGame.setCurrentSeason(2031);
 
     // Regional rules for total rounds calculation
     GameRegionRule naRule = GameRegionRule.builder().region(Player.Region.EU).maxPlayers(3).build();
@@ -165,8 +166,16 @@ class DraftServiceTddTest {
     @DisplayName("Should create draft with proper initial state")
     void shouldCreateDraftWithProperInitialState() {
       // RED: Define expected behavior for draft creation
+      // Simulate Hibernate @GeneratedValue: assign a UUID when save() is called (id was null).
       when(draftRepository.save(any(Draft.class)))
-          .thenAnswer(invocation -> invocation.getArgument(0));
+          .thenAnswer(
+              invocation -> {
+                Draft d = invocation.getArgument(0);
+                if (d.getId() == null) {
+                  d.setId(UUID.randomUUID());
+                }
+                return d;
+              });
 
       Draft result = draftService.createDraft(testGame, testParticipants);
 
@@ -177,6 +186,7 @@ class DraftServiceTddTest {
       assertThat(result.getTotalRounds()).isEqualTo(5); // Sum of region rules: 3 + 2
       assertThat(result.getStartedAt()).isNotNull();
       assertThat(result.getId()).isNotNull();
+      assertThat(result.getSeason()).isEqualTo(2031);
 
       verify(draftRepository).save(any(Draft.class));
       verify(draftDomainRepository).save(any(com.fortnite.pronos.domain.draft.model.Draft.class));
@@ -261,7 +271,7 @@ class DraftServiceTddTest {
 
       assertThatThrownBy(() -> draftService.getCurrentPicker(testDraft, testParticipants))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("Aucun participant trouvÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© pour l'ordre");
+          .hasMessageContaining("Aucun participant trouvé pour l'ordre");
     }
   }
 
@@ -334,6 +344,7 @@ class DraftServiceTddTest {
 
       assertThat(result.getStatus()).isEqualTo(Draft.Status.ACTIVE);
       assertThat(result.getStartedAt()).isNotNull();
+      assertThat(result.getSeason()).isEqualTo(2031);
       verify(draftRepository).save(any(Draft.class));
     }
 
@@ -749,7 +760,7 @@ class DraftServiceTddTest {
       DraftAdvanceResponse response = draftService.advanceDraftToNextParticipant(testGame);
 
       // After advancing: round becomes 2, pick becomes 1
-      // In snake draft round 2 (even), pick 1 â†’ snakePosition = 3 - 1 + 1 = 3
+      // In snake draft round 2 (even), pick 1 → snakePosition = 3 - 1 + 1 = 3
       assertThat(response.currentPick()).isEqualTo(1);
       assertThat(response.currentRound()).isEqualTo(2);
       // Snake draft: round 2 starts with last participant (position 3)

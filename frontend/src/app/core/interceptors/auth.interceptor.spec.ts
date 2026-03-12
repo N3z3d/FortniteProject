@@ -78,4 +78,17 @@ describe('AuthInterceptor', () => {
     expect(req.request.params.has('user')).toBeFalse();
     req.flush([]);
   });
+
+  it('adds X-Test-User header for local E2E synthetic tokens instead of Authorization', () => {
+    authService.getToken.and.returnValue('e2e.thibaut.token');
+    sessionStorage.setItem('currentUser', JSON.stringify({ username: 'thibaut' }));
+
+    http.get('http://localhost:8080/api/games').subscribe();
+
+    const req = httpMock.expectOne(r => r.url === 'http://localhost:8080/api/games');
+    expect(req.request.headers.get('X-Test-User')).toBe('thibaut');
+    expect(req.request.headers.has('Authorization')).toBeFalse();
+    req.flush([]);
+    sessionStorage.removeItem('currentUser');
+  });
 });

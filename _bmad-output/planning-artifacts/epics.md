@@ -791,3 +791,160 @@ So that je puisse piloter l exploitation sans ouvrir chaque game individuellemen
 **When** la meme action est soumise
 **Then** le systeme rejette la requete avec un message d erreur explicite
 **And** aucun etat invalide n est persiste
+
+## Epic 8: Stabilisation locale et regression E2E critique
+
+Consolider l application en environnement local prod-like avec une suite Playwright rerunnable, un contrat de tests explicite et un cadrage clair des flux encore non couverts avant toute reprise du chantier hebergement/staging.
+
+### Story 8.1: Stabilisation locale E2E critique
+
+As a developer validating the app locally,
+I want a deterministic Playwright regression pack for the critical user flows,
+So that I can detect real regressions before considering public staging.
+
+**NFR refs:** NFR-R01, NFR-M03
+
+**Acceptance Criteria:**
+
+**Given** le front, le back et la base Docker locale sont deja disponibles
+**When** `npx playwright test` est execute deux fois de suite
+**Then** la suite complete se relance sans reset manuel de la base
+**And** aucun echec n est provoque par des donnees E2E historiques ou des collisions entre suites.
+
+**Given** les flows critiques create/join par code font partie de la regression locale
+**When** un code d invitation est genere depuis l UI
+**Then** la suite attend la persistance effective cote backend avant de lancer le join
+**And** deux profils seedes distincts peuvent rejoindre le meme jeu de facon deterministe.
+
+**Given** le pack critique local doit rester stable dans le temps
+**When** le full-flow est execute
+**Then** le flux coeur create/join reste dans la suite principale
+**And** les etapes draft plus profondes sont soit stabilisees dans une suite dediee, soit explicitement sorties du pack critique avec une raison documentee.
+
+**Given** la couverture E2E actuelle reste incomplete
+**When** la story est terminee
+**Then** `CAT-04` n est plus skippe
+**And** les zones encore hors couverture critique (draft approfondi, trade/swap) sont documentees avec la prochaine story recommandee.
+
+### Story 8.2: Realignement contrat draft serpent front/back
+
+As a developer validating the deep draft flow locally,
+I want the snake draft page to consume the real backend contract and persist picks end to end,
+So that the dedicated Playwright draft suite can move from `fixme` to active coverage.
+
+**FR refs:** FR-21, FR-24, FR-28
+
+**Acceptance Criteria:**
+
+**Given** la page snake draft locale depend encore de routes legacy `/api/drafts/*`
+**When** la story est livree
+**Then** le front consomme les endpoints runtime reels du snake draft
+**And** les liens UI home/detail ouvrent bien `/games/:id/draft/snake`.
+
+**Given** un participant courant confirme un pick
+**When** le backend persiste la selection
+**Then** le roster du participant est mis a jour
+**And** un reload du board refleche le joueur pris et la progression draft.
+
+**Given** la suite Playwright dediee draft est aujourd hui en `fixme`
+**When** la story est terminee
+**Then** `frontend/e2e/draft-flow.spec.ts` passe activement
+**And** le reliquat hors scope restant est documente explicitement.
+
+### Story 8.3: Couverture E2E locale trade/swap
+
+As a developer validating roster mutations locally,
+I want deterministic Playwright coverage for swap solo and mutual trade flows on the real runtime contract,
+So that the last major local gameplay area without E2E safety net is covered before any infra/staging work.
+
+**FR refs:** FR-34, FR-35, FR-36
+
+**Acceptance Criteria:**
+
+**Given** la couverture Playwright trade/swap est absente aujourd hui
+**When** la story est terminee
+**Then** une suite dediee `frontend/e2e/trade-swap-flow.spec.ts` est active
+**And** elle n est ni `fixme` ni `skip`.
+
+**Given** un participant effectue un `swap-solo` valide
+**When** le scenario E2E est rejoue en local
+**Then** le roster est effectivement modifie
+**And** la trace d audit est visible.
+
+**Given** deux participants en draft actif effectuent un trade 1v1
+**When** le trade est propose puis accepte ou rejete
+**Then** la suite E2E valide les deux issues
+**And** la story documente le reliquat hors scope restant.
+
+### Story 8.4: Realignement dashboard trades front/runtime
+
+As a local user validating trades from the actual UI,
+I want the `trades/` dashboard and related routes to consume the real game-scoped runtime contract without mock fallback,
+So that the trade UI itself becomes a trustworthy prod-like surface for local testing.
+
+**FR refs:** FR-34, FR-35, FR-36
+
+**Acceptance Criteria:**
+
+**Given** le module frontend `trades/` reste partiellement legacy apres 8.3
+**When** la story est livree
+**Then** la surface principale `/games/:id/trades` charge les trades et statistiques de la game courante via les endpoints runtime reels
+**And** aucun fallback mock silencieux ne masque un echec API.
+
+**Given** la navigation trades actuelle melange routes game-scope et routes legacy detachees
+**When** le module est rationalise
+**Then** les parcours prioritaires restent coherents avec le contexte game courant
+**And** les routes legacy non valides sont redirigees ou bornees explicitement.
+
+**Given** les preuves runtime trade/swap existent deja via helpers et API
+**When** la story est terminee
+**Then** au moins une preuve Playwright passe par la vraie page `trades/`
+**And** le reliquat hors scope restant est documente explicitement.
+
+### Story 8.5: Couverture E2E multi-trade realtime
+
+As a local user validating advanced trade behavior,
+I want deterministic E2E coverage for chained trades and dashboard refresh behavior on the real runtime contract,
+So that the remaining local risk on the `trades/` module is reduced before any infra/staging work.
+
+**FR refs:** FR-34, FR-35, FR-36
+
+**Acceptance Criteria:**
+
+**Given** la page `trades/` est maintenant alignee sur le runtime reel
+**When** la story est terminee
+**Then** une suite Playwright dediee couvre au moins un scenario de trades successifs sur la meme partie
+**And** elle reste rerunnable sans reset manuel.
+
+**Given** plusieurs offres de trade peuvent coexister sur une meme partie
+**When** la suite est executee
+**Then** le dashboard garde des statuts et libelles coherents pour chaque trade
+**And** les compteurs ou filtres restent consistants apres refresh.
+
+**Given** la synchro temps reel fine reste hors scope a ce stade
+**When** la story est livree
+**Then** le comportement par refresh/polling est prouve explicitement
+**And** le reliquat WebSocket restant est documente sans faux vert.
+
+### Story 8.6: Stabilisation auth E2E et admin guard
+
+As a local user relying on the full E2E pack as a prod-like safety net,
+I want auth/admin seeded sessions to follow the same local runtime contract everywhere,
+So that the complete Playwright suite becomes green and rerunnable without false negatives caused by helper or guard drift.
+
+**Acceptance Criteria:**
+
+**Given** les sessions E2E seedes utilisent des tokens synthetiques locaux
+**When** la story est terminee
+**Then** les appels API frontend utilisent le contrat local attendu par le backend dev
+**And** ils ne cassent plus les parcours auth/admin par faux bearer token.
+
+**Given** un admin seed local navigue directement vers `/admin*`
+**When** la story est livree
+**Then** le guard d administration s appuie sur la vraie autorisation admin
+**And** les routes admin directes ne redirigent plus a tort vers `/games`.
+
+**Given** le pack Playwright complet doit servir de filet de securite local
+**When** la story est terminee
+**Then** le pack complet passe au vert
+**And** un second rerun sans reset manuel confirme la rerunabilite.

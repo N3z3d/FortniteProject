@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 
@@ -70,12 +70,25 @@ const PLAYERS: AvailablePlayer[] = [
   buildPlayer('3', 'Charlie', 'EU', '1'),
 ];
 
+const CATALOGUE_DEBOUNCE_SETTLE_MS = 250;
+
 describe('PlayerCataloguePageComponent', () => {
   let component: PlayerCataloguePageComponent;
   let fixture: ComponentFixture<PlayerCataloguePageComponent>;
   let catalogueSpy: jasmine.SpyObj<PlayerCatalogueService>;
 
+  const waitForCatalogueDebounce = async (): Promise<void> => {
+    await vi.advanceTimersByTimeAsync(CATALOGUE_DEBOUNCE_SETTLE_MS);
+    fixture.detectChanges();
+  };
+
+  const initializeCatalogue = async (): Promise<void> => {
+    fixture.detectChanges();
+    await waitForCatalogueDebounce();
+  };
+
   beforeEach(async () => {
+    vi.useFakeTimers();
     catalogueSpy = jasmine.createSpyObj('PlayerCatalogueService', ['getPlayers', 'getSparkline']);
     catalogueSpy.getPlayers.and.returnValue(of(PLAYERS));
     catalogueSpy.getSparkline.and.returnValue(of([]));
@@ -94,93 +107,84 @@ describe('PlayerCataloguePageComponent', () => {
     component = fixture.componentInstance;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   // ===== INIT =====
 
   describe('Initialization', () => {
-    it('should load players on init', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should load players on init', async () => {
+      await initializeCatalogue();
 
       expect(catalogueSpy.getPlayers).toHaveBeenCalled();
       expect(component.filteredPlayers.length).toBe(3);
-    }));
+    });
 
-    it('should extract unique regions from players', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should extract unique regions from players', async () => {
+      await initializeCatalogue();
 
       expect(component.availableRegions).toContain('EU');
       expect(component.availableRegions).toContain('NAC');
-    }));
+    });
 
-    it('should extract unique tranches from players', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should extract unique tranches from players', async () => {
+      await initializeCatalogue();
 
       expect(component.availableTranches).toContain('1');
       expect(component.availableTranches).toContain('2');
-    }));
+    });
 
-    it('should set loading=false after data arrives', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should set loading=false after data arrives', async () => {
+      await initializeCatalogue();
 
       expect(component.loading).toBeFalse();
-    }));
+    });
 
-    it('should show virtual scroll viewport when players exist', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should show virtual scroll viewport when players exist', async () => {
+      await initializeCatalogue();
 
       const viewport = fixture.nativeElement.querySelector('cdk-virtual-scroll-viewport');
       expect(viewport).not.toBeNull();
-    }));
+    });
   });
 
   // ===== FILTER =====
 
   describe('Filter', () => {
-    it('should call getPlayers with region filter', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should call getPlayers with region filter', async () => {
+      await initializeCatalogue();
       const filter: PlayerFilter = { searchTerm: '', region: 'EU', tranche: null, hideUnavailable: false, hideTaken: false };
       component.onFilterChanged(filter);
-      tick(300);
+      await waitForCatalogueDebounce();
 
       expect(catalogueSpy.getPlayers).toHaveBeenCalledWith(jasmine.objectContaining({ region: 'EU' }));
-    }));
+    });
 
-    it('should update currentSearchTerm on filter change', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should update currentSearchTerm on filter change', async () => {
+      await initializeCatalogue();
       const filter: PlayerFilter = { searchTerm: 'alpha', region: null, tranche: null, hideUnavailable: false, hideTaken: false };
       component.onFilterChanged(filter);
-      tick(300);
+      await waitForCatalogueDebounce();
 
       expect(component.currentSearchTerm).toBe('alpha');
-    }));
+    });
 
-    it('should deduplicate identical consecutive filters (emit once, not twice)', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should deduplicate identical consecutive filters (emit once, not twice)', async () => {
+      await initializeCatalogue();
       // Emit a NEW filter (different from default) twice in a row
       const filter: PlayerFilter = { searchTerm: 'test', region: 'EU', tranche: null, hideUnavailable: false, hideTaken: false };
       component.onFilterChanged(filter);
       component.onFilterChanged(filter);
-      tick(300);
+      await waitForCatalogueDebounce();
       const countAfterDuplication = catalogueSpy.getPlayers.calls.count();
 
       // Now emit it a 3rd time — still same: no new call
       component.onFilterChanged(filter);
-      tick(300);
+      await waitForCatalogueDebounce();
 
       expect(catalogueSpy.getPlayers.calls.count()).toBe(countAfterDuplication);
-    }));
+    });
   });
 
   // ===== EMPTY STATE =====
@@ -190,37 +194,29 @@ describe('PlayerCataloguePageComponent', () => {
       catalogueSpy.getPlayers.and.returnValue(of([]));
     });
 
-    it('should show empty state when no players', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should show empty state when no players', async () => {
+      await initializeCatalogue();
 
       const empty = fixture.nativeElement.querySelector('.catalogue-empty');
       expect(empty).not.toBeNull();
-    }));
+    });
 
-    it('should show CTA button in empty state', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should show CTA button in empty state', async () => {
+      await initializeCatalogue();
 
       const cta = fixture.nativeElement.querySelector('.catalogue-empty__cta');
       expect(cta).not.toBeNull();
-    }));
+    });
 
-    it('should not show viewport when no players', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should not show viewport when no players', async () => {
+      await initializeCatalogue();
 
       const viewport = fixture.nativeElement.querySelector('cdk-virtual-scroll-viewport');
       expect(viewport).toBeNull();
-    }));
+    });
 
-    it('should open snackbar on empty CTA click', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should open snackbar on empty CTA click', async () => {
+      await initializeCatalogue();
       component.currentSearchTerm = 'unknown';
       const snackSpy = spyOn((component as any).snackBar, 'open');
 
@@ -231,34 +227,31 @@ describe('PlayerCataloguePageComponent', () => {
         jasmine.any(String),
         jasmine.any(Object)
       );
-    }));
+    });
   });
 
   // ===== COMPARISON =====
 
   describe('Comparison', () => {
-    it('should add player to comparison on card selected', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should add player to comparison on card selected', async () => {
+      await initializeCatalogue();
 
       component.onCardSelected(PLAYERS[0]);
 
       expect(component.comparedPlayers).toContain(PLAYERS[0]);
-    }));
+    });
 
-    it('should remove player from comparison when selected again', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should remove player from comparison when selected again', async () => {
+      await initializeCatalogue();
 
       component.onCardSelected(PLAYERS[0]);
       component.onCardSelected(PLAYERS[0]);
 
       expect(component.comparedPlayers).not.toContain(PLAYERS[0]);
-    }));
+    });
 
-    it('should not add more than 2 players to comparison', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should not add more than 2 players to comparison', async () => {
+      await initializeCatalogue();
       const snackSpy = spyOn((component as any).snackBar, 'open');
 
       component.onCardSelected(PLAYERS[0]);
@@ -267,55 +260,49 @@ describe('PlayerCataloguePageComponent', () => {
 
       expect(component.comparedPlayers.length).toBe(2);
       expect(snackSpy).toHaveBeenCalled();
-    }));
+    });
 
-    it('should clear comparison on clearCompare()', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should clear comparison on clearCompare()', async () => {
+      await initializeCatalogue();
 
       component.onCardSelected(PLAYERS[0]);
       component.onCardSelected(PLAYERS[1]);
       component.clearCompare();
 
       expect(component.comparedPlayers.length).toBe(0);
-    }));
+    });
 
-    it('should show comparison panel when players are compared', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      component.comparedPlayers = [PLAYERS[0]];
+    it('should show comparison panel when players are compared', async () => {
+      await initializeCatalogue();
+      component.onCardSelected(PLAYERS[0]);
       fixture.detectChanges();
 
       const panel = fixture.nativeElement.querySelector('.comparison-panel');
       expect(panel).not.toBeNull();
-    }));
+    });
 
-    it('should not show comparison panel when no comparison', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should not show comparison panel when no comparison', async () => {
+      await initializeCatalogue();
 
       const panel = fixture.nativeElement.querySelector('.comparison-panel');
       expect(panel).toBeNull();
-    }));
+    });
 
-    it('should mark compared player as selected', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should mark compared player as selected', async () => {
+      await initializeCatalogue();
 
       component.onCardSelected(PLAYERS[0]);
 
       expect(component.isCompared(PLAYERS[0])).toBeTrue();
       expect(component.isCompared(PLAYERS[1])).toBeFalse();
-    }));
+    });
   });
 
   // ===== REPORT =====
 
   describe('Report', () => {
-    it('should open snackbar on report', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
+    it('should open snackbar on report', async () => {
+      await initializeCatalogue();
       const snackSpy = spyOn((component as any).snackBar, 'open');
 
       component.onReport(PLAYERS[0]);
@@ -325,7 +312,7 @@ describe('PlayerCataloguePageComponent', () => {
         jasmine.any(String),
         jasmine.any(Object)
       );
-    }));
+    });
   });
 
   // ===== TRACK BY =====
@@ -347,29 +334,25 @@ describe('PlayerCataloguePageComponent', () => {
       expect(skipLink.getAttribute('href')).toBe('#accessible-list');
     });
 
-    it('should have accessible list with id', fakeAsync(() => {
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+    it('should have accessible list with id', async () => {
+      await initializeCatalogue();
 
       const list = fixture.nativeElement.querySelector('#accessible-list');
       expect(list).not.toBeNull();
-    }));
+    });
   });
 
   // ===== ERROR HANDLING =====
 
   describe('Error handling', () => {
-    it('should show empty state when service returns empty array (after error recovery)', fakeAsync(() => {
+    it('should show empty state when service returns empty array (after error recovery)', async () => {
       // The real service has catchError(() => of([])), so we simulate that here
       catalogueSpy.getPlayers.and.returnValue(of([]));
-      fixture.detectChanges();
-      tick(300);
-      fixture.detectChanges();
+      await initializeCatalogue();
 
       expect(component.filteredPlayers.length).toBe(0);
       const empty = fixture.nativeElement.querySelector('.catalogue-empty');
       expect(empty).not.toBeNull();
-    }));
+    });
   });
 });

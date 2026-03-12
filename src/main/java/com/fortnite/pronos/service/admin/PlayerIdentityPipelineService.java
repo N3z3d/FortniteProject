@@ -1,16 +1,22 @@
 package com.fortnite.pronos.service.admin;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
+import com.fortnite.pronos.domain.player.identity.model.RegionalStatRow;
 import com.fortnite.pronos.domain.port.out.EpicIdValidatorPort;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
+import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
 import com.fortnite.pronos.exception.InvalidEpicIdException;
 import com.fortnite.pronos.exception.PlayerIdentityNotFoundException;
@@ -91,6 +97,48 @@ public class PlayerIdentityPipelineService {
     return toResponse(saved);
   }
 
+  public PlayerIdentityEntryResponse correctMetadata(
+      UUID playerId, String newUsername, String newRegion, String correctedBy) {
+    PlayerIdentityEntry entry = findEntry(playerId);
+    entry.correctMetadata(newUsername, newRegion, correctedBy);
+    PlayerIdentityEntry saved = identityRepository.save(entry);
+    log.info("Player {} metadata corrected by {}", playerId, correctedBy);
+    return toResponse(saved);
+  }
+
+  public List<PipelineRegionalStatsDto> getRegionalStats() {
+    List<RegionalStatRow> rows = identityRepository.countByRegionAndStatus();
+    Map<String, LocalDateTime> lastDates = identityRepository.findLastIngestedAtByRegion();
+    return assembleRegionalStats(rows, lastDates);
+  }
+
+  private List<PipelineRegionalStatsDto> assembleRegionalStats(
+      List<RegionalStatRow> rows, Map<String, LocalDateTime> lastDates) {
+    Map<String, Map<IdentityStatus, Long>> grouped =
+        rows.stream()
+            .collect(
+                Collectors.groupingBy(
+                    RegionalStatRow::region,
+                    Collectors.groupingBy(
+                        RegionalStatRow::status, Collectors.summingLong(RegionalStatRow::count))));
+
+    return grouped.entrySet().stream()
+        .map(
+            e -> {
+              String region = e.getKey();
+              Map<IdentityStatus, Long> counts = e.getValue();
+              long unresolved = counts.getOrDefault(IdentityStatus.UNRESOLVED, 0L);
+              long resolved = counts.getOrDefault(IdentityStatus.RESOLVED, 0L);
+              long rejected = counts.getOrDefault(IdentityStatus.REJECTED, 0L);
+              long total = unresolved + resolved + rejected;
+              LocalDateTime lastAt = lastDates.get(region);
+              return new PipelineRegionalStatsDto(
+                  region, unresolved, resolved, rejected, total, lastAt);
+            })
+        .sorted(Comparator.comparing(PipelineRegionalStatsDto::region))
+        .toList();
+  }
+
   private PlayerIdentityEntry findEntry(UUID playerId) {
     return identityRepository
         .findByPlayerId(playerId)
@@ -122,6 +170,10 @@ public class PlayerIdentityPipelineService {
         e.getResolvedAt(),
         e.getRejectedAt(),
         e.getRejectionReason(),
-        e.getCreatedAt());
+        e.getCreatedAt(),
+        e.getCorrectedUsername(),
+        e.getCorrectedRegion(),
+        e.getCorrectedBy(),
+        e.getCorrectedAt());
   }
 }

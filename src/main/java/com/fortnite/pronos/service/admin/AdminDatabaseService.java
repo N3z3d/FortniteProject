@@ -3,6 +3,8 @@ package com.fortnite.pronos.service.admin;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.dto.admin.DbTableInfoDto;
+import com.fortnite.pronos.dto.admin.SqlQueryResultDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,10 @@ public class AdminDatabaseService {
   private static final long BYTES_IN_KILOBYTE = 1024L;
   private static final long BYTES_IN_MEGABYTE = BYTES_IN_KILOBYTE * BYTES_IN_KILOBYTE;
   private static final long BYTES_IN_GIGABYTE = BYTES_IN_MEGABYTE * BYTES_IN_KILOBYTE;
+  private static final int MAX_QUERY_ROWS = 100;
+  private static final Pattern FORBIDDEN_KEYWORDS =
+      Pattern.compile(
+          "(?i)\\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|EXECUTE|EXEC|CALL|MERGE|REPLACE|LOAD|IMPORT|EXPORT|COPY|LOCK|UNLOCK)\\b");
 
   private final EntityManager entityManager;
   private final JdbcTemplate jdbcTemplate;
@@ -79,6 +86,20 @@ public class AdminDatabaseService {
           "Could not resolve size for table {} (non-PostgreSQL?): {}", tableName, e.getMessage());
       return "N/A";
     }
+  }
+
+  @Transactional(readOnly = true)
+  public SqlQueryResultDto executeReadOnlyQuery(String sql) {
+    String normalizedSql = sql.strip();
+    if (FORBIDDEN_KEYWORDS.matcher(normalizedSql).find()) {
+      throw new IllegalArgumentException(
+          "Only SELECT queries are allowed. Mutation and DDL statements are forbidden.");
+    }
+    List<Map<String, Object>> allRows = jdbcTemplate.queryForList(normalizedSql);
+    boolean truncated = allRows.size() > MAX_QUERY_ROWS;
+    List<Map<String, Object>> rows = truncated ? allRows.subList(0, MAX_QUERY_ROWS) : allRows;
+    List<String> columns = rows.isEmpty() ? List.of() : List.copyOf(rows.getFirst().keySet());
+    return new SqlQueryResultDto(columns, rows, rows.size(), truncated);
   }
 
   private String formatBytes(long bytes) {

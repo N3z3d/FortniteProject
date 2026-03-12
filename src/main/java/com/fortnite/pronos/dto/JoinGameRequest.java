@@ -6,6 +6,8 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import jakarta.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
@@ -19,8 +21,10 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JoinGameRequest {
 
-  private UUID gameId;
-  private UUID userId;
+  @NotNull(message = "L'ID de la game est requis") private UUID gameId;
+
+  @NotNull(message = "L'ID de l'utilisateur est requis") private UUID userId;
+
   private String invitationCode;
   private Boolean joinAsSpectator;
 

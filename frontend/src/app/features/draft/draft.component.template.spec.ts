@@ -1,3 +1,4 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -9,11 +10,15 @@ import { DraftComponent } from './draft.component';
 import { DraftService } from './services/draft.service';
 import { DraftBoardState, DraftStatus } from './models/draft.interface';
 import { DraftPlayerListComponent } from './components/draft-player-list/draft-player-list.component';
+import { TranslationService } from '../../core/services/translation.service';
+import { UserContextService } from '../../core/services/user-context.service';
 
 describe('DraftComponent Progressive Template', () => {
   let component: DraftComponent;
   let fixture: ComponentFixture<DraftComponent>;
   let draftService: jasmine.SpyObj<DraftService>;
+  let userContextService: jasmine.SpyObj<UserContextService>;
+  let translationService: jasmine.SpyObj<TranslationService>;
 
   const mockDraftBoardState: DraftBoardState = {
     draft: {
@@ -93,10 +98,18 @@ describe('DraftComponent Progressive Template', () => {
     ]);
 
     draftServiceSpy.getDraftBoardState.and.returnValue(of(mockDraftBoardState));
+    userContextService = jasmine.createSpyObj<UserContextService>('UserContextService', ['getCurrentUser']);
+    userContextService.getCurrentUser.and.returnValue({ id: 'participant-1', username: 'user1', email: 'user1@test.dev' });
+    translationService = jasmine.createSpyObj<TranslationService>('TranslationService', ['t']);
+    translationService.t.and.callFake((key: string) => key);
 
     await TestBed.configureTestingModule({
-      imports: [DraftComponent, RouterTestingModule, NoopAnimationsModule, MatDialogModule],
-      providers: [{ provide: DraftService, useValue: draftServiceSpy }]
+      imports: [DraftComponent, RouterTestingModule, NoopAnimationsModule, MatDialogModule, HttpClientTestingModule],
+      providers: [
+        { provide: DraftService, useValue: draftServiceSpy },
+        { provide: UserContextService, useValue: userContextService },
+        { provide: TranslationService, useValue: translationService }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(DraftComponent);
@@ -236,19 +249,19 @@ describe('DraftComponent Progressive Template', () => {
     expect(component.showAllResults).toBeFalse();
   });
 
-  it('delegates playerSelected output to selectPlayer', () => {
+  it('delegates playerSelected output to the selection flow', () => {
     component.gameId = 'game-123';
     component.currentUserId = 'participant-1';
     component.draftState = mockDraftBoardState;
+    draftService.makePlayerSelection.and.returnValue(of(undefined));
     fixture.detectChanges();
 
-    const selectSpy = spyOn(component, 'selectPlayer');
     const playerList = fixture.debugElement.query(By.directive(DraftPlayerListComponent));
     const playerListComponent = playerList.componentInstance as DraftPlayerListComponent;
     const selectedPlayer = mockDraftBoardState.availablePlayers[0];
     playerListComponent.playerSelected.emit(selectedPlayer);
 
-    expect(selectSpy).toHaveBeenCalledWith(selectedPlayer);
+    expect(draftService.makePlayerSelection).toHaveBeenCalledWith('game-123', selectedPlayer.id);
   });
 
   it('shows waiting state when the current user cannot select', () => {

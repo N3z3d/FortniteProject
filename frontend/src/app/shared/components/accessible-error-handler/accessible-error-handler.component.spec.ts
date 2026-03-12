@@ -1,4 +1,4 @@
-import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { AccessibleErrorHandlerComponent, AccessibleErrorInfo } from './accessible-error-handler.component';
 import { AccessibilityAnnouncerService } from '../../services/accessibility-announcer.service';
 import { FocusManagementService } from '../../services/focus-management.service';
@@ -52,7 +52,8 @@ describe('AccessibleErrorHandlerComponent', () => {
   });
 
   describe('showError', () => {
-    it('should set currentError and announce', fakeAsync(() => {
+    it('should set currentError and announce', async () => {
+      vi.useFakeTimers();
       const error: AccessibleErrorInfo = {
         title: 'Test Error',
         message: 'Test message',
@@ -67,9 +68,11 @@ describe('AccessibleErrorHandlerComponent', () => {
         'Test message. errors.handler.errorDialogOpened'
       );
 
-      tick(150);
+      vi.advanceTimersByTime(150);
+      await Promise.resolve();
       expect(mockFocusManagement.focusElement).toHaveBeenCalledWith(component.errorTitle.nativeElement);
-    }));
+      vi.useRealTimers();
+    });
   });
 
   describe('fromHttpError', () => {
@@ -266,8 +269,10 @@ describe('AccessibleErrorHandlerComponent', () => {
       const result = component.getValidationErrorsArray();
 
       expect(result.length).toBe(2);
-      expect(result).toContain({ field: 'email', message: 'Email invalide' });
-      expect(result).toContain({ field: 'password', message: 'Mot de passe trop court' });
+      expect(result).toEqual(jasmine.arrayContaining([
+        jasmine.objectContaining({ field: 'email', message: 'Email invalide' }),
+        jasmine.objectContaining({ field: 'password', message: 'Mot de passe trop court' })
+      ]));
     });
 
     it('should return empty array when no validation errors', () => {

@@ -1,6 +1,7 @@
 package com.fortnite.pronos.model;
 
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.UUID;
 
 import jakarta.persistence.*;
@@ -8,6 +9,8 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "drafts")
 public class Draft {
+
+  private static final int DEFAULT_SEASON = Year.now().getValue();
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -20,6 +23,9 @@ public class Draft {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Status status;
+
+  @Column(name = "season", nullable = false)
+  private Integer season;
 
   @Column(name = "current_round", nullable = false)
   private Integer currentRound;
@@ -56,13 +62,14 @@ public class Draft {
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
     this.status = Status.PENDING;
+    this.season = DEFAULT_SEASON;
     this.currentRound = 1;
     this.currentPick = 1;
   }
 
   public Draft(Game game) {
     this();
-    this.game = game;
+    setGame(game);
     this.totalRounds = calculateTotalRounds(game);
   }
 
@@ -155,6 +162,7 @@ public class Draft {
 
   public void setGame(Game game) {
     this.game = game;
+    this.season = resolveSeason(game);
   }
 
   public UUID getGameId() {
@@ -175,6 +183,14 @@ public class Draft {
 
   public void setStatus(Status status) {
     this.status = status;
+  }
+
+  public Integer getSeason() {
+    return season;
+  }
+
+  public void setSeason(Integer season) {
+    this.season = season != null && season > 0 ? season : DEFAULT_SEASON;
   }
 
   public Integer getCurrentRound() {
@@ -233,6 +249,13 @@ public class Draft {
     this.finishedAt = finishedAt;
   }
 
+  private Integer resolveSeason(Game game) {
+    if (game == null || game.getCurrentSeason() == null || game.getCurrentSeason() <= 0) {
+      return DEFAULT_SEASON;
+    }
+    return game.getCurrentSeason();
+  }
+
   @Override
   public String toString() {
     return "Draft{"
@@ -240,6 +263,8 @@ public class Draft {
         + id
         + ", game="
         + (game != null ? game.getName() : "null")
+        + ", season="
+        + season
         + ", status="
         + status
         + ", currentRound="

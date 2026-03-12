@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
@@ -62,35 +62,38 @@ describe('TeamEditComponent', () => {
     expect(component.team).toBeNull();
   });
 
-  it('should load team from route params', fakeAsync(() => {
+  it('should load team from route params', async () => {
     fixture.detectChanges();
-    tick();
+    await Promise.resolve();
 
     expect(component.teamId).toBe('1');
     expect(component.gameId).toBe('game1');
     expect(component.loading).toBeTrue();
-  }));
+  });
 
-  it('should load mock team data after timeout', fakeAsync(() => {
+  it('should load mock team data after timeout', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(800);
+    vi.advanceTimersByTime(800);
+    await Promise.resolve();
 
     expect(component.loading).toBeFalse();
     expect(component.team).not.toBeNull();
     expect(component.team?.name).toBe('Équipe Thibaut');
     expect(component.players.length).toBe(5);
     expect(component.teamForm.value.name).toBe('Équipe Thibaut');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should not load team if no teamId in route', fakeAsync(() => {
+  it('should not load team if no teamId in route', async () => {
     activatedRoute.params = of({});
     fixture.detectChanges();
-    tick();
+    await Promise.resolve();
 
     expect(component.teamId).toBeNull();
     expect(component.loading).toBeFalse();
     expect(component.team).toBeNull();
-  }));
+  });
 
   it('should show error when saving invalid form', () => {
     component.teamForm.get('name')?.setValue('');
@@ -101,14 +104,16 @@ describe('TeamEditComponent', () => {
     expect(component.saving).toBeFalse();
   });
 
-  it('should save valid form', fakeAsync(() => {
+  it('should save valid form', async () => {
+    vi.useFakeTimers();
     component.teamForm.get('name')?.setValue('New Team Name');
     component.teamForm.get('description')?.setValue('Description');
 
     component.onSave();
 
     expect(component.saving).toBeTrue();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.saving).toBeFalse();
     expect(uiFeedback.showSuccessWithAction).toHaveBeenCalledWith(
@@ -117,20 +122,24 @@ describe('TeamEditComponent', () => {
       jasmine.any(Function),
       3000
     );
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should navigate back on save action click', fakeAsync(() => {
+  it('should navigate back on save action click', async () => {
+    vi.useFakeTimers();
     component.teamForm.get('name')?.setValue('Valid Name');
     component.gameId = 'game1';
 
     component.onSave();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     const onAction = uiFeedback.showSuccessWithAction.calls.mostRecent().args[2] as () => void;
     onAction();
 
     expect(router.navigate).toHaveBeenCalledWith(['/games', 'game1', 'teams']);
-  }));
+    vi.useRealTimers();
+  });
 
   it('should navigate back on cancel', () => {
     component.gameId = 'game1';
@@ -148,7 +157,8 @@ describe('TeamEditComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/games']);
   });
 
-  it('should remove player and show undo option', fakeAsync(() => {
+  it('should remove player and show undo option', async () => {
+    vi.useFakeTimers();
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
     const translations: Record<string, string> = {
       'teams.edit.snackbar.playerRemoved': '{player} retire',
@@ -157,16 +167,19 @@ describe('TeamEditComponent', () => {
     translationService.t.and.callFake((key: string) => translations[key] || key);
 
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.players = [player];
     component.removePlayer(player);
 
     expect(component.players.length).toBe(0);
     expect(uiFeedback.showInfoWithAction).toHaveBeenCalled();
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should restore player on undo', fakeAsync(() => {
+  it('should restore player on undo', async () => {
+    vi.useFakeTimers();
     const player = { id: '1', nickname: 'Mero', region: 'EU', tranche: 'T1', points: 100000 };
     const translations: Record<string, string> = {
       'teams.edit.snackbar.playerRemoved': '{player} retire',
@@ -177,7 +190,8 @@ describe('TeamEditComponent', () => {
     translationService.t.and.callFake((key: string) => translations[key] || key);
 
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.players = [player];
     component.removePlayer(player);
@@ -185,12 +199,13 @@ describe('TeamEditComponent', () => {
 
     const undoAction = uiFeedback.showInfoWithAction.calls.mostRecent().args[2] as () => void;
     undoAction();
-    tick();
+    await Promise.resolve();
 
     expect(component.players.length).toBe(1);
     expect(component.players[0]).toBe(player);
     expect(uiFeedback.showSuccessFromKey).toHaveBeenCalledWith('teams.edit.snackbar.playerRestored', 2000);
-  }));
+    vi.useRealTimers();
+  });
 
   it('should return correct region color', () => {
     expect(component.getRegionColor('EU')).toBe('#4CAF50');

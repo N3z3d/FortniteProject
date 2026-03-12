@@ -99,7 +99,7 @@ describe('LegalComponent', () => {
     );
   });
 
-  it('should use default pageType when route data is missing', (done) => {
+  it('should use default pageType when route data is missing', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [LegalComponent],
@@ -116,7 +116,6 @@ describe('LegalComponent', () => {
       newFixture.detectChanges();
 
       expect(newComponent.pageType).toBe('legal-notice');
-      done();
     });
   });
 

@@ -6,6 +6,7 @@ import {
   AdminAlert,
   AlertThresholds,
   DashboardSummary,
+  GameSupervisionEntry,
   IncidentEntry,
   RecentActivity,
   SystemHealth,
@@ -336,6 +337,149 @@ describe('AdminService', () => {
       const req = httpMock.expectOne(r => r.url === `${baseUrl}/incidents`);
       expect(req.request.params.has('gameId')).toBeFalse();
       req.flush({ success: true, data: [], message: 'OK', timestamp: '' });
+    });
+  });
+
+  describe('getPipelineRegionalStatus', () => {
+    it('should return regional stats list directly', () => {
+      const mockStats = [
+        {
+          region: 'EU',
+          unresolvedCount: 10,
+          resolvedCount: 90,
+          rejectedCount: 2,
+          totalCount: 102,
+          lastIngestedAt: '2025-02-28T08:00:00'
+        }
+      ];
+
+      service.getPipelineRegionalStatus().subscribe(result => {
+        expect(result).toEqual(mockStats);
+        expect(result[0].region).toBe('EU');
+        expect(result[0].unresolvedCount).toBe(10);
+      });
+
+      const req = httpMock.expectOne(
+        `${baseUrl}/players/pipeline/regional-status`
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush(mockStats);
+    });
+  });
+
+  describe('getGamesSupervision', () => {
+    const supervisionBase = `${environment.apiUrl}/api/admin/supervision/games`;
+    const mockEntry: GameSupervisionEntry = {
+      gameId: 'g1',
+      gameName: 'Test Game',
+      status: 'ACTIVE',
+      draftMode: 'SNAKE',
+      participantCount: 3,
+      maxParticipants: 10,
+      creatorUsername: 'thibaut',
+      createdAt: '2026-03-01T00:00:00'
+    };
+
+    it('sends GET without query param when no status provided', () => {
+      let result: GameSupervisionEntry[] | undefined;
+
+      service.getGamesSupervision().subscribe(r => (result = r));
+
+      const req = httpMock.expectOne(supervisionBase);
+      expect(req.request.method).toBe('GET');
+      req.flush([mockEntry]);
+
+      expect(result).toEqual([mockEntry]);
+    });
+
+    it('sends GET with ?status=DRAFTING when status is provided', () => {
+      let result: GameSupervisionEntry[] | undefined;
+
+      service.getGamesSupervision('DRAFTING').subscribe(r => (result = r));
+
+      const req = httpMock.expectOne(`${supervisionBase}?status=DRAFTING`);
+      expect(req.request.method).toBe('GET');
+      req.flush([mockEntry]);
+
+      expect(result).toEqual([mockEntry]);
+    });
+
+    it('returns empty array on HTTP error', () => {
+      let result: GameSupervisionEntry[] | undefined;
+
+      service.getGamesSupervision().subscribe(r => (result = r));
+
+      httpMock
+        .expectOne(supervisionBase)
+        .flush(null, { status: 500, statusText: 'Server Error' });
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getScrapingLogs', () => {
+    const scrapingBase = `${environment.apiUrl}/api/admin/scraping/logs`;
+
+    it('calls GET /api/admin/scraping/logs with default limit 50', () => {
+      service.getScrapingLogs().subscribe();
+      const req = httpMock.expectOne(`${scrapingBase}?limit=50`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('passes custom limit as query param', () => {
+      service.getScrapingLogs(10).subscribe();
+      const req = httpMock.expectOne(`${scrapingBase}?limit=10`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+  });
+
+  describe('getAuditLog', () => {
+    const auditBase = `${baseUrl}/audit-log`;
+
+    it('calls GET /api/admin/audit-log with default limit 50', () => {
+      service.getAuditLog().subscribe();
+      const req = httpMock.expectOne(`${auditBase}?limit=50`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('passes custom limit as query param', () => {
+      service.getAuditLog(20).subscribe();
+      const req = httpMock.expectOne(`${auditBase}?limit=20`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+  });
+
+  describe('executeSqlQuery', () => {
+    const queryUrl = `${baseUrl}/database/query`;
+
+    it('calls POST /api/admin/database/query with query body', () => {
+      service.executeSqlQuery('SELECT * FROM games').subscribe();
+      const req = httpMock.expectOne(queryUrl);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ query: 'SELECT * FROM games' });
+      req.flush({ success: true, data: { columns: ['id'], rows: [], totalRows: 0, truncated: false }, message: '', timestamp: '' });
+    });
+
+    it('returns mapped SqlQueryResult from response', () => {
+      const mockResult = { columns: ['id', 'name'], rows: [{ id: 1, name: 'Alice' }], totalRows: 1, truncated: false };
+      service.executeSqlQuery('SELECT id, name FROM users').subscribe(result => {
+        expect(result).toEqual(mockResult);
+      });
+      const req = httpMock.expectOne(queryUrl);
+      req.flush({ success: true, data: mockResult, message: '', timestamp: '' });
+    });
+
+    it('returns truncated result when over 100 rows', () => {
+      const mockResult = { columns: ['id'], rows: [], totalRows: 100, truncated: true };
+      service.executeSqlQuery('SELECT id FROM big_table').subscribe(result => {
+        expect(result.truncated).toBeTrue();
+      });
+      const req = httpMock.expectOne(queryUrl);
+      req.flush({ success: true, data: mockResult, message: '', timestamp: '' });
     });
   });
 });

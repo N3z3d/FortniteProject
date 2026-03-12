@@ -1,6 +1,6 @@
 # Story 3.3: Suppression de compte avec libération roster
 
-Status: review
+Status: done
 
 ## Story
 
@@ -212,3 +212,19 @@ claude-sonnet-4-6
 - `src/main/java/com/fortnite/pronos/service/UserDeletionService.java` (NEW)
 - `src/main/java/com/fortnite/pronos/controller/AccountController.java` (NEW)
 - `src/test/java/com/fortnite/pronos/service/UserDeletionServiceTest.java` (NEW — 9 tests)
+- `src/test/java/com/fortnite/pronos/config/SecurityConfigAccountAuthorizationTest.java` (NEW — 2 tests, M1 fix)
+
+## Review Follow-ups (AI — post-code-review fixes)
+
+### Fix appliqué (M1)
+
+**M1 — FIXED**: No `@WebMvcTest` security test for `DELETE /api/account`. Created `SecurityConfigAccountAuthorizationTest` with 2 tests:
+- `unauthenticatedUserCannotDeleteAccount` → asserts 401 or 403
+- `authenticatedUserCanDeleteAccount` → `@WithMockUser(username = "player1")` + `nullable(String.class)` stub (username param is null in security-it profile) → asserts 204
+
+### Action items
+
+- [ ] **[AI-Review][Low][L1]** : `leaveAllActiveGames()` loads all user games via `findGamesByUserId(userId)` then filters in-memory by `ACTIVE_STATUSES` — could add a dedicated filtered query to `GameDomainRepositoryPort` for performance on large datasets.
+- [ ] **[AI-Review][Low][L2]** : `AccountDeletionBlockedException` manque `private static final long serialVersionUID = 1L`.
+- [ ] **[AI-Review][Low][L3]** : `?user=` query param on `DELETE /api/account` — only active in dev/h2/test profiles but endpoint is visible in API docs. Document clearly in Swagger/OpenAPI to avoid confusion.
+- [ ] **[AI-Review][Low][L4]** : `UserDeletionServiceTest` does not use `InOrder` to verify that `leaveGame()` is called before `softDelete()` — sequence is critical for correctness.

@@ -29,12 +29,16 @@ class UserRepositoryRoleTest {
     User userWithoutTeam = buildUser("user2", User.UserRole.USER);
     User admin = buildUser("admin", User.UserRole.ADMIN);
 
-    userRepository.saveAll(List.of(userWithTeam, userWithoutTeam, admin));
+    // Use the returned managed instances so that Hibernate tracks them in the session.
+    // saveAll with merge() returns managed copies; the original references remain detached.
+    List<User> saved = userRepository.saveAll(List.of(userWithTeam, userWithoutTeam, admin));
+    User managedUserWithTeam = saved.get(0);
 
     Team team = new Team();
-    team.setId(UUID.randomUUID());
+    // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it; pre-assigning causes
+    // Hibernate 6.6 to call merge() for an unknown row and throw StaleObjectStateException.
     team.setName("Team user1");
-    team.setOwner(userWithTeam);
+    team.setOwner(managedUserWithTeam);
     team.setSeason(2025);
     teamRepository.save(team);
 

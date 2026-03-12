@@ -265,7 +265,7 @@ describe('GameDetailActionsService', () => {
   });
 
   it('opens code duration dialog in generate mode when no code exists', () => {
-    const regenerateSpy = spyOn(service, 'regenerateInvitationCode');
+    const regenerateSpy = spyOn(service, 'regenerateInvitationCode').and.stub();
     dialogSpy.open.and.returnValue({ afterClosed: () => of('7d') } as any);
 
     service.promptRegenerateCode('game1', false);
@@ -275,7 +275,7 @@ describe('GameDetailActionsService', () => {
   });
 
   it('opens rename dialog and renames game when a new name is submitted', () => {
-    const renameSpy = spyOn(service, 'renameGame');
+    const renameSpy = spyOn(service, 'renameGame').and.stub();
     dialogSpy.open.and.returnValue({ afterClosed: () => of('New Game Name') } as any);
 
     service.promptRenameGame('game1', 'Old Name');
@@ -290,7 +290,7 @@ describe('GameDetailActionsService', () => {
   });
 
   it('does not rename when rename dialog is cancelled', () => {
-    const renameSpy = spyOn(service, 'renameGame');
+    const renameSpy = spyOn(service, 'renameGame').and.stub();
     dialogSpy.open.and.returnValue({ afterClosed: () => of(undefined) } as any);
 
     service.promptRenameGame('game1', 'Old Name');

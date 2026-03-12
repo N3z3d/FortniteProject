@@ -26,6 +26,7 @@ import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftPickRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.PlayerDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.ScoreRepositoryPort;
@@ -40,6 +41,7 @@ class GameDetailServiceTest {
 
   @Mock private GameDomainRepositoryPort gameRepository;
   @Mock private DraftDomainRepositoryPort draftRepository;
+  @Mock private DraftPickRepositoryPort draftPickRepository;
   @Mock private PlayerDomainRepositoryPort playerRepository;
   @Mock private ScoreRepositoryPort scoreRepository;
   @Mock private UserRepositoryPort userRepository;
@@ -151,6 +153,15 @@ class GameDetailServiceTest {
         .thenReturn(Optional.of(createPlayer(bughaId, "Bugha", PlayerRegion.NAW)));
     when(playerRepository.findById(aquaId))
         .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), creatorParticipant.getId()))
+        .thenReturn(List.of(bughaId));
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), teddyParticipant.getId()))
+        .thenReturn(List.of(aquaId));
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), marcelParticipant.getId()))
+        .thenReturn(List.of());
 
     when(scoreRepository.sumPointsByPlayerAndSeason(eq(bughaId), anyInt())).thenReturn(15000);
     when(scoreRepository.sumPointsByPlayerAndSeason(eq(aquaId), anyInt())).thenReturn(12000);
@@ -164,6 +175,7 @@ class GameDetailServiceTest {
     assertThat(result.getParticipants()).hasSize(3);
     assertThat(result.getDraftInfo()).isNotNull();
     assertThat(result.getDraftInfo().getStatus()).isEqualTo("FINISHED");
+    assertThat(result.getDraftInfo().getTotalRounds()).isEqualTo(3);
 
     assertThat(result.getStatistics().getTotalParticipants()).isEqualTo(3);
     assertThat(result.getStatistics().getTotalPlayers()).isEqualTo(2);
@@ -263,6 +275,64 @@ class GameDetailServiceTest {
 
     assertThat(result.getDraftInfo()).isNull();
     assertThat(result.getStatus()).isEqualTo("ACTIVE");
+  }
+
+  @Test
+  @DisplayName(
+      "utilise les DraftPicks comme source de verite quand le roster du participant est obsolete")
+  void shouldUseDraftPicksWhenParticipantRosterIsStale() {
+    UUID swappedPlayerId = UUID.randomUUID();
+    Draft draft =
+        Draft.restore(
+            UUID.randomUUID(),
+            gameId,
+            DraftStatus.ACTIVE,
+            2,
+            4,
+            5,
+            LocalDateTime.now().minusDays(2),
+            null,
+            LocalDateTime.now().minusDays(2),
+            null);
+
+    when(gameRepository.findById(gameId)).thenReturn(Optional.of(testGame));
+    when(draftRepository.findByGameId(gameId)).thenReturn(Optional.of(draft));
+    when(userRepository.findById(creatorId))
+        .thenReturn(Optional.of(createUser(creatorId, "Thibaut")));
+    when(userRepository.findById(teddyId)).thenReturn(Optional.of(createUser(teddyId, "Teddy")));
+    when(userRepository.findById(marcelId)).thenReturn(Optional.of(createUser(marcelId, "Marcel")));
+
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), creatorParticipant.getId()))
+        .thenReturn(List.of(swappedPlayerId));
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), teddyParticipant.getId()))
+        .thenReturn(List.of(aquaId));
+    when(draftPickRepository.findPlayerIdsByDraftIdAndParticipantId(
+            draft.getId(), marcelParticipant.getId()))
+        .thenReturn(List.of());
+
+    when(playerRepository.findById(swappedPlayerId))
+        .thenReturn(Optional.of(createPlayer(swappedPlayerId, "EUMid1", PlayerRegion.EU)));
+    when(playerRepository.findById(aquaId))
+        .thenReturn(Optional.of(createPlayer(aquaId, "Aqua", PlayerRegion.EU)));
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(swappedPlayerId), anyInt()))
+        .thenReturn(9000);
+    when(scoreRepository.sumPointsByPlayerAndSeason(eq(aquaId), anyInt())).thenReturn(12000);
+
+    GameDetailDto result = service.getGameDetails(gameId);
+
+    GameDetailDto.ParticipantInfo thibautInfo =
+        result.getParticipants().stream()
+            .filter(p -> "Thibaut".equals(p.getUsername()))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(thibautInfo.getSelectedPlayers())
+        .extracting(GameDetailDto.PlayerInfo::getNickname)
+        .containsExactly("EUMid1");
+    assertThat(result.getStatistics().getRegionDistribution()).containsEntry("EU", 2);
+    assertThat(result.getStatistics().getTotalPlayers()).isEqualTo(2);
   }
 
   @Test

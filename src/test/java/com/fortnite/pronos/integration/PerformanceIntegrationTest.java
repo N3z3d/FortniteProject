@@ -144,7 +144,7 @@ class PerformanceIntegrationTest {
     // Création de 50 games de test
     for (int i = 0; i < 50; i++) {
       Game game = new Game();
-      game.setId(UUID.randomUUID());
+      // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it (Hibernate 6.6 compatibility).
       game.setName("Performance Test Game " + i);
       game.setCreator(testUsers.get(i % testUsers.size()));
       game.setMaxParticipants(10);
@@ -490,7 +490,7 @@ class PerformanceIntegrationTest {
     // Création de 1000 games pour tester les limites
     for (int i = 0; i < 1000; i++) {
       Game game = new Game();
-      game.setId(UUID.randomUUID());
+      // Do NOT pre-assign ID: @GeneratedValue(UUID) handles it (Hibernate 6.6 compatibility).
       game.setName("Timeout Test Game " + i);
       game.setCreator(testUsers.get(i % testUsers.size()));
       game.setMaxParticipants(10);

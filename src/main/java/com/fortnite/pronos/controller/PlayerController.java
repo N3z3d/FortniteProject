@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fortnite.pronos.application.usecase.PlayerQueryUseCase;
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
+import com.fortnite.pronos.dto.FortnitePlayerDataDto;
 import com.fortnite.pronos.dto.player.CataloguePlayerDto;
 import com.fortnite.pronos.dto.player.PlayerDetailDto;
 import com.fortnite.pronos.dto.player.PlayerDto;
 import com.fortnite.pronos.dto.player.RankSnapshotResponse;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.service.RankSnapshotService;
+import com.fortnite.pronos.service.catalogue.FortnitePlayerSearchService;
 import com.fortnite.pronos.service.catalogue.PlayerCatalogueService;
 import com.fortnite.pronos.service.catalogue.PlayerDetailService;
 
@@ -50,6 +52,7 @@ public class PlayerController {
   private final RankSnapshotService rankSnapshotService;
   private final PlayerCatalogueService playerCatalogueService;
   private final PlayerDetailService playerDetailService;
+  private final FortnitePlayerSearchService fortnitePlayerSearchService;
 
   @Operation(
       summary = "Get all players with pagination",
@@ -239,5 +242,22 @@ public class PlayerController {
         .getPlayerDetail(id)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
+  }
+
+  @Operation(
+      summary = "Search player on Fortnite API by name",
+      description =
+          "Fetches live player data from Fortnite-API.com by display name. Returns 200 with null"
+              + " body when the player is not found, the profile is private, or no API key is"
+              + " configured. Never returns 404.")
+  @ApiResponse(responseCode = "200", description = "Player data, or null if not found/unavailable")
+  @GetMapping("/fortnite-search")
+  public ResponseEntity<FortnitePlayerDataDto> searchOnFortniteApi(
+      @Parameter(description = "Player display name", required = true) @RequestParam String name) {
+    return fortnitePlayerSearchService
+        .searchByName(name)
+        .map(FortnitePlayerDataDto::from)
+        .<ResponseEntity<FortnitePlayerDataDto>>map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.ok(null));
   }
 }

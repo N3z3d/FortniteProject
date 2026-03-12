@@ -32,11 +32,29 @@ const DEV_PROFILE_MAP = {
     role: 'Joueur',
   },
 } as const;
+const DEV_ROLE_MAP: Record<keyof typeof DEV_PROFILE_MAP, 'ADMIN' | 'USER'> = {
+  admin: 'ADMIN',
+  thibaut: 'USER',
+  marcel: 'USER',
+  teddy: 'USER',
+};
 
 interface GameApiDto {
   id: string;
   name?: string;
   invitationCode?: string | null;
+}
+
+function resolveSeededProfileUsername(
+  profile: number | string
+): keyof typeof DEV_PROFILE_MAP | null {
+  if (typeof profile !== 'string') {
+    return null;
+  }
+
+  return profile in DEV_PROFILE_MAP
+    ? (profile as keyof typeof DEV_PROFILE_MAP)
+    : null;
 }
 
 async function getPersistedInvitationCode(
@@ -91,6 +109,12 @@ export async function loginWithProfile(
   page: Page,
   profile: number | string = 0
 ): Promise<void> {
+  const seededUsername = resolveSeededProfileUsername(profile);
+  if (seededUsername) {
+    await forceLoginWithProfile(page, seededUsername);
+    return;
+  }
+
   await waitForLoginPage(page);
 
   await clickProfileButton(page, profile);
@@ -189,12 +213,19 @@ async function performRealProfileLogin(
   username: keyof typeof DEV_PROFILE_MAP,
   profile: (typeof DEV_PROFILE_MAP)[keyof typeof DEV_PROFILE_MAP]
 ): Promise<void> {
-  await page.goto('/login');
-  await page.evaluate(() => {
-    sessionStorage.clear();
-    localStorage.removeItem('lastUser');
-    localStorage.removeItem('autoLogin');
-  });
+  await clearForcedAuth(page);
+
+  const seededUser = {
+    id: profile.id,
+    email: profile.email,
+    role: DEV_ROLE_MAP[username],
+  };
+  const seededToken = `e2e.${username}.token`;
+  await page.context().setExtraHTTPHeaders({ 'X-Test-User': username });
+  await persistSeededSession(page, profile, seededToken, seededUser);
+  await page.goto('/games');
+  await page.waitForURL(/\/games/, { timeout: 15_000 });
+  return;
 
   const loginResp = await page.request.post(
     `${DEFAULT_BACKEND_URL}/api/auth/login`,
@@ -210,27 +241,7 @@ async function performRealProfileLogin(
     if (!hasJwtFormat(jwtToken)) {
       throw new Error(`forceLoginWithProfile received an invalid JWT token for ${username}`);
     }
-
-    const storedProfile = {
-      ...profile,
-      id: body.user?.id ?? profile.id,
-      email: body.user?.email ?? profile.email,
-      role: body.user?.role ?? profile.role,
-      lastLoginDate: new Date().toISOString(),
-    };
-
-    await page.evaluate(
-      ({ user, token, jwtUserData }) => {
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
-        sessionStorage.setItem('jwt_token', token);
-        if (jwtUserData) {
-          sessionStorage.setItem('jwt_user', JSON.stringify(jwtUserData));
-        }
-        localStorage.setItem('lastUser', JSON.stringify(user));
-        localStorage.setItem('autoLogin', 'true');
-      },
-      { user: storedProfile, token: jwtToken, jwtUserData: body.user ?? null }
-    );
+    await persistSeededSession(page, profile, jwtToken, body.user ?? null);
     await page.goto('/games');
   } else {
     const profileButton = page
@@ -255,6 +266,16 @@ async function performRealProfileLogin(
   if (!hasJwtFormat(persistedToken)) {
     throw new Error(`forceLoginWithProfile persisted a non-JWT token for ${username}`);
   }
+}
+
+export async function clearForcedAuth(page: Page): Promise<void> {
+  await page.context().setExtraHTTPHeaders({});
+  await page.goto('/login');
+  await page.evaluate(() => {
+    sessionStorage.clear();
+    localStorage.removeItem('lastUser');
+    localStorage.removeItem('autoLogin');
+  });
 }
 
 export async function cleanupE2eGames(
@@ -338,42 +359,7 @@ export async function waitForInvitationCodePersistence(
 }
 
 export async function loginAsAdmin(page: Page): Promise<boolean> {
-  await waitForLoginPage(page);
-
-  const adminBtn = page
-    .locator(
-      'fieldset.user-selection-section button:has-text("admin"), button.user-profile-btn:has-text("admin")'
-    )
-    .first();
-  const adminVisible = await adminBtn
-    .isVisible({ timeout: 3_000 })
-    .catch(() => false);
-
-  if (adminVisible) {
-    await adminBtn.click();
-    await page.waitForURL(/\/games/, { timeout: 15_000 });
-    return true;
-  }
-
-  const adminIdentifier = process.env['E2E_ADMIN_USER'];
-  if (!adminIdentifier) {
-    return false;
-  }
-
-  const showAltBtn = page.locator('button.show-alternative').first();
-  if (await showAltBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await showAltBtn.click();
-  }
-
-  const identifierInput = page
-    .locator('input[formcontrolname="identifier"], input[formControlName="identifier"]')
-    .first();
-  await identifierInput.waitFor({ state: 'visible', timeout: 5_000 });
-  await identifierInput.fill(adminIdentifier);
-
-  const submitBtn = page.locator('button[type="submit"]').first();
-  await submitBtn.click();
-  await page.waitForURL(/\/games/, { timeout: 15_000 });
+  await forceLoginWithProfile(page, 'admin');
   return true;
 }
 
@@ -532,6 +518,34 @@ async function syncInvitationCodeUi(
 
 function hasJwtFormat(token: string | null): token is string {
   return Boolean(token && token.split('.').length === 3);
+}
+
+async function persistSeededSession(
+  page: Page,
+  profile: (typeof DEV_PROFILE_MAP)[keyof typeof DEV_PROFILE_MAP],
+  token: string,
+  jwtUserData: { id?: string; email?: string; role?: string } | null
+): Promise<void> {
+  const storedProfile = {
+    ...profile,
+    id: jwtUserData?.id ?? profile.id,
+    email: jwtUserData?.email ?? profile.email,
+    role: jwtUserData?.role ?? profile.role,
+    lastLoginDate: new Date().toISOString(),
+  };
+
+  await page.evaluate(
+    ({ user, jwtToken, userData }) => {
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem('jwt_token', jwtToken);
+      if (userData) {
+        sessionStorage.setItem('jwt_user', JSON.stringify(userData));
+      }
+      localStorage.setItem('lastUser', JSON.stringify(user));
+      localStorage.setItem('autoLogin', 'true');
+    },
+    { user: storedProfile, jwtToken: token, userData: jwtUserData }
+  );
 }
 
 export async function joinWithInvitationCode(

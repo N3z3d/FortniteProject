@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class ErrorJournalControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Errors")
   class GetErrors {
 
     @Test
@@ -79,6 +81,7 @@ class ErrorJournalControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Error Statistics")
   class GetErrorStatistics {
 
     @Test
@@ -119,6 +122,7 @@ class ErrorJournalControllerTest {
   }
 
   @Nested
+  @DisplayName("Get Error Detail")
   class GetErrorDetail {
 
     @Test

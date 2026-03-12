@@ -106,6 +106,43 @@ jobs:
       - name: Lint Angular (ng lint)
         run: npx ng lint --no-progress || true
 
+      # Tests Vitest (unitaires) — exécutés explicitement en CI.
+      # La step reste non bloquante tant que sprint7-z1 n'a pas fermé les failures
+      # pré-existantes, mais l'exit code réel et le log complet restent visibles.
+      - name: Tests Vitest (unitaires)
+        id: vitest
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:vitest 2>&1 | tee vitest-ci.log
+
+      - name: Upload Vitest log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-vitest-log
+          path: frontend/vitest-ci.log
+          retention-days: 7
+
+      - name: CI Summary — Vitest baseline
+        if: always()
+        shell: bash
+        run: |
+          if [ "${{ steps.vitest.outcome }}" = "failure" ]; then
+            {
+              echo "## Frontend Vitest"
+              echo ""
+              echo "- Result: failure"
+              echo "- Artifact: frontend-vitest-log"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Frontend Vitest"
+              echo ""
+              echo "- Result: passed"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Build Angular (production)
         run: npm run build
 
@@ -118,25 +155,42 @@ jobs:
           retention-days: 7
 
   # ============================================================
-  # Job 3 — Docker build validation (main uniquement)
-  # Valide que l'image Docker se construit correctement.
-  # Pas de push registry — validation locale uniquement.
+  # Job 3 — Docker build + push GHCR (main uniquement)
+  # Build l'image multi-stage et push sur GitHub Container Registry.
   # Dépend de backend ET frontend pour garantir que les builds
   # individuels sont verts avant de construire l'image complète.
+  # Tag: latest + SHA court pour rollback facile.
   # ============================================================
-  docker-build:
-    name: Docker build validation
+  docker-build-and-push:
+    name: Docker build + push GHCR
     runs-on: ubuntu-latest
     needs: [backend, frontend]
-    # Ne tourne que sur la branche main pour éviter les builds Docker
-    # longs sur chaque feature branch ou PR (coût CI et durée)
+    # Ne tourne que sur la branche main
     if: github.ref == 'refs/heads/main'
+
+    # Permissions requises pour pousser sur GHCR via GITHUB_TOKEN
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Build Docker image (sans push)
-        # --target production : utilise uniquement le stage final multi-stage
-        # Valide que frontend-builder + backend-builder + production fonctionnent
-        run: docker build --target production -t fortnite-pronos:ci .
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Normalize GHCR image name
+        shell: bash
+        run: echo "IMAGE_NAME=$(echo 'ghcr.io/${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Build et push image Docker vers GHCR
+        # --target production : stage final multi-stage uniquement
+        # Tags: :latest (déploiement courant) + :sha (rollback précis)
+        run: |
+          docker build --target production \
+            -t "${IMAGE_NAME}:latest" \
+            -t "${IMAGE_NAME}:${{ github.sha }}" \
+            .
+          docker push "${IMAGE_NAME}:latest"
+          docker push "${IMAGE_NAME}:${{ github.sha }}"

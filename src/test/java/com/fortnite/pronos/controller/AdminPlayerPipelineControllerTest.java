@@ -17,10 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.dto.admin.CorrectMetadataRequest;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
+import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
 import com.fortnite.pronos.dto.admin.RejectPlayerRequest;
 import com.fortnite.pronos.dto.admin.ResolvePlayerRequest;
+import com.fortnite.pronos.service.admin.AdminAuditLogService;
 import com.fortnite.pronos.service.admin.PlayerIdentityPipelineService;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,12 +31,13 @@ import com.fortnite.pronos.service.admin.PlayerIdentityPipelineService;
 class AdminPlayerPipelineControllerTest {
 
   @Mock private PlayerIdentityPipelineService pipelineService;
+  @Mock private AdminAuditLogService auditLogService;
 
   private AdminPlayerPipelineController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new AdminPlayerPipelineController(pipelineService);
+    controller = new AdminPlayerPipelineController(pipelineService, auditLogService);
   }
 
   @Nested
@@ -105,6 +109,13 @@ class AdminPlayerPipelineControllerTest {
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       verify(pipelineService).resolve(playerId, "bughaboo_fn_1204", "thibaut");
+      verify(auditLogService)
+          .recordAction(
+              "thibaut",
+              "RESOLVE_PLAYER",
+              "PLAYER_IDENTITY",
+              playerId.toString(),
+              "epicId=bughaboo_fn_1204");
     }
 
     @Test
@@ -138,6 +149,86 @@ class AdminPlayerPipelineControllerTest {
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       verify(pipelineService).reject(playerId, "introuvable", "thibaut");
+      verify(auditLogService)
+          .recordAction(
+              "thibaut",
+              "REJECT_PLAYER",
+              "PLAYER_IDENTITY",
+              playerId.toString(),
+              "reason=introuvable");
+    }
+  }
+
+  @Nested
+  @DisplayName("getRegionalStatus")
+  class GetRegionalStatus {
+
+    @Test
+    @DisplayName("returns 200 with regional stats list")
+    void returnsRegionalStatsList() {
+      LocalDateTime last = LocalDateTime.of(2025, 2, 28, 8, 0);
+      List<PipelineRegionalStatsDto> stats =
+          List.of(new PipelineRegionalStatsDto("EU", 10L, 90L, 2L, 102L, last));
+      when(pipelineService.getRegionalStats()).thenReturn(stats);
+
+      var response = controller.getRegionalStatus();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).hasSize(1);
+      assertThat(response.getBody().get(0).region()).isEqualTo("EU");
+      assertThat(response.getBody().get(0).unresolvedCount()).isEqualTo(10L);
+    }
+
+    @Test
+    @DisplayName("returns 200 with empty list when no data")
+    void returnsEmptyList() {
+      when(pipelineService.getRegionalStats()).thenReturn(List.of());
+
+      var response = controller.getRegionalStatus();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).isEmpty();
+    }
+  }
+
+  @Nested
+  @DisplayName("correctMetadata")
+  class CorrectMetadata {
+
+    @Test
+    @DisplayName("uses principal name as correctedBy")
+    void usesPrincipalName() {
+      UUID playerId = UUID.randomUUID();
+      CorrectMetadataRequest request = new CorrectMetadataRequest(playerId, "NewName", "NAW");
+      Principal principal = () -> "thibaut";
+      when(pipelineService.correctMetadata(playerId, "NewName", "NAW", "thibaut"))
+          .thenReturn(sampleResponse("UNRESOLVED"));
+
+      var response = controller.correctMetadata(playerId, request, principal);
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      verify(pipelineService).correctMetadata(playerId, "NewName", "NAW", "thibaut");
+      verify(auditLogService)
+          .recordAction(
+              "thibaut",
+              "CORRECT_METADATA",
+              "PLAYER_IDENTITY",
+              playerId.toString(),
+              "username=NewName, region=NAW");
+    }
+
+    @Test
+    @DisplayName("falls back to admin when principal is null")
+    void fallsBackToAdmin() {
+      UUID playerId = UUID.randomUUID();
+      CorrectMetadataRequest request = new CorrectMetadataRequest(playerId, null, "EU");
+      when(pipelineService.correctMetadata(playerId, null, "EU", "admin"))
+          .thenReturn(sampleResponse("UNRESOLVED"));
+
+      var response = controller.correctMetadata(playerId, request, null);
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      verify(pipelineService).correctMetadata(playerId, null, "EU", "admin");
     }
   }
 
@@ -154,6 +245,10 @@ class AdminPlayerPipelineControllerTest {
         status.equals("RESOLVED") ? LocalDateTime.now() : null,
         status.equals("REJECTED") ? LocalDateTime.now() : null,
         status.equals("REJECTED") ? "introuvable" : null,
-        LocalDateTime.now().minusHours(1));
+        LocalDateTime.now().minusHours(1),
+        null,
+        null,
+        null,
+        null);
   }
 }

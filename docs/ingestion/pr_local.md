@@ -17,19 +17,37 @@ Objectif: charger des snapshots PR dans la base locale (H2 ou Postgres local).
 Endpoint:
 `POST /api/ingestion/pr/csv`
 
+Authentification:
+- En runtime local actuel, tout `/api/**` est protege.
+- Utiliser un JWT admin valide avant l'appel d'ingestion.
+- Un appel anonyme retournera `403`.
+
 Exemple PowerShell:
 ```powershell
+$loginBody = @{ username = "admin"; password = "Admin1234" } | ConvertTo-Json
+$login = Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:8080/api/auth/login" `
+  -ContentType "application/json" `
+  -Body $loginBody
+$headers = @{ Authorization = "Bearer $($login.token)" }
 $csv = Get-Content -Raw src\main\resources\data\pr_sample.csv
 Invoke-RestMethod `
   -Method Post `
   -Uri "http://localhost:8080/api/ingestion/pr/csv?source=LOCAL_PR&season=2025&writeScores=true" `
+  -Headers $headers `
   -Body $csv `
   -ContentType "text/csv"
 ```
 
 Exemple curl:
 ```bash
+TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin1234"}' | jq -r '.token')
+
 curl -X POST "http://localhost:8080/api/ingestion/pr/csv?source=LOCAL_PR&season=2025&writeScores=true" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: text/csv" \
   --data-binary @src/main/resources/data/pr_sample.csv
 ```

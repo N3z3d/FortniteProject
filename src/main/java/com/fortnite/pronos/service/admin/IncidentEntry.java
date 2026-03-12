@@ -1,6 +1,6 @@
 package com.fortnite.pronos.service.admin;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.fortnite.pronos.dto.IncidentReportRequest.IncidentType;
@@ -24,5 +24,5 @@ public final class IncidentEntry {
   private String reporterUsername;
   private IncidentType incidentType;
   private String description;
-  private LocalDateTime timestamp;
+  private OffsetDateTime timestamp;
 }

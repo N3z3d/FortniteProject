@@ -48,4 +48,10 @@ public interface GameDomainRepositoryPort {
   long countByStatus(GameStatus status);
 
   List<Game> findByCurrentSeasonWithFetch(Integer season);
+
+  /**
+   * Returns all non-deleted games that have both competitionStart and competitionEnd configured.
+   * Used by the daily delta batch to identify games eligible for score computation.
+   */
+  List<Game> findAllWithCompetitionPeriod();
 }

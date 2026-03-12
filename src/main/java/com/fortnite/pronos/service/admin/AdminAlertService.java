@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminAlertService {
 
   private static final String STATUS_UP = "UP";
+  private static final int HTTP_SERVER_ERROR_THRESHOLD = 500;
 
   private final AdminDashboardService adminDashboardService;
   private final ErrorJournalService errorJournalService;
@@ -152,7 +153,7 @@ public class AdminAlertService {
       return 0;
     }
     return stats.getErrorsByStatusCode().entrySet().stream()
-        .filter(entry -> entry.getKey() >= 500)
+        .filter(entry -> entry.getKey() >= HTTP_SERVER_ERROR_THRESHOLD)
         .mapToInt(entry -> entry.getValue().intValue())
         .sum();
   }

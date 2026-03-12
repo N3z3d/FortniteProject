@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TradeHistoryComponent, TradeHistoryItem } from './trade-history.component';
@@ -49,85 +49,108 @@ describe('TradeHistoryComponent', () => {
     expect(component.displayedColumns).toEqual(['status', 'details', 'team', 'createdAt', 'completedAt', 'actions']);
   });
 
-  it('should load trade history on init', fakeAsync(() => {
+  it('should load trade history on init', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
 
     expect(component.isLoading).toBeTrue();
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.isLoading).toBeFalse();
     expect(component.allTrades.length).toBeGreaterThan(0);
     expect(component.filteredTrades.length).toBe(component.allTrades.length);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should load mock trade history data', fakeAsync(() => {
+  it('should load mock trade history data', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.allTrades.length).toBe(3);
     expect(component.allTrades[0].status).toBe('COMPLETED');
     expect(component.allTrades[1].status).toBe('PENDING');
     expect(component.allTrades[2].status).toBe('CANCELLED');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should filter trades by status', fakeAsync(() => {
+  it('should filter trades by status', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ status: 'PENDING' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(1);
     expect(component.filteredTrades[0].status).toBe('PENDING');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should filter trades by team', fakeAsync(() => {
+  it('should filter trades by team', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ team: '1' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(1);
     expect(component.filteredTrades[0].team.id).toBe('1');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should filter trades by player name', fakeAsync(() => {
+  it('should filter trades by player name', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ player: 'Ninja' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(1);
     expect(component.filteredTrades[0].playerOut.username).toBe('Ninja');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should filter by player in name', fakeAsync(() => {
+  it('should filter by player in name', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ player: 'Aqua' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(1);
     expect(component.filteredTrades[0].playerIn.username).toBe('Aqua');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should filter case-insensitively', fakeAsync(() => {
+  it('should filter case-insensitively', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ player: 'ninja' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(1);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should combine multiple filters', fakeAsync(() => {
+  it('should combine multiple filters', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({
       status: 'COMPLETED',
@@ -138,11 +161,14 @@ describe('TradeHistoryComponent', () => {
     expect(component.filteredTrades.length).toBe(1);
     expect(component.filteredTrades[0].status).toBe('COMPLETED');
     expect(component.filteredTrades[0].team.id).toBe('1');
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should clear filters', fakeAsync(() => {
+  it('should clear filters', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ status: 'PENDING' });
     component.applyFilters();
@@ -153,11 +179,14 @@ describe('TradeHistoryComponent', () => {
 
     expect(component.filtersForm.value.status).toBeNull();
     expect(component.filteredTrades.length).toBe(component.allTrades.length);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should detect active filters', fakeAsync(() => {
+  it('should detect active filters', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.hasActiveFilters()).toBeFalse();
 
@@ -169,7 +198,8 @@ describe('TradeHistoryComponent', () => {
 
     component.filtersForm.reset();
     expect(component.hasActiveFilters()).toBeFalse();
-  }));
+    vi.useRealTimers();
+  });
 
   it('should navigate to trade detail', () => {
     component.viewTrade('123');
@@ -220,33 +250,45 @@ describe('TradeHistoryComponent', () => {
     expect(translationService.t).toHaveBeenCalledWith('trades.status.completed', 'COMPLETED');
   });
 
-  it('should get total trades count', fakeAsync(() => {
+  it('should get total trades count', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.getTotalTrades()).toBe(3);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should get completed trades count', fakeAsync(() => {
+  it('should get completed trades count', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.getCompletedTrades()).toBe(1);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should get pending trades count', fakeAsync(() => {
+  it('should get pending trades count', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.getPendingTrades()).toBe(1);
-  }));
+    vi.useRealTimers();
+  });
 
-  it('should get cancelled trades count', fakeAsync(() => {
+  it('should get cancelled trades count', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(component.getCancelledTrades()).toBe(1);
-  }));
+    vi.useRealTimers();
+  });
 
   it('should have available teams', () => {
     expect(component.availableTeams.length).toBe(3);
@@ -261,13 +303,16 @@ describe('TradeHistoryComponent', () => {
     expect(component.filteredTrades).toEqual([]);
   });
 
-  it('should handle filters with no matching trades', fakeAsync(() => {
+  it('should handle filters with no matching trades', async () => {
+    vi.useFakeTimers();
     fixture.detectChanges();
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     component.filtersForm.patchValue({ player: 'NonExistentPlayer' });
     component.applyFilters();
 
     expect(component.filteredTrades.length).toBe(0);
-  }));
+    vi.useRealTimers();
+  });
 });

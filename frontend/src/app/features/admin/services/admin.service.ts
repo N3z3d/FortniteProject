@@ -1,17 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
+  AdminAuditEntry,
+  AdminUserEntry,
   ApiResponse,
   AdminAlert,
   AlertThresholds,
   DashboardSummary,
   DbTableInfo,
+  GameSupervisionEntry,
+  GameSupervisionStatus,
   IncidentEntry,
+  PipelineRegionalStats,
   RealTimeAnalytics,
   RecentActivity,
+  ScrapeLogEntry,
+  SqlQueryResult,
   SystemHealth,
   SystemMetrics,
   VisitAnalytics
@@ -63,6 +70,12 @@ export class AdminService {
   getRealTimeAnalytics(): Observable<RealTimeAnalytics> {
     return this.http
       .get<ApiResponse<RealTimeAnalytics>>(`${this.baseUrl}/dashboard/realtime`)
+      .pipe(map(r => r.data));
+  }
+
+  getUsers(): Observable<AdminUserEntry[]> {
+    return this.http
+      .get<ApiResponse<AdminUserEntry[]>>(`${this.baseUrl}/users`)
       .pipe(map(r => r.data));
   }
 
@@ -120,6 +133,41 @@ export class AdminService {
     }
     return this.http
       .get<ApiResponse<IncidentEntry[]>>(`${this.baseUrl}/incidents`, { params })
+      .pipe(map(r => r.data));
+  }
+
+  getPipelineRegionalStatus(): Observable<PipelineRegionalStats[]> {
+    return this.http.get<PipelineRegionalStats[]>(
+      `${this.baseUrl}/players/pipeline/regional-status`
+    );
+  }
+
+  getScrapingLogs(limit: number = 50): Observable<ScrapeLogEntry[]> {
+    return this.http.get<ScrapeLogEntry[]>(`${environment.apiUrl}/api/admin/scraping/logs`, {
+      params: { limit: limit.toString() }
+    });
+  }
+
+  getAuditLog(limit: number = 50): Observable<AdminAuditEntry[]> {
+    return this.http.get<AdminAuditEntry[]>(`${this.baseUrl}/audit-log`, {
+      params: { limit: limit.toString() }
+    });
+  }
+
+  getGamesSupervision(status?: GameSupervisionStatus): Observable<GameSupervisionEntry[]> {
+    const url = `${environment.apiUrl}/api/admin/supervision/games`;
+    const params: Record<string, string> = {};
+    if (status) {
+      params['status'] = status;
+    }
+    return this.http
+      .get<GameSupervisionEntry[]>(url, { params })
+      .pipe(catchError(() => of([] as GameSupervisionEntry[])));
+  }
+
+  executeSqlQuery(query: string): Observable<SqlQueryResult> {
+    return this.http
+      .post<ApiResponse<SqlQueryResult>>(`${this.baseUrl}/database/query`, { query })
       .pipe(map(r => r.data));
   }
 }

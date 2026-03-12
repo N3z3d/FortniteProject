@@ -67,7 +67,7 @@ class PrIngestionRowProcessorAliasTest {
     @DisplayName("Records alias with FT_INGESTION source for new player")
     void newPlayer_recordsAliasWithCorrectSource() {
       when(playerRepository.findByNickname("PlayerA")).thenReturn(Optional.empty());
-      when(prSnapshotRepository.findById(any())).thenReturn(Optional.empty());
+      when(prSnapshotRepository.findForUpsert(any(), any(), any())).thenReturn(Optional.empty());
       when(aliasRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
       processor.persistRows(List.of(row("PlayerA", "EU")), config, run);
@@ -84,7 +84,7 @@ class PrIngestionRowProcessorAliasTest {
     @DisplayName("Records one alias per new player in batch")
     void multipleNewPlayers_oneAliasEach() {
       when(playerRepository.findByNickname(any())).thenReturn(Optional.empty());
-      when(prSnapshotRepository.findById(any())).thenReturn(Optional.empty());
+      when(prSnapshotRepository.findForUpsert(any(), any(), any())).thenReturn(Optional.empty());
       when(aliasRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
       processor.persistRows(List.of(row("PlayerA", "EU"), row("PlayerB", "NAC")), config, run);
@@ -107,7 +107,7 @@ class PrIngestionRowProcessorAliasTest {
       existing.setTranche("1-5");
       existing.setCurrentSeason(2025);
       when(playerRepository.findByNickname("ExistingPlayer")).thenReturn(Optional.of(existing));
-      when(prSnapshotRepository.findById(any())).thenReturn(Optional.empty());
+      when(prSnapshotRepository.findForUpsert(any(), any(), any())).thenReturn(Optional.empty());
 
       processor.persistRows(List.of(row("ExistingPlayer", "EU")), config, run);
 
@@ -118,7 +118,7 @@ class PrIngestionRowProcessorAliasTest {
     @DisplayName("Alias save failure does not abort row processing (non-blocking)")
     void aliasSaveThrows_rowIsStillProcessed() {
       when(playerRepository.findByNickname("PlayerA")).thenReturn(Optional.empty());
-      when(prSnapshotRepository.findById(any())).thenReturn(Optional.empty());
+      when(prSnapshotRepository.findForUpsert(any(), any(), any())).thenReturn(Optional.empty());
       when(aliasRepository.save(any())).thenThrow(new RuntimeException("DB constraint"));
 
       PrIngestionCounters counters =

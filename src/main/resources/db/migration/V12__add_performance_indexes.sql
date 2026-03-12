@@ -1,50 +1,50 @@
--- flyway:executeInTransaction=false
 -- Migration V12: Ajout d'index pour optimiser les performances
--- Corrige les problèmes identifiés de requêtes lentes
+-- Note: CONCURRENTLY retiré — incompatible avec le lock Flyway (deadlock circulaire)
+-- Sur DB fraîche (tables vides), CREATE INDEX est équivalent et non bloquant
 
 -- Index pour optimiser les requêtes de leaderboard par saison
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teams_season 
-ON teams(season) 
+CREATE INDEX IF NOT EXISTS idx_teams_season
+ON teams(season)
 WHERE season IS NOT NULL;
 
 -- Index pour optimiser les requêtes de score par joueur et saison
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_scores_player_season 
-ON scores(player_id, season) 
+CREATE INDEX IF NOT EXISTS idx_scores_player_season
+ON scores(player_id, season)
 WHERE player_id IS NOT NULL AND season IS NOT NULL;
 
 -- Index pour optimiser les requêtes de games par statut
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_games_status 
-ON games(status) 
+CREATE INDEX IF NOT EXISTS idx_games_status
+ON games(status)
 WHERE status IS NOT NULL;
 
 -- Index pour optimiser les requêtes de participants par game
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_game_participants_game_id 
-ON game_participants(game_id) 
+CREATE INDEX IF NOT EXISTS idx_game_participants_game_id
+ON game_participants(game_id)
 WHERE game_id IS NOT NULL;
 
 -- Index pour optimiser les requêtes de team_players actifs
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_team_players_active 
-ON team_players(team_id, until) 
+CREATE INDEX IF NOT EXISTS idx_team_players_active
+ON team_players(team_id, until)
 WHERE until IS NULL;
 
 -- Index composite pour optimiser les requêtes team + owner + saison
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_teams_owner_season 
-ON teams(owner_id, season) 
+CREATE INDEX IF NOT EXISTS idx_teams_owner_season
+ON teams(owner_id, season)
 WHERE owner_id IS NOT NULL AND season IS NOT NULL;
 
 -- Index pour optimiser les requêtes de draft par game
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_drafts_game_id 
-ON drafts(game_id) 
+CREATE INDEX IF NOT EXISTS idx_drafts_game_id
+ON drafts(game_id)
 WHERE game_id IS NOT NULL;
 
 -- Index pour optimiser les requêtes de draft_picks par draft
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_draft_picks_draft_id 
-ON draft_picks(draft_id) 
+CREATE INDEX IF NOT EXISTS idx_draft_picks_draft_id
+ON draft_picks(draft_id)
 WHERE draft_id IS NOT NULL;
 
 -- Index pour optimiser les requêtes de joueurs par région
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_players_region 
-ON players(region) 
+CREATE INDEX IF NOT EXISTS idx_players_region
+ON players(region)
 WHERE region IS NOT NULL;
 
 -- Index pour optimiser les requêtes de transfers

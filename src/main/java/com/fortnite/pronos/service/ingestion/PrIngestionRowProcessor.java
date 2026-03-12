@@ -181,9 +181,11 @@ class PrIngestionRowProcessor {
       PrCsvParser.PrCsvRow row,
       IngestionRun run,
       MutableCounters counters) {
-    PrSnapshot.PrSnapshotId id =
-        new PrSnapshot.PrSnapshotId(player.getId(), region, row.snapshotDate());
-    PrSnapshot snapshot = prSnapshotRepository.findById(id).orElseGet(PrSnapshot::new);
+    java.util.Optional<PrSnapshot> existingSnapshot =
+        prSnapshotRepository
+            .findForUpsert(player.getId(), region.name(), row.snapshotDate())
+            .map(snapshot -> snapshot);
+    PrSnapshot snapshot = existingSnapshot.orElseGet(PrSnapshot::new);
     snapshot.setPlayer(player);
     snapshot.setRegion(region);
     snapshot.setSnapshotDate(row.snapshotDate());
@@ -192,7 +194,9 @@ class PrIngestionRowProcessor {
     snapshot.setRank(row.rank());
     snapshot.setCollectedAt(OffsetDateTime.now());
     snapshot.setRun(run);
-    prSnapshotRepository.save(snapshot);
+    if (existingSnapshot.isEmpty()) {
+      prSnapshotRepository.persist(snapshot);
+    }
     counters.snapshotsWritten++;
   }
 

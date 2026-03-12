@@ -2,6 +2,7 @@ package com.fortnite.pronos.adapter.out.persistence.player.identity;
 
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.domain.player.identity.model.MetadataCorrection;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
 
 @Component
@@ -20,7 +21,12 @@ public class PlayerIdentityEntityMapper {
         entity.getResolvedAt(),
         entity.getRejectedAt(),
         entity.getRejectionReason(),
-        entity.getCreatedAt());
+        entity.getCreatedAt(),
+        new MetadataCorrection(
+            entity.getCorrectedUsername(),
+            entity.getCorrectedRegion(),
+            entity.getCorrectedBy(),
+            entity.getCorrectedAt()));
   }
 
   public PlayerIdentityEntity toEntity(PlayerIdentityEntry domain) {
@@ -37,6 +43,10 @@ public class PlayerIdentityEntityMapper {
         .rejectedAt(domain.getRejectedAt())
         .rejectionReason(domain.getRejectionReason())
         .createdAt(domain.getCreatedAt())
+        .correctedUsername(domain.getCorrectedUsername())
+        .correctedRegion(domain.getCorrectedRegion())
+        .correctedBy(domain.getCorrectedBy())
+        .correctedAt(domain.getCorrectedAt())
         .build();
   }
 }

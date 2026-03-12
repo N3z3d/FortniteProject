@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { AdminDashboardComponent } from './admin-dashboard.component';
@@ -282,30 +282,39 @@ describe('AdminDashboardComponent', () => {
   });
 
   describe('real-time analytics polling', () => {
-    it('should populate realTimeAnalytics after timer fires', fakeAsync(() => {
+    it('should populate realTimeAnalytics after timer fires', async () => {
+      vi.useFakeTimers();
       createComponent();
-      tick(0);
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
 
       expect(component.realTimeAnalytics).toEqual(mockRealTimeAnalytics);
       expect(component.realTimeAnalytics?.activeUsersNow).toBe(7);
       expect(component.realTimeAnalytics?.activeSessionsNow).toBe(5);
-    }));
+      vi.useRealTimers();
+    });
 
-    it('should show active pages from real-time snapshot', fakeAsync(() => {
+    it('should show active pages from real-time snapshot', async () => {
+      vi.useFakeTimers();
       createComponent();
-      tick(0);
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
 
       expect(component.realTimeAnalytics?.activePagesNow.length).toBe(2);
       expect(component.realTimeAnalytics?.activePagesNow[0].path).toBe('/games');
       expect(component.realTimeAnalytics?.activePagesNow[0].visitorCount).toBe(3);
-    }));
+      vi.useRealTimers();
+    });
 
-    it('should call getRealTimeAnalytics on polling start', fakeAsync(() => {
+    it('should call getRealTimeAnalytics on polling start', async () => {
+      vi.useFakeTimers();
       createComponent();
-      tick(0);
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
 
       expect(adminService.getRealTimeAnalytics).toHaveBeenCalled();
-    }));
+      vi.useRealTimers();
+    });
 
     it('should start with null realTimeAnalytics before init', () => {
       adminService.getDashboardSummary.and.returnValue(of(mockSummary));

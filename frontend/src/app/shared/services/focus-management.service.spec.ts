@@ -1,4 +1,3 @@
-import { fakeAsync, tick } from '@angular/core/testing';
 import { FocusManagementService } from './focus-management.service';
 
 describe('FocusManagementService', () => {
@@ -8,6 +7,11 @@ describe('FocusManagementService', () => {
   const createButton = (label: string) => {
     const button = document.createElement('button');
     button.textContent = label;
+    button.tabIndex = 0;
+    Object.defineProperty(button, 'offsetParent', {
+      configurable: true,
+      get: () => (button.style.display === 'none' ? null : container)
+    });
     return button;
   };
 
@@ -122,7 +126,8 @@ describe('FocusManagementService', () => {
     expect(document.activeElement).toBe(last);
   });
 
-  it('announceFocus adds a temporary announcer and removes it', fakeAsync(() => {
+  it('announceFocus adds a temporary announcer and removes it', async () => {
+    vi.useFakeTimers();
     const target = createButton('target');
     container.append(target);
 
@@ -134,8 +139,10 @@ describe('FocusManagementService', () => {
     expect(announcer).toBeTruthy();
     expect(document.body.contains(announcer)).toBeTrue();
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
+    await Promise.resolve();
 
     expect(document.body.contains(announcer)).toBeFalse();
-  }));
+    vi.useRealTimers();
+  });
 });

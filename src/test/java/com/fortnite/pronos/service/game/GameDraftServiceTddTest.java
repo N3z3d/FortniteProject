@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +35,7 @@ import com.fortnite.pronos.dto.DraftPickDto;
 import com.fortnite.pronos.exception.InvalidDraftStateException;
 import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.model.Draft;
+import com.fortnite.pronos.model.DraftPick;
 import com.fortnite.pronos.model.GameParticipant;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.draft.DraftService;
@@ -168,9 +171,40 @@ class GameDraftServiceTddTest {
     assertThat(dto.getRound()).isEqualTo(1);
     assertThat(dto.getPick()).isEqualTo(1);
 
-    verify(draftPickRepository).save(any());
+    ArgumentCaptor<DraftPick> pickCaptor = ArgumentCaptor.forClass(DraftPick.class);
+    verify(draftPickRepository).save(pickCaptor.capture());
+    DraftPick savedPick = pickCaptor.getValue();
+    assertThat(savedPick.getParticipantLabel()).isEqualTo(userId.toString());
+    assertThat(savedPick.getRegionSlot()).isEqualTo(DraftPick.DraftRegionSlot.EU);
+
     verify(draftService).nextPick(draft, domainGame.getMaxParticipants());
     assertThat(draft.getCurrentPick()).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("selectPlayer doit aussi mettre a jour le roster du participant")
+  void selectPlayer_shouldUpdateParticipantRoster() {
+    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(domainGame));
+    when(draftDomainRepository.findActiveByGameId(gameId)).thenReturn(Optional.of(domainDraft));
+    when(draftRepository.findById(draftId)).thenReturn(Optional.of(draft));
+    when(draftService.isUserTurn(draft, userId)).thenReturn(true);
+    when(draftPickRepository.existsByDraftAndPlayer(
+            eq(draft), any(com.fortnite.pronos.model.Player.class)))
+        .thenReturn(false);
+    when(playerRepository.findById(playerId)).thenReturn(Optional.of(player));
+    when(gameParticipantRepository.findByUserIdAndGameId(userId, gameId))
+        .thenReturn(Optional.of(participant));
+    when(draftService.nextPick(any(Draft.class), anyInt())).thenReturn(draft);
+    when(draftPickRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(gameParticipantRepository.save(any(GameParticipant.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    gameDraftService.selectPlayer(gameId, userId, playerId);
+
+    assertThat(participant.getSelectedPlayers()).hasSize(1);
+    assertThat(participant.getSelectedPlayers().get(0).getId()).isEqualTo(playerId);
+    assertThat(participant.getLastSelectionTime()).isNotNull();
+    verify(gameParticipantRepository).save(participant);
   }
 
   @Test
@@ -182,6 +216,7 @@ class GameDraftServiceTddTest {
     org.assertj.core.api.Assertions.assertThatThrownBy(
             () -> gameDraftService.selectPlayer(gameId, userId, playerId))
         .isInstanceOf(InvalidDraftStateException.class);
+    verify(gameParticipantRepository, never()).save(any(GameParticipant.class));
   }
 
   @Test

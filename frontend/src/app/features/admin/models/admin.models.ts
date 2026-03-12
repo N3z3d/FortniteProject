@@ -144,11 +144,29 @@ export interface PlayerIdentityEntry {
   rejectedAt: string | null;
   rejectionReason: string | null;
   createdAt: string;
+  correctedUsername: string | null;
+  correctedRegion: string | null;
+  correctedBy: string | null;
+  correctedAt: string | null;
+}
+
+export interface CorrectMetadataRequest {
+  newUsername?: string;
+  newRegion?: string;
 }
 
 export interface PipelineCount {
   unresolvedCount: number;
   resolvedCount: number;
+}
+
+export interface PipelineRegionalStats {
+  region: string;
+  unresolvedCount: number;
+  resolvedCount: number;
+  rejectedCount: number;
+  totalCount: number;
+  lastIngestedAt: string | null;
 }
 
 export interface ResolvePlayerRequest {
@@ -177,4 +195,65 @@ export interface IncidentEntry {
 export interface IncidentReportRequest {
   incidentType: IncidentType;
   description: string;
+}
+
+export type AlertLevel = 'NONE' | 'WARNING' | 'CRITICAL';
+
+export interface ScrapeLogEntry {
+  id: string;
+  source: string;
+  startedAt: string;
+  finishedAt: string | null;
+  status: string;
+  totalRowsWritten: number | null;
+  errorMessage: string | null;
+}
+
+export interface PipelineAlertStatus {
+  level: AlertLevel;
+  unresolvedCount: number;
+  oldestUnresolvedAt: string | null;
+  elapsedHours: number;
+  checkedAt: string;
+}
+
+export type UserRole = 'USER' | 'ADMIN' | 'SPECTATOR';
+
+export interface AdminUserEntry {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  currentSeason: number;
+  deleted: boolean;
+}
+
+export type GameSupervisionStatus = 'CREATING' | 'DRAFTING' | 'ACTIVE';
+
+export interface GameSupervisionEntry {
+  gameId: string;
+  gameName: string;
+  status: GameSupervisionStatus;
+  draftMode: string;
+  participantCount: number;
+  maxParticipants: number;
+  creatorUsername: string;
+  createdAt: string;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  actor: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  details: string | null;
+  timestamp: string;
+}
+
+export interface SqlQueryResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  totalRows: number;
+  truncated: boolean;
 }

@@ -16,7 +16,11 @@ const ENTRY_UNRESOLVED: PlayerIdentityEntry = {
   resolvedAt: null,
   rejectedAt: null,
   rejectionReason: null,
-  createdAt: '2026-01-01T00:00:00'
+  createdAt: '2026-01-01T00:00:00',
+  correctedUsername: null,
+  correctedRegion: null,
+  correctedBy: null,
+  correctedAt: null
 };
 
 const ENTRY_RESOLVED: PlayerIdentityEntry = {
@@ -31,7 +35,11 @@ const ENTRY_RESOLVED: PlayerIdentityEntry = {
   resolvedAt: '2026-01-02T10:00:00',
   rejectedAt: null,
   rejectionReason: null,
-  createdAt: '2026-01-01T00:00:00'
+  createdAt: '2026-01-01T00:00:00',
+  correctedUsername: null,
+  correctedRegion: null,
+  correctedBy: null,
+  correctedAt: null
 };
 
 const ENTRY_REJECTED: PlayerIdentityEntry = {
@@ -46,7 +54,11 @@ const ENTRY_REJECTED: PlayerIdentityEntry = {
   resolvedAt: null,
   rejectedAt: '2026-01-03T00:00:00',
   rejectionReason: 'Joueur introuvable',
-  createdAt: '2026-01-01T00:00:00'
+  createdAt: '2026-01-01T00:00:00',
+  correctedUsername: null,
+  correctedRegion: null,
+  correctedBy: null,
+  correctedAt: null
 };
 
 describe('AdminPipelineTableComponent', () => {
@@ -115,8 +127,6 @@ describe('AdminPipelineTableComponent', () => {
 
     it('epic ID input uses monospace font class', () => {
       const input = fixture.debugElement.query(By.css('.epic-id-input'));
-      const style = getComputedStyle(input.nativeElement);
-      // Verify the CSS class applies (component sets the class)
       expect(input.nativeElement.classList.contains('epic-id-input')).toBeTrue();
     });
 
@@ -148,6 +158,13 @@ describe('AdminPipelineTableComponent', () => {
       component.rejected.subscribe(spy);
       fixture.debugElement.query(By.css('.btn-reject')).nativeElement.click();
       expect(spy).toHaveBeenCalledWith({ playerId: 'p1' });
+    });
+
+    it('emits correctRequested event with full entry on correct click', () => {
+      const spy = jasmine.createSpy('correctRequested');
+      component.correctRequested.subscribe(spy);
+      fixture.debugElement.query(By.css('.btn-correct')).nativeElement.click();
+      expect(spy).toHaveBeenCalledWith(ENTRY_UNRESOLVED);
     });
 
     it('Enter key triggers confirm when epic ID is filled', () => {
@@ -213,20 +230,33 @@ describe('AdminPipelineTableComponent', () => {
       expect(rejectedChip.length).toBe(1);
     });
 
-    it('displays resolved columns: username, region, epicId, score, resolvedBy, status', () => {
+    it('displays resolved columns: username, region, epicId, score, resolvedBy, status, actions', () => {
       expect(component.displayedColumns).toEqual([
         'playerUsername',
         'playerRegion',
         'epicId',
         'confidenceScore',
         'resolvedBy',
-        'status'
+        'status',
+        'actions'
       ]);
     });
 
-    it('hides actions buttons in resolved mode', () => {
+    it('hides confirm and reject buttons in resolved mode', () => {
       expect(fixture.debugElement.query(By.css('.btn-confirm'))).toBeNull();
       expect(fixture.debugElement.query(By.css('.btn-reject'))).toBeNull();
+    });
+
+    it('shows correct button in resolved mode', () => {
+      const correctBtns = fixture.debugElement.queryAll(By.css('.btn-correct'));
+      expect(correctBtns.length).toBe(2);
+    });
+
+    it('emits correctRequested event with entry on correct click in resolved mode', () => {
+      const spy = jasmine.createSpy('correctRequested');
+      component.correctRequested.subscribe(spy);
+      fixture.debugElement.queryAll(By.css('.btn-correct'))[0].nativeElement.click();
+      expect(spy).toHaveBeenCalledWith(ENTRY_RESOLVED);
     });
   });
 

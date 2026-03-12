@@ -1,6 +1,6 @@
 package com.fortnite.pronos.service.admin;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -57,7 +57,7 @@ public class IncidentReportingService {
             .reporterUsername(reporterUsername)
             .incidentType(request.getIncidentType())
             .description(request.getDescription())
-            .timestamp(LocalDateTime.now())
+            .timestamp(OffsetDateTime.now())
             .build();
 
     gameIncidentService.recordIncident(entry);

@@ -257,7 +257,6 @@ describe('NotificationCenterComponent', () => {
   });
 
   it('should render malicious toast payload as plain text (no HTML injection)', () => {
-    const appendChildSpy = spyOn(document.body, 'appendChild').and.callThrough();
     const maliciousPayload = '<img src=x onerror=\"window.__xss=1\"><script>window.__xss=2</script>';
     const maliciousNotification: NotificationMessage = {
       ...mockNotification,
@@ -267,7 +266,8 @@ describe('NotificationCenterComponent', () => {
 
     component['showToastNotification'](maliciousNotification);
 
-    const toast = appendChildSpy.calls.mostRecent().args[0] as HTMLElement;
+    const toasts = Array.from(document.body.querySelectorAll('.notification-toast')) as HTMLElement[];
+    const toast = toasts[toasts.length - 1];
     const messageElement = toast.querySelector('.toast-content p') as HTMLElement;
 
     expect(toast.querySelector('script')).toBeNull();
