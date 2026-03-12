@@ -61,6 +61,8 @@ validation-rules:
 
 - [ ] **Story Status Updated:** Story Status set to "review"
 - [ ] **Sprint Status Updated:** Sprint status updated to "review" (when sprint tracking is used)
+- [ ] **Git Commit Par Story :** Au moins 1 commit Git créé *pendant* cette story avant de passer à la suivante. Vérifier : `git log --oneline -5` doit montrer un commit récent lié à cette story. Absence de commit = story ne peut PAS passer en `done`.
+- [ ] **Validation CI/CD Obligatoire :** Si la story modifie `ci.yml` ou tout fichier `.github/workflows/*.yml` → validation requise par push sur branche principale + CI vert dans GitHub Actions UI. Test local insuffisant. Story ne peut PAS passer en `done` sans ce push confirmé.
 - [ ] **Quality Gates Passed:** All quality checks and validations completed successfully
 - [ ] **No HALT Conditions:** No blocking issues or incomplete work remaining
 - [ ] **User Communication Ready:** Implementation summary prepared for user review
