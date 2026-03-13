@@ -53,14 +53,9 @@ jobs:
       #   - ScoreServiceTddTest           : RED TDD intentionnel
       #   - GameStatisticsServiceTddTest  : NPE pre-existante non liée aux stories
       - name: Tests + Build Maven
-        run: >
-          mvn verify -B --no-transfer-progress
-          -Dexcludes="**/GameDataIntegrationTest.java,
-                      **/FortniteTrackerServiceTddTest.java,
-                      **/PlayerServiceTddTest.java,
-                      **/ScoreCalculationServiceTddTest.java,
-                      **/ScoreServiceTddTest.java,
-                      **/GameStatisticsServiceTddTest.java"
+        run: |
+          mvn verify -B --no-transfer-progress \
+            -Dexcludes="**/GameDataIntegrationTest.java,**/FortniteTrackerServiceTddTest.java,**/PlayerServiceTddTest.java,**/ScoreCalculationServiceTddTest.java,**/ScoreServiceTddTest.java,**/GameStatisticsServiceTddTest.java"
 
       - name: Upload JAR (artifact de build)
         uses: actions/upload-artifact@v4

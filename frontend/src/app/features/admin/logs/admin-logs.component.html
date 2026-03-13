@@ -1,0 +1,121 @@
+<div class="logs-page">
+  <div class="page-header">
+    <h1>Logs &amp; Audit Trail</h1>
+    <button mat-icon-button (click)="loadData()" [disabled]="loading" aria-label="Rafraîchir">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+
+  <div *ngIf="error" class="error-banner" role="alert">
+    {{ error }}
+    <button mat-button (click)="loadData()">Réessayer</button>
+  </div>
+
+  <mat-tab-group>
+    <!-- SCRAPING LOGS TAB -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>storage</mat-icon>
+        Logs d'ingestion ({{ scrapeLogs.length }})
+      </ng-template>
+
+      <div class="tab-content">
+        <table mat-table [dataSource]="scrapeLogs" class="logs-table">
+          <ng-container matColumnDef="source">
+            <th mat-header-cell *matHeaderCellDef>Source</th>
+            <td mat-cell *matCellDef="let row">{{ row.source }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="startedAt">
+            <th mat-header-cell *matHeaderCellDef>Démarré</th>
+            <td mat-cell *matCellDef="let row">{{ row.startedAt | date: 'dd/MM HH:mm' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="finishedAt">
+            <th mat-header-cell *matHeaderCellDef>Terminé</th>
+            <td mat-cell *matCellDef="let row">{{ row.finishedAt ? (row.finishedAt | date: 'dd/MM HH:mm') : '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Statut</th>
+            <td mat-cell *matCellDef="let row">
+              <span [class]="'status-badge ' + scrapeStatusClass(row.status)">{{ row.status }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="totalRowsWritten">
+            <th mat-header-cell *matHeaderCellDef>Lignes</th>
+            <td mat-cell *matCellDef="let row">{{ row.totalRowsWritten ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="errorMessage">
+            <th mat-header-cell *matHeaderCellDef>Erreur</th>
+            <td mat-cell *matCellDef="let row" class="error-cell">{{ row.errorMessage ?? '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="scrapeColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: scrapeColumns;"></tr>
+        </table>
+
+        <div *ngIf="!loading && scrapeLogs.length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <p>Aucun log d'ingestion disponible.</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- AUDIT TRAIL TAB -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>history</mat-icon>
+        Audit admin ({{ auditEntries.length }})
+      </ng-template>
+
+      <div class="tab-content">
+        <table mat-table [dataSource]="auditEntries" class="logs-table">
+          <ng-container matColumnDef="timestamp">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let row">{{ row.timestamp | date: 'dd/MM HH:mm:ss' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actor">
+            <th mat-header-cell *matHeaderCellDef>Acteur</th>
+            <td mat-cell *matCellDef="let row"><strong>{{ row.actor }}</strong></td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="action-badge">{{ row.action }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="entityType">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let row">{{ row.entityType }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="entityId">
+            <th mat-header-cell *matHeaderCellDef>Entité</th>
+            <td mat-cell *matCellDef="let row" class="id-cell">{{ row.entityId ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="details">
+            <th mat-header-cell *matHeaderCellDef>Détails</th>
+            <td mat-cell *matCellDef="let row">{{ row.details ?? '—' }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="auditColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: auditColumns;"></tr>
+        </table>
+
+        <div *ngIf="!loading && auditEntries.length === 0" class="empty-state">
+          <mat-icon>history_toggle_off</mat-icon>
+          <p>Aucune action admin enregistrée.</p>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
