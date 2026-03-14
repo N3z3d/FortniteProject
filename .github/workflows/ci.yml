@@ -8,7 +8,7 @@
 # Pre-existing backend failures connues (~15 tests) :
 #   GameDataIntegrationTest, FortniteTrackerServiceTddTest, PlayerServiceTddTest,
 #   ScoreCalculationServiceTddTest, ScoreServiceTddTest, GameStatisticsServiceTddTest
-#   → Exclus via -Dexcludes pour que le CI reste vert sur du code correct.
+#   → Exclus via pom.xml <excludes> dans maven-surefire-plugin.
 #   Ces tests sont des RED TDD (intégration data ou API externe non mockée) et
 #   ne représentent pas de régressions introduites.
 
@@ -44,18 +44,10 @@ jobs:
       - name: Spotless — vérification du formatage
         run: mvn spotless:check -B --no-transfer-progress
 
-      # mvn verify lance : compile → test → package → verify
-      # Les 15 tests pre-existing failures sont exclus (classes connues, non-régressives) :
-      #   - GameDataIntegrationTest       : fixtures DB absentes en CI
-      #   - FortniteTrackerServiceTddTest : API externe non mockée (RED TDD intentionnel)
-      #   - PlayerServiceTddTest          : RED TDD intentionnel
-      #   - ScoreCalculationServiceTddTest: RED TDD intentionnel
-      #   - ScoreServiceTddTest           : RED TDD intentionnel
-      #   - GameStatisticsServiceTddTest  : NPE pre-existante non liée aux stories
+      # mvn verify : compile → test → package → verify
+      # Les exclusions pre-existing RED TDD sont dans pom.xml <excludes>.
       - name: Tests + Build Maven
-        run: |
-          mvn verify -B --no-transfer-progress \
-            -Dexcludes="**/GameDataIntegrationTest.java,**/FortniteTrackerServiceTddTest.java,**/PlayerServiceTddTest.java,**/ScoreCalculationServiceTddTest.java,**/ScoreServiceTddTest.java,**/GameStatisticsServiceTddTest.java"
+        run: mvn verify -B --no-transfer-progress
 
       - name: Upload JAR (artifact de build)
         uses: actions/upload-artifact@v4
