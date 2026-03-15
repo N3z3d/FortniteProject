@@ -1,79 +1,49 @@
-# CLAUDE.md — Directives de refactorisation du projet (Claude Code)
+### 1. Plan Mode Default
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately — don't keep pushing
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
 
-## Mandat
-- Refactoriser le projet en appliquant **Clean Code** et **SOLID** parfaitement.
-- **Analyser le projet** et **supprimer les fichiers inutiles**.
-- Travailler en **TDD** : Red → Green → Refactor, en petits lots sûrs.
+### 2. Subagent Strategy
+- Use subagents liberally to keep main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- For complex problems, throw more compute at it via subagents
+- One task per subagent for focused execution
 
-## Processus & Sécurité
-1) **Cartographie** (sans code) : liste des modules, dépendances, zones mortes/dupliquées.
-2) **Plan par lots** (≤ 200 lignes modifiées/lot). Pas de big bang.
-3) **Suppression contrôlée** :
-   - Étape 1 (rapport) : fichier | raison | références | décision.
-   - Étape 2 (diff) : supprimer uniquement ce qui a été validé.
-4) Pas d’ajout de dépendances externes sans justification explicite.
+### 3. Self-Improvement Loop
+- After ANY correction from the user: update `tasks/lessons.md` with the pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review lessons at session start for relevant project
 
-## Contraintes de taille
-- **Maximum 500 lignes par classe**.
-- **Maximum 50 lignes par méthode**.
-- Si dépassement : extraire classes/fonctions/stratégies jusqu’à respecter les seuils.
+### 4. Verification Before Done
+- Never mark a task complete without proving it works
+- Diff behavior between main and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
 
-## Organisation du code
-- **Regrouper les classes qui évoluent ensemble** (cohésion forte, couplage faible).
-- Respecter l’architecture cible choisie (cf. section “Architectures”).
+### 5. Demand Elegance (Balanced)
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes — don't over-engineer
+- Challenge your own work before presenting it
 
-## Règles générales de Clean Code
-- Nommer classes/méthodes/variables **explicitement**.
-- **Aucun code mort**. **Aucune duplication** (DRY).
-- Méthodes **courtes et cohérentes** (une seule intention).
-- Respect des conventions du repo (indentation, style, lint/format).
-- **Tests unitaires systématiques** sur tout code modifié/ajouté.
-- **Loi de Demeter** (principe de moindre connaissance) — Un objet ne doit interagir qu'avec ses dépendances directes. Interdire les chaînes d'appels type `a.getB().getC().doSomething()`. Préférer déléguer via une méthode dédiée sur l'objet direct.
+### 6. Autonomous Bug Fixing
+- When given a bug report: just fix it. Don't ask for hand-holding
+- Point at logs, errors, failing tests — then resolve them
+- Zero context switching required from the user
+- Go fix failing CI tests without being told how
 
-## SOLID (obligatoire)
-- **SRP** — Single Responsibility Principle
-- **OCP** — Open/Closed Principle
-- **LSP** — Liskov Substitution Principle
-- **ISP** — Interface Segregation Principle
-- **DIP** — Dependency Inversion Principle
+## Task Management
 
-## Design Patterns (utiliser quand le besoin est avéré, pas par dogme)
-- **Création** : Singleton, Factory Method, Abstract Factory, Builder, Prototype
-- **Structuraux** : Adapter, Facade, Decorator, Composite, Proxy, Flyweight, Bridge
-- **Comportement** : Strategy, Observer, Command, Chain of Responsibility, Template Method, Mediator, Iterator, Memento, Interpreter, State
+1. **Plan First**: Write plan to `tasks/todo.md` with checkable items  
+2. **Verify Plan**: Check in before starting implementation  
+3. **Track Progress**: Mark items complete as you go  
+4. **Explain Changes**: High-level summary at each step  
+5. **Document Results**: Add review section to `tasks/todo.md`  
+6. **Capture Lessons**: Update `tasks/lessons.md` after corrections  
 
-## Architectures (choix guidé par le contexte)
-- **Layered Architecture**
-- **Hexagonal Architecture**
-- **Microservices Architecture**
-- **Event-Driven Architecture (EDA)**
-- **CQRS** (Command Query Responsibility Segregation)
-- **Event Sourcing**
-- **Saga Pattern**
-- **Serverless Patterns**
-- **API Gateway**
-- **Résilience** : Circuit Breaker, Retry Pattern (uniquement aux frontières I/O)
+## Core Principles
 
-> Règle : privilégier **Layered/Hexagonal** par défaut. **Microservices/Serverless/CQRS/Event Sourcing/Saga** uniquement si la complexité métier/équipe/scale le justifie.
-
-## TDD — Exigences de tests
-- Toujours écrire un **test rouge minimal** avant d’implémenter.
-- Couverture visée ≥ **85% lignes** sur le code modifié (qualité > pourcentage).
-- Cas : **nominal + ≥3 edge cases** + erreurs attendues.
-- Tests **déterministes** (isoler temps/réseau/IO via mocks/adapters).
-
-## Sortie attendue (obligatoire pour chaque demande à Claude)
-1) **Plan bref** (3–6 puces) décrivant l’approche.
-2) **DIFF unifié uniquement** des fichiers à modifier/créer/supprimer.
-3) **Tests** (diff des fichiers dans `tests/` ou équivalent).
-4) **Checklist qualité** :
-   - [ ] SOLID respecté (SRP/OCP/LSP/ISP/DIP)
-   - [ ] ≤ 500 lignes par classe / ≤ 50 lignes par méthode
-   - [ ] 0 duplication, 0 code mort
-   - [ ] Nommage explicite, conventions respectées
-   - [ ] Tests unitaires ajoutés/MAJ, cas limites couverts
-   - [ ] Pas de nouvelle dépendance non justifiée
-   - [ ] Si suppression : référencée dans le rapport approuvé
-
-## Zones sensibles (ne pas toucher sans plan dédié)
-- Pipelines CI/CD, schémas DB publics, contrats d’API publiés, config build/prod.
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
