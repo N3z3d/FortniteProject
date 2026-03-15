@@ -340,7 +340,7 @@ development_status:
   # ----------------------------------------------------------
 
   # Décision hébergement : Railway oui/non (une seule fois — si non → deferred-sprint5)
-  sprint4-decision-hebergement: deferred-future  # décision utilisateur 2026-03-08 retro Sprint4: report long terme explicite. Docker local = cible principale. A reprendre quand le besoin de staging public se fera sentir.
+  sprint4-decision-hebergement: wont-do  # 2026-03-08 retro Sprint4: Docker local = cible principale. Staging public hors scope actuel.
 
   # ----------------------------------------------------------
   # Phase 1 — Chemin critique vers staging
@@ -351,13 +351,13 @@ development_status:
   # ----------------------------------------------------------
 
   # Config secrets prod : JWT_SECRET, DB_PASSWORD, FORTNITE_API_KEY dans hébergeur choisi
-  sprint4-config-secrets-prod: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+  sprint4-config-secrets-prod: wont-do  # cascade: dépend décision hébergement (wont-do ci-dessus)
 
   # PostgreSQL prod : managé (Supabase/Neon/RDS) ou Docker volume — provisioning
-  sprint4-db-prod-provisioning: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+  sprint4-db-prod-provisioning: wont-do  # cascade: dépend décision hébergement (wont-do ci-dessus)
 
   # Déploiement staging accessible publiquement (dépend: hébergement + secrets + DB)
-  sprint4-a10-staging-deployment: deferred-future  # dépend décision hébergement — mise en veille retro Sprint4
+  sprint4-a10-staging-deployment: wont-do  # cascade: dépend décision hébergement (wont-do ci-dessus)
 
   # ----------------------------------------------------------
   # Phase 2 — API Fortnite + E2E (P1 — indépendant du staging)
@@ -388,10 +388,10 @@ development_status:
   # ----------------------------------------------------------
 
   # A3b — CI/CD complet : docker build + push registry + deploy staging automatique
-  sprint4-a3b-cicd-pipeline-complet: deferred-future  # dépend staging — mise en veille retro Sprint4. CI (tests) déjà opérationnel via A3a.
+  sprint4-a3b-cicd-pipeline-complet: wont-do  # CI tests opérationnel via A3a. Deploy staging hors scope.
 
   # SEC-R2 — Auth WebSocket : JWT token au handshake (obligatoire avant exposition publique)
-  sprint4-sec-r2-websocket-auth: deferred-future  # mise en veille retro Sprint4 — seulement nécessaire avant exposition publique
+  sprint4-sec-r2-websocket-auth: done  # ✅ Implémenté Sprint 8 (JwtHandshakeInterceptor + query param token)
 
   # ----------------------------------------------------------
   # Phase 4 — Tech Debt critique (stretch — si capacity le permet)
@@ -647,3 +647,4 @@ sprint-9:
   status: in-progress
 
   sprint9-pipeline-rewrite: done  # 2026-03-15: FortniteTrackerScrapingAdapter + HtmlParser + ProxyUrlBuilder + 26 tests, 0 regressions (2330 run)
+  sprint9-p0-cleanup: done  # 2026-03-15: D3+D4+S2 — checklist + deferred-future + SEC-R2 doc

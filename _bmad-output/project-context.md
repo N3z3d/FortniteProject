@@ -324,6 +324,57 @@ Une story est **done** uniquement si **tous** les critères ci-dessous sont sati
 
 ---
 
+## §WebSocket Security Pattern (Sprint 8 — SEC-R2)
+
+### Contexte
+
+SockJS ne supporte pas les **headers HTTP personnalisés** au handshake. L'approche standard `Authorization: Bearer <token>` est impossible. La seule solution viable est le **query param** au moment de la création de la connexion SockJS.
+
+### Pattern de référence (implémenté Sprint 8)
+
+**Backend — `JwtHandshakeInterceptor`** (`config/JwtHandshakeInterceptor.java`) :
+```java
+@Component
+public class JwtHandshakeInterceptor implements HandshakeInterceptor {
+    @Override
+    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
+            WebSocketHandler wsHandler, Map<String, Object> attributes) {
+        if (request instanceof ServletServerHttpRequest servletRequest) {
+            String token = servletRequest.getServletRequest().getParameter("token");
+            if (token != null && jwtUtil.validateToken(token)) {
+                attributes.put("username", jwtUtil.extractUsername(token));
+                return true;
+            }
+        }
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        return false;
+    }
+}
+```
+
+**Frontend — `WebSocketService`** :
+```typescript
+const token = this.authService.getToken();
+const sockjs = new SockJS(`${environment.wsUrl}?token=${encodeURIComponent(token ?? '')}`);
+```
+
+### Comportement actuel du chemin de rejet
+
+⚠️ **Décision documentée** : Le rejet d'une connexion sans JWT valide passe par `IllegalStateException → STOMP ERROR frame` côté client, et **non** un HTTP 401 propre au handshake.
+
+- **Pourquoi** : `JwtHandshakeInterceptor.beforeHandshake()` retourne `false` + `response.setStatusCode(UNAUTHORIZED)`, mais SockJS intercepte et encapsule la réponse, ce qui entraîne un STOMP ERROR au lieu d'un HTTP 401 visible.
+- **Impact** : Le message d'erreur côté frontend n'est pas explicite — l'erreur doit être traitée dans le callback `onStompError` du client STOMP.
+- **Décision** : Comportement conservé tel quel (fonctionnel). Correction HTTP 401 propre non prioritaire.
+
+### Pour les futures stories WebSocket
+
+Lors de la création d'une story de sécurité WebSocket, définir explicitement dans les ACs :
+1. Le code de rejet (HTTP au handshake OU STOMP ERROR frame)
+2. Le message côté client et son handling dans `WebSocketService`
+3. Si `onStompError` doit déclencher une déconnexion / notification utilisateur
+
+---
+
 ## Usage Guidelines
 
 **Pour les agents IA :**
