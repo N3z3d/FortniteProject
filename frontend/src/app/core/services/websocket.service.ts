@@ -3,6 +3,7 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 import { UserContextService } from './user-context.service';
 import { LoggerService } from './logger.service';
 
@@ -65,6 +66,7 @@ export class WebSocketService implements OnDestroy {
   private readonly maxReconnectAttempts = 5;
   private readonly reconnectDelay = 3000;
 
+  private readonly authService = inject(AuthService);
   private readonly userContextService = inject(UserContextService);
   private readonly logger = inject(LoggerService);
 
@@ -283,15 +285,22 @@ export class WebSocketService implements OnDestroy {
       return headers;
     }
 
-    // In dev mode, use X-Test-User header for authentication
-    if (!environment.production) {
-      const currentUser = this.userContextService.getCurrentUser();
-      const lastUser = this.userContextService.getLastUser();
-      const username = currentUser?.username || lastUser?.username || environment.defaultDevUser;
-
-      if (username) {
-        headers['X-Test-User'] = username;
+    // In production, inject stored JWT automatically
+    if (environment.production) {
+      const storedToken = this.authService.getToken();
+      if (storedToken) {
+        headers['Authorization'] = `Bearer ${storedToken}`;
       }
+      return headers;
+    }
+
+    // In dev mode, use X-Test-User header for authentication
+    const currentUser = this.userContextService.getCurrentUser();
+    const lastUser = this.userContextService.getLastUser();
+    const username = currentUser?.username || lastUser?.username || environment.defaultDevUser;
+
+    if (username) {
+      headers['X-Test-User'] = username;
     }
 
     return headers;

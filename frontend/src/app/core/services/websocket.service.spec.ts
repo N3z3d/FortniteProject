@@ -1,24 +1,29 @@
 import { TestBed } from '@angular/core/testing';
 import { take } from 'rxjs';
 import { WebSocketService, TradeNotification } from './websocket.service';
+import { AuthService } from './auth.service';
 import { UserContextService } from './user-context.service';
 import { LoggerService } from './logger.service';
 import { environment } from '../../../environments/environment';
 
 describe('WebSocketService', () => {
   let service: WebSocketService;
+  let authService: jasmine.SpyObj<AuthService>;
   let userContext: jasmine.SpyObj<UserContextService>;
   let logger: jasmine.SpyObj<LoggerService>;
 
   beforeEach(() => {
+    authService = jasmine.createSpyObj('AuthService', ['getToken']);
     userContext = jasmine.createSpyObj('UserContextService', ['getCurrentUser', 'getLastUser']);
     logger = jasmine.createSpyObj('LoggerService', ['debug', 'info', 'warn', 'error']);
+    authService.getToken.and.returnValue(null);
     userContext.getCurrentUser.and.returnValue({ id: 'u1', username: 'TestUser', email: 'test@example.com' });
     userContext.getLastUser.and.returnValue(null);
 
     TestBed.configureTestingModule({
       providers: [
         WebSocketService,
+        { provide: AuthService, useValue: authService },
         { provide: UserContextService, useValue: userContext },
         { provide: LoggerService, useValue: logger }
       ]
@@ -90,6 +95,44 @@ describe('WebSocketService', () => {
     const url = (service as any).getWebSocketUrl();
 
     expect(url).toBe(`${environment.apiUrl}/ws`);
+  });
+
+  describe('buildConnectHeaders — production mode', () => {
+    let originalProduction: boolean;
+
+    beforeEach(() => {
+      originalProduction = environment.production;
+      (environment as any).production = true;
+    });
+
+    afterEach(() => {
+      (environment as any).production = originalProduction;
+    });
+
+    it('injects stored JWT token as Authorization header in production', () => {
+      authService.getToken.and.returnValue('stored-jwt-123');
+
+      const headers = (service as any).buildConnectHeaders();
+
+      expect(headers['Authorization']).toBe('Bearer stored-jwt-123');
+    });
+
+    it('returns empty headers in production when no token is stored', () => {
+      authService.getToken.and.returnValue(null);
+
+      const headers = (service as any).buildConnectHeaders();
+
+      expect(headers['Authorization']).toBeUndefined();
+      expect(headers['X-Test-User']).toBeUndefined();
+    });
+
+    it('explicit token overrides stored token in production', () => {
+      authService.getToken.and.returnValue('stored-jwt-123');
+
+      const headers = (service as any).buildConnectHeaders('explicit-token');
+
+      expect(headers['Authorization']).toBe('Bearer explicit-token');
+    });
   });
 
   describe('TradeNotification interface', () => {

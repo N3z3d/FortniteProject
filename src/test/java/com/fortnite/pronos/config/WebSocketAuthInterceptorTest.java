@@ -1,5 +1,6 @@
 package com.fortnite.pronos.config;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -78,7 +79,7 @@ class WebSocketAuthInterceptorTest {
     }
 
     @Test
-    @DisplayName("Should reject invalid JWT token")
+    @DisplayName("Should reject invalid JWT token in production (throws)")
     void shouldRejectInvalidJwt() {
       // Given
       String token = "invalid.jwt.token";
@@ -95,11 +96,10 @@ class WebSocketAuthInterceptorTest {
       when(jwtService.isTokenValid(token, userDetails)).thenReturn(false);
       when(environment.getActiveProfiles()).thenReturn(new String[] {"prod"});
 
-      // When
-      Message<?> result = interceptor.preSend(message, null);
-
-      // Then
-      assertNotNull(result);
+      // When / Then — unauthenticated CONNECT in production must be rejected
+      assertThatThrownBy(() -> interceptor.preSend(message, null))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("Authentication required");
       verify(jwtService).isTokenValid(token, userDetails);
     }
   }
@@ -132,7 +132,8 @@ class WebSocketAuthInterceptorTest {
     }
 
     @Test
-    @DisplayName("Should NOT authenticate with X-Test-User in prod environment")
+    @DisplayName(
+        "Should reject X-Test-User in prod (throws — X-Test-User not trusted in production)")
     void shouldNotAuthenticateWithTestUserInProd() {
       // Given
       String testUser = "devuser";
@@ -144,11 +145,10 @@ class WebSocketAuthInterceptorTest {
 
       when(environment.getActiveProfiles()).thenReturn(new String[] {"prod"});
 
-      // When
-      Message<?> result = interceptor.preSend(message, null);
-
-      // Then
-      assertNotNull(result);
+      // When / Then — X-Test-User ignored in prod → unauthenticated → rejected
+      assertThatThrownBy(() -> interceptor.preSend(message, null))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("Authentication required");
       verify(userDetailsService, never()).loadUserByUsername(anyString());
     }
 

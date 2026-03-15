@@ -57,6 +57,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
       tryTestUserAuthentication(accessor);
     }
 
+    // Reject unauthenticated connections in production
+    if (!isDevEnvironment() && accessor.getUser() == null) {
+      log.warn("WebSocket CONNECT rejected: no valid authentication provided");
+      throw new IllegalStateException("Authentication required for WebSocket connection");
+    }
+
     return message;
   }
 
