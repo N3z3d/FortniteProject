@@ -622,7 +622,7 @@ sprint-8:
   # Format: Playwright specs dans frontend/e2e/ — même pattern que trade-swap-flow.spec.ts
   # AC: au moins 3 nouveaux scénarios E2E (TRADE-REJECT-01, SWAP-INVALID-01, DRAFT-FULL-01)
 
-  sprint8-e1-e2e-flux-alternatifs: ready-for-dev
+  sprint8-e1-e2e-flux-alternatifs: done  # 2026-03-15: frontend/e2e/alt-flows.spec.ts — ALT-01 (wrong region swap→400), ALT-02 (trade unowned player→400), ALT-03 (duplicate draft pick→409)
 
   # ----------------------------------------------------------
   # Phase 3 — P3 : Critères DoD commits + CI (process C1/C2)
