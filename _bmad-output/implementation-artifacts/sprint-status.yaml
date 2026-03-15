@@ -631,6 +631,6 @@ sprint-8:
   # C2: "story modifiant ci.yml → validation via push branche principale + CI vert visible" → ajouter dans checklist.md
   # Scope: modification de checklist.md uniquement (~20 min)
 
-  sprint8-c1c2-dod-process: review  # 2026-03-12: C1+C2 ajoutés dans checklist.md §Final Status Verification
+  sprint8-c1c2-dod-process: done  # 2026-03-12: C1+C2 dans checklist.md §Final Status Verification — vérifié 2026-03-15
 
   sprint-8-retrospective-globale: optional
