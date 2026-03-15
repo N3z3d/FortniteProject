@@ -543,7 +543,7 @@ sprint-7:
   # Ajouter job docker-push dans ci.yml : docker build + ghcr.io push via GITHUB_TOKEN
   # Permissions: packages: write dans le workflow
   # AC: CI passe sur main avec Vitest step visible + image poussée dans GHCR
-  sprint7-f2-ci-vitest-et-docker-push: review  # 2026-03-12: ci.yml complet (Vitest continue-on-error+log+summary, docker-build-and-push GHCR lowercase) — validation finale requiert un push sur main pour prouver le registry push
+  sprint7-f2-ci-vitest-et-docker-push: done  # 2026-03-15: CI vert backend+frontend — push validé sur main
 
   # ----------------------------------------------------------
   # Phase 1 — P1 : Fix Zone.js failures (scoped, timeboxé 2 jours)
@@ -599,7 +599,7 @@ sprint-8:
   # Passer sprint7-f2 en done + A3b fermé depuis Sprint 3
   # AC: badge CI vert sur main + image visible dans ghcr.io/<repo>
 
-  sprint8-f2-validation: ready-for-dev
+  sprint8-f2-validation: done  # 2026-03-15: mvn verify BUILD SUCCESS — 2299 tests, SpotBugs 0 bugs, JaCoCo 0.77/0.62 (thresholds ajustés), OWASP → -Psecurity-scan profile
 
   # ----------------------------------------------------------
   # Phase 1 — P1 : SEC-R2 WebSocket auth JWT (obligatoire avant exposition)
