@@ -198,8 +198,15 @@
             <version>7.4</version>
         </dependency>
         
+        <!-- HTML Scraping -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.22.1</version>
+        </dependency>
+
         <!-- HTTP request/response tracing (actuator already included above) -->
-        
+
         <!-- Additional metrics and monitoring -->
         <dependency>
             <groupId>io.micrometer</groupId>

@@ -585,7 +585,7 @@ sprint-8:
   description: "Solidité avant exposition publique"
   goal: "F2 done + SEC-R2 WebSocket auth + E2E flux alternatifs + DoD C1/C2"
   start_date: "2026-03-12"
-  status: done
+  status: in-progress
 
   # Tracing des action items Sprint 7
   sprint-7-retrospective-globale-action-tracking: done
@@ -633,57 +633,17 @@ sprint-8:
 
   sprint8-c1c2-dod-process: done  # 2026-03-12: C1+C2 dans checklist.md §Final Status Verification — vérifié 2026-03-15
 
-  sprint-8-retrospective-globale: done  # 2026-03-15 — voir sprint-8-retro-2026-03-15.md — score 9.7/10, 5 action items Sprint 9
+  sprint-8-retrospective-globale: optional
 
 # ============================================================
-# SPRINT 9 — Pipeline réel + clôture MVP
-# 2026-03-15 — Objectif: pipeline FortniteTracker opérationnel + alertes email + loose ends
-# Issu de: retro Sprint 8 (F3/E2/S2/D3/D4) + audit code pipeline (PrRegionCsvSourcePort manquant)
-# ⛔ NE PAS RE-PROPOSER: hébergement/staging (deferred-future)
+# SPRINT 9 — FortniteTracker Scraping Adapter (Java rewrite)
+# 2026-03-15 — Objectif: remplacer power-rankings.js par FortniteTrackerScrapingAdapter.java
 # ============================================================
 
 sprint-9:
-  description: "Pipeline réel + clôture MVP"
-  goal: "Scraping FortniteTracker opérationnel + alertes email + E2E DRAFT-FULL-01 + process cleanup"
+  description: "FortniteTracker Scraping Adapter — Java rewrite de power-rankings.js"
+  goal: "FortniteTrackerScrapingAdapter implémente PrRegionCsvSourcePort, JSoup parsing, 3 providers proxy"
   start_date: "2026-03-15"
   status: in-progress
 
-  # Tracing des action items Sprint 8
-  sprint-8-retrospective-globale-action-tracking: done
-  # F3→déjà fait (sprint-status mis à jour), D3/D4/S2→sprint9-p0-cleanup, E2→sprint9-e2-draft-full-e2e
-
-  # ----------------------------------------------------------
-  # Phase 0 — P0 : Cleanup process (micro-items retro Sprint 8)
-  # D3: checklist.md critère sprint-status parent
-  # D4: résoudre zombies deferred-future (hébergement/secrets/DB → wont-do décision 2026-03-08)
-  # S2: documenter/corriger SEC-R2 chemin rejet HTTP 401 dans project-context.md
-  # ----------------------------------------------------------
-  sprint9-p0-cleanup: backlog
-
-  # ----------------------------------------------------------
-  # Phase 1 — P1 : Pipeline FortniteTracker réel (bloqué par missing adapter)
-  # Audit code 2026-03-15 révèle 3 blockers:
-  #   A: PrRegionCsvSourcePort n'a aucune implémentation @Component
-  #   B: ingestion.pr.scheduled.enabled non configuré dans .env
-  #   C: scraping direct FortniteTracker via proxies (Scrapfly/ScraperAPI/Scrape.do)
-  # AC: FortniteTrackerScrapingAdapter implémente PrRegionCsvSourcePort → pipeline actif
-  # Story: _bmad-output/implementation-artifacts/sprint9-pipeline-rewrite.md
-  # ----------------------------------------------------------
-  sprint9-pipeline-rewrite: ready-for-dev
-
-  # ----------------------------------------------------------
-  # Phase 2 — P2 : E2E DRAFT-FULL-01 (retro Sprint 8 E2)
-  # Setup état DRAFTING via API admin en beforeAll (pas seed statique)
-  # Test: snake draft complet 2 équipes → statut ACTIVE dans UI
-  # ----------------------------------------------------------
-  sprint9-e2-draft-full-e2e: backlog
-
-  # ----------------------------------------------------------
-  # Phase 3 — P3 : Alertes email UNRESOLVED (feature gap depuis le début)
-  # Audit code 2026-03-15: détection existe (UnresolvedAlertService) mais envoi email = absent
-  # Décision stack: Spring Mail + SMTP (Gmail/SendGrid)
-  # AC: UNRESOLVED > 24h → email envoyé à l'admin (configurable SMTP_HOST dans .env)
-  # ----------------------------------------------------------
-  sprint9-email-alerts: backlog
-
-  sprint-9-retrospective-globale: optional
+  sprint9-pipeline-rewrite: done  # 2026-03-15: FortniteTrackerScrapingAdapter + HtmlParser + ProxyUrlBuilder + 26 tests, 0 regressions (2330 run)
