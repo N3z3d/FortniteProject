@@ -220,6 +220,7 @@ class HexagonalArchitectureTest {
                 "..domain..", // Domain models and ports (including subdomain packages)
                 "..model..", // JPA entities that adapters map from
                 "..repository..", // JPA repositories that adapters delegate to
+                "..service..", // Service ports that adapters implement (e.g. PrRegionCsvSourcePort)
                 "..dto..", // External-API adapters use response DTOs (e.g.
                 // FortniteApiStatsResponse)
                 "..shared..",
@@ -228,7 +229,8 @@ class HexagonalArchitectureTest {
                 "org.springframework..",
                 "org.slf4j..",
                 "jakarta..",
-                "org.hibernate..");
+                "org.hibernate..",
+                "org.jsoup.."); // HTML scraping adapter uses JSoup
 
     // Allow empty - package adapter.out doesn't exist yet during hybrid migration
     rule.allowEmptyShould(true)

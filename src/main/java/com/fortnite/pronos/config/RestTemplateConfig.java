@@ -10,12 +10,21 @@ import org.springframework.web.client.RestTemplate;
 public class RestTemplateConfig {
 
   private static final int HTTP_TIMEOUT_MS = 10_000;
+  private static final int SCRAPING_TIMEOUT_MS = 20_000;
 
   @Bean
   public RestTemplate restTemplate() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(HTTP_TIMEOUT_MS);
     factory.setReadTimeout(HTTP_TIMEOUT_MS);
+    return new RestTemplate(factory);
+  }
+
+  @Bean
+  public RestTemplate restTemplateForScraping() {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(SCRAPING_TIMEOUT_MS);
+    factory.setReadTimeout(SCRAPING_TIMEOUT_MS);
     return new RestTemplate(factory);
   }
 }

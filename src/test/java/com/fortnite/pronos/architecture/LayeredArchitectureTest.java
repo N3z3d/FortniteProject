@@ -68,7 +68,7 @@ class LayeredArchitectureTest {
         .mayOnlyBeAccessedByLayers("Controllers", "Services", "UseCases", "Application", "Config")
         .whereLayer("Services")
         .mayOnlyBeAccessedByLayers(
-            "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions")
+            "Controllers", "Services", "UseCases", "Config", "DTOs", "Exceptions", "Adapters")
         .whereLayer("Repositories")
         .mayOnlyBeAccessedByLayers(
             "Controllers", "Services", "UseCases", "Config", "Domain", "Adapters")
