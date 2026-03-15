@@ -612,7 +612,7 @@ sprint-8:
   # AC: WS draft/trade rejeté sans JWT valide (401) ; avec JWT valide → connexion STOMP établie
   # Tests: SecurityConfigWebSocketAuthorizationTest (anonymous→reject, valid JWT→accept)
 
-  sprint8-sec-r2-websocket-auth: ready-for-dev
+  sprint8-sec-r2-websocket-auth: done  # 2026-03-15: STOMP CONNECT rejeté sans JWT en prod (IllegalStateException→STOMP ERROR), frontend injecte Bearer token automatiquement, 5 nouveaux tests backend + 3 frontend
 
   # ----------------------------------------------------------
   # Phase 2 — P2 : E2E flux alternatifs critiques
