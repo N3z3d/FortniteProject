@@ -114,6 +114,9 @@ public final class GameParticipant {
   }
 
   public List<UUID> getSelectedPlayerIds() {
+    if (selectedPlayerIds == null) {
+      return Collections.emptyList();
+    }
     return Collections.unmodifiableList(List.copyOf(selectedPlayerIds));
   }
 

@@ -108,7 +108,7 @@ public class FortniteTrackerService {
       throw exception;
     } catch (Exception exception) {
       log.error("Unexpected error during FortniteTracker call: {}", exception.getMessage());
-      throw new FortniteTrackerException("Unexpected error", exception);
+      throw new FortniteTrackerException("Erreur inattendue", exception);
     }
   }
 
@@ -124,14 +124,14 @@ public class FortniteTrackerService {
     }
     if (status.value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
       log.error("Rate limit reached for FortniteTracker API");
-      throw new FortniteTrackerException("Rate limit exceeded, try again later", exception);
+      throw new FortniteTrackerException("Rate limit dépassé", exception);
     }
     if (status.value() == HttpStatus.NOT_FOUND.value()) {
       log.warn("Player not found: {}", epicId);
-      throw new FortniteTrackerException("Player not found: " + epicId, exception);
+      throw new FortniteTrackerException("Joueur non trouvé: " + epicId, exception);
     }
     log.error("HTTP error while calling FortniteTracker: {}", exception.getMessage());
-    throw new FortniteTrackerException("Error while fetching stats", exception);
+    throw new FortniteTrackerException("Erreur lors de la récupération des stats", exception);
   }
 
   private FortniteTrackerPlayerStats retryImmediately(
@@ -155,7 +155,7 @@ public class FortniteTrackerService {
             FortniteTrackerResponse.class);
 
     if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
-      throw new FortniteTrackerException("Invalid FortniteTracker response");
+      throw new FortniteTrackerException("Réponse invalide de FortniteTracker");
     }
 
     return parseResponse(response.getBody());

@@ -26,9 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
 
-  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvÃ©";
-  private static final String TEAM_NOT_FOUND_MESSAGE = "Ã‰quipe non trouvÃ©e";
-  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouvÃ©";
+  private static final String USER_NOT_FOUND_MESSAGE = "Utilisateur non trouvé";
+  private static final String TEAM_NOT_FOUND_MESSAGE = "Équipe non trouvée";
+  private static final String PLAYER_NOT_FOUND_MESSAGE = "Joueur non trouvé";
 
   private final com.fortnite.pronos.repository.ScoreRepository scoreRepository;
   private final PlayerRepositoryPort playerRepository;
@@ -191,7 +191,7 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
         .findById(userId)
         .orElseThrow(
             () -> {
-              log.warn("Utilisateur non trouvÃ© avec l'ID: {}", userId);
+              log.warn("Utilisateur non trouvé avec l'ID: {}", userId);
               return new EntityNotFoundException(USER_NOT_FOUND_MESSAGE);
             });
   }
@@ -203,9 +203,7 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
         .orElseThrow(
             () -> {
               log.warn(
-                  "Ã‰quipe non trouvÃ©e pour l'utilisateur {} et la saison {}",
-                  user.getId(),
-                  season);
+                  "Équipe non trouvée pour l'utilisateur {} et la saison {}", user.getId(), season);
               return new EntityNotFoundException(TEAM_NOT_FOUND_MESSAGE);
             });
   }
@@ -215,7 +213,7 @@ public class ScoreService implements ScoreQueryUseCase, ScoreCommandUseCase {
         .findById(playerId)
         .orElseThrow(
             () -> {
-              log.warn("Joueur non trouvÃ© avec l'ID: {}", playerId);
+              log.warn("Joueur non trouvé avec l'ID: {}", playerId);
               return new EntityNotFoundException(PLAYER_NOT_FOUND_MESSAGE);
             });
   }

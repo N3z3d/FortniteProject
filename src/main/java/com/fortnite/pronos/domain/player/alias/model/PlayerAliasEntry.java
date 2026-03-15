@@ -28,8 +28,6 @@ public final class PlayerAliasEntry {
       String source,
       boolean current,
       LocalDateTime createdAt) {
-    PlayerAliasEntry entry = new PlayerAliasEntry(playerId, nickname, source, createdAt);
-    // Reconstruct with original id
     return new PlayerAliasEntry(id, playerId, nickname, source, current, createdAt);
   }
 

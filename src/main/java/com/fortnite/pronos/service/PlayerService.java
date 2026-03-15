@@ -64,7 +64,7 @@ public class PlayerService implements PlayerQueryUseCase {
   public PlayerDto getPlayerById(UUID id) {
     log.debug("RÃ©cupÃ©ration du joueur avec l'ID: {}", id);
     com.fortnite.pronos.model.Player player =
-        findPlayerById(id).orElseThrow(() -> new RuntimeException("Joueur non trouvÃ©: " + id));
+        findPlayerById(id).orElseThrow(() -> new RuntimeException("Joueur non trouvé: " + id));
 
     // Calculer les points totaux pour la saison courante du joueur
     Integer totalPoints = scoreRepository.sumPointsByPlayerAndSeason(id, player.getCurrentSeason());

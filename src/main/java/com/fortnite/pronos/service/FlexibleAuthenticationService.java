@@ -141,7 +141,9 @@ public class FlexibleAuthenticationService {
   /** Cree un utilisateur par defaut pour le MVP */
   private com.fortnite.pronos.model.User createDefaultUser() {
     com.fortnite.pronos.model.User defaultUser = new com.fortnite.pronos.model.User();
-    defaultUser.setId(java.util.UUID.nameUUIDFromBytes("dev-user".getBytes()));
+    defaultUser.setId(
+        java.util.UUID.nameUUIDFromBytes(
+            "dev-user".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     defaultUser.setEmail("dev@fortnite-pronos.com");
     defaultUser.setUsername("dev-user");
     defaultUser.setPassword("password");

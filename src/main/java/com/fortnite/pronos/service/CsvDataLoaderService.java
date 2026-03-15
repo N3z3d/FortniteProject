@@ -374,7 +374,8 @@ public class CsvDataLoaderService {
             .matcher(sourceNickname.toLowerCase(Locale.ROOT))
             .replaceAll(EMPTY_STRING);
     if (cleanUsername.isEmpty()) {
-      cleanUsername = USERNAME_FALLBACK_PREFIX + Math.abs(sourceNickname.hashCode());
+      cleanUsername =
+          USERNAME_FALLBACK_PREFIX + Integer.toUnsignedString(sourceNickname.hashCode());
     }
     return cleanUsername;
   }

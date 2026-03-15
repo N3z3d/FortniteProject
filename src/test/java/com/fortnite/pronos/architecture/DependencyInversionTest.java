@@ -150,7 +150,15 @@ class DependencyInversionTest {
     @Test
     @DisplayName("Repositories should be interfaces")
     void repositoriesShouldBeInterfaces() {
-      ArchRule rule = classes().that().resideInAPackage("..repository..").should().beInterfaces();
+      // Spring Data fragment implementations (*Impl) are classes by necessity — excluded.
+      ArchRule rule =
+          classes()
+              .that()
+              .resideInAPackage("..repository..")
+              .and()
+              .haveSimpleNameNotEndingWith("Impl")
+              .should()
+              .beInterfaces();
 
       rule.because("Repositories must be interfaces to allow DIP - services depend on abstractions")
           .check(importedClasses);

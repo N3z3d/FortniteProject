@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.fortnite.pronos.model.PrSnapshot;
 
 @Repository
-class PrSnapshotRepositoryImpl implements PrSnapshotRepositoryCustom {
+class PrSnapshotNativeRepositoryImpl implements PrSnapshotNativeRepository {
 
   @PersistenceContext private EntityManager entityManager;
 

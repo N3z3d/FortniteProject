@@ -57,7 +57,9 @@ public class ProductionAuthenticationStrategy implements AuthenticationStrategy 
   /** Génère la clé de signature pour les tokens JWT */
   private SecretKey getSigningKey() {
     try {
-      byte[] keyBytes = "ma_super_cle_jwt_123456789_tres_longue_pour_securite".getBytes();
+      byte[] keyBytes =
+          "ma_super_cle_jwt_123456789_tres_longue_pour_securite"
+              .getBytes(java.nio.charset.StandardCharsets.UTF_8);
       return Keys.hmacShaKeyFor(keyBytes);
     } catch (Exception e) {
       log.error("Erreur lors de la génération de la clé de signature JWT", e);

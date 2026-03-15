@@ -160,7 +160,7 @@ public class TeamInitializationService {
     String cleanUsername =
         NON_ALPHANUMERIC_PATTERN.matcher(pronostiqueurName.toLowerCase(Locale.ROOT)).replaceAll("");
     if (cleanUsername.isEmpty()) {
-      cleanUsername = "pronostiqueur" + Math.abs(pronostiqueurName.hashCode());
+      cleanUsername = "pronostiqueur" + Integer.toUnsignedString(pronostiqueurName.hashCode());
     }
 
     String email = cleanUsername + "@fortnite-pronos.local";

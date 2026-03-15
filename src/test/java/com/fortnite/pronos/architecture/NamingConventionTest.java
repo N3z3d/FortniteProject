@@ -51,10 +51,14 @@ class NamingConventionTest {
 
   @Test
   void repositoriesShouldHaveRepositorySuffix() {
+    // Spring Data fragment implementations (*Impl) are excluded — they must follow
+    // the *RepositoryImpl naming imposed by Spring Data's fragment discovery mechanism.
     ArchRule rule =
         ArchRuleDefinition.classes()
             .that()
             .resideInAPackage("..repository..")
+            .and()
+            .haveSimpleNameNotEndingWith("Impl")
             .should()
             .haveSimpleNameEndingWith("Repository");
 

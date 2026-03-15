@@ -131,7 +131,7 @@ public class MockDataGeneratorService {
         NON_ALPHANUMERIC_PATTERN.matcher(nickname.toLowerCase(Locale.ROOT)).replaceAll("");
 
     if (cleaned.isEmpty()) {
-      return PLAYER_USERNAME_PREFIX + Math.abs(nickname.hashCode());
+      return PLAYER_USERNAME_PREFIX + Integer.toUnsignedString(nickname.hashCode());
     }
 
     if (cleaned.length() < MIN_USERNAME_LENGTH) {

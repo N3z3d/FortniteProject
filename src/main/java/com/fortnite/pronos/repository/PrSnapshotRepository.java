@@ -14,7 +14,7 @@ import com.fortnite.pronos.model.PrSnapshot;
 
 @Repository
 public interface PrSnapshotRepository
-    extends JpaRepository<PrSnapshot, PrSnapshot.PrSnapshotId>, PrSnapshotRepositoryCustom {
+    extends JpaRepository<PrSnapshot, PrSnapshot.PrSnapshotId>, PrSnapshotNativeRepository {
 
   @Query("SELECT s FROM PrSnapshot s WHERE s.player.id = :playerId AND s.snapshotDate >= :since")
   List<PrSnapshot> findByPlayerIdSince(
