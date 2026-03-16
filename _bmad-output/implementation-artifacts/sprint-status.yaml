@@ -649,3 +649,4 @@ sprint-9:
   sprint9-pipeline-rewrite: done  # 2026-03-15: FortniteTrackerScrapingAdapter + HtmlParser + ProxyUrlBuilder + 26 tests, 0 regressions (2330 run)
   sprint9-p0-cleanup: done  # 2026-03-15: D3+D4+S2 — checklist + deferred-future + SEC-R2 doc
   sprint9-e2-draft-full-e2e: done  # 2026-03-15: DRAFT-FULL-01 — API-level snake draft complet (create→join→start→init→2 picks→finish→ACTIVE), frontend/e2e/draft-full-flow.spec.ts
+  sprint9-email-alerts: done  # EmailAlertService + UnresolvedAlertSchedulerService, @ConditionalOnProperty(alert.email.enabled=false default), 6 tests green, 2336 run 0 failures
