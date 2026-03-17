@@ -162,4 +162,12 @@ class SecurityConfigAdminScrapeAuthorizationTest {
         .perform(post("/api/admin/scraping/dry-run").param("region", "EU"))
         .andExpect(status().isOk());
   }
+
+  @Test
+  @DisplayName("Anonymous user cannot access POST /api/admin/scraping/trigger")
+  void anonymousCannotTriggerIngestion() throws Exception {
+    int status =
+        mockMvc.perform(post("/api/admin/scraping/trigger")).andReturn().getResponse().getStatus();
+    assertThat(status).isIn(401, 403);
+  }
 }

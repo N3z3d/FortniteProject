@@ -80,7 +80,10 @@ public class PrIngestionOrchestrationService {
       log.debug("PR scheduled ingestion skipped: outside 05h-08h window, now={}", now);
       return new MultiRegionIngestionResult(BatchStatus.SKIPPED, 0, Map.of(), 0L);
     }
+    return runAllRegions();
+  }
 
+  public MultiRegionIngestionResult runAllRegions() {
     Map<PrRegion, String> regionFailures = new EnumMap<>(PrRegion.class);
     int regionsProcessed = 0;
     long startedAtMillis = clock.millis();

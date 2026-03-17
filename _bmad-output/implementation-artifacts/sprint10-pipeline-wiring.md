@@ -1,6 +1,6 @@
 # Story: sprint10-pipeline-wiring — Wire Scheduler → FortniteTrackerScrapingAdapter (pagesPerRegion=1)
 
-Status: ready-for-dev
+Status: review
 
 <!-- METADATA
   story_key: sprint10-pipeline-wiring
@@ -50,37 +50,38 @@ Two previous stories completed the foundational work:
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Update `application.properties` (AC: #1)
-  - [ ] 1.1: Change `scraping.fortnitetracker.pages-per-region=${SCRAPING_FORTNITETRACKER_PAGES_PER_REGION:4}` → `:1`
-  - [ ] 1.2: Add commented block documenting scheduler activation:
+- [x] Task 1: Update `application.properties` (AC: #1)
+  - [x] 1.1: Change `scraping.fortnitetracker.pages-per-region=${SCRAPING_FORTNITETRACKER_PAGES_PER_REGION:4}` → `:1`
+  - [x] 1.2: Add commented block documenting scheduler activation:
     ```properties
     # Scheduled PR ingestion — enable via env var INGESTION_PR_SCHEDULED_ENABLED=true
     # ingestion.pr.scheduled.enabled=${INGESTION_PR_SCHEDULED_ENABLED:false}
     # ingestion.pr.scheduled.cron=${INGESTION_PR_SCHEDULED_CRON:0 0 5 * * *}
     ```
 
-- [ ] Task 2: Add `runAllRegions()` to `PrIngestionOrchestrationService` (AC: #5)
-  - [ ] 2.1: Add package-scoped method `MultiRegionIngestionResult runAllRegions()` — copies the loop from `runScheduledIngestion()` but skips the `isInsideRunWindow()` guard
-  - [ ] 2.2: `runScheduledIngestion()` delegates to `runAllRegions()` when inside the window (extract shared loop into `runAllRegions()`)
+- [x] Task 2: Add `runAllRegions()` to `PrIngestionOrchestrationService` (AC: #5)
+  - [x] 2.1: Add `public MultiRegionIngestionResult runAllRegions()` — extracts the loop from `runScheduledIngestion()`, skips window guard
+  - [x] 2.2: `runScheduledIngestion()` delegates to `runAllRegions()` when inside the window
 
-- [ ] Task 3: Create `IngestionTriggerResultDto` (AC: #3)
-  - [ ] 3.1: Create `src/main/java/com/fortnite/pronos/dto/admin/IngestionTriggerResultDto.java` — record with `String status`, `int regionsProcessed`, `Map<String, String> regionFailures`, `long durationMs`
+- [x] Task 3: Create `IngestionTriggerResultDto` (AC: #3)
+  - [x] 3.1: Created `src/main/java/com/fortnite/pronos/dto/admin/IngestionTriggerResultDto.java` — record with `String status`, `int regionsProcessed`, `Map<String, String> regionFailures`, `long durationMs`
 
-- [ ] Task 4: Update `AdminScrapeController` with trigger endpoint (AC: #2, #4)
-  - [ ] 4.1: Replace `@RequiredArgsConstructor` + implicit constructor with explicit constructor accepting `Optional<PrIngestionOrchestrationService> orchestrationService` as 4th param (plus 3 existing deps)
-  - [ ] 4.2: Store `Optional<PrIngestionOrchestrationService>` as field
-  - [ ] 4.3: Add `POST /trigger` endpoint: if orchestration service absent → 503; else call `runAllRegions()`, map result to `IngestionTriggerResultDto`, return 200
-  - [ ] 4.4: Map `MultiRegionIngestionResult.regionFailures()` (`Map<PrRegion, String>`) to `Map<String, String>` (region.name() as key) in DTO
+- [x] Task 4: Update `AdminScrapeController` with trigger endpoint (AC: #2, #4)
+  - [x] 4.1: Replaced `@RequiredArgsConstructor` with explicit 4-arg constructor accepting `Optional<PrIngestionOrchestrationService>`
+  - [x] 4.2: Stored `Optional<PrIngestionOrchestrationService>` as field
+  - [x] 4.3: Added `POST /trigger` endpoint: 503 if absent, else `runAllRegions()` → `IngestionTriggerResultDto` 200
+  - [x] 4.4: `Map<PrRegion, String>` → `Map<String, String>` via `region.name()` using `Collectors.toMap`
 
-- [ ] Task 5: Tests (AC: #6, #7)
-  - [ ] 5.1: In `PrIngestionOrchestrationServiceTest`, add 2 tests:
-    - `runAllRegions_processesAllRegionsRegardlessOfWindow`: use clock fixed at 09:00 UTC (outside window), call `runAllRegions()` directly, verify all 8 regions processed
-    - `runAllRegions_returnsPartial_whenOneRegionFails`: NAW fetch throws exception, verify PARTIAL result + NAW in regionFailures
-  - [ ] 5.2: In `AdminScrapeControllerTest`, add 3 tests:
-    - `trigger_returnsOk_whenSchedulerEnabled`: orchestration service present, mock returns `MultiRegionIngestionResult(SUCCESS, 8, {}, 1234)`, verify 200 + DTO fields
-    - `trigger_returns503_whenSchedulerDisabled`: orchestration service `Optional.empty()`, verify 503
-    - `trigger_mapsFailuresToDto`: orchestration service returns PARTIAL with NAW → "smoke_check_failed", verify DTO `regionFailures` has `{"NAW": "smoke_check_failed"}`
-  - [ ] 5.3: In `SecurityConfigAdminScrapeAuthorizationTest`, add 1 test: `anonymousCannotTriggerIngestion` → POST `/api/admin/scraping/trigger`, expect 401 or 403
+- [x] Task 5: Tests (AC: #6, #7)
+  - [x] 5.1: Added 2 tests to `PrIngestionOrchestrationServiceTest` in `@Nested RunAllRegionsTests`:
+    - `runAllRegions_processesAllRegionsRegardlessOfWindow` ✅
+    - `runAllRegions_returnsPartial_whenOneRegionFails` ✅
+  - [x] 5.2: Updated `AdminScrapeControllerTest` (explicit constructor, `@BeforeEach` replaced with helpers), added 3 trigger tests:
+    - `trigger_returnsOk_whenSchedulerEnabled` ✅
+    - `trigger_returns503_whenSchedulerDisabled` ✅
+    - `trigger_mapsFailuresToDto` ✅
+  - [x] 5.3: Added 1 test to `SecurityConfigAdminScrapeAuthorizationTest`:
+    - `anonymousCannotTriggerIngestion` ✅
 
 ## Dev Notes
 
@@ -285,15 +286,20 @@ src/main/resources/
 
 ### Agent Model Used
 
-(to be filled by dev agent)
+claude-sonnet-4-6
 
 ### Debug Log References
 
-(none)
+- Fix: `runAllRegions()` initially package-private — compilation error from `AdminScrapeController` (different package). Changed to `public`.
 
 ### Completion Notes List
 
-(to be filled after implementation)
+- ✅ `application.properties`: pagesPerRegion default `:4` → `:1`, scheduler commented docs added
+- ✅ `PrIngestionOrchestrationService.runAllRegions()`: public method extracted, `runScheduledIngestion()` delegates to it
+- ✅ `IngestionTriggerResultDto` record created in `dto/admin/`
+- ✅ `AdminScrapeController`: `@RequiredArgsConstructor` removed, explicit 4-arg constructor with `Optional<PrIngestionOrchestrationService>`, `POST /trigger` returns 503 when disabled or 200 with DTO when enabled
+- ✅ 6 new tests: 2 in OrchestrationServiceTest, 3 in AdminScrapeControllerTest, 1 security auth test
+- ✅ Full regression: 2367 tests, 0 failures, 0 errors
 
 ### File List
 
@@ -307,3 +313,5 @@ src/main/resources/
 - `src/test/java/com/fortnite/pronos/service/ingestion/PrIngestionOrchestrationServiceTest.java`
 - `src/test/java/com/fortnite/pronos/controller/AdminScrapeControllerTest.java`
 - `src/test/java/com/fortnite/pronos/config/SecurityConfigAdminScrapeAuthorizationTest.java`
+- `_bmad-output/implementation-artifacts/sprint10-pipeline-wiring.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`

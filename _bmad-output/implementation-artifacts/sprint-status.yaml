@@ -666,7 +666,7 @@ sprint-10:
 
   sprint10-pipeline-dry-run: done           # P1 (score 17): Valider adapter sur données réelles — 1 région, 1 page, clé proxy réelle, log résultats. Avant tout câblage cron.
   sprint10-pipeline-hardening: done   # P1 (score 15): Smoke test rows>=10, score validation 0<points<10M, cache CSV fallback (D8), User-Agent rotation, cost cap maxRequestsPerRun
-  sprint10-pipeline-wiring: ready-for-dev  # P1 (score 18): Câbler PrIngestionScheduler → FortniteTrackerScrapingAdapter. pagesPerRegion=1 défaut. Seulement après dry-run + hardening validés.
+  sprint10-pipeline-wiring: review  # P1 (score 18): Câbler PrIngestionScheduler → FortniteTrackerScrapingAdapter. pagesPerRegion=1 défaut. Seulement après dry-run + hardening validés.
   sprint10-e2e-websocket-minimal: backlog # P2 (score 14): 1 test Playwright browser.newContext() x2 — propagation STOMP event PICK_MADE sur 2ème browser. Pattern multi-context documenté.
   sprint10-p0-process-docs: backlog      # P3 (score 6-9): §E2E Limitations + §Config Production dans project-context.md. Checklist adapter DoD + @ConditionalOnProperty. Vérif CGU FortniteTracker.
   sprint10-retrospective: optional

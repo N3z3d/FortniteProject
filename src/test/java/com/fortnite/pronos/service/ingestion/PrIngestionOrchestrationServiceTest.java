@@ -281,6 +281,66 @@ class PrIngestionOrchestrationServiceTest {
     }
   }
 
+  @Nested
+  @DisplayName("runAllRegions() — bypasses window check")
+  class RunAllRegionsTests {
+
+    @Test
+    @DisplayName("processes all 8 regions regardless of time window (outside 05h-08h)")
+    void runAllRegions_processesAllRegionsRegardlessOfWindow() {
+      Clock outsideClock = Clock.fixed(Instant.parse("2026-02-25T09:00:00Z"), ZoneOffset.UTC);
+      PrIngestionOrchestrationService outsideService =
+          new PrIngestionOrchestrationService(
+              ingestionService, regionCsvSourcePort, outsideClock, csvCachePort);
+
+      for (PrRegion region : PrIngestionOrchestrationService.SUPPORTED_REGIONS) {
+        when(regionCsvSourcePort.fetchCsv(region)).thenReturn(Optional.of(csvWithRows(region, 11)));
+      }
+      when(ingestionService.ingest(any(Reader.class), any()))
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult());
+
+      PrIngestionOrchestrationService.MultiRegionIngestionResult result =
+          outsideService.runAllRegions();
+
+      assertThat(result.status()).isEqualTo(PrIngestionOrchestrationService.BatchStatus.SUCCESS);
+      assertThat(result.regionsProcessed()).isEqualTo(8);
+      assertThat(result.regionFailures()).isEmpty();
+      verify(ingestionService, times(8)).ingest(any(Reader.class), any());
+    }
+
+    @Test
+    @DisplayName("returns PARTIAL when one region fetch throws exception")
+    void runAllRegions_returnsPartial_whenOneRegionFails() {
+      for (PrRegion region : PrIngestionOrchestrationService.SUPPORTED_REGIONS) {
+        when(regionCsvSourcePort.fetchCsv(region)).thenReturn(Optional.of(csvWithRows(region, 11)));
+      }
+      when(regionCsvSourcePort.fetchCsv(PrRegion.NAW))
+          .thenThrow(new IllegalStateException("source_down"));
+      when(ingestionService.ingest(any(Reader.class), any()))
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult());
+
+      PrIngestionOrchestrationService.MultiRegionIngestionResult result =
+          orchestrationService.runAllRegions();
+
+      assertThat(result.status()).isEqualTo(PrIngestionOrchestrationService.BatchStatus.PARTIAL);
+      assertThat(result.regionsProcessed()).isEqualTo(7);
+      assertThat(result.regionFailures()).containsKey(PrRegion.NAW);
+    }
+  }
+
   private PrIngestionResult successResult() {
     return new PrIngestionResult(
         UUID.randomUUID(), com.fortnite.pronos.model.IngestionRun.Status.SUCCESS, 1, 0, 1, 1, 0, 0);

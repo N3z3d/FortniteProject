@@ -6,9 +6,10 @@ import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,12 +18,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.dto.admin.DryRunResultDto;
+import com.fortnite.pronos.dto.admin.IngestionTriggerResultDto;
 import com.fortnite.pronos.dto.admin.PipelineAlertDto;
 import com.fortnite.pronos.dto.admin.PipelineAlertDto.AlertLevel;
 import com.fortnite.pronos.dto.admin.ScrapeLogDto;
 import com.fortnite.pronos.model.PrRegion;
 import com.fortnite.pronos.service.admin.ScrapeLogService;
 import com.fortnite.pronos.service.admin.UnresolvedAlertService;
+import com.fortnite.pronos.service.ingestion.PrIngestionOrchestrationService;
+import com.fortnite.pronos.service.ingestion.PrIngestionOrchestrationService.BatchStatus;
+import com.fortnite.pronos.service.ingestion.PrIngestionOrchestrationService.MultiRegionIngestionResult;
 import com.fortnite.pronos.service.ingestion.ScrapingDryRunService;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,13 +37,19 @@ class AdminScrapeControllerTest {
   @Mock private ScrapeLogService scrapeLogService;
   @Mock private UnresolvedAlertService unresolvedAlertService;
   @Mock private ScrapingDryRunService scrapingDryRunService;
+  @Mock private PrIngestionOrchestrationService orchestrationService;
 
-  private AdminScrapeController controller;
+  private AdminScrapeController controllerWithScheduler() {
+    return new AdminScrapeController(
+        scrapeLogService,
+        unresolvedAlertService,
+        scrapingDryRunService,
+        Optional.of(orchestrationService));
+  }
 
-  @BeforeEach
-  void setUp() {
-    controller =
-        new AdminScrapeController(scrapeLogService, unresolvedAlertService, scrapingDryRunService);
+  private AdminScrapeController controllerWithoutScheduler() {
+    return new AdminScrapeController(
+        scrapeLogService, unresolvedAlertService, scrapingDryRunService, Optional.empty());
   }
 
   private ScrapeLogDto sampleLog() {
@@ -65,7 +76,7 @@ class AdminScrapeControllerTest {
     void returns200WithLogs() {
       when(scrapeLogService.getRecentLogs(50)).thenReturn(List.of(sampleLog()));
 
-      var response = controller.getLogs(50);
+      var response = controllerWithoutScheduler().getLogs(50);
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       assertThat(response.getBody()).hasSize(1);
@@ -77,7 +88,7 @@ class AdminScrapeControllerTest {
     void returns200Empty() {
       when(scrapeLogService.getRecentLogs(50)).thenReturn(List.of());
 
-      var response = controller.getLogs(50);
+      var response = controllerWithoutScheduler().getLogs(50);
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       assertThat(response.getBody()).isEmpty();
@@ -88,7 +99,7 @@ class AdminScrapeControllerTest {
     void forwardsCustomLimit() {
       when(scrapeLogService.getRecentLogs(10)).thenReturn(List.of());
 
-      controller.getLogs(10);
+      controllerWithoutScheduler().getLogs(10);
 
       verify(scrapeLogService).getRecentLogs(10);
     }
@@ -103,7 +114,7 @@ class AdminScrapeControllerTest {
     void returnsNoneAlert() {
       when(unresolvedAlertService.getAlertStatus()).thenReturn(alertDto(AlertLevel.NONE));
 
-      var response = controller.getAlert();
+      var response = controllerWithoutScheduler().getAlert();
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       assertThat(response.getBody()).isNotNull();
@@ -119,7 +130,7 @@ class AdminScrapeControllerTest {
           new PipelineAlertDto(AlertLevel.CRITICAL, 5L, oldest, 72L, OffsetDateTime.now());
       when(unresolvedAlertService.getAlertStatus()).thenReturn(alert);
 
-      var response = controller.getAlert();
+      var response = controllerWithoutScheduler().getAlert();
 
       assertThat(response.getBody().level()).isEqualTo(AlertLevel.CRITICAL);
       assertThat(response.getBody().unresolvedCount()).isEqualTo(5L);
@@ -137,7 +148,7 @@ class AdminScrapeControllerTest {
       DryRunResultDto dto = new DryRunResultDto("EU", 15, true, List.of(), List.of());
       when(scrapingDryRunService.runDryRun(PrRegion.EU)).thenReturn(dto);
 
-      var response = controller.dryRun("EU");
+      var response = controllerWithoutScheduler().dryRun("EU");
 
       assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
       assertThat(response.getBody()).isEqualTo(dto);
@@ -146,7 +157,7 @@ class AdminScrapeControllerTest {
     @Test
     @DisplayName("returns 400 for unknown region string")
     void returns400ForUnknownRegion() {
-      var response = controller.dryRun("UNKNOWN");
+      var response = controllerWithoutScheduler().dryRun("UNKNOWN");
 
       assertThat(response.getStatusCode().is4xxClientError()).isTrue();
     }
@@ -157,9 +168,58 @@ class AdminScrapeControllerTest {
       DryRunResultDto dto = new DryRunResultDto("NAC", 10, true, List.of(), List.of());
       when(scrapingDryRunService.runDryRun(PrRegion.NAC)).thenReturn(dto);
 
-      controller.dryRun("NAC");
+      controllerWithoutScheduler().dryRun("NAC");
 
       org.mockito.Mockito.verify(scrapingDryRunService).runDryRun(PrRegion.NAC);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /trigger")
+  class PostTrigger {
+
+    @Test
+    @DisplayName("returns 200 with SUCCESS result when scheduler enabled")
+    void trigger_returnsOk_whenSchedulerEnabled() {
+      MultiRegionIngestionResult serviceResult =
+          new MultiRegionIngestionResult(BatchStatus.SUCCESS, 8, Map.of(), 1234L);
+      when(orchestrationService.runAllRegions()).thenReturn(serviceResult);
+
+      var response = controllerWithScheduler().triggerIngestion();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      IngestionTriggerResultDto dto = (IngestionTriggerResultDto) response.getBody();
+      assertThat(dto).isNotNull();
+      assertThat(dto.status()).isEqualTo("SUCCESS");
+      assertThat(dto.regionsProcessed()).isEqualTo(8);
+      assertThat(dto.regionFailures()).isEmpty();
+      assertThat(dto.durationMs()).isEqualTo(1234L);
+    }
+
+    @Test
+    @DisplayName("returns 503 when scheduler disabled")
+    void trigger_returns503_whenSchedulerDisabled() {
+      var response = controllerWithoutScheduler().triggerIngestion();
+
+      assertThat(response.getStatusCode().value()).isEqualTo(503);
+    }
+
+    @Test
+    @DisplayName("maps region failures to string keys in DTO")
+    void trigger_mapsFailuresToDto() {
+      MultiRegionIngestionResult serviceResult =
+          new MultiRegionIngestionResult(
+              BatchStatus.PARTIAL, 7, Map.of(PrRegion.NAW, "smoke_check_failed"), 5000L);
+      when(orchestrationService.runAllRegions()).thenReturn(serviceResult);
+
+      var response = controllerWithScheduler().triggerIngestion();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      IngestionTriggerResultDto dto = (IngestionTriggerResultDto) response.getBody();
+      assertThat(dto).isNotNull();
+      assertThat(dto.status()).isEqualTo("PARTIAL");
+      assertThat(dto.regionsProcessed()).isEqualTo(7);
+      assertThat(dto.regionFailures()).containsEntry("NAW", "smoke_check_failed");
     }
   }
 }
