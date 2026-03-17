@@ -4,6 +4,7 @@
 **Facilité par :** Bob (Scrum Master)
 **Participants :** Thibaut (Project Lead), Alice (Product Owner), Charlie (Senior Dev), Dana (QA Engineer), Elena (Junior Dev), Winston (Architect), Mary (Analyst), Amelia (Developer), Quinn (QA)
 **Objectif Sprint 9 :** "FortniteTracker Scraping Adapter + DRAFT-FULL-01 E2E + Email Alerts + Process Cleanup D3/D4/S2"
+**Elicitation :** 15 méthodes avancées appliquées (Party Mode)
 
 ---
 
@@ -36,9 +37,9 @@
 |---|---|---|------|
 | F3 | sprint-status.yaml : sprint-8 status → done | ✅ Fait | Clôturé avant le début du Sprint 9 |
 | D3 | checklist.md : critère Sprint-N Parent Status | ✅ Fait | sprint9-p0-cleanup — §Final Status Verification |
-| D4 | Résoudre les zombies deferred-future | ✅ Fait | 5 items hébergement/staging/secrets/DB/CI-CD → wont-do ; sprint4-sec-r2 → done |
+| D4 | Résoudre les zombies deferred-future | ✅ Fait | 5 items → wont-do ; sprint4-sec-r2 → done |
 | E2 | DRAFT-FULL-01 E2E complet | ✅ Fait (compromis) | API-level, compromis documenté dans test + story |
-| S2 | §WebSocket Security Pattern dans project-context.md | ✅ Fait | Section complète avec code Java+TypeScript, comportement rejet, guidance futures stories |
+| S2 | §WebSocket Security Pattern dans project-context.md | ✅ Fait | Section complète avec code Java+TypeScript |
 
 **Score : 5/5 (100%) — deuxième sprint consécutif avec 100% des actions livrées.**
 
@@ -46,15 +47,15 @@
 
 ## 3. Ce qui a bien marché
 
-**Alice (Product Owner):** "Le P0 cleanup a soldé des dettes qui traînaient depuis Sprint 3-4. Les zombies `deferred-future` du hébergement/staging : on savait qu'ils ne seraient jamais faits, on l'a dit explicitement. C'est de la clarté mentale collective. On peut maintenant parcourir le sprint-status.yaml sans être pollué par des items sans date de révision."
+**Alice (Product Owner):** "Le P0 cleanup a soldé des dettes depuis Sprint 3-4. Les zombies `deferred-future` : on l'a dit explicitement. Clarté mentale collective."
 
-**Winston (Architect):** "La session de brainstorming sur le pipeline-rewrite a produit 7 décisions architecturales documentées avant le premier commit. D1 (API vs Scraping), D2 (HTTP client), D3 (Retry strategy), D4 (Structure 3 classes), D5 (Config), D6 (JSoup version), D7 (Pages). Une heure de réflexion collective a évité des jours potentiels de refactoring."
+**Winston (Architect):** "La session brainstorming a produit 7 décisions D1-D7 documentées avant le premier commit. Une heure de réflexion a évité des jours de refactoring potentiel."
 
-**Amelia (Developer):** "26 tests sur 3 classes, 0 Spring context. `FortniteTrackerHtmlParser` et `ProxyUrlBuilder` sont des POJOs purs. `@Component` sur l'adapter plutôt que `@Service` — évite le CouplingTest max-7-deps constraint. Architecture testable et propre."
+**Amelia (Developer):** "26 tests, 0 Spring context. `FortniteTrackerHtmlParser` et `ProxyUrlBuilder` sont des POJOs purs. `@Component` évite le CouplingTest constraint."
 
-**Dana (QA Engineer):** "L'email alerts story : `@ConditionalOnProperty(alert.email.enabled=false)` — quand désactivé, le bean n'existe pas. On ne requiert pas de SMTP configuré pour builder. Pattern correct pour les features opt-in avec dépendances externes non garanties."
+**Dana (QA Engineer):** "`@ConditionalOnProperty(alert.email.enabled=false)` — quand désactivé, le bean n'existe pas. Pattern correct pour features opt-in."
 
-**Mary (Analyst):** "La documentation §WebSocket Security Pattern dans project-context.md est exemplaire. Comportement documenté (`IllegalStateException → STOMP ERROR` vs HTTP 401), code de référence Java+TypeScript, raisons du choix, guidelines pour stories futures. Dans 6 mois, on sait exactement pourquoi."
+**Mary (Analyst):** "§WebSocket Security Pattern dans project-context.md : comportement documenté, code de référence, raisons du choix, guidance futures stories."
 
 ### Victoires clés
 - 4/4 stories done (100%) — 4ème sprint consécutif parfait
@@ -67,53 +68,148 @@
 
 ## 4. Ce qui n'a pas bien marché / Challenges
 
-**Dana (QA Engineer):** "DRAFT-FULL-01 : on a livré un test API-level qui valide create→join→start→2 picks→finish→ACTIVE. Utile. Mais l'objectif original était de prouver le flux draft *dans l'UI avec WebSocket* — deux contextes browser simultanés. Ça, on ne l'a pas."
+**Dana (QA Engineer):** "DRAFT-FULL-01 : test API-level uniquement. Le flux UI WebSocket multi-browser n'est pas testé. La coordination STOMP entre 2 browsers peut casser silencieusement."
 
-**Charlie (Senior Dev):** "Le problème est structurel. 35 secondes Playwright + 2 contextes WebSocket + latence SockJS handshake : mathématiquement fragile sans infrastructure dédiée. Ce n'est pas un oubli, c'est une limite architecturale de l'approche E2E actuelle."
+**Charlie (Senior Dev):** "Structurel : 35s Playwright + 2 contextes WS + latence SockJS = fragile sans infrastructure dédiée."
 
-**Mary (Analyst):** "L'adapter pipeline scraping existe, mais `PrIngestionScheduler` ne câble pas encore `PrRegionCsvSourcePort`. Le scraper est implémenté mais pas activé dans le flux de production. Sans vraies clés proxy configurées, on ne peut pas valider que les données réelles entrent dans le système."
+**Mary (Analyst):** "`PrIngestionScheduler` ne câble pas encore `PrRegionCsvSourcePort`. Le scraper est implémenté mais pas activé en production."
 
-**Quinn (QA Engineer):** "Le sprint-9 `status: in-progress` — même pattern qu'en Sprint 8. On a ajouté le critère D3 dans checklist.md mais on n'a pas appliqué le critère sur notre propre sprint. Auto-référentiel."
+**Quinn (QA):** "sprint-9 `status: in-progress` avant la rétro — même pattern Sprint 8 répété malgré le critère D3."
+
+**Winston (Architect) [Red Team]:** "L'adapter n'a jamais tourné avec de vraies données. Les fixtures de test ont 3 rows ; la vraie page en a 100. Structure HTML potentiellement différente par région."
+
+**Dana [Red Team]:** "Données corrompues silencieuses : si FT change le format des scores (`1,234,567` avec virgules), le parser extrait `1`. Pas d'exception, juste des données fausses en base."
+
+**Mary [Red Team]:** "Coût proxy non estimé : 10 régions × 4 pages × 8 tentatives max = 320 requêtes potentielles. ~$74/mois non budgétés."
 
 ### Challenges clés
-- DRAFT-FULL-01 : flux UI WebSocket multi-browser non testé (compromis API-level documenté)
-- Pipeline rewrite : intégration end-to-end avec vrais proxies non validée (pas de clés configurées)
-- sprint-9 parent status non mis à jour avant la rétro (critère D3 existe mais pas appliqué)
+- DRAFT-FULL-01 : flux UI WebSocket multi-browser non testé
+- Pipeline : adapter non câblé, jamais validé sur données réelles
+- Smoke test `rows > 0` absent — ingestion silencieuse possible
+- Coût proxy réel non estimé
+- sprint-9 parent status mis à jour en rétro (pas avant)
 
 ---
 
 ## 5. Leçons apprises
 
 ### L1 — Une session d'architecture documentée > code immédiat
-**Contexte :** La story pipeline-rewrite aurait pu démarrer sans session brainstorming. L'utilisateur a identifié que la partie réflexion était absente et l'a demandée explicitement avant implémentation.
-**Leçon :** Pour toute story avec des décisions non triviales (choix de stack, intégration externe, patterns de retry), documenter les décisions D1-DN *avant* la création de la story. La réflexion en amont réduit les refactorings.
-**How to apply :** Dans create-story, si la story touche à une nouvelle intégration externe ou un nouveau pattern architectural : déclencher brainstorming multi-agent avant le template.
+**Contexte :** La story pipeline-rewrite aurait démarré sans brainstorming. Thibaut a identifié l'absence et l'a demandée.
+**Leçon :** Pour toute story avec intégration externe ou nouveau pattern : documenter D1-DN avant la story.
+**How to apply :** Dans create-story si intégration externe : brainstorming multi-agent avant template.
 
 ### L2 — Les tests E2E WebSocket multi-browser nécessitent une infrastructure dédiée
-**Contexte :** DRAFT-FULL-01 nécessitait 2 contextes browser WebSocket simultanés en 35s. Impossible de manière fiable avec Playwright seul.
-**Leçon :** Pour les stories E2E impliquant coordination WebSocket multi-utilisateurs, définir dans les ACs l'approche (UI+WebSocket ou API-level) *avant* la story, pas pendant.
-**How to apply :** Template Dev Notes §E2E WebSocket Multi-User : déclarer explicitement l'approche et ses limites dans la story.
+**Contexte :** DRAFT-FULL-01 — 2 contextes browser WebSocket simultanés en 35s impossible avec Playwright seul.
+**Leçon :** Définir dans les ACs si l'approche est UI+WebSocket ou API-level. Décider avant la story.
+**How to apply :** Template Dev Notes §E2E WebSocket Multi-User — déclarer l'approche et ses limites.
 
 ### L3 — Les features opt-in méritent @ConditionalOnProperty systématique
-**Contexte :** `EmailAlertService` protégé par `@ConditionalOnProperty(alert.email.enabled=false)`. Sans ça, Spring chercherait `JavaMailSender` au démarrage même sans SMTP configuré.
-**Leçon :** Toute feature qui dépend de config externe optionnelle (SMTP, webhooks, API keys) doit être protégée par `@ConditionalOnProperty`.
-**How to apply :** Critère dans checklist.md §Technical : "Features opt-in avec dépendance externe non garantie → @ConditionalOnProperty obligatoire."
+**Contexte :** `EmailAlertService` sans `@ConditionalOnProperty` chercherait `JavaMailSender` au démarrage.
+**Leçon :** Toute feature dépendant d'une config externe optionnelle → `@ConditionalOnProperty`.
+**How to apply :** Critère checklist §Technical : "Features opt-in avec dépendance externe → @ConditionalOnProperty obligatoire."
 
 ### L4 — Les adapters non câblés doivent générer une story backlog immédiatement
-**Contexte :** `FortniteTrackerScrapingAdapter` implémente `PrRegionCsvSourcePort` mais `PrIngestionScheduler` ne l'utilise pas encore. Gap implicite.
-**Leçon :** Quand un adapter est créé mais pas câblé dans l'orchestration production, créer immédiatement une story backlog "câblage + validation". Ne pas laisser un gap implicite.
-**How to apply :** Dans Completion Notes de dev-story : documenter explicitement "Integration gaps: ..."
+**Contexte :** `FortniteTrackerScrapingAdapter` implémente le port mais `PrIngestionScheduler` ne l'utilise pas.
+**Leçon :** Un adapter sans câblage n'est pas livré — il est juste écrit.
+**How to apply :** Dans Completion Notes dev-story : documenter explicitement "Integration gaps: ..."
+
+### L5 — Les décisions architecturales implicites sont les plus dangereuses [NEW]
+**Contexte :** D2 (RestTemplate dédié 20s) aurait pu être omis sans la session brainstorming.
+**Leçon :** Une décision non documentée est une dette masquée. Le format D1-DN obligatoire pour toute intégration externe.
+**How to apply :** Checklist §Architecture : "Toute intégration externe → au moins 3 décisions D1-DN documentées."
+
+### L6 — Les compromis E2E doivent être dans project-context.md [NEW]
+**Contexte :** Le compromis DRAFT-FULL-01 est dans le test et la story, mais pas dans project-context.md.
+**Leçon :** Dans 3 mois, quelqu'un lira `draft-full-flow.spec.ts` sans contexte.
+**How to apply :** Section §E2E Limitations dans project-context.md pour chaque compromis de scope E2E.
+
+### L7 — Vérifier pom.xml/package.json avant de créer une nouvelle dépendance [NEW]
+**Contexte :** `spring-boot-starter-mail` était déjà dans pom.xml. Feature email quasi-gratuite.
+**Leçon :** Les dépendances dormantes sont des features à coût quasi-nul.
+**How to apply :** Dans create-story si dépendance externe requise : vérifier pom.xml/package.json d'abord.
+
+### L8 — Valider minimum viable scraping avant de généraliser [NEW]
+**Contexte :** On a construit rotation 3 providers + 8 retries avant de valider 1 provider sur données réelles.
+**Leçon :** Valider Scrapfly seul sur 1 région d'abord. Généraliser après validation.
+**How to apply :** AC obligatoire pour tout adapter d'ingestion : "Au moins 1 région validée avec données réelles."
+
+### L9 — Les invariants de validation appartiennent à l'adapter, pas à une story séparée [NEW]
+**Contexte :** Thibaut futur (Hindsight) : smoke test `rows > 0` ajouté en Sprint 10, 2 semaines de cron silencieux perdues.
+**Leçon :** La validation des invariants (`rows > 0`, `score > 0`) doit être dans l'adapter au moment de sa création.
+**How to apply :** Dans dev-story §Definition of Done pour adapters d'ingestion : "Validation invariants incluse."
+
+### L10 — `pagesPerRegion` doit être basé sur l'usage réel, pas une estimation [NEW]
+**Contexte :** Socratic Questioning — `pagesPerRegion=4` (top 400) jamais justifié. Les parties utilisent top 50-100 max.
+**Leçon :** Les paramètres de volume doivent être dérivés de l'usage réel du domaine.
+**How to apply :** Valider `pagesPerRegion=1` (top 100) en dry-run. Augmenter si insuffisant.
 
 ---
 
-## 6. Patterns établis (réutiliser en Sprint 10)
+## 6. Analyse de risques (Pre-mortem Sprint 10)
+
+### Scénario A — Pipeline silencieux (HIGH RISK)
+**Failure :** HTML FT change structure → JSoup parse 0 rows → cron s'exécute "avec succès" → 0 données ingérées → personne ne le sait.
+**Prevention :** Smoke test `rows >= MIN_EXPECTED_ROWS` (ex: 10) post-parse. Log CRITICAL + skip ingestion si déclenché.
+
+### Scénario B — Fingerprinting anti-bot (MEDIUM RISK)
+**Failure :** FT détecte pattern régulier → ban progressif des 3 providers → plus de données.
+**Prevention :** (1) User-Agent rotation dans `ProxyUrlBuilder`, (2) cache fichier CSV du dernier scraping réussi (D8), (3) plan C : ingestion manuelle admin.
+
+### Scénario C — Données corrompues silencieuses (HIGH RISK)
+**Failure :** FT change format scores (`1,234,567`) → parser extrait `1` → scores faux en base sans exception.
+**Prevention :** Validation `0 < points < 10_000_000` avant insertion. Log WARNING + skip row si invalide.
+
+### Scénario D — Dérive de coût proxy (MEDIUM RISK)
+**Failure :** 10 régions × 4 pages × 8 retries = 320 req/run × 4 runs/jour = ~$74/mois non budgétés.
+**Prevention :** `pagesPerRegion=1` par défaut. Mesurer coût réel 7 premiers jours. `maxRequestsPerRun` configurable.
+
+### Scénario E — Email alerts spam (LOW RISK)
+**Failure :** 50 entries UNRESOLVED en base → même email chaque matin pendant 30 jours.
+**Prevention :** Ajouter `lastAlertSentAt` ou cooldown configurable dans `UnresolvedAlertSchedulerService`.
+
+---
+
+## 7. Scoring priorités Sprint 10 (Comparative Analysis Matrix)
+
+| Option | Valeur produit | Risque si non fait | Effort | Urgence | **Total** |
+|---|---|---|---|---|---|
+| I1-dry-run — Validation proxy+parser réels | 5 | 5 | 2 | 5 | **17** |
+| I1 — Câblage PrIngestionScheduler | 5 | 5 | 3 | 5 | **18** |
+| Red Team hardening (smoke test + validation) | 4 | 5 | 2 | 4 | **15** |
+| E2E multi-user infrastructure | 3 | 4 | 4 | 3 | **14** |
+| D5/D6 — Checklist process | 2 | 2 | 1 | 4 | **9** |
+| §E2E Limitations project-context.md | 1 | 2 | 1 | 3 | **6** |
+
+**Recommandation :** I1-dry-run → I1 → Hardening en séquence. E2E multi-user = Sprint 11.
+
+---
+
+## 8. Décisions architecturales non prises (Sprint 10)
+
+### D8 — Stratégie de cache si scraping échoue
+**Décision → Option B : cache fichier CSV**
+Stocker le résultat du dernier scraping réussi en `/tmp/pr-cache-{region}.csv`. Si scraping échoue, utiliser le cache.
+Rationale : 0 migration Flyway, résilient, simple. Option C (cache DB) quand besoin d'audit.
+
+### D9 — Stratégie multi-region parallèle vs séquentielle
+**Décision → Séquentiel pour Sprint 10**
+Parallèle si temps de scraping > 5 minutes mesuré en prod.
+Rationale : prématuré d'optimiser sans métriques réelles.
+
+### D10 — pagesPerRegion par défaut
+**Décision → 1 page (top 100) pour le dry-run**
+Les parties utilisent top 50-100 joueurs max. Augmenter après validation du besoin.
+Rationale : divise coût et temps par 4 pour la validation initiale.
+
+---
+
+## 9. Patterns établis (réutiliser en Sprint 10)
 
 ### Architecture Decision Record (standard Sprint 9)
 ```markdown
 | D# | Question | Décision | Raison |
 |---|---|---|---|
 | D1 | API vs Scraping ? | Scraping | API ne donne que lookup individuel |
-| D2 | HTTP client ? | RestTemplate bean dédié 20s | Timeout isolation |
 ```
 
 ### @ConditionalOnProperty pour features opt-in (standard Sprint 9)
@@ -123,16 +219,17 @@
 public class OptionalFeatureService { ... }
 ```
 
-### @ConfigurationProperties groupées (standard Sprint 9)
+### Smoke test post-ingestion (à implémenter Sprint 10)
 ```java
-@Component
-@ConfigurationProperties(prefix = "scraping.fortnitetracker")
-public class FortniteTrackerScrapingProperties { ... }
+if (rows.size() < MIN_EXPECTED_ROWS) {
+    log.error("CRITICAL: parse returned {} rows for region {} — possible HTML structure change", rows.size(), region);
+    return; // ne pas écraser les bonnes données
+}
 ```
 
-### POJO pur pour logique métier sans dépendances Spring (standard Sprint 9)
+### POJO pur pour logique métier sans Spring (standard Sprint 9)
 ```java
-// Pas @Component — classe POJO testable sans contexte Spring
+// Pas @Component — testable sans contexte Spring
 class FortniteTrackerHtmlParser {
     List<ScrapedRow> parse(String html) { ... }
 }
@@ -140,7 +237,7 @@ class FortniteTrackerHtmlParser {
 
 ---
 
-## 7. Action Items Sprint 10
+## 10. Action Items Sprint 10
 
 ═══════════════════════════════════════════════════════════
 📝 ACTION ITEMS SPRINT 10 (issus de la rétro Sprint 9)
@@ -150,36 +247,41 @@ class FortniteTrackerHtmlParser {
 
 | # | Action | Détail |
 |---|---|---|
-| F4 | sprint-status.yaml : sprint-9 status → done | Mettre `status: done` dans le bloc `sprint-9:`. Mettre `sprint9-retrospective: done`. |
+| F4 | sprint-status.yaml : sprint-9 status → done | ✅ Fait dans cette rétro |
 
-### P1 — Intégration Pipeline (critique pour valider Sprint 9)
+### P1 — Pipeline (critique — valeur bloquée)
 
 | # | Action | Détail |
 |---|---|---|
-| I1 | Câbler PrRegionCsvSourcePort dans PrIngestionScheduler | Story : wiring adapter scraping + validation avec vraies clés proxy. Sans ça, le scraper est inutilisé en production. |
+| I1a | Dry-run manuel : valider parser + proxy sur données réelles | 1 région, 1 page, log résultats. Avant tout câblage cron. |
+| I1b | Red Team hardening : smoke test + score validation | `rows >= 10` post-parse. `0 < points < 10_000_000`. Cache CSV fallback (D8). |
+| I1c | Câbler PrIngestionScheduler → FortniteTrackerScrapingAdapter | Seulement après I1a + I1b validés. `pagesPerRegion=1` par défaut. |
 
 ### P2 — Tests E2E
 
 | # | Action | Détail |
 |---|---|---|
-| E3 | Définir stratégie E2E WebSocket multi-browser | Documenter dans project-context.md : DRAFT-FULL-01 UI est hors scope Playwright seul, ou identifier l'infrastructure nécessaire. |
+| E3 | 1 test Playwright multi-context minimal | Valider propagation STOMP event `PICK_MADE` sur 2ème browser. Pas le flux complet — juste l'event WebSocket. |
 
-### P3 — Process
+### P3 — Process & Documentation
 
 | # | Action | Détail |
 |---|---|---|
-| D5 | Ajouter @ConditionalOnProperty dans checklist.md §Technical | Critère : "Features opt-in avec dépendance externe non garantie → @ConditionalOnProperty obligatoire" |
-| D6 | Template Dev Notes §Integration gaps | Champ explicite pour documenter les adapters non câblés en fin de story |
+| D5 | §E2E Limitations dans project-context.md | Documenter compromis DRAFT-FULL-01 et limites Playwright multi-browser |
+| D6 | §Configuration Production dans project-context.md | Comment activer email alerts en prod (SMTP, @ConditionalOnProperty) |
+| D7 | Checklist §Technical : adapter DoD + @ConditionalOnProperty | "Adapter sans câblage = not done" + "Features opt-in → @ConditionalOnProperty" |
+| D8 | Vérifier CGU FortniteTracker | Confirmer que le scraping est permis, documenter dans project-context.md |
 
 ### ⛔ Ne pas re-proposer
-- Hébergement externe / staging → résolu comme `wont-do` en Sprint 9 (D4, définitif)
-- Tests E2E DRAFT-FULL-01 UI browser multi-contexte → hors scope Playwright seul (voir E3)
+- Hébergement externe / staging → `wont-do` définitif (D4 Sprint 9)
+- DRAFT-FULL-01 UI multi-browser complet → hors scope Playwright seul (voir E3 minimal)
+- Sprint-N status oublié → critère D3 existe dans checklist.md
 
 ═══════════════════════════════════════════════════════════
 
 ---
 
-## 8. Évaluation Sprint 9
+## 11. Évaluation Sprint 9
 
 | Dimension | Score | Notes |
 |---|---|---|
@@ -187,24 +289,25 @@ class FortniteTrackerHtmlParser {
 | Qualité technique | 10/10 | 0 régression, 2336 tests backend, 2243 frontend |
 | Tests | 9/10 | +32 tests ; DRAFT-FULL-01 UI WebSocket non testé |
 | Architecture | 10/10 | Session brainstorming + 7 décisions D1-D7 documentées avant code |
-| Process | 9/10 | D3/D4/S2 soldés ; sprint-9 parent status non mis à jour avant rétro |
+| Process | 9/10 | D3/D4/S2 soldés ; sprint-9 parent status mis à jour en rétro seulement |
 | Suivi actions Sprint 8 | 10/10 | 5/5 livrés |
 | **Global** | **9.7/10** | 4ème sprint consécutif parfait — cohérence remarquable |
 
 ---
 
-## 9. Preview Sprint 10
+## 12. Preview Sprint 10
 
 **Orientations naturelles Sprint 10 :**
-1. **F4 (P0)** — fix sprint-status.yaml (immédiat, dans cette rétro)
-2. **I1 (P1)** — câblage PrIngestionScheduler + validation vraies clés proxy (critique)
-3. **E3 (P2)** — stratégie E2E WebSocket multi-browser ou décision wont-do explicite
-4. **Décision stratégique** — nouvelle feature ou consolidation pipeline + données réelles ?
+1. **I1a — dry-run (P0)** — valider pipeline sur données réelles avant tout
+2. **I1b — hardening (P1)** — smoke test, score validation, cache CSV
+3. **I1c — câblage (P1)** — activer le cron seulement après I1a+I1b
+4. **E3 — E2E WS minimal (P2)** — 1 test multi-context propagation STOMP
+5. **D5-D8 — documentation (P3)** — §E2E Limitations, §Config Production, checklist
 
 **Ce qu'on ne fait pas en Sprint 10 :**
-- Hébergement externe / staging → `wont-do` définitif (Sprint 9)
-- DRAFT-FULL-01 UI multi-browser → voir E3 d'abord
+- Hébergement externe / staging → wont-do définitif
+- DRAFT-FULL-01 flux UI complet multi-browser → hors scope
 
 ---
 
-*Rétrospective générée le 2026-03-17. Prochaine action recommandée : mettre à jour sprint-status.yaml (sprint-9 → done, sprint9-retrospective → done), puis `/bmad-bmm-sprint-planning` pour Sprint 10.*
+*Rétrospective générée le 2026-03-17. 15 méthodes d'élicitation avancées appliquées (Party Mode). Prochaine action : `/bmad-bmm-sprint-planning` pour Sprint 10.*
