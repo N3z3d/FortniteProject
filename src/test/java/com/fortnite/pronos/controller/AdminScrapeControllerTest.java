@@ -16,11 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.dto.admin.DryRunResultDto;
 import com.fortnite.pronos.dto.admin.PipelineAlertDto;
 import com.fortnite.pronos.dto.admin.PipelineAlertDto.AlertLevel;
 import com.fortnite.pronos.dto.admin.ScrapeLogDto;
+import com.fortnite.pronos.model.PrRegion;
 import com.fortnite.pronos.service.admin.ScrapeLogService;
 import com.fortnite.pronos.service.admin.UnresolvedAlertService;
+import com.fortnite.pronos.service.ingestion.ScrapingDryRunService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminScrapeController")
@@ -28,12 +31,14 @@ class AdminScrapeControllerTest {
 
   @Mock private ScrapeLogService scrapeLogService;
   @Mock private UnresolvedAlertService unresolvedAlertService;
+  @Mock private ScrapingDryRunService scrapingDryRunService;
 
   private AdminScrapeController controller;
 
   @BeforeEach
   void setUp() {
-    controller = new AdminScrapeController(scrapeLogService, unresolvedAlertService);
+    controller =
+        new AdminScrapeController(scrapeLogService, unresolvedAlertService, scrapingDryRunService);
   }
 
   private ScrapeLogDto sampleLog() {
@@ -119,6 +124,42 @@ class AdminScrapeControllerTest {
       assertThat(response.getBody().level()).isEqualTo(AlertLevel.CRITICAL);
       assertThat(response.getBody().unresolvedCount()).isEqualTo(5L);
       assertThat(response.getBody().oldestUnresolvedAt()).isEqualTo(oldest);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /dry-run")
+  class PostDryRun {
+
+    @Test
+    @DisplayName("returns 200 with valid result when service returns success")
+    void returns200WithValidResult() {
+      DryRunResultDto dto = new DryRunResultDto("EU", 15, true, List.of(), List.of());
+      when(scrapingDryRunService.runDryRun(PrRegion.EU)).thenReturn(dto);
+
+      var response = controller.dryRun("EU");
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).isEqualTo(dto);
+    }
+
+    @Test
+    @DisplayName("returns 400 for unknown region string")
+    void returns400ForUnknownRegion() {
+      var response = controller.dryRun("UNKNOWN");
+
+      assertThat(response.getStatusCode().is4xxClientError()).isTrue();
+    }
+
+    @Test
+    @DisplayName("forwards NAC region to dry-run service")
+    void forwardsRegionToService() {
+      DryRunResultDto dto = new DryRunResultDto("NAC", 10, true, List.of(), List.of());
+      when(scrapingDryRunService.runDryRun(PrRegion.NAC)).thenReturn(dto);
+
+      controller.dryRun("NAC");
+
+      org.mockito.Mockito.verify(scrapingDryRunService).runDryRun(PrRegion.NAC);
     }
   }
 }
