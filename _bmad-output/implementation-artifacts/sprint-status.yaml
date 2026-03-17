@@ -644,9 +644,10 @@ sprint-9:
   description: "FortniteTracker Scraping Adapter — Java rewrite de power-rankings.js"
   goal: "FortniteTrackerScrapingAdapter implémente PrRegionCsvSourcePort, JSoup parsing, 3 providers proxy"
   start_date: "2026-03-15"
-  status: in-progress
+  status: done
 
   sprint9-pipeline-rewrite: done  # 2026-03-15: FortniteTrackerScrapingAdapter + HtmlParser + ProxyUrlBuilder + 26 tests, 0 regressions (2330 run)
   sprint9-p0-cleanup: done  # 2026-03-15: D3+D4+S2 — checklist + deferred-future + SEC-R2 doc
   sprint9-e2-draft-full-e2e: done  # 2026-03-15: DRAFT-FULL-01 — API-level snake draft complet (create→join→start→init→2 picks→finish→ACTIVE), frontend/e2e/draft-full-flow.spec.ts
   sprint9-email-alerts: done  # EmailAlertService + UnresolvedAlertSchedulerService, @ConditionalOnProperty(alert.email.enabled=false default), 6 tests green, 2336 run 0 failures
+  sprint9-retrospective: done  # 2026-03-17: sprint-9-retro-2026-03-17.md — 9.7/10, 5/5 actions Sprint 8, I1+E3+D5+D6 pour Sprint 10
