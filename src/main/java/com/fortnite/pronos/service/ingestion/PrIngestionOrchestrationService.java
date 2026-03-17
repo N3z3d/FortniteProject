@@ -8,7 +8,9 @@ import java.time.Year;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class PrIngestionOrchestrationService {
 
   static final int WINDOW_START_HOUR = 5;
   static final int WINDOW_END_HOUR_EXCLUSIVE = 8;
+  static final int SMOKE_MIN_ROWS = 10;
 
   public static final List<PrRegion> SUPPORTED_REGIONS =
       List.of(
@@ -45,17 +48,25 @@ public class PrIngestionOrchestrationService {
   private final PrIngestionService ingestionService;
   private final PrRegionCsvSourcePort regionCsvSourcePort;
   private final Clock clock;
+  private final CsvCachePort csvCachePort;
 
+  @Autowired
   public PrIngestionOrchestrationService(
-      PrIngestionService ingestionService, PrRegionCsvSourcePort regionCsvSourcePort) {
-    this(ingestionService, regionCsvSourcePort, Clock.systemUTC());
+      PrIngestionService ingestionService,
+      PrRegionCsvSourcePort regionCsvSourcePort,
+      CsvCachePort csvCachePort) {
+    this(ingestionService, regionCsvSourcePort, Clock.systemUTC(), csvCachePort);
   }
 
   PrIngestionOrchestrationService(
-      PrIngestionService ingestionService, PrRegionCsvSourcePort regionCsvSourcePort, Clock clock) {
+      PrIngestionService ingestionService,
+      PrRegionCsvSourcePort regionCsvSourcePort,
+      Clock clock,
+      CsvCachePort csvCachePort) {
     this.ingestionService = ingestionService;
     this.regionCsvSourcePort = regionCsvSourcePort;
     this.clock = clock;
+    this.csvCachePort = csvCachePort;
   }
 
   @Scheduled(cron = "${ingestion.pr.scheduled.cron:0 0 5 * * *}")
@@ -91,23 +102,46 @@ public class PrIngestionOrchestrationService {
 
   private String processRegion(PrRegion region) {
     try {
-      String csv = regionCsvSourcePort.fetchCsv(region).orElse("");
-      if (csv.isBlank()) {
-        return "empty_csv";
+      Optional<String> csvOpt = regionCsvSourcePort.fetchCsv(region);
+      String csv;
+      if (csvOpt.isEmpty()) {
+        Optional<String> cached = csvCachePort.load(region);
+        if (cached.isEmpty()) {
+          return "no_data";
+        }
+        log.info("Using CSV cache fallback for region={}", region);
+        csv = cached.get();
+      } else {
+        csv = csvOpt.get();
+        int rowCount = countDataRows(csv);
+        if (rowCount < SMOKE_MIN_ROWS) {
+          log.warn(
+              "Smoke check failed for region={}: {} rows < {}", region, rowCount, SMOKE_MIN_ROWS);
+          return "smoke_check_failed";
+        }
+        csvCachePort.save(region, csv);
       }
-      PrIngestionResult regionResult =
+      PrIngestionResult result =
           ingestionService.ingest(
               new StringReader(csv),
               new PrIngestionConfig(
                   "SCHEDULED_PR_" + region.name(), Year.now(clock).getValue(), true));
-      if (regionResult.status() == IngestionRun.Status.SUCCESS) {
-        return null;
-      }
-      return "ingestion_" + regionResult.status();
+      return result.status() == IngestionRun.Status.SUCCESS ? null : "ingestion_" + result.status();
     } catch (Exception exception) {
       String message = exception.getMessage();
       return message == null || message.isBlank() ? exception.getClass().getSimpleName() : message;
     }
+  }
+
+  private int countDataRows(String csv) {
+    String[] lines = csv.split("\n");
+    int count = 0;
+    for (int i = 1; i < lines.length; i++) {
+      if (!lines[i].trim().isEmpty()) {
+        count++;
+      }
+    }
+    return count;
   }
 
   private boolean isInsideRunWindow(LocalTime now) {

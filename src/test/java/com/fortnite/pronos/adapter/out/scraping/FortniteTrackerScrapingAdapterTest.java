@@ -1,9 +1,11 @@
 package com.fortnite.pronos.adapter.out.scraping;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -67,7 +71,8 @@ class FortniteTrackerScrapingAdapterTest {
     @Test
     @DisplayName("returns CSV with header when scraping succeeds")
     void fetchCsv_success_returnsCsvWithHeader() {
-      when(restTemplate.getForEntity(anyString(), eq(String.class)))
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
 
       Optional<String> result = adapter.fetchCsv(PrRegion.EU);
@@ -80,7 +85,8 @@ class FortniteTrackerScrapingAdapterTest {
     @Test
     @DisplayName("returns empty Optional when all pages fail")
     void fetchCsv_allPagesFail_returnsEmpty() {
-      when(restTemplate.getForEntity(anyString(), eq(String.class)))
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("Network error"));
 
       props.setMaxAttempts(1);
@@ -96,7 +102,8 @@ class FortniteTrackerScrapingAdapterTest {
     @Test
     @DisplayName("returns rows after 2 failures then success on 3rd attempt")
     void fetchPageWithRetry_twoFailuresThenSuccess() {
-      when(restTemplate.getForEntity(anyString(), eq(String.class)))
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("fail"))
           .thenThrow(new RuntimeException("fail"))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
@@ -109,12 +116,27 @@ class FortniteTrackerScrapingAdapterTest {
     @Test
     @DisplayName("returns empty Optional when all attempts exhausted")
     void fetchPageWithRetry_allAttemptsFail_returnsEmpty() {
-      when(restTemplate.getForEntity(anyString(), eq(String.class)))
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("Network failure"));
 
       props.setMaxAttempts(2);
       Optional<List<ScrapedRow>> result = adapter.fetchPageWithRetry("EU", 1);
       assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("sets User-Agent header when userAgents configured")
+    void fetchPageWithRetry_setsUserAgentHeader_whenConfigured() {
+      props.setUserAgents("Mozilla/5.0 TestAgent/1.0");
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+          .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
+
+      adapter.fetchPageWithRetry("EU", 1);
+
+      verify(restTemplate)
+          .exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
     }
   }
 

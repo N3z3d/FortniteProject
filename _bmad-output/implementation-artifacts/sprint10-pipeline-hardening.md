@@ -1,6 +1,6 @@
 # Story: sprint10-pipeline-hardening — CSV Cache Fallback + Smoke Check + User-Agent Rotation
 
-Status: ready-for-dev
+Status: review
 
 <!-- METADATA
   story_key: sprint10-pipeline-hardening
@@ -47,34 +47,34 @@ This story adds:
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `CsvCachePort` interface (AC: #1)
-  - [ ] 1.1: Create `src/main/java/com/fortnite/pronos/service/ingestion/CsvCachePort.java`
-  - [ ] 1.2: Two methods: `void save(PrRegion region, String csv)` and `Optional<String> load(PrRegion region)`
+- [x] Task 1: Create `CsvCachePort` interface (AC: #1)
+  - [x] 1.1: Create `src/main/java/com/fortnite/pronos/service/ingestion/CsvCachePort.java`
+  - [x] 1.2: Two methods: `void save(PrRegion region, String csv)` and `Optional<String> load(PrRegion region)`
 
-- [ ] Task 2: Create `InMemoryCsvCacheAdapter` (AC: #2)
-  - [ ] 2.1: Create `src/main/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapter.java`
-  - [ ] 2.2: `@Component`, `implements CsvCachePort`, `ConcurrentHashMap<PrRegion, String>` field
-  - [ ] 2.3: `save()` puts; `load()` returns `Optional.ofNullable(map.get(region))`
+- [x] Task 2: Create `InMemoryCsvCacheAdapter` (AC: #2)
+  - [x] 2.1: Create `src/main/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapter.java`
+  - [x] 2.2: `@Component`, `implements CsvCachePort`, `ConcurrentHashMap<PrRegion, String>` field
+  - [x] 2.3: `save()` puts; `load()` returns `Optional.ofNullable(map.get(region))`
 
-- [ ] Task 3: Update `PrIngestionOrchestrationService` (AC: #3)
-  - [ ] 3.1: Add `CsvCachePort csvCachePort` as 4th constructor param (both public + package-private test constructor)
-  - [ ] 3.2: Add `static final int SMOKE_MIN_ROWS = 10` constant
-  - [ ] 3.3: Rewrite `processRegion()` per AC #3a/b/c logic (see Dev Notes for full pseudocode)
-  - [ ] 3.4: Add private helper `int countDataRows(String csv)` — splits on `\n`, skips header (index 0), counts non-blank lines
-  - [ ] 3.5: Update `PrIngestionOrchestrationServiceTest` — add `@Mock CsvCachePort csvCachePort`, update constructor call to 4-arg, update single-row CSV fixtures to 11 rows
+- [x] Task 3: Update `PrIngestionOrchestrationService` (AC: #3)
+  - [x] 3.1: Add `CsvCachePort csvCachePort` as 4th constructor param (both public + package-private test constructor)
+  - [x] 3.2: Add `static final int SMOKE_MIN_ROWS = 10` constant
+  - [x] 3.3: Rewrite `processRegion()` per AC #3a/b/c logic (see Dev Notes for full pseudocode)
+  - [x] 3.4: Add private helper `int countDataRows(String csv)` — splits on `\n`, skips header (index 0), counts non-blank lines
+  - [x] 3.5: Update `PrIngestionOrchestrationServiceTest` — add `@Mock CsvCachePort csvCachePort`, update constructor call to 4-arg, update single-row CSV fixtures to 11 rows
 
-- [ ] Task 4: User-Agent rotation in adapter (AC: #4, #5)
-  - [ ] 4.1: Add `private String userAgents = ""` field + setter/getter to `FortniteTrackerScrapingProperties`
-  - [ ] 4.2: Add `getUserAgentList()` method reusing `parseKeys(userAgents)`
-  - [ ] 4.3: In `FortniteTrackerScrapingAdapter.fetchPageWithRetry()`: replace `restTemplate.getForEntity(proxyUrl, String.class)` with `restTemplate.exchange(proxyUrl, HttpMethod.GET, buildRequestEntity(attempt), String.class)`
-  - [ ] 4.4: Add private `HttpEntity<Void> buildRequestEntity(int attempt)` — creates `HttpHeaders`, sets `User-Agent` if `getUserAgentList()` is non-empty, returns `new HttpEntity<>(headers)`
-  - [ ] 4.5: Add required imports: `org.springframework.http.HttpMethod`, `org.springframework.http.HttpEntity`, `org.springframework.http.HttpHeaders`
-  - [ ] 4.6: Update `FortniteTrackerScrapingAdapterTest` mock: change `restTemplate.getForEntity(...)` to `restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class))`
+- [x] Task 4: User-Agent rotation in adapter (AC: #4, #5)
+  - [x] 4.1: Add `private String userAgents = ""` field + setter/getter to `FortniteTrackerScrapingProperties`
+  - [x] 4.2: Add `getUserAgentList()` method reusing `parseKeys(userAgents)`
+  - [x] 4.3: In `FortniteTrackerScrapingAdapter.fetchPageWithRetry()`: replace `restTemplate.getForEntity(proxyUrl, String.class)` with `restTemplate.exchange(proxyUrl, HttpMethod.GET, buildRequestEntity(attempt), String.class)`
+  - [x] 4.4: Add private `HttpEntity<Void> buildRequestEntity(int attempt)` — creates `HttpHeaders`, sets `User-Agent` if `getUserAgentList()` is non-empty, returns `new HttpEntity<>(headers)`
+  - [x] 4.5: Add required imports: `org.springframework.http.HttpMethod`, `org.springframework.http.HttpEntity`, `org.springframework.http.HttpHeaders`
+  - [x] 4.6: Update `FortniteTrackerScrapingAdapterTest` mock: change `restTemplate.getForEntity(...)` to `restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class))`
 
-- [ ] Task 5: Tests (AC: #6)
-  - [ ] 5.1: Create `src/test/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapterTest.java` — 3 tests: `save_thenLoad_returnsValue`, `load_returnsEmpty_whenNothingSaved`, `save_twice_overwritesPrevious`
-  - [ ] 5.2: Add 4 tests to `PrIngestionOrchestrationServiceTest`: `processRegion_usesCacheFallback_whenFetchCsvEmpty`, `processRegion_skipsIngestion_whenSmokeCheckFails`, `processRegion_savesToCache_afterSuccessfulIngestion`, `processRegion_returnsNoData_whenBothLiveAndCacheEmpty`
-  - [ ] 5.3: Add 1 test to `FortniteTrackerScrapingAdapterTest`: `fetchPageWithRetry_setsUserAgentHeader_whenConfigured`
+- [x] Task 5: Tests (AC: #6)
+  - [x] 5.1: Create `src/test/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapterTest.java` — 3 tests: `save_thenLoad_returnsValue`, `load_returnsEmpty_whenNothingSaved`, `save_twice_overwritesPrevious`
+  - [x] 5.2: Add 4 tests to `PrIngestionOrchestrationServiceTest`: `processRegion_usesCacheFallback_whenFetchCsvEmpty`, `processRegion_skipsIngestion_whenSmokeCheckFails`, `processRegion_savesToCache_afterSuccessfulIngestion`, `processRegion_returnsNoData_whenBothLiveAndCacheEmpty`
+  - [x] 5.3: Add 1 test to `FortniteTrackerScrapingAdapterTest`: `fetchPageWithRetry_setsUserAgentHeader_whenConfigured`
 
 ## Dev Notes
 
@@ -242,4 +242,27 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- ✅ `CsvCachePort` interface created in `service/ingestion/` — `save(PrRegion, String)` + `Optional<String> load(PrRegion)`
+- ✅ `InMemoryCsvCacheAdapter` created in `adapter/out/scraping/` — `@Component`, `ConcurrentHashMap<PrRegion, String>`, thread-safe
+- ✅ `PrIngestionOrchestrationService` updated: 4-arg constructor (+`@Autowired` on public ctor), `SMOKE_MIN_ROWS=10`, `processRegion()` rewritten with cache fallback + smoke check + cache save, `countDataRows()` helper added
+- ✅ `FortniteTrackerScrapingProperties` updated: `userAgents` field + `getUserAgentList()` reusing `parseKeys()`
+- ✅ `FortniteTrackerScrapingAdapter.fetchPageWithRetry()` migrated from `getForEntity()` to `exchange()` with `buildRequestEntity(attempt)` — User-Agent header set when `userAgents` list is non-empty; backward-compatible (empty list → `HttpHeaders.EMPTY`)
+- ✅ `InMemoryCsvCacheAdapterTest` (3 tests) — save+load, load empty, overwrite
+- ✅ `PrIngestionOrchestrationServiceTest` (4 new tests + 3 existing updated) — cache fallback, smoke check failure, cache save after success, no_data when both empty; single-row CSV → 11-row via `csvWithRows()` helper
+- ✅ `FortniteTrackerScrapingAdapterTest` (all stubs migrated getForEntity→exchange, 1 new test: User-Agent header)
+- ✅ Full regression: 2359 tests, 0 failures, 0 errors
+- ℹ️ `HttpEntity.EMPTY` is typed `HttpEntity<?>` — used `new HttpEntity<>(HttpHeaders.EMPTY)` for correct `HttpEntity<Void>` return type
+
 ### File List
+
+**Created:**
+- `src/main/java/com/fortnite/pronos/service/ingestion/CsvCachePort.java`
+- `src/main/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapter.java`
+- `src/test/java/com/fortnite/pronos/adapter/out/scraping/InMemoryCsvCacheAdapterTest.java`
+
+**Modified:**
+- `src/main/java/com/fortnite/pronos/service/ingestion/PrIngestionOrchestrationService.java`
+- `src/main/java/com/fortnite/pronos/adapter/out/scraping/FortniteTrackerScrapingAdapter.java`
+- `src/main/java/com/fortnite/pronos/adapter/out/scraping/FortniteTrackerScrapingProperties.java`
+- `src/test/java/com/fortnite/pronos/service/ingestion/PrIngestionOrchestrationServiceTest.java`
+- `src/test/java/com/fortnite/pronos/adapter/out/scraping/FortniteTrackerScrapingAdapterTest.java`

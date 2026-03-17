@@ -46,6 +46,9 @@ public class FortniteTrackerScrapingProperties {
   /** Timeframe filter (e.g. "year"). */
   private String timeframe = "year";
 
+  /** Comma-separated User-Agent strings for rotation. Empty = use default. */
+  private String userAgents = "";
+
   public List<String> getScrapflyKeyList() {
     return parseKeys(scrapflyKeys);
   }
@@ -127,5 +130,17 @@ public class FortniteTrackerScrapingProperties {
 
   public void setTimeframe(String timeframe) {
     this.timeframe = timeframe;
+  }
+
+  public String getUserAgents() {
+    return userAgents;
+  }
+
+  public void setUserAgents(String userAgents) {
+    this.userAgents = userAgents;
+  }
+
+  public List<String> getUserAgentList() {
+    return parseKeys(userAgents);
   }
 }

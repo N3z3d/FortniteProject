@@ -10,6 +10,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -90,7 +93,9 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
       String proxyUrl = urlBuilder.build(provider, targetUrl, key, props.getRequestTimeoutMs());
 
       try {
-        ResponseEntity<String> resp = restTemplate.getForEntity(proxyUrl, String.class);
+        ResponseEntity<String> resp =
+            restTemplate.exchange(
+                proxyUrl, HttpMethod.GET, buildRequestEntity(attempt), String.class);
         if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
           List<ScrapedRow> parsed = htmlParser.parse(resp.getBody(), region, ordinalOffset);
           if (!parsed.isEmpty()) {
@@ -183,6 +188,16 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
           .append('\n');
     }
     return sb.toString();
+  }
+
+  private HttpEntity<Void> buildRequestEntity(int attempt) {
+    List<String> uas = props.getUserAgentList();
+    if (uas.isEmpty()) {
+      return new HttpEntity<>(HttpHeaders.EMPTY);
+    }
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("User-Agent", uas.get(attempt % uas.size()));
+    return new HttpEntity<>(headers);
   }
 
   private void sleepBackoff(int attempt) {
