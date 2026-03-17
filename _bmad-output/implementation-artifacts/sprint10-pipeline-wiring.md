@@ -1,6 +1,6 @@
 # Story: sprint10-pipeline-wiring — Wire Scheduler → FortniteTrackerScrapingAdapter (pagesPerRegion=1)
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint10-pipeline-wiring

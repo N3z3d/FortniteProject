@@ -83,8 +83,9 @@ public class AdminScrapeController {
     }
     MultiRegionIngestionResult result = orchestrationService.get().runAllRegions();
     Map<String, String> failures =
-        result.regionFailures().entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+        Map.copyOf(
+            result.regionFailures().entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
     IngestionTriggerResultDto dto =
         new IngestionTriggerResultDto(
             result.status().name(), result.regionsProcessed(), failures, result.durationMs());

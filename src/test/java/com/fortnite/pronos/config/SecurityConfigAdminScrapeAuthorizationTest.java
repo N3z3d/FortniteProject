@@ -170,4 +170,23 @@ class SecurityConfigAdminScrapeAuthorizationTest {
         mockMvc.perform(post("/api/admin/scraping/trigger")).andReturn().getResponse().getStatus();
     assertThat(status).isIn(401, 403);
   }
+
+  @Test
+  @DisplayName("Non-admin authenticated user is forbidden from POST /api/admin/scraping/trigger")
+  @WithMockUser(
+      username = "user",
+      roles = {"USER"})
+  void nonAdminForbiddenFromTrigger() throws Exception {
+    mockMvc.perform(post("/api/admin/scraping/trigger")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("Admin gets 503 on POST /api/admin/scraping/trigger when scheduler disabled")
+  @WithMockUser(
+      username = "admin",
+      roles = {"ADMIN"})
+  void adminGetS503WhenSchedulerDisabled() throws Exception {
+    // Scheduler is disabled (Optional.empty injected) — expects 503
+    mockMvc.perform(post("/api/admin/scraping/trigger")).andExpect(status().isServiceUnavailable());
+  }
 }

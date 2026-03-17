@@ -84,6 +84,7 @@ public class PrIngestionOrchestrationService {
   }
 
   public MultiRegionIngestionResult runAllRegions() {
+    log.info("Starting multi-region PR ingestion run ({} regions)", SUPPORTED_REGIONS.size());
     Map<PrRegion, String> regionFailures = new EnumMap<>(PrRegion.class);
     int regionsProcessed = 0;
     long startedAtMillis = clock.millis();
