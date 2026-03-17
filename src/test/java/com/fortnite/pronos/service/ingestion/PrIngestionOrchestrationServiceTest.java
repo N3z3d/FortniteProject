@@ -2,6 +2,7 @@ package com.fortnite.pronos.service.ingestion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -60,6 +61,7 @@ class PrIngestionOrchestrationServiceTest {
   }
 
   @Test
+  @DisplayName("runs all 8 regions and returns SUCCESS when all ingestions succeed")
   void runsAllEightRegionsWithinWindow() {
     for (PrRegion region : PrIngestionOrchestrationService.SUPPORTED_REGIONS) {
       when(regionCsvSourcePort.fetchCsv(region)).thenReturn(Optional.of(csvWithRows(region, 11)));
@@ -92,6 +94,7 @@ class PrIngestionOrchestrationServiceTest {
   }
 
   @Test
+  @DisplayName("continues processing all regions when one fails and marks batch PARTIAL")
   void continuesWhenOneRegionFailsAndMarksBatchPartial() {
     for (PrRegion region : PrIngestionOrchestrationService.SUPPORTED_REGIONS) {
       when(regionCsvSourcePort.fetchCsv(region)).thenReturn(Optional.of(csvWithRows(region, 11)));
@@ -117,6 +120,7 @@ class PrIngestionOrchestrationServiceTest {
   }
 
   @Test
+  @DisplayName("skips ingestion entirely when called outside 05h-08h UTC window")
   void skipsRunOutsideFiveToEightWindow() {
     Clock outsideWindowClock = Clock.fixed(Instant.parse("2026-02-25T09:00:00Z"), ZoneOffset.UTC);
     PrIngestionOrchestrationService outsideWindowService =
@@ -164,6 +168,7 @@ class PrIngestionOrchestrationServiceTest {
 
       assertThat(result.status()).isEqualTo(PrIngestionOrchestrationService.BatchStatus.SUCCESS);
       verify(csvCachePort, times(1)).load(PrRegion.EU);
+      verify(csvCachePort, never()).save(eq(PrRegion.EU), any());
       verify(ingestionService, times(8)).ingest(any(Reader.class), any());
     }
 
@@ -222,6 +227,33 @@ class PrIngestionOrchestrationServiceTest {
     }
 
     @Test
+    @DisplayName("saves CSV to cache even when ingestion returns non-SUCCESS status")
+    void processRegion_savesToCache_evenWhenIngestionFails() {
+      String validCsv = csvWithRows(PrRegion.EU, 11);
+      when(regionCsvSourcePort.fetchCsv(PrRegion.EU)).thenReturn(Optional.of(validCsv));
+      for (PrRegion region : PrIngestionOrchestrationService.SUPPORTED_REGIONS) {
+        if (region != PrRegion.EU) {
+          when(regionCsvSourcePort.fetchCsv(region))
+              .thenReturn(Optional.of(csvWithRows(region, 11)));
+        }
+      }
+      when(ingestionService.ingest(any(Reader.class), any()))
+          .thenReturn(failedResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult())
+          .thenReturn(successResult());
+
+      orchestrationService.runScheduledIngestion();
+
+      // Cache is updated after smoke check passes, before ingestion result is known
+      verify(csvCachePort, times(1)).save(PrRegion.EU, validCsv);
+    }
+
+    @Test
     @DisplayName("returns no_data when both live and cache are empty")
     void processRegion_returnsNoData_whenBothLiveAndCacheEmpty() {
       when(regionCsvSourcePort.fetchCsv(PrRegion.EU)).thenReturn(Optional.empty());
@@ -252,5 +284,10 @@ class PrIngestionOrchestrationServiceTest {
   private PrIngestionResult successResult() {
     return new PrIngestionResult(
         UUID.randomUUID(), com.fortnite.pronos.model.IngestionRun.Status.SUCCESS, 1, 0, 1, 1, 0, 0);
+  }
+
+  private PrIngestionResult failedResult() {
+    return new PrIngestionResult(
+        UUID.randomUUID(), com.fortnite.pronos.model.IngestionRun.Status.FAILED, 0, 1, 0, 0, 1, 0);
   }
 }

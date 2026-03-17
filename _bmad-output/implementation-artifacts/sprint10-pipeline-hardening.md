@@ -1,6 +1,6 @@
 # Story: sprint10-pipeline-hardening — CSV Cache Fallback + Smoke Check + User-Agent Rotation
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint10-pipeline-hardening

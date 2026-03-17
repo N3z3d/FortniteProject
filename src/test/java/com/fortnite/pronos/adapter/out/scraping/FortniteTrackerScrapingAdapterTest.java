@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -135,8 +136,28 @@ class FortniteTrackerScrapingAdapterTest {
 
       adapter.fetchPageWithRetry("EU", 1);
 
+      @SuppressWarnings("unchecked")
+      ArgumentCaptor<HttpEntity<Void>> captor = ArgumentCaptor.forClass(HttpEntity.class);
       verify(restTemplate)
-          .exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
+          .exchange(anyString(), eq(HttpMethod.GET), captor.capture(), eq(String.class));
+      assertThat(captor.getValue().getHeaders().getFirst("User-Agent"))
+          .isEqualTo("Mozilla/5.0 TestAgent/1.0");
+    }
+
+    @Test
+    @DisplayName("sends no User-Agent header when userAgents not configured")
+    void fetchPageWithRetry_noUserAgentHeader_whenNotConfigured() {
+      when(restTemplate.exchange(
+              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+          .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
+
+      adapter.fetchPageWithRetry("EU", 1);
+
+      @SuppressWarnings("unchecked")
+      ArgumentCaptor<HttpEntity<Void>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+      verify(restTemplate)
+          .exchange(anyString(), eq(HttpMethod.GET), captor.capture(), eq(String.class));
+      assertThat(captor.getValue().getHeaders().get("User-Agent")).isNullOrEmpty();
     }
   }
 

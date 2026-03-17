@@ -28,7 +28,7 @@ public class FortniteTrackerScrapingProperties {
   /** Comma-separated ScraperAPI API keys. */
   private String scraperapiKeys = "";
 
-  /** Single Scrape.do token. */
+  /** Comma-separated Scrape.do tokens (supports multiple for rotation). */
   private String scrapedoToken = "";
 
   /** Maximum retry attempts per page. */
