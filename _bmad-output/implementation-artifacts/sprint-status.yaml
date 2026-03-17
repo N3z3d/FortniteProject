@@ -651,3 +651,22 @@ sprint-9:
   sprint9-e2-draft-full-e2e: done  # 2026-03-15: DRAFT-FULL-01 — API-level snake draft complet (create→join→start→init→2 picks→finish→ACTIVE), frontend/e2e/draft-full-flow.spec.ts
   sprint9-email-alerts: done  # EmailAlertService + UnresolvedAlertSchedulerService, @ConditionalOnProperty(alert.email.enabled=false default), 6 tests green, 2336 run 0 failures
   sprint9-retrospective: done  # 2026-03-17: sprint-9-retro-2026-03-17.md — 9.7/10, 5/5 actions Sprint 8, I1+E3+D5+D6 pour Sprint 10
+
+# ============================================================
+# SPRINT 10 — Pipeline Production : validation + hardening + câblage
+# 2026-03-17 — Objectif: activer FortniteTrackerScrapingAdapter en production avec données réelles validées
+# Issu de la rétro Sprint 9 (15 méthodes élicitation) — Comparative Analysis Matrix
+# ============================================================
+
+sprint-10:
+  description: "Pipeline Production — dry-run + hardening + câblage PrIngestionScheduler"
+  goal: "FortniteTrackerScrapingAdapter validé sur données réelles, câblé dans PrIngestionScheduler, avec smoke tests et fallback CSV"
+  start_date: "2026-03-17"
+  status: in-progress
+
+  sprint10-pipeline-dry-run: backlog     # P1 (score 17): Valider adapter sur données réelles — 1 région, 1 page, clé proxy réelle, log résultats. Avant tout câblage cron.
+  sprint10-pipeline-hardening: backlog   # P1 (score 15): Smoke test rows>=10, score validation 0<points<10M, cache CSV fallback (D8), User-Agent rotation, cost cap maxRequestsPerRun
+  sprint10-pipeline-wiring: backlog      # P1 (score 18): Câbler PrIngestionScheduler → FortniteTrackerScrapingAdapter. pagesPerRegion=1 défaut. Seulement après dry-run + hardening validés.
+  sprint10-e2e-websocket-minimal: backlog # P2 (score 14): 1 test Playwright browser.newContext() x2 — propagation STOMP event PICK_MADE sur 2ème browser. Pattern multi-context documenté.
+  sprint10-p0-process-docs: backlog      # P3 (score 6-9): §E2E Limitations + §Config Production dans project-context.md. Checklist adapter DoD + @ConditionalOnProperty. Vérif CGU FortniteTracker.
+  sprint10-retrospective: optional
