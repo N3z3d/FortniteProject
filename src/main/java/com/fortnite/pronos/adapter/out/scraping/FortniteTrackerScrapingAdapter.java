@@ -127,6 +127,10 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
     if (available.isEmpty()) {
       return "scraperapi";
     }
+    // First attempt always uses Scrape.do if available (preferred provider)
+    if (attempt == 0 && available.contains("scrapedo")) {
+      return "scrapedo";
+    }
     int slot = Math.abs((region + "-" + page).hashCode()) % available.size();
     int index = (slot + (attempt % available.size())) % available.size();
     return available.get(index);
