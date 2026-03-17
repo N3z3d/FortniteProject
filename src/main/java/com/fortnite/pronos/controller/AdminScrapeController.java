@@ -45,7 +45,7 @@ public class AdminScrapeController {
   }
 
   @PostMapping("/dry-run")
-  public ResponseEntity<?> dryRun(@RequestParam(defaultValue = "EU") String region) {
+  public ResponseEntity<Object> dryRun(@RequestParam(defaultValue = "EU") String region) {
     PrRegion prRegion;
     try {
       prRegion = PrRegion.valueOf(region.toUpperCase());

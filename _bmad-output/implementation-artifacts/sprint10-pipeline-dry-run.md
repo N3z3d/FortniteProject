@@ -1,6 +1,6 @@
 # Story: sprint10-pipeline-dry-run — Admin Dry-Run Endpoint for FortniteTrackerScrapingAdapter
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint10-pipeline-dry-run
@@ -188,6 +188,7 @@ claude-sonnet-4-6
 - ✅ 3 security tests added to existing `SecurityConfigAdminScrapeAuthorizationTest` (11 total, all green)
 - ✅ 3 controller tests added to `AdminScrapeControllerTest` (8 total, all green)
 - ✅ Full regression: 0 failures, 0 errors
+- ✅ Code review fixes (H1/M1/M2/L3): message erreur générique, List.copyOf(errors), ResponseEntity<Object>, détection lignes malformées — +2 tests (malformedRow + immutability)
 - ℹ️ `FortniteTrackerScrapingAdapter.pickProvider()` updated to favor Scrape.do (attempt 0 always uses scrapedo if available)
 - ℹ️ All 6 proxy keys (2 Scrapfly + 2 ScraperAPI + 2 Scrape.do) configured in `.env`
 

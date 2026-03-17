@@ -39,7 +39,11 @@ public class ScrapingDryRunService {
     if (csvOpt.isEmpty()) {
       log.warn("Dry-run returned no data for region={}", region.name());
       return new DryRunResultDto(
-          region.name(), 0, false, List.of(), List.of("No scraping providers configured"));
+          region.name(),
+          0,
+          false,
+          List.of(),
+          List.of("No data returned — check application logs for scraping errors"));
     }
 
     String csv = csvOpt.get();
@@ -64,25 +68,27 @@ public class ScrapingDryRunService {
     // Score validation: points must be in range [1, 9_999_999]
     for (String line : dataLines) {
       String[] fields = line.split(",");
-      if (fields.length > POINTS_COLUMN_INDEX) {
-        try {
-          int points = Integer.parseInt(fields[POINTS_COLUMN_INDEX].trim());
-          if (points < SCORE_MIN || points > SCORE_MAX) {
-            errors.add(
-                "Score validation failed: points="
-                    + points
-                    + " out of range ["
-                    + SCORE_MIN
-                    + ", "
-                    + SCORE_MAX
-                    + "] in row: "
-                    + line);
-            break; // report first offending row only
-          }
-        } catch (NumberFormatException e) {
-          errors.add("Score validation failed: non-numeric points field in row: " + line);
-          break;
+      if (fields.length <= POINTS_COLUMN_INDEX) {
+        errors.add("Malformed row (fewer than 3 fields): " + line);
+        break;
+      }
+      try {
+        int points = Integer.parseInt(fields[POINTS_COLUMN_INDEX].trim());
+        if (points < SCORE_MIN || points > SCORE_MAX) {
+          errors.add(
+              "Score validation failed: points="
+                  + points
+                  + " out of range ["
+                  + SCORE_MIN
+                  + ", "
+                  + SCORE_MAX
+                  + "] in row: "
+                  + line);
+          break; // report first offending row only
         }
+      } catch (NumberFormatException e) {
+        errors.add("Score validation failed: non-numeric points field in row: " + line);
+        break;
       }
     }
 
@@ -95,6 +101,7 @@ public class ScrapingDryRunService {
         rowCount,
         valid,
         errors);
-    return new DryRunResultDto(region.name(), rowCount, valid, List.copyOf(sampleRows), errors);
+    return new DryRunResultDto(
+        region.name(), rowCount, valid, List.copyOf(sampleRows), List.copyOf(errors));
   }
 }

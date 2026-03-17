@@ -96,7 +96,7 @@ class ScrapingDryRunServiceTest {
       assertThat(result.valid()).isFalse();
       assertThat(result.rowCount()).isEqualTo(0);
       assertThat(result.errors()).isNotEmpty();
-      assertThat(result.errors().get(0)).contains("No scraping providers configured");
+      assertThat(result.errors().get(0)).contains("check application logs");
     }
 
     @Test
@@ -131,6 +131,32 @@ class ScrapingDryRunServiceTest {
 
       assertThat(result.valid()).isFalse();
       assertThat(result.errors()).anyMatch(e -> e.contains("Score") || e.contains("score"));
+    }
+
+    @Test
+    @DisplayName("fails with malformed row error when a row has fewer than 3 fields")
+    void failsMalformedRow_whenFieldsAreMissing() {
+      String malformedCsv =
+          "nickname,region,points,rank,snapshot_date\n"
+              + "Player1,EU\n" // only 2 fields — missing points
+              + "Player2,EU,12500,2,2026-03-17\n";
+      when(csvSourcePort.fetchCsv(PrRegion.EU)).thenReturn(Optional.of(malformedCsv));
+
+      DryRunResultDto result = service.runDryRun(PrRegion.EU);
+
+      assertThat(result.valid()).isFalse();
+      assertThat(result.errors()).anyMatch(e -> e.contains("Malformed") || e.contains("malformed"));
+    }
+
+    @Test
+    @DisplayName("errors list in returned DTO is immutable")
+    void errorsListIsImmutable() {
+      when(csvSourcePort.fetchCsv(PrRegion.EU)).thenReturn(Optional.empty());
+
+      DryRunResultDto result = service.runDryRun(PrRegion.EU);
+
+      org.junit.jupiter.api.Assertions.assertThrows(
+          UnsupportedOperationException.class, () -> result.errors().add("hack"));
     }
   }
 }
