@@ -464,7 +464,9 @@ await forceLoginWithProfile(pageB, 'teddy');
 // ❌ insuffisant — DOM visible mais WS pas encore souscrit
 await expect(pageB.locator('#player-list')).toBeVisible({ timeout: 15_000 });
 
-// ✅ correct — au moins une carte = ngOnInit + subscription complète
+// ✅ meilleure heuristique — les cartes sont rendues via HTTP après ngOnInit,
+// ce qui réduit la fenêtre de timing avant que la subscription STOMP soit active.
+// Pas une garantie absolue, mais suffisant en pratique sur stack local.
 await expect(pageB.locator('.player-card').first()).toBeVisible({ timeout: 10_000 });
 ```
 
@@ -496,7 +498,7 @@ await expect(pageB.locator('.player-card').first()).toBeVisible({ timeout: 10_00
 ```
 1. Configurer au moins un set de clés proxy (Scrapfly recommandé)
 2. Lancer POST /api/admin/scraping/dry-run?region=EU  → vérifier rows >= 10 et score dans [0, 10M]
-3. Si dry-run OK → décommenter et activer INGESTION_PR_SCHEDULED_ENABLED=true
+3. Si dry-run OK → définir l'env var `INGESTION_PR_SCHEDULED_ENABLED=true` (Spring Boot relaxed binding l'applique automatiquement — pas besoin de modifier application.properties)
 4. Vérifier les logs 05h00 UTC J+1 via GET /api/admin/scraping/logs
 ```
 
@@ -507,15 +509,15 @@ await expect(pageB.locator('.player-card').first()).toBeVisible({ timeout: 10_00
 **Plateforme** : FortniteTracker.com est opéré par Tracker Network / tracker.gg
 
 **Résultat de la vérification (2026-03-18)** :
-- La page `tracker.gg/legal/terms-of-service` retourne HTTP 403 aux fetches automatisés — ironie notable pour un audit de scraping
+- La page `tracker.gg/legal/terms-of-service` retourne HTTP 403 aux fetches automatisés — la ToS n'a **pas pu être lue directement**
 - tracker.gg expose une **API officielle** (`tracker.gg/developers`) avec API key gratuite — voie légitime préférable au scraping HTML
-- Les ToS de tracker.gg contiennent typiquement une clause interdisant "automated data collection without written permission" (standard industrie)
-- L'architecture proxy (Scrapfly/ScraperAPI/Scrape.do) scrape des **pages publiques** (pas derrière auth) — zone grise légale
+- ⚠️ **Inférence non-vérifiée** : la ToS tracker.gg n'a pas été lue (403). Les ToS des plateformes de ce type *incluent généralement* une clause restreignant la collecte automatisée sans permission écrite — **ne pas supposer que c'est autorisé** ; vérifier manuellement avant toute montée en charge
+- L'architecture proxy (Scrapfly/ScraperAPI/Scrape.do) scrape des **pages publiques** (pas derrière auth) — zone grise légale non résolue
 
 **Recommandations** :
 1. **Migration API officielle** : priorité haute — passer de HTML scraping à `tracker.gg/developers` API dès que le volume le permet (API key gratuite disponible)
 2. **Revue trimestrielle** : vérifier manuellement `tracker.gg/legal` chaque trimestre — les ToS évoluent
-3. **Volume limité** : `SCRAPING_FORTNITETRACKER_PAGES_PER_REGION=1` par défaut limite l'impact (≤ 800 req/jour pour 8 régions × 1 page)
+3. **Volume limité** : `SCRAPING_FORTNITETRACKER_PAGES_PER_REGION=1` par défaut limite l'impact (≤ 8 req HTTP/jour pour 8 régions × 1 page ; ~800 lignes de données)
 4. **Pas de données personnelles** : seuls les classements publics (nickname, rang, points) sont collectés — pas d'email, profil privé, etc.
 
 ---

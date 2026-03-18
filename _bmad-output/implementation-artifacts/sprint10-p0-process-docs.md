@@ -1,6 +1,6 @@
 # Story 10.5: Process Documentation — §E2E Limitations, §Config Production, Adapter DoD, @ConditionalOnProperty
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint10-p0-process-docs
