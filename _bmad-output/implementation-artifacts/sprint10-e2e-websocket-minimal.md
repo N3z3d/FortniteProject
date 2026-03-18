@@ -1,6 +1,6 @@
 # Story 10.4: E2E WebSocket STOMP — propagation PICK_MADE multi-context
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint10-e2e-websocket-minimal

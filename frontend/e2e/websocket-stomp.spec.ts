@@ -228,8 +228,6 @@ test.describe.serial('WS-STOMP: WebSocket STOMP multi-context propagation', () =
   test(
     'WS-01: pick by Context A is reflected in Context B UI via STOMP without page reload',
     async ({ browser }) => {
-      test.setTimeout(120_000);
-
       // ── Context A: the current picker ──────────────────────────────────────
       // Use browser.newContext() to get an isolated session (independent sessionStorage)
       contextA = await browser.newContext();
@@ -248,6 +246,11 @@ test.describe.serial('WS-STOMP: WebSocket STOMP multi-context propagation', () =
       await expect(pageA.locator('#player-list')).toBeVisible({ timeout: 15_000 });
       await expect(pageB.locator('#player-list')).toBeVisible({ timeout: 15_000 });
 
+      // M1 fix: wait for at least one player card to render in Context B before picking.
+      // This ensures SnakeDraftPageComponent's ngOnInit STOMP subscription is active —
+      // #player-list being visible does not guarantee the async WS handshake is complete.
+      await expect(pageB.locator('.player-card').first()).toBeVisible({ timeout: 10_000 });
+
       // Context A must display the "your turn" badge before picking
       await expect(pageA.locator('.my-turn-badge')).toBeVisible({ timeout: 15_000 });
 
@@ -257,10 +260,16 @@ test.describe.serial('WS-STOMP: WebSocket STOMP multi-context propagation', () =
       const pickedPlayerName = (
         (await firstAvailableCard.locator('.player-name').textContent()) ?? ''
       ).trim();
+      // M2 fix: guard against empty player name — { hasText: '' } would match anything
+      expect(pickedPlayerName, 'picked player name must be non-empty').not.toBe('');
 
       await firstAvailableCard.click();
       await expect(pageA.locator('.confirm-zone .btn-confirm')).toBeVisible({ timeout: 10_000 });
       await pageA.locator('.confirm-zone .btn-confirm').click();
+
+      // M3 fix: confirm Context A's pick cycle completed before polling Context B.
+      // Without this, a silent confirm-click failure would appear as a WS propagation issue.
+      await expect(pageA.locator('.confirm-zone')).not.toBeVisible({ timeout: 10_000 });
 
       // ── Context B: verify STOMP push — no reload ───────────────────────────
       // The backend broadcasts on /topic/draft/{draftId}/snake.
@@ -269,7 +278,8 @@ test.describe.serial('WS-STOMP: WebSocket STOMP multi-context propagation', () =
       await expect
         .poll(() => pageB.locator('.player-card--taken').count(), {
           timeout: 15_000,
-          intervals: [500, 1_000, 2_000],
+          // L2 fix: explicit cadence for all 15s — avoid undefined behavior after array exhausts
+          intervals: [500, 1_000, 2_000, 2_000, 2_000, 2_000, 2_000],
         })
         .toBeGreaterThan(0);
 
