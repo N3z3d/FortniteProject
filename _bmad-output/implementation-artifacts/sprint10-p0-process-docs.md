@@ -1,6 +1,6 @@
 # Story 10.5: Process Documentation — §E2E Limitations, §Config Production, Adapter DoD, @ConditionalOnProperty
 
-Status: ready-for-dev
+Status: review
 
 <!-- METADATA
   story_key: sprint10-p0-process-docs
@@ -57,27 +57,27 @@ so that future AI agents and developers have complete context when working with 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add §E2E Limitations section to `project-context.md` (AC: #1)
-  - [ ] 1.1: Add new section `## §E2E Tests — Limitations et Patterns` after the existing §WebSocket Security Pattern section
-  - [ ] 1.2: Document Docker stack prerequisite, multi-context pattern, STOMP timing caveat, X-Test-User header, SUITE_PREFIX convention
+- [x] Task 1: Add §E2E Limitations section to `project-context.md` (AC: #1)
+  - [x] 1.1: Add new section `## §E2E Tests — Limitations et Patterns` after the existing §WebSocket Security Pattern section
+  - [x] 1.2: Document Docker stack prerequisite, multi-context pattern, STOMP timing caveat, X-Test-User header, SUITE_PREFIX convention
 
-- [ ] Task 2: Add §Config Production section to `project-context.md` (AC: #2)
-  - [ ] 2.1: Add new section `## §Config Production — Pipeline FortniteTracker` after §E2E Limitations
-  - [ ] 2.2: Document all env vars with defaults, activation prerequisite (dry-run first), `application.properties` commented reference
+- [x] Task 2: Add §Config Production section to `project-context.md` (AC: #2)
+  - [x] 2.1: Add new section `## §Config Production — Pipeline FortniteTracker` after §E2E Limitations
+  - [x] 2.2: Document all env vars with defaults, activation prerequisite (dry-run first), `application.properties` commented reference
 
-- [ ] Task 3: Add adapter DoD checklist to §6 Definition of Done (AC: #3)
-  - [ ] 3.1: Add "Adapter externe" row in the DoD table, OR add a dedicated sub-section below the DoD table listing the 6 checklist items
+- [x] Task 3: Add adapter DoD checklist to §6 Definition of Done (AC: #3)
+  - [x] 3.1: Added dedicated sub-section `### Adapter externe — Checklist supplémentaire` below the DoD table with 7-item checklist
 
-- [ ] Task 4: Add @ConditionalOnProperty pattern to §3 Backend Critical Rules (AC: #4)
-  - [ ] 4.1: Add sub-section `### @ConditionalOnProperty — Beans optionnels` in §3
-  - [ ] 4.2: Document the pattern, Optional injection, @WebMvcTest behavior, two-constructor rule, and canonical reference
+- [x] Task 4: Add @ConditionalOnProperty pattern to §3 Backend Critical Rules (AC: #4)
+  - [x] 4.1: Added sub-section `### @ConditionalOnProperty — Beans optionnels` in §3 with code examples
+  - [x] 4.2: Document the pattern, Optional injection, @WebMvcTest behavior, two-constructor rule, and canonical reference
 
-- [ ] Task 5: Add §FortniteTracker CGU/ToS status (AC: #5)
-  - [ ] 5.1: Research FortniteTracker.com ToS (check `tracker.gg/fortnite` — parent site `tracker.gg`) for automated access clauses
-  - [ ] 5.2: Add `### §FortniteTracker ToS Status` sub-section inside §Config Production documenting findings and quarterly review recommendation
+- [x] Task 5: Add §FortniteTracker CGU/ToS status (AC: #5)
+  - [x] 5.1: Research attempted — tracker.gg/legal returns 403 to automated fetches (documented). Official API (`tracker.gg/developers`) confirmed as legitimate path. Findings documented factually.
+  - [x] 5.2: Added `### §FortniteTracker ToS — Statut vérification` inside §Config Production with findings and quarterly review recommendation
 
-- [ ] Task 6: Update `_Last Updated` line (AC: #6)
-  - [ ] 6.1: Update the last line of `project-context.md` to mention Sprint 10 additions
+- [x] Task 6: Update `_Last Updated` line (AC: #6)
+  - [x] 6.1: Updated last line of `project-context.md` to Sprint 10 additions summary
 
 ## Dev Notes
 
@@ -123,4 +123,14 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- ✅ Task 1: §E2E Limitations added — Docker prerequisite, `browser.newContext()` vs `newPage()` table, STOMP timing caveat with code examples, X-Test-User, SUITE_PREFIX, `expect.poll` intervals, pick confirmation pattern.
+- ✅ Task 2: §Config Production added — env vars table with defaults, 4-step activation sequence, `application.properties` reference.
+- ✅ Task 3: Adapter externe checklist (7 items: port, mock, dry-run, smoke check, env vars commentées, @ConditionalOnProperty, CGU) added as sub-section under §6 DoD.
+- ✅ Task 4: @ConditionalOnProperty section added to §3 with full Java + constructor examples, @WebMvcTest behavior, two-constructor @Autowired rule, canonical reference to PrIngestionOrchestrationService.
+- ✅ Task 5: tracker.gg/legal returns 403 (ironic). Official API documented. ToS status documented factually with 4 recommendations (migrate to official API, quarterly review, volume limit, no personal data). No legal advice given.
+- ✅ Task 6: _Last Updated updated to 2026-03-18 Sprint 10.
+- ✅ Known Issue fix: §4 frontend baseline updated from 2243/0 → 2206/2185 (21 Zone.js pre-existing).
+
 ### File List
+
+- `_bmad-output/project-context.md` (modified)

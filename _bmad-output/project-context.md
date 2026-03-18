@@ -121,8 +121,41 @@ frontend/src/app/
 - `DependencyInversionTest` : mappers nécessitant un accès repo → package `service`, pas `controller`
 - **Toujours lancer** `mvn spotless:apply` avant `mvn test` sur tout nouveau fichier
 
+### @ConditionalOnProperty — Beans optionnels
+
+Utiliser pour tout `@Service` devant être **désactivé par défaut** (jobs planifiés, adapters externes, feature flags).
+
+```java
+@Service
+@ConditionalOnProperty(
+    name = "feature.enabled",
+    havingValue = "true",
+    matchIfMissing = false)   // false = bean ABSENT si propriété non définie
+public class MyOptionalService { ... }
+```
+
+**Injection dans les consumers :**
+```java
+// Spring injecte Optional.empty() si le bean est absent
+private final Optional<MyOptionalService> myService;
+
+public MyController(Optional<MyOptionalService> myService) {
+    this.myService = myService;
+}
+
+// Usage
+if (myService.isEmpty()) {
+    return ResponseEntity.status(503).body("Feature disabled");
+}
+```
+
+**Règles critiques :**
+- Dans `@WebMvcTest` : le bean conditionnel est absent → `Optional.empty()` auto-injecté, **pas besoin de `@MockBean`** pour le bean absent
+- Si `@Service` a 2 constructeurs (prod DI + package-private pour tests) → annoter le constructeur prod avec **`@Autowired`** (sinon Spring lève "No default constructor found")
+- **Référence canonique** : `PrIngestionOrchestrationService` (`@ConditionalOnProperty ingestion.pr.scheduled.enabled`) + `AdminScrapeController` (`Optional<PrIngestionOrchestrationService>`)
+
 ### Tests Backend
-- Baseline : **1780+ tests** (4 échecs pre-existing dans `GameWorkflowIntegrationTest` — connus, ne pas corriger sans plan dédié)
+- Baseline : **~2355 tests** (15 failures + 1 error pré-existants — voir §Pre-existing Failures Baseline)
 - Tests H2 en mémoire pour les tests unitaires/intégration
 - `TestSecurityConfig`, `TestPasswordEncoderConfig`, `TestPrometheusConfig` pour l'isolation de tests
 
@@ -162,7 +195,7 @@ frontend/src/app/
 - Framework : **Vitest** (Karma/Jasmine supprimés Sprint 3)
 - Commande CI unit : `npm run test:vitest` (depuis `frontend/`)
 - Commande CI e2e : `npm run test:e2e` (Playwright — requiert app sur :4200 + backend sur :8080)
-- Baseline : **2243 tests, 0 failure** (Zone.js débounce fixes appliqués Sprint 7-Z1)
+- Baseline : **2206 tests, 2185 passing** (21 Zone.js pre-existing — Sprint 10; Sprint 7-Z1 avait atteint 2243/0)
 - Coverage actuel : Lines 86.89%, Branches 73.36%, Functions 84.64%
 - Certains composants ont des fichiers `.template.spec.ts` ET `.spec.ts` — vérifier les deux
 - Le **linter** modifie les fichiers automatiquement au save → relire avant d'éditer si du temps est passé
@@ -275,6 +308,20 @@ Une story est **done** uniquement si **tous** les critères ci-dessous sont sati
 | **Loi de Demeter** | Aucune chaîne `a.getB().getC().doSomething()` introduite |
 | **Dockerfile** | Si `Dockerfile`, `tsconfig.app.json` ou `angular.json` modifié : `docker build . --target production` doit passer sans erreur |
 
+### Adapter externe — Checklist supplémentaire
+
+Obligatoire pour toute story ajoutant un adapter vers un service externe (scraping, API tierce, etc.) :
+
+| Étape | Règle |
+|---|---|
+| **Port interface** | Définir dans `service/` ou package port approprié — pas de dépendance directe dans le service métier |
+| **Mock adapter** | Fournir un mock/stub pour tests et dev local — zéro appel réseau réel en CI |
+| **Dry-run d'abord** | Endpoint `/dry-run` validé avant toute activation scheduler en production |
+| **Smoke check** | Validation du seuil minimum de données (ex: `rows >= 10`) dans l'orchestrateur |
+| **Env vars commentées** | `application.properties` documente les clés via commentaires — jamais de vraie clé en valeur par défaut |
+| **@ConditionalOnProperty** | Tout bean devant être OFF par défaut utilise `matchIfMissing = false` |
+| **CGU vérifiées** | ToS du service tiers vérifiée et documentée dans `project-context.md` §Config Production |
+
 ### Critères bloquants (HALT)
 
 - Code review non exécuté → NE PAS passer en `done` dans sprint-status.yaml
@@ -375,6 +422,104 @@ Lors de la création d'une story de sécurité WebSocket, définir explicitement
 
 ---
 
+## §E2E Tests — Limitations et Patterns (Sprint 10)
+
+### Prérequis
+
+Les tests E2E Playwright **ne peuvent pas tourner sans le stack Docker local** :
+```bash
+docker-compose -f docker-compose.local.yml up -d   # app :8080, Angular :4200
+npm run test:e2e                                    # depuis frontend/
+```
+Sans le stack, les fichiers `.spec.ts` compilent proprement mais les tests échouent immédiatement.
+
+### Pattern multi-contexte (`browser.newContext()`)
+
+Pour simuler **deux utilisateurs simultanés** sur la même page, utiliser `browser.newContext()` et non `browser.newPage()` :
+
+| | `browser.newPage()` | `browser.newContext()` |
+|---|---|---|
+| Session partagée | ✅ même sessionStorage/cookies | ❌ sessions isolées |
+| Deux utilisateurs | ❌ impossible | ✅ chacun son propre login |
+| Usage | Onglets supplémentaires pour un même user | Simulations multi-user (WS, STOMP) |
+
+```typescript
+// ✅ CORRECT — deux sessions indépendantes
+const contextA = await browser.newContext();
+const pageA = await contextA.newPage();
+await forceLoginWithProfile(pageA, 'thibaut');
+
+const contextB = await browser.newContext();
+const pageB = await contextB.newPage();
+await forceLoginWithProfile(pageB, 'teddy');
+```
+
+### Timing STOMP — caveat critique
+
+`#player-list` visible **ne garantit pas** que la subscription STOMP est active. Le composant Angular souscrit en `ngOnInit` via `WebSocketService.subscribeToDraft()` — le handshake SockJS est asynchrone.
+
+**Règle** : avant de déclencher un event WS depuis Context A, attendre que Context B ait rendu au moins une **player-card** (data loadée = subscription active) :
+
+```typescript
+// ❌ insuffisant — DOM visible mais WS pas encore souscrit
+await expect(pageB.locator('#player-list')).toBeVisible({ timeout: 15_000 });
+
+// ✅ correct — au moins une carte = ngOnInit + subscription complète
+await expect(pageB.locator('.player-card').first()).toBeVisible({ timeout: 10_000 });
+```
+
+### Autres patterns E2E établis
+
+- **`X-Test-User` header** : doit être défini par contexte via `page.context().setExtraHTTPHeaders({ 'X-Test-User': username })` — `forceLoginWithProfile()` le fait automatiquement
+- **`SUITE_PREFIX`** : chaque suite utilise son propre préfixe pour le cleanup (`'E2E-WS-'`, `'E2E-DRAFT-82-'`, etc.) — évite les collisions entre suites
+- **`resolveCurrentPickerUsername()`** : déterminer dynamiquement qui est le premier picker via API plutôt qu'assumer un ordre fixe
+- **`expect.poll` intervals** : définir un tableau complet pour éviter le comportement indéfini après épuisement : `[500, 1_000, 2_000, 2_000, 2_000, 2_000, 2_000]`
+- **Confirmation du pick** : après `btn-confirm.click()`, vérifier que `.confirm-zone` disparaît avant de poller l'observer — sinon un échec silencieux de click masque le vrai problème
+
+---
+
+## §Config Production — Pipeline FortniteTracker (Sprint 10)
+
+### Variables d'environnement
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `INGESTION_PR_SCHEDULED_ENABLED` | `false` | Active le bean `PrIngestionOrchestrationService` (`@ConditionalOnProperty`) |
+| `INGESTION_PR_SCHEDULED_CRON` | `0 0 5 * * *` | Cron de déclenchement (05:00 UTC quotidien) |
+| `SCRAPING_FORTNITETRACKER_PAGES_PER_REGION` | `1` | Pages par région (1 = ~100 rows, dev/dry-run) ; mettre `4` pour scrape production complet |
+| `SCRAPING_FORTNITETRACKER_SCRAPFLY_KEYS` | _(vide)_ | Clés Scrapfly séparées par virgule — ne jamais commiter |
+| `SCRAPING_FORTNITETRACKER_SCRAPERAPI_KEYS` | _(vide)_ | Clés ScraperAPI séparées par virgule — ne jamais commiter |
+| `SCRAPING_FORTNITETRACKER_SCRAPEDO_TOKEN` | _(vide)_ | Tokens Scrape.do séparés par virgule — ne jamais commiter |
+
+### Activation en production — séquence obligatoire
+
+```
+1. Configurer au moins un set de clés proxy (Scrapfly recommandé)
+2. Lancer POST /api/admin/scraping/dry-run?region=EU  → vérifier rows >= 10 et score dans [0, 10M]
+3. Si dry-run OK → décommenter et activer INGESTION_PR_SCHEDULED_ENABLED=true
+4. Vérifier les logs 05h00 UTC J+1 via GET /api/admin/scraping/logs
+```
+
+**Référence** : `src/main/resources/application.properties` (lignes commentées sections scraping + scheduler)
+
+### §FortniteTracker ToS — Statut vérification
+
+**Plateforme** : FortniteTracker.com est opéré par Tracker Network / tracker.gg
+
+**Résultat de la vérification (2026-03-18)** :
+- La page `tracker.gg/legal/terms-of-service` retourne HTTP 403 aux fetches automatisés — ironie notable pour un audit de scraping
+- tracker.gg expose une **API officielle** (`tracker.gg/developers`) avec API key gratuite — voie légitime préférable au scraping HTML
+- Les ToS de tracker.gg contiennent typiquement une clause interdisant "automated data collection without written permission" (standard industrie)
+- L'architecture proxy (Scrapfly/ScraperAPI/Scrape.do) scrape des **pages publiques** (pas derrière auth) — zone grise légale
+
+**Recommandations** :
+1. **Migration API officielle** : priorité haute — passer de HTML scraping à `tracker.gg/developers` API dès que le volume le permet (API key gratuite disponible)
+2. **Revue trimestrielle** : vérifier manuellement `tracker.gg/legal` chaque trimestre — les ToS évoluent
+3. **Volume limité** : `SCRAPING_FORTNITETRACKER_PAGES_PER_REGION=1` par défaut limite l'impact (≤ 800 req/jour pour 8 régions × 1 page)
+4. **Pas de données personnelles** : seuls les classements publics (nickname, rang, points) sont collectés — pas d'email, profil privé, etc.
+
+---
+
 ## Usage Guidelines
 
 **Pour les agents IA :**
@@ -388,4 +533,4 @@ Lors de la création d'une story de sécurité WebSocket, définir explicitement
 - Mettre à jour lors de changements de stack technologique
 - Réviser trimestriellement pour supprimer les règles obsolètes
 
-_Last Updated: 2026-03-12 — Sprint 7 D1/D2: Patterns fakeAsync→Vitest (A/B) ajoutés §4 Tests Frontend; baseline 2243/0 failures; Pre-existing Failures Baseline documentée; DoD §6 mis à jour; checklist dev-story critère pre-existing failures ajouté; template create-story annoté._
+_Last Updated: 2026-03-18 — Sprint 10 P0 docs: §3 @ConditionalOnProperty pattern + Optional injection; §4 baseline 2206/2185; §6 Adapter externe checklist (7 items); §E2E Limitations (multi-context, STOMP timing, SUITE_PREFIX); §Config Production FortniteTracker (env vars, activation séquence, ToS statut)._
