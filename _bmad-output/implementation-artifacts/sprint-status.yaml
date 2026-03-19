@@ -585,7 +585,7 @@ sprint-8:
   description: "Solidité avant exposition publique"
   goal: "F2 done + SEC-R2 WebSocket auth + E2E flux alternatifs + DoD C1/C2"
   start_date: "2026-03-12"
-  status: in-progress
+  status: done
 
   # Tracing des action items Sprint 7
   sprint-7-retrospective-globale-action-tracking: done
@@ -683,7 +683,7 @@ sprint-11:
   description: "Pipeline FortniteTracker activation locale + monitoring email"
   goal: "Scraping FortniteTracker validé sur données réelles en Docker local, avec email monitoring des échecs"
   start_date: "2026-03-18"
-  status: in-progress
+  status: done
 
   # Fix docker-compose — DONE : SCRAPING_* + INGESTION_PR_SCHEDULED_ENABLED passés au conteneur via docker-compose.local.yml
   sprint11-fix-docker-compose-scraping-env: done
@@ -703,3 +703,119 @@ sprint-11:
   sprint11-ws01-ci-guard: backlog
 
   sprint11-retrospective: optional
+
+# ============================================================
+# SPRINT 12 — "L'app ne plante plus"
+# 2026-03-19 — Objectif: stabilisation complète — zéro crash, zéro 500,
+#              navigation cohérente, logout propre
+# Issu de: première session de test utilisateur réel (Thibaut + Teddy)
+# Élaboré via: 15 méthodes Advanced Elicitation
+#              (5 Whys × 4 bugs, Failure Mode Analysis, Pre-mortem,
+#               User Persona Focus Group, Performance Profiler Panel,
+#               Comparative Analysis Matrix, Red Team vs Blue Team,
+#               Chaos Monkey, Customer Support Theater, War Room,
+#               ADR × 3, Occam's Razor, First Principles, Devil's Advocate,
+#               Self-Consistency Validation)
+#
+# Root causes identifiées:
+#   RC-1: subscribe() sans unsubscribe() → freeze sur disconnect
+#   RC-2: DataIntegrityViolationException non catchée → 500 delete/archive
+#   RC-3: Timer local client ignorant expiresAt serveur → désync draft
+#   RC-4: games.length === 0 avant load terminé → "aucune partie" erroné
+#   RC-5: store non nettoyé au logout → état pollué entre sessions
+#
+# Séquence: P0 crash fixes (bloquants) → P1 UX/Error → P2 bonus
+# ⛔ NE PAS RE-PROPOSER: staging/hébergement (deferred-future)
+# ============================================================
+
+sprint-12:
+  description: "Stabilisation — l'app ne plante plus"
+  goal: "Zéro crash sur disconnect/draft, delete/archive fonctionnels, navigation propre, logout propre"
+  start_date: "2026-03-19"
+  status: in-progress
+
+  # ----------------------------------------------------------
+  # Phase 0 — P0 : Crashes bloquants (score 9.1 → 7.3)
+  # Root cause commune: lifecycle WebSocket + store non nettoyé
+  # ----------------------------------------------------------
+
+  # P0 #1 (score 9.1): Crash/freeze total sur déconnexion
+  # RC-1+RC-5: subscribe() sans unsubscribe() dans composants draft/simultaneous
+  # Fix: takeUntilDestroyed() sur tous les draftEvents$/simultaneousEvents$ subscribes
+  #      + store.reset() dans AppComponent au logout
+  #      + disconnectStomp() explicite dans ngOnDestroy()
+  #      + error handler sur les Subjects STOMP (catchError → empty())
+  # Scope: SnakeDraftPageComponent, SimultaneousDraftPageComponent, WebSocketService
+  # AC: déconnexion depuis page draft → redirect login sans freeze ni erreur console
+  sprint12-ws-lifecycle-fix: backlog
+
+  # P0 #2 (score 8.6): Delete/Archive game → server error 500
+  # RC-2: DataIntegrityViolationException → 500 non catchée
+  # Fix: DomainExceptionHandler + handler DataIntegrityViolationException → 409 CONFLICT
+  #      + ordre de suppression: picks → participants → draft → game (cascade)
+  #      + archive = soft delete (deletedAt) uniquement, jamais hard delete
+  #      + validation statut avant archive ("draft en cours → refusé avec message clair")
+  #      + message d'erreur frontend lisible (pas "error server")
+  # AC: delete partie sans picks → OK ; delete partie avec picks → 409 message clair ;
+  #     archive partie CREATING → OK ; archive partie DRAFT_IN_PROGRESS → message bloquant
+  sprint12-delete-archive-fix: backlog
+
+  # P0 #3 (score 8.1): Draft timer désynchronisé / "Connection instable"
+  # RC-3: Timer local client repart à 0 à chaque reconnexion STOMP
+  # ADR-001: Backend inclut expiresAt: Instant dans chaque PICK_PROMPT event STOMP
+  # Fix backend: ajouter expiresAt dans DraftEventMessage + le remplir dans l'orchestrateur
+  # Fix frontend: supprimer countdown local dans DraftTimerComponent
+  #               afficher max(0, expiresAt - now()) en temps réel
+  #               reconnect STOMP → relire expiresAt → timer correct immédiatement
+  # AC: fermer/rouvrir l'onglet pendant draft → timer affiche le vrai temps restant serveur
+  sprint12-draft-timer-server-sync: backlog
+
+  # P0 #4 (score 7.3): Parties de Teddy vides au chargement initial
+  # RC-4: games.length === 0 affiché avant que la requête HTTP soit résolue
+  # Fix: ajouter isLoading signal dans UserGamesStore
+  #      état tripartite dans template: loading (spinner) | empty (vrai vide) | populated
+  #      + store.reset() au logout pour isoler les sessions
+  # AC: login Teddy → spinner visible → puis liste correcte ; jamais "aucune partie" si en cours de chargement
+  sprint12-loading-states-fix: backlog
+
+  # ----------------------------------------------------------
+  # Phase 1 — P1 : UX + Error handling (score 7.7 → 5.5)
+  # ----------------------------------------------------------
+
+  # P1 #1 (score 7.7): Écran d'erreur générique sans récupération
+  # Fix: GlobalErrorHandler Angular → composant ErrorBoundaryComponent
+  #      avec message lisible + bouton "Réessayer" (reload) + bouton "Accueil"
+  #      + messages spécifiques pour les erreurs connues (401, 403, 404, 500)
+  # AC: erreur réseau → écran propre avec retry, pas écran blanc ni "ai ai ai"
+  sprint12-error-boundary: backlog
+
+  # P1 #2 (score 5.9): Bouton "Créer une partie" nécessite un refresh
+  # RC: timing race entre le guard isAuthenticated() et le composant monté
+  # Fix: disable bouton pendant requête HTTP (isCreating signal)
+  #      + idempotence backend: même créateur + même nom dans < 5s → rejeter 409
+  #      + canDeactivate guard sur pages draft (confirmation avant quitter)
+  # AC: clic "Créer" → bouton disabled jusqu'à réponse ; double-clic = 1 seule création
+  sprint12-create-game-fixes: backlog
+
+  # P1 #3 (score 5.5): Navigation header — boutons inutiles
+  # Fix: supprimer bouton "Parties" du header (redondant avec logo/home)
+  #      supprimer bouton "Draft" du header (n'existe que dans contexte d'une partie)
+  #      garder "Catalogue" mais le déplacer dans le contexte d'une partie (P2)
+  # AC: header = Logo | Catalogue | 👤 Profil ▼ uniquement
+  sprint12-nav-cleanup: backlog
+
+  # ----------------------------------------------------------
+  # Phase 2 — P2 : Bonus si capacity (non bloquants)
+  # ----------------------------------------------------------
+
+  # P2 #1: canDeactivate guard sur pages draft
+  # Confirmation "Vous êtes en train de drafter — vraiment quitter ?"
+  # Empêche navigation accidentelle qui casse le flow de l'autre joueur
+  sprint12-candeactivate-draft-guard: backlog
+
+  # P2 #2: Corriger le reste des items Sprint 11 déférés
+  # sprint11-pipeline-email-monitoring + sprint11-email-alerts-cooldown
+  # + sprint11-ws01-ci-guard (test.skip en CI)
+  sprint12-sprint11-deferred-items: backlog
+
+  sprint12-retrospective: optional
