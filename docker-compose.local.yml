@@ -83,6 +83,21 @@ services:
       - FORTNITE_API_KEY=${FORTNITE_API_KEY}
       - FORTNITE_API_URL=${FORTNITE_API_URL:-https://fortnite-api.com/v2/stats/br/v2}
 
+      # Scraping FortniteTracker — clés proxy (jamais committées, lues depuis .env)
+      # Au moins une des trois doit être configurée pour que le scraping fonctionne.
+      - SCRAPING_FORTNITETRACKER_SCRAPFLY_KEYS=${SCRAPING_FORTNITETRACKER_SCRAPFLY_KEYS:-}
+      - SCRAPING_FORTNITETRACKER_SCRAPERAPI_KEYS=${SCRAPING_FORTNITETRACKER_SCRAPERAPI_KEYS:-}
+      - SCRAPING_FORTNITETRACKER_SCRAPEDO_TOKEN=${SCRAPING_FORTNITETRACKER_SCRAPEDO_TOKEN:-}
+      # Nombre de pages par région (1 = ~100 rows, 4 = ~400 rows)
+      - SCRAPING_FORTNITETRACKER_PAGES_PER_REGION=${SCRAPING_FORTNITETRACKER_PAGES_PER_REGION:-1}
+      # User-Agent rotation (optionnel — liste séparée par virgules)
+      - SCRAPING_FORTNITETRACKER_USER_AGENTS=${SCRAPING_FORTNITETRACKER_USER_AGENTS:-}
+
+      # Pipeline ingestion programmée — désactivé par défaut
+      # Mettre à true pour activer le cron quotidien 05h00 UTC
+      - INGESTION_PR_SCHEDULED_ENABLED=${INGESTION_PR_SCHEDULED_ENABLED:-false}
+      - INGESTION_PR_SCHEDULED_CRON=${INGESTION_PR_SCHEDULED_CRON:-0 0 5 * * *}
+
       # JVM allégée pour local (override les 2g/4g du Dockerfile prod)
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx768m -Djava.security.egd=file:/dev/./urandom
 

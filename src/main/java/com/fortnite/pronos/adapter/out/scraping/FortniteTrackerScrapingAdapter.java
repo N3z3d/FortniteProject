@@ -1,5 +1,6 @@
 package com.fortnite.pronos.adapter.out.scraping;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,7 +96,7 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
       try {
         ResponseEntity<String> resp =
             restTemplate.exchange(
-                proxyUrl, HttpMethod.GET, buildRequestEntity(attempt), String.class);
+                URI.create(proxyUrl), HttpMethod.GET, buildRequestEntity(attempt), String.class);
         if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
           List<ScrapedRow> parsed = htmlParser.parse(resp.getBody(), region, ordinalOffset);
           if (!parsed.isEmpty()) {

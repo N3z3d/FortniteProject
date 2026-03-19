@@ -69,8 +69,7 @@ class ProxyUrlBuilderTest {
           builder.build("scraperapi", "https://fortnitetracker.com/test", "apikey123", 20000);
       assertThat(url).startsWith("https://api.scraperapi.com/");
       assertThat(url).contains("api_key=apikey123");
-      assertThat(url).contains("render=false");
-      assertThat(url).contains("wait_selector=tbody");
+      assertThat(url).contains("render=true");
       assertThat(url).contains("timeout=20000");
       assertThat(url).contains("url=");
     }

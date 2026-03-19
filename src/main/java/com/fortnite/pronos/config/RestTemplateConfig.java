@@ -10,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 public class RestTemplateConfig {
 
   private static final int HTTP_TIMEOUT_MS = 10_000;
-  private static final int SCRAPING_TIMEOUT_MS = 20_000;
+  private static final int SCRAPING_TIMEOUT_MS = 90_000;
 
   @Bean
   public RestTemplate restTemplate() {

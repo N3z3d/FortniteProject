@@ -2,12 +2,12 @@ package com.fortnite.pronos.adapter.out.scraping;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,7 +73,7 @@ class FortniteTrackerScrapingAdapterTest {
     @DisplayName("returns CSV with header when scraping succeeds")
     void fetchCsv_success_returnsCsvWithHeader() {
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
 
       Optional<String> result = adapter.fetchCsv(PrRegion.EU);
@@ -87,7 +87,7 @@ class FortniteTrackerScrapingAdapterTest {
     @DisplayName("returns empty Optional when all pages fail")
     void fetchCsv_allPagesFail_returnsEmpty() {
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("Network error"));
 
       props.setMaxAttempts(1);
@@ -104,7 +104,7 @@ class FortniteTrackerScrapingAdapterTest {
     @DisplayName("returns rows after 2 failures then success on 3rd attempt")
     void fetchPageWithRetry_twoFailuresThenSuccess() {
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("fail"))
           .thenThrow(new RuntimeException("fail"))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
@@ -118,7 +118,7 @@ class FortniteTrackerScrapingAdapterTest {
     @DisplayName("returns empty Optional when all attempts exhausted")
     void fetchPageWithRetry_allAttemptsFail_returnsEmpty() {
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenThrow(new RuntimeException("Network failure"));
 
       props.setMaxAttempts(2);
@@ -131,7 +131,7 @@ class FortniteTrackerScrapingAdapterTest {
     void fetchPageWithRetry_setsUserAgentHeader_whenConfigured() {
       props.setUserAgents("Mozilla/5.0 TestAgent/1.0");
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
 
       adapter.fetchPageWithRetry("EU", 1);
@@ -139,7 +139,7 @@ class FortniteTrackerScrapingAdapterTest {
       @SuppressWarnings("unchecked")
       ArgumentCaptor<HttpEntity<Void>> captor = ArgumentCaptor.forClass(HttpEntity.class);
       verify(restTemplate)
-          .exchange(anyString(), eq(HttpMethod.GET), captor.capture(), eq(String.class));
+          .exchange(any(URI.class), eq(HttpMethod.GET), captor.capture(), eq(String.class));
       assertThat(captor.getValue().getHeaders().getFirst("User-Agent"))
           .isEqualTo("Mozilla/5.0 TestAgent/1.0");
     }
@@ -148,7 +148,7 @@ class FortniteTrackerScrapingAdapterTest {
     @DisplayName("sends no User-Agent header when userAgents not configured")
     void fetchPageWithRetry_noUserAgentHeader_whenNotConfigured() {
       when(restTemplate.exchange(
-              anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
           .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
 
       adapter.fetchPageWithRetry("EU", 1);
@@ -156,7 +156,7 @@ class FortniteTrackerScrapingAdapterTest {
       @SuppressWarnings("unchecked")
       ArgumentCaptor<HttpEntity<Void>> captor = ArgumentCaptor.forClass(HttpEntity.class);
       verify(restTemplate)
-          .exchange(anyString(), eq(HttpMethod.GET), captor.capture(), eq(String.class));
+          .exchange(any(URI.class), eq(HttpMethod.GET), captor.capture(), eq(String.class));
       assertThat(captor.getValue().getHeaders().get("User-Agent")).isNullOrEmpty();
     }
   }

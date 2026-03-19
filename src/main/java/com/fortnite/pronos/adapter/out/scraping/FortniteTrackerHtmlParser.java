@@ -68,10 +68,23 @@ class FortniteTrackerHtmlParser {
 
     String player = tr.select("[class*=leaderboard-user__nickname]").text().trim();
 
-    Element highlightDiv = tr.selectFirst("td[class*=column--highlight] div");
-    Element rightDiv = tr.selectFirst("td[class*=column--right] div");
-    String pointsText =
-        highlightDiv != null ? highlightDiv.text() : rightDiv != null ? rightDiv.text() : "";
+    // Points may be directly in the <td> (no wrapping <div>) — try div first, fallback to td text
+    Element highlightTd = tr.selectFirst("td[class*=column--highlight]");
+    Element highlightDiv = highlightTd != null ? highlightTd.selectFirst("div") : null;
+    Element rightTd = tr.selectFirst("td[class*=column--right]");
+    Element rightDiv = rightTd != null ? rightTd.selectFirst("div") : null;
+    String pointsText;
+    if (highlightDiv != null) {
+      pointsText = highlightDiv.text();
+    } else if (highlightTd != null) {
+      pointsText = highlightTd.text();
+    } else if (rightDiv != null) {
+      pointsText = rightDiv.text();
+    } else if (rightTd != null) {
+      pointsText = rightTd.text();
+    } else {
+      pointsText = "";
+    }
     String pointsClean = DIGITS_ONLY_PATTERN.matcher(pointsText).replaceAll("");
 
     if (player.isEmpty() || pointsClean.isEmpty()) {

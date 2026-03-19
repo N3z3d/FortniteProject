@@ -662,11 +662,44 @@ sprint-10:
   description: "Pipeline Production — dry-run + hardening + câblage PrIngestionScheduler"
   goal: "FortniteTrackerScrapingAdapter validé sur données réelles, câblé dans PrIngestionScheduler, avec smoke tests et fallback CSV"
   start_date: "2026-03-17"
-  status: in-progress
+  status: done
 
   sprint10-pipeline-dry-run: done           # P1 (score 17): Valider adapter sur données réelles — 1 région, 1 page, clé proxy réelle, log résultats. Avant tout câblage cron.
   sprint10-pipeline-hardening: done   # P1 (score 15): Smoke test rows>=10, score validation 0<points<10M, cache CSV fallback (D8), User-Agent rotation, cost cap maxRequestsPerRun
   sprint10-pipeline-wiring: done  # P1 (score 18): Câbler PrIngestionScheduler → FortniteTrackerScrapingAdapter. pagesPerRegion=1 défaut. Seulement après dry-run + hardening validés.
   sprint10-e2e-websocket-minimal: done # P2 (score 14): 1 test Playwright browser.newContext() x2 — propagation STOMP event PICK_MADE sur 2ème browser. Pattern multi-context documenté.
   sprint10-p0-process-docs: done      # P3 (score 6-9): §E2E Limitations + §Config Production dans project-context.md. Checklist adapter DoD + @ConditionalOnProperty. Vérif CGU FortniteTracker.
-  sprint10-retrospective: optional
+  sprint10-retrospective: done        # 2026-03-18 : sprint10-retro-2026-03-18.md — 9.2/10, 6/6 actions Sprint 9, A1-A6 pour Sprint 11
+
+# ============================================================
+# SPRINT 11 — Pipeline FortniteTracker : activation locale Docker + monitoring
+# 2026-03-18 — Objectif: scraping réel validé en Docker local + email alerts sur échecs pipeline
+# Issu de la rétro Sprint 10 (9.2/10) — A1-A6 actions items
+# Séquence: docker-compose fix (DONE) → activation dry-run → email pipeline → cooldown
+# ⛔ NE PAS RE-PROPOSER: staging/hébergement (deferred-future)
+# ============================================================
+
+sprint-11:
+  description: "Pipeline FortniteTracker activation locale + monitoring email"
+  goal: "Scraping FortniteTracker validé sur données réelles en Docker local, avec email monitoring des échecs"
+  start_date: "2026-03-18"
+  status: in-progress
+
+  # Fix docker-compose — DONE : SCRAPING_* + INGESTION_PR_SCHEDULED_ENABLED passés au conteneur via docker-compose.local.yml
+  sprint11-fix-docker-compose-scraping-env: done
+
+  # P0 (score 17): Activer pipeline + valider dry-run + 1er cycle cron en Docker local
+  # DONE 2026-03-19: dry-run EU valid=true rowCount=100, trigger SUCCESS regionsProcessed=8, ~806 snapshots in pr_snapshots
+  # Bugs fixés: URI double-encoding, HTML parser points (no div wrapper), render=true, timeout 90s
+  sprint11-pipeline-activation-local: done
+
+  # P1 (score 12): Câbler EmailAlertService sur regionFailures dans runAllRegions()
+  sprint11-pipeline-email-monitoring: backlog
+
+  # P1 (score 12): Cooldown 24h dans UnresolvedAlertSchedulerService (lastAlertSentAt en mémoire)
+  sprint11-email-alerts-cooldown: backlog
+
+  # P1 (score 8): WS-01 guard test.skip en CI (process.env.CI === 'true')
+  sprint11-ws01-ci-guard: backlog
+
+  sprint11-retrospective: optional

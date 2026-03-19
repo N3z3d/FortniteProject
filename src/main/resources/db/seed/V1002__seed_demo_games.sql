@@ -5,8 +5,11 @@
 -- IDEMPOTENT : ON CONFLICT ... DO NOTHING (safe sur re-run)
 --
 -- Dépend de V1001__seed_e2e_users_and_players.sql :
---   users  : 001=admin, 002=thibaut, 003=marcel, 004=teddy
+--   users  : thibaut, marcel, teddy (UUIDs dynamiques — ne pas hardcoder)
 --   players: 001-025 (EU/NAW/NAC, tranches 1-3)
+--
+-- Note: Les UUIDs des users sont résolus dynamiquement via subquery
+-- pour être robustes même si les users existent déjà avec des UUIDs différents.
 -- ============================================================
 
 -- ============================================================
@@ -14,47 +17,79 @@
 -- Démontre : leaderboard, équipes, résultats
 -- ============================================================
 INSERT INTO games (id, name, creator_id, max_participants, status, created_at, finished_at)
-VALUES (
+SELECT
   'a0000000-0000-0000-0000-000000000001',
   'Coupe Automne 2025',
-  '00000000-0000-0000-0000-000000000002',  -- thibaut
+  id,
   3,
   'FINISHED',
   '2025-10-01 10:00:00',
   '2025-11-01 18:00:00'
-) ON CONFLICT (id) DO NOTHING;
+FROM users WHERE username = 'thibaut'
+ON CONFLICT (id) DO NOTHING;
 
 -- Participants de la partie 1
 INSERT INTO game_participants (id, game_id, user_id, draft_order, joined_at, is_creator)
-VALUES
-  ('c0000000-0000-0000-0000-000000000001',
-   'a0000000-0000-0000-0000-000000000001',
-   '00000000-0000-0000-0000-000000000002',  -- thibaut
-   1, '2025-10-01 10:00:00', TRUE),
-  ('c0000000-0000-0000-0000-000000000002',
-   'a0000000-0000-0000-0000-000000000001',
-   '00000000-0000-0000-0000-000000000003',  -- marcel
-   2, '2025-10-01 10:05:00', FALSE),
-  ('c0000000-0000-0000-0000-000000000003',
-   'a0000000-0000-0000-0000-000000000001',
-   '00000000-0000-0000-0000-000000000004',  -- teddy
-   3, '2025-10-01 10:07:00', FALSE)
+SELECT
+  'c0000000-0000-0000-0000-000000000001',
+  'a0000000-0000-0000-0000-000000000001',
+  id,
+  1, '2025-10-01 10:00:00', TRUE
+FROM users WHERE username = 'thibaut'
+ON CONFLICT (game_id, user_id) DO NOTHING;
+
+INSERT INTO game_participants (id, game_id, user_id, draft_order, joined_at, is_creator)
+SELECT
+  'c0000000-0000-0000-0000-000000000002',
+  'a0000000-0000-0000-0000-000000000001',
+  id,
+  2, '2025-10-01 10:05:00', FALSE
+FROM users WHERE username = 'marcel'
+ON CONFLICT (game_id, user_id) DO NOTHING;
+
+INSERT INTO game_participants (id, game_id, user_id, draft_order, joined_at, is_creator)
+SELECT
+  'c0000000-0000-0000-0000-000000000003',
+  'a0000000-0000-0000-0000-000000000001',
+  id,
+  3, '2025-10-01 10:07:00', FALSE
+FROM users WHERE username = 'teddy'
 ON CONFLICT (game_id, user_id) DO NOTHING;
 
 -- ============================================================
 -- ÉQUIPES liées à la partie 1
 -- ============================================================
 INSERT INTO teams (id, name, owner_id, game_id, season, total_score)
-VALUES
-  ('b0000000-0000-0000-0000-000000000001', 'Team Thibaut',
-   '00000000-0000-0000-0000-000000000002',
-   'a0000000-0000-0000-0000-000000000001', 2025, 450),
-  ('b0000000-0000-0000-0000-000000000002', 'Team Marcel',
-   '00000000-0000-0000-0000-000000000003',
-   'a0000000-0000-0000-0000-000000000001', 2025, 280),
-  ('b0000000-0000-0000-0000-000000000003', 'Team Teddy',
-   '00000000-0000-0000-0000-000000000004',
-   'a0000000-0000-0000-0000-000000000001', 2025, 120)
+SELECT
+  'b0000000-0000-0000-0000-000000000001',
+  'Team Thibaut',
+  id,
+  'a0000000-0000-0000-0000-000000000001',
+  2025,
+  450
+FROM users WHERE username = 'thibaut'
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO teams (id, name, owner_id, game_id, season, total_score)
+SELECT
+  'b0000000-0000-0000-0000-000000000002',
+  'Team Marcel',
+  id,
+  'a0000000-0000-0000-0000-000000000001',
+  2025,
+  280
+FROM users WHERE username = 'marcel'
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO teams (id, name, owner_id, game_id, season, total_score)
+SELECT
+  'b0000000-0000-0000-0000-000000000003',
+  'Team Teddy',
+  id,
+  'a0000000-0000-0000-0000-000000000001',
+  2025,
+  120
+FROM users WHERE username = 'teddy'
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
@@ -109,15 +144,15 @@ INSERT INTO team_score_deltas
 VALUES
   ('d0000000-0000-0000-0000-000000000001',
    'a0000000-0000-0000-0000-000000000001',
-   'c0000000-0000-0000-0000-000000000001',  -- thibaut
+   'c0000000-0000-0000-0000-000000000001',  -- thibaut participant
    '2025-10-01', '2025-11-01', 450, '2025-11-01 18:00:00'),
   ('d0000000-0000-0000-0000-000000000002',
    'a0000000-0000-0000-0000-000000000001',
-   'c0000000-0000-0000-0000-000000000002',  -- marcel
+   'c0000000-0000-0000-0000-000000000002',  -- marcel participant
    '2025-10-01', '2025-11-01', 280, '2025-11-01 18:00:00'),
   ('d0000000-0000-0000-0000-000000000003',
    'a0000000-0000-0000-0000-000000000001',
-   'c0000000-0000-0000-0000-000000000003',  -- teddy
+   'c0000000-0000-0000-0000-000000000003',  -- teddy participant
    '2025-10-01', '2025-11-01', 120, '2025-11-01 18:00:00')
 ON CONFLICT (game_id, participant_id, period_start, period_end) DO NOTHING;
 
@@ -126,23 +161,25 @@ ON CONFLICT (game_id, participant_id, period_start, period_end) DO NOTHING;
 -- Démontre : interface de création de partie, invitation
 -- ============================================================
 INSERT INTO games (id, name, creator_id, max_participants, status, created_at)
-VALUES (
+SELECT
   'a0000000-0000-0000-0000-000000000002',
   'Tournoi Hiver 2025',
-  '00000000-0000-0000-0000-000000000002',  -- thibaut
+  id,
   4,
   'CREATING',
   '2026-03-10 14:00:00'
-) ON CONFLICT (id) DO NOTHING;
+FROM users WHERE username = 'thibaut'
+ON CONFLICT (id) DO NOTHING;
 
 -- Thibaut est créateur de la partie 2
 INSERT INTO game_participants (id, game_id, user_id, draft_order, joined_at, is_creator)
-VALUES (
+SELECT
   'c0000000-0000-0000-0000-000000000010',
   'a0000000-0000-0000-0000-000000000002',
-  '00000000-0000-0000-0000-000000000002',  -- thibaut
+  id,
   1, '2026-03-10 14:00:00', TRUE
-) ON CONFLICT (game_id, user_id) DO NOTHING;
+FROM users WHERE username = 'thibaut'
+ON CONFLICT (game_id, user_id) DO NOTHING;
 
 -- ============================================================
 -- RANK SNAPSHOTS — Historique PR pour sparkline catalogue

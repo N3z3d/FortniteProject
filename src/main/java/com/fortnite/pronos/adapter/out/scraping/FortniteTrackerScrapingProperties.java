@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class FortniteTrackerScrapingProperties {
 
   private static final int DEFAULT_MAX_ATTEMPTS = 8;
-  private static final int DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+  private static final int DEFAULT_REQUEST_TIMEOUT_MS = 60_000;
   private static final int DEFAULT_PAGES_PER_REGION = 4;
 
   /** Comma-separated Scrapfly API keys. */

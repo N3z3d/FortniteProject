@@ -67,8 +67,7 @@ class ProxyUrlBuilder {
     return SCRAPERAPI_BASE
         + "?api_key="
         + encode(key)
-        + "&render=false"
-        + "&wait_selector=tbody"
+        + "&render=true"
         + "&timeout="
         + timeoutMs
         + "&url="
