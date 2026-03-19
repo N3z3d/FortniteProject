@@ -26,7 +26,7 @@ public interface PrSnapshotRepository
           SELECT *
           FROM pr_snapshots
           WHERE player_id = :playerId
-            AND region = CAST(:region AS pr_region)
+            AND region = :region
             AND snapshot_date = :snapshotDate
           """,
       nativeQuery = true)

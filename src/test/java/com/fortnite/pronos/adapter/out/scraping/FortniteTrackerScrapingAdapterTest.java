@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -184,6 +185,131 @@ class FortniteTrackerScrapingAdapterTest {
       String attempt0 = multiAdapter.pickProvider("EU", 1, 0);
       String attempt1 = multiAdapter.pickProvider("EU", 1, 1);
       assertThat(attempt0).isNotEqualTo(attempt1);
+    }
+  }
+
+  @Nested
+  @DisplayName("getActiveProviders()")
+  class GetActiveProvidersTests {
+
+    @Test
+    @DisplayName("returns all providers when no keys exhausted")
+    void getActiveProviders_noExhausted_returnsAll() {
+      props.setScrapflyKeys("sfkey");
+      props.setScrapedoToken("sdtoken");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      List<String> active = multi.getActiveProviders(Set.of());
+      assertThat(active).containsExactlyInAnyOrder("scrapfly", "scraperapi", "scrapedo");
+    }
+
+    @Test
+    @DisplayName("removes provider when all its keys are exhausted")
+    void getActiveProviders_allKeysExhausted_removesProvider() {
+      props.setScraperapiKeys("key1,key2");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      Set<String> exhausted = Set.of("scraperapi:key1", "scraperapi:key2");
+      List<String> active = multi.getActiveProviders(exhausted);
+      assertThat(active).doesNotContain("scraperapi");
+    }
+
+    @Test
+    @DisplayName("keeps provider when only some keys exhausted")
+    void getActiveProviders_partialExhaust_keepsProvider() {
+      props.setScraperapiKeys("key1,key2");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      Set<String> exhausted = Set.of("scraperapi:key1");
+      List<String> active = multi.getActiveProviders(exhausted);
+      assertThat(active).contains("scraperapi");
+    }
+  }
+
+  @Nested
+  @DisplayName("pickActiveKey()")
+  class PickActiveKeyTests {
+
+    @Test
+    @DisplayName("returns non-exhausted key")
+    void pickActiveKey_skipsExhaustedKey() {
+      props.setScraperapiKeys("key1,key2");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      Set<String> exhausted = Set.of("scraperapi:key1");
+      String key = multi.pickActiveKey("scraperapi", 0, exhausted);
+      assertThat(key).isEqualTo("key2");
+    }
+
+    @Test
+    @DisplayName("returns null when all keys exhausted")
+    void pickActiveKey_allExhausted_returnsNull() {
+      props.setScraperapiKeys("key1,key2");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      Set<String> exhausted = Set.of("scraperapi:key1", "scraperapi:key2");
+      String key = multi.pickActiveKey("scraperapi", 0, exhausted);
+      assertThat(key).isNull();
+    }
+  }
+
+  @Nested
+  @DisplayName("isQuotaError()")
+  class IsQuotaErrorTests {
+
+    @Test
+    @DisplayName("detects 429 in message")
+    void isQuotaError_429inMessage_returnsTrue() {
+      assertThat(adapter.isQuotaError(new RuntimeException("429 Too Many Requests"))).isTrue();
+    }
+
+    @Test
+    @DisplayName("detects QUOTA_LIMIT_REACHED")
+    void isQuotaError_quotaLimitReached_returnsTrue() {
+      assertThat(adapter.isQuotaError(new RuntimeException("ERR::SCRAPE::QUOTA_LIMIT_REACHED")))
+          .isTrue();
+    }
+
+    @Test
+    @DisplayName("returns false for non-quota errors")
+    void isQuotaError_networkError_returnsFalse() {
+      assertThat(adapter.isQuotaError(new RuntimeException("Read timed out"))).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("fetchPageWithRetry() — quota handling")
+  class FetchPageQuotaHandlingTests {
+
+    @Test
+    @DisplayName("switches to next key immediately after 429, no backoff")
+    void fetchPageWithRetry_quotaError_switchesKeyImmediately() {
+      props.setScraperapiKeys("key1,key2");
+      FortniteTrackerScrapingAdapter multi =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      when(restTemplate.exchange(
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+          .thenThrow(new RuntimeException("429 Too Many Requests on GET"))
+          .thenReturn(new ResponseEntity<>(VALID_HTML, HttpStatus.OK));
+
+      Optional<List<ScrapedRow>> result = multi.fetchPageWithRetry("EU", 1);
+      assertThat(result).isPresent();
+      assertThat(result.get()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("stops early when all keys exhausted by quota")
+    void fetchPageWithRetry_allKeysExhausted_stopsEarly() {
+      props.setScraperapiKeys("key1");
+      props.setMaxAttempts(5);
+      FortniteTrackerScrapingAdapter single =
+          new FortniteTrackerScrapingAdapter(props, restTemplate);
+      when(restTemplate.exchange(
+              any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
+          .thenThrow(new RuntimeException("429 Too Many Requests"));
+
+      Optional<List<ScrapedRow>> result = single.fetchPageWithRetry("EU", 1);
+      assertThat(result).isEmpty();
     }
   }
 

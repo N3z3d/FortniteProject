@@ -41,7 +41,7 @@ class PrSnapshotNativeRepositoryImpl implements PrSnapshotNativeRepository {
               run_id
             ) VALUES (
               :playerId,
-              CAST(:region AS pr_region),
+              :region,
               :snapshotDate,
               :id,
               :points,

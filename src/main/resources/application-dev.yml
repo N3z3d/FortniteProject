@@ -39,6 +39,7 @@ spring:
     connect-retries-interval: 1     # 1 seconde entre les tentatives
     lock-retry-count: 3             # 3 tentatives pour acquérir le lock
     fail-on-missing-locations: false
+    out-of-order: true
   h2:
     console:
       enabled: false                # H2 console disabled in dev - use PostgreSQL tools

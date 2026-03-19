@@ -19,8 +19,6 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 
-import org.hibernate.annotations.ColumnTransformer;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -42,8 +40,7 @@ public class PrSnapshot {
 
   @Id
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, columnDefinition = "pr_region")
-  @ColumnTransformer(write = "CAST(? AS pr_region)")
+  @Column(nullable = false)
   private PrRegion region;
 
   @Id
