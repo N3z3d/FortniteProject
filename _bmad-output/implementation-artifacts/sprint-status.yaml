@@ -811,11 +811,33 @@ sprint-12:
   # P2 #1: canDeactivate guard sur pages draft
   # Confirmation "Vous êtes en train de drafter — vraiment quitter ?"
   # Empêche navigation accidentelle qui casse le flow de l'autre joueur
-  sprint12-candeactivate-draft-guard: backlog
+  sprint12-candeactivate-draft-guard: review
 
   # P2 #2: Corriger le reste des items Sprint 11 déférés
   # sprint11-pipeline-email-monitoring + sprint11-email-alerts-cooldown
   # + sprint11-ws01-ci-guard (test.skip en CI)
   sprint12-sprint11-deferred-items: backlog
+
+  # ----------------------------------------------------------
+  # Phase 3 — Validation Docker + E2E coverage (nouveau)
+  # Valider que les 7 fixes Sprint 12 fonctionnent en conditions réelles
+  # + ajouter E2E pour les flux non couverts
+  # ----------------------------------------------------------
+
+  # F: Rebuild Docker + valider les 7 fixes Sprint 12 en conditions réelles
+  # AC: login/logout propre, delete/archive game, draft timer correct, pas de freeze
+  sprint12-docker-validation: ready-for-dev
+
+  # E: E2E draft complet 2 joueurs avec timer (le plus complexe, le plus valuable)
+  # AC: 2 browsers, draft snake complet, timer server-sync validé, logout propre
+  sprint12-e2e-draft-two-players: review
+
+  # C: E2E login/logout propre (valide RC-5 fix — store nettoyé au logout)
+  # AC: login Teddy → voit ses parties, logout → login Thibaut → voit ses parties
+  sprint12-e2e-login-logout: review
+
+  # D: E2E delete/archive game (valide RC-2 fix — 409 au lieu de 500)
+  # AC: delete partie avec picks → message clair, archive CREATING → OK
+  sprint12-e2e-delete-archive: review
 
   sprint12-retrospective: optional

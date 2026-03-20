@@ -1236,6 +1236,12 @@
       "emptyTitle": "No se encontraron jugadores",
       "emptyDescription": "Intenta ajustar tus criterios de búsqueda",
       "performanceOptimized": "Rendimiento optimizado para {count} jugadores"
+    },
+    "leaveConfirm": {
+      "title": "Draft en curso",
+      "message": "Estás participando en un draft. Salir ahora puede bloquear a los demás participantes.",
+      "stay": "Quedarse",
+      "leave": "Salir de todas formas"
     }
   },
   "teams": {

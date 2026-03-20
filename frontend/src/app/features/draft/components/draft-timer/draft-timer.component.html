@@ -12,7 +12,7 @@
 
   <div class="timer-display" *ngIf="hasTimer" aria-live="off" aria-hidden="true">
     <span *ngIf="timerState === 'urgent'" class="timer-icon" aria-hidden="true">â±ï¸</span>
-    <span class="timer-digits display-md">{{ displayTime }}</span>
+    <span class="timer-digits display-md" data-testid="draft-timer-value">{{ displayTime }}</span>
   </div>
 
   <span role="status" aria-live="assertive" aria-atomic="true" class="sr-only">

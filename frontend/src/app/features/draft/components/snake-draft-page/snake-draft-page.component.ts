@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, DestroyRef } from '@angular/core';
+import { ComponentWithDraftState } from '../../../../core/guards/draft-active.guard';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -42,7 +43,7 @@ const PICK_CONFIRM_SNACKBAR_DURATION_MS = 3_000;
   templateUrl: './snake-draft-page.component.html',
   styleUrls: ['./snake-draft-page.component.scss'],
 })
-export class SnakeDraftPageComponent implements OnInit, OnDestroy {
+export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWithDraftState {
   private readonly route = inject(ActivatedRoute);
   private readonly draftService = inject(DraftService);
   private readonly wsService = inject(WebSocketService);
@@ -73,6 +74,10 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
     this.loadDraftState(this.gameId);
     this.subscribeToWebSocket(this.gameId);
     this.trackConnectionStatus();
+  }
+
+  isDraftActive(): boolean {
+    return this.draft !== null && !this.isDraftDone();
   }
 
   ngOnDestroy(): void {
@@ -221,6 +226,11 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
       return false;
     }
     return true;
+  }
+
+  private isDraftDone(): boolean {
+    const status = this.draft?.status;
+    return status === 'COMPLETED' || status === 'CANCELLED' || status === 'ACTIVE';
   }
 
   private computeRecommendation(players: AvailablePlayer[]): AvailablePlayer | null {

@@ -1236,6 +1236,12 @@
       "emptyTitle": "No players found",
       "emptyDescription": "Try adjusting your search criteria",
       "performanceOptimized": "Performance optimized for {count} players"
+    },
+    "leaveConfirm": {
+      "title": "Draft in progress",
+      "message": "You are currently in a draft. Leaving now may block the other participants.",
+      "stay": "Stay",
+      "leave": "Leave anyway"
     }
   },
   "teams": {
