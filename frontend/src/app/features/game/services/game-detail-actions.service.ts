@@ -121,6 +121,7 @@ export class GameDetailActionsService {
     this.gameService.deleteGame(gameId).subscribe({
       next: success => {
         if (!success) {
+          this.uiFeedback.showError({}, 'games.detail.actions.deleteFailed', { duration: 4000 });
           return;
         }
 
@@ -128,6 +129,7 @@ export class GameDetailActionsService {
         this.router.navigate(['/']);
       },
       error: error => {
+        this.uiFeedback.showError(error, 'games.detail.actions.deleteError', { duration: 5000 });
         this.logActionError('permanentlyDeleteGame', gameId, error);
       }
     });

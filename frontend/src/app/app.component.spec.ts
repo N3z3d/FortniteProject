@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { AppComponent } from './app.component';
 import { UserContextService, UserProfile } from './core/services/user-context.service';
 import { TranslationService } from './core/services/translation.service';
+import { UserGamesStore } from './core/services/user-games.store';
 import { environment } from '../environments/environment';
 
 describe('AppComponent', () => {
@@ -11,6 +12,7 @@ describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let userContextService: jasmine.SpyObj<UserContextService>;
   let translationService: jasmine.SpyObj<TranslationService>;
+  let userGamesStore: jasmine.SpyObj<UserGamesStore>;
   let userChangedSubject: Subject<UserProfile | null>;
 
   beforeEach(async () => {
@@ -19,12 +21,14 @@ describe('AppComponent', () => {
       userChanged$: userChangedSubject.asObservable()
     });
     translationService = jasmine.createSpyObj('TranslationService', ['setCurrentUserId']);
+    userGamesStore = jasmine.createSpyObj<UserGamesStore>('UserGamesStore', ['reset']);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent, RouterTestingModule],
       providers: [
         { provide: UserContextService, useValue: userContextService },
-        { provide: TranslationService, useValue: translationService }
+        { provide: TranslationService, useValue: translationService },
+        { provide: UserGamesStore, useValue: userGamesStore }
       ]
     }).compileComponents();
 
@@ -100,6 +104,18 @@ describe('AppComponent', () => {
     userChangedSubject.next(null);
 
     expect(translationService.setCurrentUserId).toHaveBeenCalledWith(null);
+  });
+
+  it('should call userGamesStore.reset() when user becomes null (logout)', () => {
+    userChangedSubject.next(null);
+
+    expect(userGamesStore.reset).toHaveBeenCalled();
+  });
+
+  it('should not call userGamesStore.reset() when user logs in', () => {
+    userChangedSubject.next({ id: '1', username: 'Thibaut', email: 'thibaut@test.com' });
+
+    expect(userGamesStore.reset).not.toHaveBeenCalled();
   });
 
   it('should unsubscribe on destroy', () => {

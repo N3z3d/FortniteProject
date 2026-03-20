@@ -7,6 +7,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -236,6 +237,28 @@ public class GlobalExceptionHandler {
             .build();
 
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+  }
+
+  /** Handle FK constraint violations (e.g. delete game with existing picks/trades) */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+      DataIntegrityViolationException ex, HttpServletRequest request) {
+
+    log.warn("Data integrity violation: {}", ex.getMessage());
+
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.CONFLICT.value())
+            .error("Conflict")
+            .message(
+                "Cette partie contient des donnees liees (picks, echanges) — veuillez d'abord terminer ou supprimer le draft")
+            .path(request.getRequestURI())
+            .code("DATA_INTEGRITY_VIOLATION")
+            .build();
+
+    recordToJournal(ex, request, errorResponse);
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
   }
 
   /** PHASE 1B: Additional exception handlers for comprehensive error coverage */

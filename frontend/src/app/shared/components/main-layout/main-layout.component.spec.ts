@@ -678,13 +678,13 @@ describe('MainLayoutComponent', () => {
       expect(component.isAdmin()).toBeFalse();
     });
 
-    it('should show Parties and Catalogue links in global-navigation', () => {
+    it('should show Catalogue link in global-navigation (Parties button removed)', () => {
       fixture.detectChanges();
       const globalNav = fixture.nativeElement.querySelector('.global-navigation');
       expect(globalNav).toBeTruthy();
       const gamesBtn = globalNav.querySelector('button[routerlink="/games"]');
       const catalogueBtn = globalNav.querySelector('button[routerlink="/catalogue"]');
-      expect(gamesBtn).toBeTruthy();
+      expect(gamesBtn).toBeNull();
       expect(catalogueBtn).toBeTruthy();
     });
 

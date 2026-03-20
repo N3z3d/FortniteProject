@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { UserContextService } from './core/services/user-context.service';
 import { TranslationService } from './core/services/translation.service';
+import { UserGamesStore } from './core/services/user-games.store';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -71,10 +72,14 @@ export class AppComponent implements OnDestroy {
   constructor(
     private userContextService: UserContextService,
     private translationService: TranslationService,
+    private userGamesStore: UserGamesStore,
     private router: Router
   ) {
     this.userSub = this.userContextService.userChanged$.subscribe(user => {
       this.translationService.setCurrentUserId(user?.id ?? null);
+      if (!user) {
+        this.userGamesStore.reset();
+      }
     });
   }
 

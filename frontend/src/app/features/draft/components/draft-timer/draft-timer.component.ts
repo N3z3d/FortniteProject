@@ -46,6 +46,8 @@ export class DraftTimerComponent implements OnChanges, OnDestroy {
   @Input() durationSeconds = 0;
   @Input() warmup = false;
   @Input() autoPickPlayer: string | null = null;
+  /** Optional ISO-8601 server timestamp. When provided, remaining time is derived from server clock. */
+  @Input() serverExpiresAt: string | null = null;
 
   @Output() readonly expired = new EventEmitter<void>();
   @Output() readonly cancelled = new EventEmitter<void>();
@@ -85,6 +87,16 @@ export class DraftTimerComponent implements OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['serverExpiresAt'] && this.serverExpiresAt) {
+      const remaining = Math.round(
+        Math.max(0, (new Date(this.serverExpiresAt).getTime() - Date.now()) / 1000)
+      );
+      if (remaining > 0) {
+        this.durationSeconds = remaining;
+        this.startCountdown();
+        return;
+      }
+    }
     if (changes['durationSeconds'] && this.durationSeconds > 0) {
       this.startCountdown();
     }

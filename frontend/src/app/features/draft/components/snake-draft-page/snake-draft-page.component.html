@@ -22,6 +22,7 @@
       <app-draft-timer
         *ngIf="draft"
         [durationSeconds]="draft.rules?.timePerPick ?? 60"
+        [serverExpiresAt]="pickExpiresAt"
         [autoPickPlayer]="isMyTurn ? (recommendedPlayer?.username ?? null) : null"
         (expired)="onTimerExpired()"
         (cancelled)="onPickCancelled()"

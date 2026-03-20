@@ -8,7 +8,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject } from 'rxjs';
 
 import { DraftService } from '../../services/draft.service';
 import { WebSocketService } from '../../../../core/services/websocket.service';
@@ -63,9 +62,9 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
   regions: string[] = [];
   activeRegionIndex = 0;
   isPickPending = false;
+  pickExpiresAt: string | null = null;
 
   private activeFilter: PlayerFilter | null = null;
-  private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
     this.gameId = this.route.snapshot.paramMap.get('id');
@@ -77,8 +76,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.wsService.disconnect();
   }
 
   onFilterChange(filter: PlayerFilter): void {
@@ -157,12 +155,17 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy {
     this.recommendedPlayer = this.computeRecommendation(state.availablePlayers);
   }
 
-  private handleDraftEvent(event: { event: string; draftId: string }): void {
-    if (event.event === TURN_CHANGED_EVENT && this.gameId) {
-      this.draftService
-        .getSnakeBoardState(this.gameId)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(state => this.applyDraftState(state));
+  private handleDraftEvent(event: { event: string; draftId: string; expiresAt?: string }): void {
+    if (event.event === 'PICK_PROMPT' || event.event === TURN_CHANGED_EVENT) {
+      if (event.expiresAt) {
+        this.pickExpiresAt = event.expiresAt;
+      }
+      if (this.gameId) {
+        this.draftService
+          .getSnakeBoardState(this.gameId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(state => this.applyDraftState(state));
+      }
     }
   }
 

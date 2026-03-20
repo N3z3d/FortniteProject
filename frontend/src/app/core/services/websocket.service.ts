@@ -37,6 +37,8 @@ export interface DraftEventMessage {
   region?: string;
   round?: number;
   message?: string;
+  /** ISO-8601 timestamp when the current pick window expires (set by server on PICK_PROMPT) */
+  expiresAt?: string;
 }
 
 export interface SimultaneousEventMessage {

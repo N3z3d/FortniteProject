@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -54,7 +54,7 @@ const SNACKBAR_DURATION_MS = 3_000;
   templateUrl: './simultaneous-draft-page.component.html',
   styleUrls: ['./simultaneous-draft-page.component.scss'],
 })
-export class SimultaneousDraftPageComponent implements OnInit {
+export class SimultaneousDraftPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly draftService = inject(DraftService);
   private readonly simultaneousService = inject(SimultaneousDraftService);
@@ -88,6 +88,10 @@ export class SimultaneousDraftPageComponent implements OnInit {
     this.loadStatus(this.gameId);
     this.subscribeToSimultaneous(this.gameId);
     this.trackConnectionStatus();
+  }
+
+  ngOnDestroy(): void {
+    this.wsService.disconnect();
   }
 
   onFilterChange(filter: PlayerFilter): void {

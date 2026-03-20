@@ -48,7 +48,7 @@ describe('SnakeDraftPageComponent', () => {
     draftServiceSpy.getSnakeBoardState.and.returnValue(of(DRAFT_STATE));
     draftServiceSpy.submitSnakePick.and.returnValue(of(DRAFT_STATE));
 
-    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToDraft'], {
+    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToDraft', 'disconnect'], {
       isConnected$: wsConnected$.asObservable(),
       draftEvents: draftEvents$.asObservable(),
     });

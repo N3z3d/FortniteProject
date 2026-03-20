@@ -747,7 +747,7 @@ sprint-12:
   #      + error handler sur les Subjects STOMP (catchError → empty())
   # Scope: SnakeDraftPageComponent, SimultaneousDraftPageComponent, WebSocketService
   # AC: déconnexion depuis page draft → redirect login sans freeze ni erreur console
-  sprint12-ws-lifecycle-fix: backlog
+  sprint12-ws-lifecycle-fix: done
 
   # P0 #2 (score 8.6): Delete/Archive game → server error 500
   # RC-2: DataIntegrityViolationException → 500 non catchée
@@ -758,7 +758,7 @@ sprint-12:
   #      + message d'erreur frontend lisible (pas "error server")
   # AC: delete partie sans picks → OK ; delete partie avec picks → 409 message clair ;
   #     archive partie CREATING → OK ; archive partie DRAFT_IN_PROGRESS → message bloquant
-  sprint12-delete-archive-fix: backlog
+  sprint12-delete-archive-fix: done
 
   # P0 #3 (score 8.1): Draft timer désynchronisé / "Connection instable"
   # RC-3: Timer local client repart à 0 à chaque reconnexion STOMP
@@ -768,7 +768,7 @@ sprint-12:
   #               afficher max(0, expiresAt - now()) en temps réel
   #               reconnect STOMP → relire expiresAt → timer correct immédiatement
   # AC: fermer/rouvrir l'onglet pendant draft → timer affiche le vrai temps restant serveur
-  sprint12-draft-timer-server-sync: backlog
+  sprint12-draft-timer-server-sync: done
 
   # P0 #4 (score 7.3): Parties de Teddy vides au chargement initial
   # RC-4: games.length === 0 affiché avant que la requête HTTP soit résolue
@@ -776,7 +776,7 @@ sprint-12:
   #      état tripartite dans template: loading (spinner) | empty (vrai vide) | populated
   #      + store.reset() au logout pour isoler les sessions
   # AC: login Teddy → spinner visible → puis liste correcte ; jamais "aucune partie" si en cours de chargement
-  sprint12-loading-states-fix: backlog
+  sprint12-loading-states-fix: done
 
   # ----------------------------------------------------------
   # Phase 1 — P1 : UX + Error handling (score 7.7 → 5.5)
@@ -787,7 +787,7 @@ sprint-12:
   #      avec message lisible + bouton "Réessayer" (reload) + bouton "Accueil"
   #      + messages spécifiques pour les erreurs connues (401, 403, 404, 500)
   # AC: erreur réseau → écran propre avec retry, pas écran blanc ni "ai ai ai"
-  sprint12-error-boundary: backlog
+  sprint12-error-boundary: done
 
   # P1 #2 (score 5.9): Bouton "Créer une partie" nécessite un refresh
   # RC: timing race entre le guard isAuthenticated() et le composant monté
@@ -795,14 +795,14 @@ sprint-12:
   #      + idempotence backend: même créateur + même nom dans < 5s → rejeter 409
   #      + canDeactivate guard sur pages draft (confirmation avant quitter)
   # AC: clic "Créer" → bouton disabled jusqu'à réponse ; double-clic = 1 seule création
-  sprint12-create-game-fixes: backlog
+  sprint12-create-game-fixes: done
 
   # P1 #3 (score 5.5): Navigation header — boutons inutiles
   # Fix: supprimer bouton "Parties" du header (redondant avec logo/home)
   #      supprimer bouton "Draft" du header (n'existe que dans contexte d'une partie)
   #      garder "Catalogue" mais le déplacer dans le contexte d'une partie (P2)
   # AC: header = Logo | Catalogue | 👤 Profil ▼ uniquement
-  sprint12-nav-cleanup: backlog
+  sprint12-nav-cleanup: done
 
   # ----------------------------------------------------------
   # Phase 2 — P2 : Bonus si capacity (non bloquants)

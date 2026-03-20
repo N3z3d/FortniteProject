@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
+import { finalize } from 'rxjs/operators';
 import { GameService } from '../services/game.service';
 import { CreateGameRequest } from '../models/game.interface';
 import { UserGamesStore } from '../../../core/services/user-games.store';
@@ -143,9 +144,10 @@ export class CreateGameComponent implements OnInit {
       regionRules: {} // Simplified - no complex region rules for now
     };
 
-    this.gameService.createGame(formData).subscribe({
+    this.gameService.createGame(formData).pipe(
+      finalize(() => { this.loading = false; })
+    ).subscribe({
       next: (game) => {
-        this.loading = false;
         // Add the new game to the store so sidebar refreshes immediately
         this.userGamesStore.addGame(game);
         this.uiFeedback.showSuccessMessage(this.buildCreateSuccessMessage(game.invitationCode), 2000);
@@ -155,7 +157,6 @@ export class CreateGameComponent implements OnInit {
         });
       },
       error: (error) => {
-        this.loading = false;
         this.error = this.uiFeedback.showError(error, 'games.create.errorCreate', { duration: 5000 });
         this.logger.error('CreateGameComponent: failed to create game', {
           formName: this.gameForm?.value?.name,

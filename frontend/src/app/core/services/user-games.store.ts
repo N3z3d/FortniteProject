@@ -158,6 +158,7 @@ export class UserGamesStore {
    * Clear the store (on logout)
    */
   clear(): void {
+    this.stopAutoRefresh();
     this.updateState({
       games: [],
       loading: false,
@@ -165,6 +166,13 @@ export class UserGamesStore {
       lastLoaded: null
     });
     this.logger.debug('UserGamesStore: cleared');
+  }
+
+  /**
+   * Reset the store (alias for clear — used by logout handlers)
+   */
+  reset(): void {
+    this.clear();
   }
 
   private fetchGames(): Observable<Game[]> {

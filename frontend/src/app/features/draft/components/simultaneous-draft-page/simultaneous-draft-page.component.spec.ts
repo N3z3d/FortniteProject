@@ -61,7 +61,7 @@ describe('SimultaneousDraftPageComponent', () => {
     );
     simultaneousServiceSpy.submitSelection.and.returnValue(of(undefined));
 
-    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToSimultaneous'], {
+    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToSimultaneous', 'disconnect'], {
       isConnected$: wsConnected$.asObservable(),
       simultaneousEvents: simultaneousEvents$.asObservable(),
     });
