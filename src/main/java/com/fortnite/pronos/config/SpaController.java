@@ -37,7 +37,7 @@ public class SpaController {
    * first segment is {@code api} or {@code actuator} are excluded so Spring MVC continues to route
    * them to their respective {@code @RestController} mappings.
    */
-  @GetMapping(value = {"/{root:(?!api$|actuator$|assets$)[^.]*}/**"})
+  @GetMapping(value = {"/{root:(?!api$|actuator$|assets$|ws$)[^.]*}/**"})
   public String spaDeep() {
     return INDEX_HTML;
   }
