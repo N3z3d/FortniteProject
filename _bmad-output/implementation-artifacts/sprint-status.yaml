@@ -947,3 +947,27 @@ sprint-13:
   sprint13-docs-joueurs: done
 
   sprint13-retrospective: done
+
+  # ============================================================
+  # SPRINT 14 — Stabilisation draft + expérience joueur complète
+  # ============================================================
+  # Objectif : Thibaut et Teddy jouent une partie complète de A à Z sans bug
+  # Critère de succès : draft complet (tous slots remplis, ordre serpent, timer sync, région respectée) + leaderboard lisible
+  # DoD renforcée : toute story draft = testée avec 2 comptes réels en Docker avant done
+  # Ref : sprint-change-proposal-2026-03-22.md
+
+  # P0 — Bloquants
+  sprint14-fix-draft-crash-tour2: backlog
+  sprint14-fix-timer-server-sync: backlog
+  sprint14-fix-region-filter-draft: backlog
+
+  # P1 — Expérience joueur
+  sprint14-ux-notification-tour: backlog
+  sprint14-fix-leaderboard-design: backlog
+  sprint14-fix-participants-count: backlog
+  sprint14-desactiver-draft-simultane-ui: backlog
+
+  # P2 — Infrastructure qualité
+  sprint14-e2e-ui-draft-complet: backlog
+
+  sprint14-retrospective: optional

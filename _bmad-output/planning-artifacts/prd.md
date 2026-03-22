@@ -37,7 +37,7 @@ classification:
     - 'Alias history: 2 sources stored in MVP (FortniteTracker pseudo + in-game Epic pseudo), searchable in Growth'
     - 'PR evolution curves: 3-month / 6-month trends (no tournament linking in v1)'
     - 'Infrastructure: Docker local -> Supabase prod, JDBC direct, hexagonal adapter'
-    - 'Real-time v1: batch update post-scraping. WebSocket (STOMP.js existing) deferred to Growth'
+    - 'Real-time draft: WebSocket STOMP obligatoire en MVP — synchronisation tours, timer, picks en temps réel. Scores leaderboard: batch update post-scraping (pas temps-réel en v1)'
 ---
 
 # Product Requirements Document â€” FortniteProject
