@@ -52,6 +52,9 @@ class SecurityConfigSnakeDraftAuthorizationTest {
   @org.springframework.boot.test.mock.mockito.MockBean private UserResolver userResolver;
 
   @org.springframework.boot.test.mock.mockito.MockBean
+  private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+  @org.springframework.boot.test.mock.mockito.MockBean
   private com.fortnite.pronos.service.admin.ErrorJournalService errorJournalService;
 
   @org.springframework.boot.test.mock.mockito.MockBean
@@ -121,7 +124,8 @@ class SecurityConfigSnakeDraftAuthorizationTest {
     UUID participantId = UUID.randomUUID();
     when(snakeDraftService.getCurrentTurn(GAME_ID, "GLOBAL"))
         .thenReturn(
-            Optional.of(new SnakeTurnResponse(draftId, "GLOBAL", participantId, 1, 1, false)));
+            Optional.of(
+                new SnakeTurnResponse(draftId, "GLOBAL", participantId, null, 1, 1, false, null)));
 
     mockMvc
         .perform(get("/api/games/{id}/draft/snake/turn", GAME_ID).param("region", "GLOBAL"))

@@ -9,6 +9,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, first, interval, skip, switchMap } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { DraftService } from '../../services/draft.service';
 import { WebSocketService } from '../../../../core/services/websocket.service';
@@ -24,6 +26,8 @@ import { AvailablePlayer, DraftBoardState } from '../../models/draft.interface';
 
 const TURN_CHANGED_EVENT = 'TURN_CHANGED';
 const PICK_CONFIRM_SNACKBAR_DURATION_MS = 3_000;
+/** Fallback polling interval (ms) — refreshes board state when WS events may be missed. */
+const BOARD_POLL_INTERVAL_MS = 5_000;
 
 @Component({
   selector: 'app-snake-draft-page',
@@ -72,8 +76,10 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     if (!this.gameId) return;
 
     this.loadDraftState(this.gameId);
+    this.wsService.connect(); // ensure STOMP session is active (idempotent)
     this.subscribeToWebSocket(this.gameId);
     this.trackConnectionStatus();
+    this.startPollingFallback(this.gameId);
   }
 
   isDraftActive(): boolean {
@@ -81,7 +87,8 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
   }
 
   ngOnDestroy(): void {
-    this.wsService.disconnect();
+    // BUG-05 fix: do NOT call disconnect() — WebSocketService is a singleton shared across pages.
+    // Subscriptions are cleaned up via takeUntilDestroyed(this.destroyRef).
   }
 
   onFilterChange(filter: PlayerFilter): void {
@@ -136,15 +143,27 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
   }
 
   private subscribeToWebSocket(gameId: string): void {
-    this.wsService.subscribeToDraft(gameId);
+    // Listen for draft events (Subject is always available regardless of WS state)
     this.wsService.draftEvents
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(event => this.handleDraftEvent(event));
+
+    // Wait for WS to be active before subscribing to the draft topic.
+    // subscribeToDraft() is a no-op when called before the STOMP handshake completes
+    // (race condition on page load in a new browser context).
+    this.wsService.isConnected$
+      .pipe(
+        first(connected => connected),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.wsService.subscribeToDraft(gameId));
   }
 
   private trackConnectionStatus(): void {
+    // skip(1) avoids the initial false emission from BehaviorSubject(false)
+    // on page load — banner only shows after a genuine connection loss
     this.wsService.isConnected$
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(skip(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(connected => {
         this.wsConnected = connected;
       });
@@ -160,15 +179,25 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     this.recommendedPlayer = this.computeRecommendation(state.availablePlayers);
   }
 
-  private handleDraftEvent(event: { event: string; draftId: string; expiresAt?: string }): void {
-    if (event.event === 'PICK_PROMPT' || event.event === TURN_CHANGED_EVENT) {
+  private handleDraftEvent(event: { event?: string; draftId?: string; round?: number; expiresAt?: string }): void {
+    // BUG-06 fix: accept both DraftEventMessage (event field) and SnakeTurnResponse-shaped
+    // broadcasts (round + draftId, no event field) from the backend snake draft service.
+    const isTurnEvent =
+      event.event === 'PICK_PROMPT' ||
+      event.event === TURN_CHANGED_EVENT ||
+      (event.round !== undefined && event.draftId !== undefined);
+
+    if (isTurnEvent) {
       if (event.expiresAt) {
         this.pickExpiresAt = event.expiresAt;
       }
       if (this.gameId) {
         this.draftService
           .getSnakeBoardState(this.gameId)
-          .pipe(takeUntilDestroyed(this.destroyRef))
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+            catchError(() => EMPTY)
+          )
           .subscribe(state => this.applyDraftState(state));
       }
     }
@@ -230,7 +259,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
 
   private isDraftDone(): boolean {
     const status = this.draft?.status;
-    return status === 'COMPLETED' || status === 'CANCELLED' || status === 'ACTIVE';
+    return status === 'COMPLETED' || status === 'CANCELLED';
   }
 
   private computeRecommendation(players: AvailablePlayer[]): AvailablePlayer | null {
@@ -239,6 +268,19 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     return available.reduce((best, p) =>
       (p.totalPoints ?? 0) > (best.totalPoints ?? 0) ? p : best
     );
+  }
+
+  private startPollingFallback(gameId: string): void {
+    interval(BOARD_POLL_INTERVAL_MS)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap(() =>
+          this.isDraftActive()
+            ? this.draftService.getSnakeBoardState(gameId).pipe(catchError(() => EMPTY))
+            : EMPTY
+        )
+      )
+      .subscribe(state => this.applyDraftState(state));
   }
 
   private showNarrativeToast(player: AvailablePlayer): void {

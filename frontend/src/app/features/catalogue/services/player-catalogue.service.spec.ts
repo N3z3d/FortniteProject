@@ -107,13 +107,17 @@ describe('PlayerCatalogueService', () => {
     ]);
   });
 
-  it('should return empty array on HTTP error', () => {
-    service.getPlayers({}).subscribe(result => {
-      expect(result).toEqual([]);
+  it('should propagate HTTP error to caller', () => {
+    let errorCaught = false;
+    service.getPlayers({}).subscribe({
+      next: () => fail('should not emit'),
+      error: () => { errorCaught = true; },
     });
 
     const req = http.expectOne(r => r.url.includes('/players/catalogue'));
     req.flush('error', { status: 500, statusText: 'Server Error' });
+
+    expect(errorCaught).toBeTrue();
   });
 
   it('should call /players/{id}/sparkline with region and days', () => {

@@ -1,6 +1,6 @@
 # Story Sprint 12 — D: E2E Delete/Archive Game avec Validation 409
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint12-e2e-delete-archive

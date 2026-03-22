@@ -37,6 +37,8 @@ import com.fortnite.pronos.exception.PlayerAlreadySelectedException;
 @Transactional(readOnly = true)
 public class DraftTrancheService {
 
+  private static final String GLOBAL_REGION = "GLOBAL";
+
   private final GameDomainRepositoryPort gameDomainRepository;
   private final DraftDomainRepositoryPort draftDomainRepository;
   private final PlayerDomainRepositoryPort playerRepository;
@@ -69,9 +71,28 @@ public class DraftTrancheService {
    */
   public void validatePick(UUID gameId, String region, UUID playerId) {
     Game game = findGameOrThrow(gameId);
+
+    // BUG-03 fix: region validation is independent of tranche rules — always enforce when
+    // region is not GLOBAL, even when tranchesEnabled=false.
+    if (!GLOBAL_REGION.equals(region)) {
+      Player playerForRegion =
+          playerRepository
+              .findById(playerId)
+              .orElseThrow(() -> new GameNotFoundException("Player not found: " + playerId));
+      String playerRegion = playerForRegion.getRegionName();
+      if (!region.equals(playerRegion)) {
+        throw new InvalidTrancheViolationException(
+            "Region violation: player region "
+                + playerRegion
+                + " does not match required region "
+                + region);
+      }
+    }
+
     if (!game.isTranchesEnabled()) {
       return;
     }
+
     Draft draft = findActiveDraftOrThrow(gameId);
     SnakeTurn turn =
         orchestratorService
@@ -156,6 +177,8 @@ public class DraftTrancheService {
     List<Player> players = playerRepository.findActivePlayers();
     return players.stream()
         .filter(p -> !pickedIds.contains(p.getId()))
+        // BUG-03 fix: only recommend players matching the requested region
+        .filter(p -> GLOBAL_REGION.equals(region) || region.equals(p.getRegionName()))
         .filter(p -> parseTrancheFloor(p.getTranche()) >= requiredFloor)
         .min(Comparator.comparingInt(p -> parseTrancheFloor(p.getTranche())))
         .map(PlayerRecommendResponse::from);

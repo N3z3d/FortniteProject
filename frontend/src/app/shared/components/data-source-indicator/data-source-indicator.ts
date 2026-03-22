@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { DataSourceStrategy, DataSourceType, DataSourceStatus } from '../../../core/strategies/data-source.strategy';
 
 /**
@@ -29,9 +29,9 @@ export class DataSourceIndicator implements OnInit, OnDestroy {
   constructor(private dataSourceStrategy: DataSourceStrategy) {}
 
   ngOnInit(): void {
-    // Subscribe to data source status updates
+    // debounceTime(500) prevents the brief INITIALIZING flash on page load
     this.dataSourceStrategy.currentSource$
-      .pipe(takeUntil(this.destroy$))
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
       .subscribe(status => {
         this.status = status;
       });

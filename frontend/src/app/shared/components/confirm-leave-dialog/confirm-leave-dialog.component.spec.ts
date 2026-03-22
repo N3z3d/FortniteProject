@@ -31,20 +31,25 @@ describe('ConfirmLeaveDialogComponent', () => {
     expect(mockTranslation.t).toHaveBeenCalled();
   });
 
-  it('should close with false when "Rester" button is clicked', () => {
-    // The "Rester" button has [mat-dialog-close]="false"
+  it('should call dialogRef.close(false) when "Rester" button is clicked', () => {
     const buttons = fixture.nativeElement.querySelectorAll('button');
     const stayBtn = Array.from(buttons as NodeListOf<HTMLButtonElement>).find(
       (b: HTMLButtonElement) => b.textContent?.includes('draft.leaveConfirm.stay')
     );
     expect(stayBtn).toBeTruthy();
+    stayBtn!.click();
+    fixture.detectChanges();
+    expect(mockDialogRef.close).toHaveBeenCalledWith(false);
   });
 
-  it('should close with true when "Quitter" button is clicked', () => {
+  it('should call dialogRef.close(true) when "Quitter" button is clicked', () => {
     const buttons = fixture.nativeElement.querySelectorAll('button');
     const leaveBtn = Array.from(buttons as NodeListOf<HTMLButtonElement>).find(
       (b: HTMLButtonElement) => b.textContent?.includes('draft.leaveConfirm.leave')
     );
     expect(leaveBtn).toBeTruthy();
+    leaveBtn!.click();
+    fixture.detectChanges();
+    expect(mockDialogRef.close).toHaveBeenCalledWith(true);
   });
 });

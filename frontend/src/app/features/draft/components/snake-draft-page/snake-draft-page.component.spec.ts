@@ -3,7 +3,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { signal } from '@angular/core';
-import { Subject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 
 import { SnakeDraftPageComponent } from './snake-draft-page.component';
 import { DraftService } from '../../services/draft.service';
@@ -48,7 +48,7 @@ describe('SnakeDraftPageComponent', () => {
     draftServiceSpy.getSnakeBoardState.and.returnValue(of(DRAFT_STATE));
     draftServiceSpy.submitSnakePick.and.returnValue(of(DRAFT_STATE));
 
-    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToDraft', 'disconnect'], {
+    wsServiceSpy = jasmine.createSpyObj('WebSocketService', ['connect', 'subscribeToDraft', 'disconnect'], {
       isConnected$: wsConnected$.asObservable(),
       draftEvents: draftEvents$.asObservable(),
     });
@@ -70,6 +70,8 @@ describe('SnakeDraftPageComponent', () => {
     fixture = TestBed.createComponent(SnakeDraftPageComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    // Simulate WebSocket connection so subscribeToDraft() is triggered
+    wsConnected$.next(true);
   });
 
   // ===== INIT =====
@@ -267,5 +269,62 @@ describe('SnakeDraftPageComponent', () => {
 
   it('should recommend player with highest totalPoints', () => {
     expect(component.recommendedPlayer?.username).toBe('BUGHA');
+  });
+
+  // ===== BUG-09: WS banner should not show on initial mount =====
+
+  it('should have wsConnected=true initially (BUG-09: no false flash)', () => {
+    // wsConnected starts true; trackConnectionStatus uses skip(1) so the
+    // initial BehaviorSubject(false) emission from production WS service is ignored
+    expect(component.wsConnected).toBeTrue();
+    const banner = fixture.nativeElement.querySelector('.ws-banner');
+    expect(banner).toBeNull();
+  });
+});
+
+// BUG-09 — Separate suite using BehaviorSubject to simulate real WS service
+describe('SnakeDraftPageComponent — BUG-09 WS banner regression', () => {
+  let fixture: ComponentFixture<SnakeDraftPageComponent>;
+  let wsStartedFalse$: BehaviorSubject<boolean>;
+
+  beforeEach(async () => {
+    wsStartedFalse$ = new BehaviorSubject<boolean>(false);
+    const wsSpy = jasmine.createSpyObj('WebSocketService', ['connect', 'subscribeToDraft', 'disconnect'], {
+      isConnected$: wsStartedFalse$.asObservable(),
+      draftEvents: new Subject<DraftEventMessage>().asObservable(),
+    });
+    const draftSpy = jasmine.createSpyObj('DraftService', ['getSnakeBoardState', 'submitSnakePick']);
+    draftSpy.getSnakeBoardState.and.returnValue(of(DRAFT_STATE));
+
+    await TestBed.configureTestingModule({
+      imports: [SnakeDraftPageComponent, NoopAnimationsModule],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'game1' } } } },
+        { provide: DraftService, useValue: draftSpy },
+        { provide: WebSocketService, useValue: wsSpy },
+        { provide: MatSnackBar, useValue: jasmine.createSpyObj('MatSnackBar', ['open']) },
+        { provide: UserContextService, useValue: { getCurrentUser: () => ({ username: 'KARIM' }) } },
+        { provide: ResponsiveService, useValue: { isMobile: signal(false) } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SnakeDraftPageComponent);
+    fixture.detectChanges();
+  });
+
+  it('should NOT show WS banner when isConnected$ starts false (BUG-09)', () => {
+    // Real WS service starts as BehaviorSubject(false), emits false immediately
+    // skip(1) ignores that initial emission → banner not shown
+    const banner = fixture.nativeElement.querySelector('.ws-banner');
+    expect(banner).toBeNull();
+  });
+
+  it('should show WS banner after genuine disconnect (false after true)', () => {
+    wsStartedFalse$.next(true);  // 1st emission — skipped by skip(1)
+    wsStartedFalse$.next(false); // 2nd emission — not skipped
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('.ws-banner');
+    expect(banner).not.toBeNull();
   });
 });

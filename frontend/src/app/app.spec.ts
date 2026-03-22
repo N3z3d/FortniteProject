@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { AppComponent } from './app.component';
 import { UserContextService } from './core/services/user-context.service';
@@ -28,6 +30,8 @@ describe('App', () => {
       ],
       providers: [
         provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: UserContextService, useValue: userContextService },
         { provide: TranslationService, useValue: translationService }
       ]

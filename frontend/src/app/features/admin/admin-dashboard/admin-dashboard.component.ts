@@ -6,8 +6,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, forkJoin, takeUntil, timer } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Subject, forkJoin, of, takeUntil, timer } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { AdminService } from '../services/admin.service';
 import { TranslationService } from '../../../core/services/translation.service';
 import {
@@ -59,6 +59,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   dbTables: DbTableInfo[] = [];
   dbTablesLoading = true;
 
+  // Per-section error flags (BUG-12: partial failure resilience)
+  summaryError = false;
+  healthError = false;
+  activityError = false;
+  metricsError = false;
+  alertsError = false;
+  visitAnalyticsError = false;
+
   ngOnInit(): void {
     this.loadDashboard();
     this.startRealTimePolling();
@@ -100,14 +108,26 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   loadDashboard(): void {
     this.loading = true;
     this.error = false;
+    this.summaryError = false;
+    this.healthError = false;
+    this.activityError = false;
+    this.metricsError = false;
+    this.alertsError = false;
+    this.visitAnalyticsError = false;
 
     forkJoin({
-      summary: this.adminService.getDashboardSummary(),
-      health: this.adminService.getSystemHealth(),
-      activity: this.adminService.getRecentActivity(),
-      metrics: this.adminService.getSystemMetrics(),
-      alerts: this.adminService.getAlerts(),
+      summary: this.adminService.getDashboardSummary()
+        .pipe(catchError(() => { this.summaryError = true; return of(null); })),
+      health: this.adminService.getSystemHealth()
+        .pipe(catchError(() => { this.healthError = true; return of(null); })),
+      activity: this.adminService.getRecentActivity()
+        .pipe(catchError(() => { this.activityError = true; return of(null); })),
+      metrics: this.adminService.getSystemMetrics()
+        .pipe(catchError(() => { this.metricsError = true; return of(null); })),
+      alerts: this.adminService.getAlerts()
+        .pipe(catchError(() => { this.alertsError = true; return of([] as AdminAlert[]); })),
       visitAnalytics: this.adminService.getVisitAnalytics()
+        .pipe(catchError(() => { this.visitAnalyticsError = true; return of(null); })),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -116,12 +136,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.health = data.health;
           this.activity = data.activity;
           this.metrics = data.metrics;
-          this.alerts = data.alerts;
+          this.alerts = data.alerts ?? [];
           this.visitAnalytics = data.visitAnalytics;
-          this.loading = false;
-        },
-        error: () => {
-          this.error = true;
           this.loading = false;
         }
       });

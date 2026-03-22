@@ -57,7 +57,8 @@ public class GameDetailService implements GameDetailUseCase {
     log.debug("Recuperation des details de la game {}", gameId);
     Game game = findGameOrThrow(gameId);
     List<GameParticipant> participants = game.getParticipants();
-    Optional<Draft> draft = draftRepository.findByGameId(gameId);
+    Optional<Draft> draft =
+        draftRepository.findActiveByGameId(gameId).or(() -> draftRepository.findByGameId(gameId));
     Map<UUID, List<UUID>> selectedPlayerIdsByParticipant =
         resolveSelectedPlayerIdsByParticipant(participants, draft);
     return buildGameDetailDto(game, participants, draft, selectedPlayerIdsByParticipant);

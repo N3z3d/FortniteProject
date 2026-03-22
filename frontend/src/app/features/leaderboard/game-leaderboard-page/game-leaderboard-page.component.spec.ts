@@ -129,4 +129,28 @@ describe('GameLeaderboardPageComponent', () => {
     const retryBtn = fixture.nativeElement.querySelector('.retry-btn');
     expect(retryBtn).toBeTruthy();
   });
+
+  // BUG-13 — rank medal classes
+  it('applique rank-gold au rang 1, rank-silver au rang 2, rank-bronze au rang 3', () => {
+    const entries3: TeamDeltaLeaderboardEntry[] = [
+      { rank: 1, participantId: 'a', username: 'A', deltaPr: 300, periodStart: '2025-01-01', periodEnd: '2025-01-31', computedAt: '2025-01-31T00:00:00Z' },
+      { rank: 2, participantId: 'b', username: 'B', deltaPr: 200, periodStart: '2025-01-01', periodEnd: '2025-01-31', computedAt: '2025-01-31T00:00:00Z' },
+      { rank: 3, participantId: 'c', username: 'C', deltaPr: 100, periodStart: '2025-01-01', periodEnd: '2025-01-31', computedAt: '2025-01-31T00:00:00Z' },
+    ];
+    leaderboardSpy.getGameDeltaLeaderboard.and.returnValue(of(entries3));
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    const rankCells = fixture.nativeElement.querySelectorAll('.rank-cell');
+    expect(rankCells[0].classList.contains('rank-gold')).toBeTrue();
+    expect(rankCells[1].classList.contains('rank-silver')).toBeTrue();
+    expect(rankCells[2].classList.contains('rank-bronze')).toBeTrue();
+  });
+
+  it('getRankClass retourne rank-gold/silver/bronze selon le rang', () => {
+    expect(component.getRankClass(1)).toBe('rank-gold');
+    expect(component.getRankClass(2)).toBe('rank-silver');
+    expect(component.getRankClass(3)).toBe('rank-bronze');
+    expect(component.getRankClass(4)).toBe('');
+  });
 });

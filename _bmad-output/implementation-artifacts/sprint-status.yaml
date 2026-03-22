@@ -732,7 +732,7 @@ sprint-12:
   description: "Stabilisation — l'app ne plante plus"
   goal: "Zéro crash sur disconnect/draft, delete/archive fonctionnels, navigation propre, logout propre"
   start_date: "2026-03-19"
-  status: in-progress
+  status: done
 
   # ----------------------------------------------------------
   # Phase 0 — P0 : Crashes bloquants (score 9.1 → 7.3)
@@ -811,7 +811,7 @@ sprint-12:
   # P2 #1: canDeactivate guard sur pages draft
   # Confirmation "Vous êtes en train de drafter — vraiment quitter ?"
   # Empêche navigation accidentelle qui casse le flow de l'autre joueur
-  sprint12-candeactivate-draft-guard: review
+  sprint12-candeactivate-draft-guard: done
 
   # P2 #2: Corriger le reste des items Sprint 11 déférés
   # sprint11-pipeline-email-monitoring + sprint11-email-alerts-cooldown
@@ -826,18 +826,124 @@ sprint-12:
 
   # F: Rebuild Docker + valider les 7 fixes Sprint 12 en conditions réelles
   # AC: login/logout propre, delete/archive game, draft timer correct, pas de freeze
-  sprint12-docker-validation: ready-for-dev
+  # DONE 2026-03-20: RC-3 backend gap fixed (expiresAt added to SnakeTurnResponse + TURN_DURATION_SECONDS=60 in SnakeDraftService). All 10 ACs validated.
+  sprint12-docker-validation: done
 
   # E: E2E draft complet 2 joueurs avec timer (le plus complexe, le plus valuable)
   # AC: 2 browsers, draft snake complet, timer server-sync validé, logout propre
-  sprint12-e2e-draft-two-players: review
+  sprint12-e2e-draft-two-players: done
 
   # C: E2E login/logout propre (valide RC-5 fix — store nettoyé au logout)
   # AC: login Teddy → voit ses parties, logout → login Thibaut → voit ses parties
-  sprint12-e2e-login-logout: review
+  sprint12-e2e-login-logout: done
 
   # D: E2E delete/archive game (valide RC-2 fix — 409 au lieu de 500)
   # AC: delete partie avec picks → message clair, archive CREATING → OK
-  sprint12-e2e-delete-archive: review
+  sprint12-e2e-delete-archive: done
 
-  sprint12-retrospective: optional
+  sprint12-retrospective: done
+
+# ============================================================
+# SPRINT 13 — "Le draft est jouable"
+# Objectif : Thibaut et Teddy finissent un draft complet sans erreur,
+#             couvert par un E2E navigateur réel
+# Planifié : 2026-03-20 (post-rétro Sprint 12)
+# Issu de : sprint12-retro-2026-03-20.md (15 méthodes Advanced Elicitation + Party Mode)
+# ============================================================
+# ⚠️  RÈGLE DE GLISSEMENT : si sprint13-fix-draft-critiques > 5j
+#     → sprint13-fix-ux-visuel + sprint13-docs-joueurs glissent en Sprint 14
+# ⚠️  DÉPENDANCES HARD :
+#     structured-logging DONE → fix-draft-critiques START
+#     fix-draft-critiques DONE → e2e-navigateur-draft START
+# ⛔  BACKLOG STABLE (ne pas re-proposer avant activation cron prod) :
+#     Email monitoring pipeline + cooldown 24h + WS-01 CI guard
+# ============================================================
+
+sprint-13:
+  description: "Le draft est jouable"
+  goal: "Thibaut et Teddy finissent un draft snake complet sans erreur — couvert par E2E navigateur réel (2 browser contexts, picks via UI)"
+  start_date: "2026-03-20"
+  status: in-progress
+
+  # ----------------------------------------------------------
+  # P0 #1 — Logs structurés backend (score rétro : 12)
+  # Prérequis absolu : sans logs, on fixe les bugs en aveugle
+  # ADR-S13-001 : Spring Boot 3.4 structured logging natif (1 ligne properties)
+  #               + MDC HTTP (OncePerRequestFilter : correlationId)
+  #               + MDC STOMP (ChannelInterceptor preSend/afterSendCompletion, 20 lignes)
+  # Périmètre : audit logs existants 1h d'abord, puis combler les gaps ciblés
+  # DoD : events STOMP visibles dans les logs lors de reproduction BUG-06
+  # ----------------------------------------------------------
+  sprint13-structured-logging: done
+
+  # ----------------------------------------------------------
+  # P0 #2 — Fix BUG-01..06 + BUG-10 (score rétro : 14)
+  # Dépend de : sprint13-structured-logging DONE
+  # Bugs critiques remontés session test Thibaut + Teddy (2026-03-20)
+  #
+  # BUG-01 : "Erreur serveur" après "Démarrer la draft" — GameController/DraftController
+  # BUG-02 : Timer bloque à 0s (probable root cause commune avec BUG-06 : expiresAt/currentPlayerId null)
+  # BUG-03 : Région incorrecte (Asie → Gazer Océanie) — vérifier données seed d'abord
+  # BUG-04 : Sélection impossible à partir du 3ème joueur — DraftRegionCursor avancement
+  # BUG-05 : Quitter draft → impossible de revenir → "Erreur serveur"
+  # BUG-06 : Désync état entre Thibaut et Teddy (STOMP event currentPlayerId)
+  # BUG-10 : Route /snake non accessible depuis l'UI → routerLink bouton game-detail
+  #
+  # Hypothèse Mary (Analyst) : BUG-01 + BUG-04 + BUG-05 = problème d'état/transaction Spring
+  # BUG-02 + BUG-06 = probable root cause commune dans SnakeDraftService/DraftEventMessage
+  #
+  # AC #0 obligatoire : root cause documentée dans PR avant merge (chaque bug)
+  # AC #X : test unitaire backend minimal par bug fixé
+  # Option split : si scope > 5j → créer sprint13-fix-draft-ws (BUG-04..06) séparément
+  # Session test mi-sprint : Thibaut + Teddy à J+5 obligatoire
+  # ----------------------------------------------------------
+  sprint13-fix-draft-critiques: done
+
+  # ----------------------------------------------------------
+  # P1 ∥ — Fix 534 tests frontend Zone.js/fakeAsync (score rétro : 10)
+  # Lancé en worktree isolé dès J1 — non bloquant sur le chemin critique
+  # Étape 0 : classifier les 534 tests (Pattern A vs Pattern B) avant de fixer
+  # Pattern A (~450 tests) : fakeAsync + observable sync → supprimer fakeAsync+tick → async ()
+  #           Agent auto, aucune review requise
+  # Pattern B (~84 tests) : fakeAsync + debounceTime réel → vi.useFakeTimers()
+  #           Review humain OBLIGATOIRE avant merge (risque faux verts)
+  # ----------------------------------------------------------
+  sprint13-fix-534-tests: done
+
+  # ----------------------------------------------------------
+  # P0 #3 — E2E navigateur draft réel (décision Thibaut : pas d'attente Sprint 14)
+  # Dépend de : sprint13-fix-draft-critiques DONE
+  # 2 browser contexts Playwright (Thibaut + Teddy)
+  # Picks via UI navigateur (WebSocket + rendu), pas via API directe
+  # DRAFT-NAV-01 : Teddy accède au draft via bouton UI (valide BUG-10 fixé)
+  # DRAFT-NAV-02 : Thibaut pick via UI → Teddy voit la mise à jour (valide BUG-01..04..06)
+  # DRAFT-NAV-03 : Timer affiche temps serveur correct (valide BUG-02)
+  # timeout : 90s minimum par test (2 browsers + WS + renders)
+  # Réutiliser 80% du setup sprint12-e2e-draft-two-players (forceLoginWithProfile, multi-context)
+  # ----------------------------------------------------------
+  sprint13-e2e-navigateur-draft: done
+
+  # ----------------------------------------------------------
+  # P1 — Fix bugs UX/visuels BUG-07..13 (score rétro : 8)
+  # BUG-13 EN PREMIER : régression visuelle classement (visible tous joueurs)
+  #   → git log -- frontend/src/...leaderboard* avant de toucher
+  #   → screenshots avant/après obligatoires
+  # BUG-07 : Bouton "Catalogue" visible sur "Mes parties" — contexte inattendu
+  # BUG-08 : Filtre région catalogue → "Aucun joueur trouvé" — vérifier si backend
+  # BUG-09 : Après refresh : "initialisation" + "connexion instable" — état UI
+  # BUG-11 : Type de draft non affiché à l'écran
+  # BUG-12 : Admin panel : nombreuses erreurs visibles
+  # ⚠️  Glisse en Sprint 14 si sprint13-fix-draft-critiques dépasse 5j
+  # ----------------------------------------------------------
+  sprint13-fix-ux-visuel: done
+
+  # ----------------------------------------------------------
+  # Bonus — Documentation joueurs + Mermaid architecture (score rétro : 4)
+  # Paige (Tech Writer) : lire le code d'abord, documenter l'état ACTUEL (pas la cible)
+  # Markdown : récapitulatif des 773 joueurs (origine, structure, régions)
+  # Mermaid : diagramme architecture réelle (domaine → adapters → frontend)
+  # ⚠️  Glisse en Sprint 14 si capacity manque
+  # ----------------------------------------------------------
+  sprint13-docs-joueurs: done
+
+  sprint13-retrospective: done

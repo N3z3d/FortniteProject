@@ -49,9 +49,15 @@
     <span>Chargement des joueurs…</span>
   </div>
 
+  <!-- Error state -->
+  <div *ngIf="!loading && loadError" class="catalogue-error" role="alert">
+    <p class="catalogue-error__message">Erreur lors du chargement des joueurs.</p>
+    <button class="catalogue-error__retry" (click)="reload()">Réessayer</button>
+  </div>
+
   <!-- Empty state -->
   <div
-    *ngIf="!loading && filteredPlayers.length === 0"
+    *ngIf="!loading && !loadError && filteredPlayers.length === 0"
     class="catalogue-empty"
     role="status"
     aria-live="polite"
@@ -71,7 +77,7 @@
 
   <!-- Virtual scroll list -->
   <cdk-virtual-scroll-viewport
-    *ngIf="!loading && filteredPlayers.length > 0"
+    *ngIf="!loading && !loadError && filteredPlayers.length > 0"
     class="catalogue-viewport"
     [itemSize]="itemSize"
     aria-label="Liste des joueurs"

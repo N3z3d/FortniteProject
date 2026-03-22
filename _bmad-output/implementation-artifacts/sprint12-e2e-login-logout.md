@@ -1,6 +1,6 @@
 # Story Sprint 12 — C: E2E Login/Logout avec Vérification Store Cleanup
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint12-e2e-login-logout

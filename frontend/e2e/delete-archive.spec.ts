@@ -194,9 +194,14 @@ test.describe('DELETE/ARCHIVE game — RC-2 fix (409 on picks present)', () => {
       return;
     }
 
-    // Attempt to delete — should return 409 because picks exist
+    // Attempt to delete — should return 409 because picks exist (RC-2 fix in GlobalExceptionHandler)
     const res = await deleteGame(request, 'thibaut', gameId);
     expect(res.status()).toBe(409);
+
+    // Note: the UI snackbar display triggered by this 409 is covered by manual acceptance
+    // testing and unit tests on game-detail-actions.service.ts (extractBackendMessage + snackbar).
+    // A full browser E2E for the snackbar would require a seeded game with picks, which is
+    // fragile across environments — API-level validation of the 409 is the primary signal here.
   });
 
   // -------------------------------------------------------------------------

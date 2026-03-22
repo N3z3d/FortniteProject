@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import {
   PlayerCataloguePageComponent,
@@ -345,14 +345,50 @@ describe('PlayerCataloguePageComponent', () => {
   // ===== ERROR HANDLING =====
 
   describe('Error handling', () => {
-    it('should show empty state when service returns empty array (after error recovery)', async () => {
-      // The real service has catchError(() => of([])), so we simulate that here
-      catalogueSpy.getPlayers.and.returnValue(of([]));
+    it('should set loadError=true when service throws', async () => {
+      catalogueSpy.getPlayers.and.returnValue(throwError(() => new Error('Network error')));
       await initializeCatalogue();
 
-      expect(component.filteredPlayers.length).toBe(0);
+      expect(component.loadError).toBeTrue();
+      expect(component.loading).toBeFalse();
+    });
+
+    it('should show error block when service throws', async () => {
+      catalogueSpy.getPlayers.and.returnValue(throwError(() => new Error('Network error')));
+      await initializeCatalogue();
+
+      const errorEl = fixture.nativeElement.querySelector('.catalogue-error');
+      expect(errorEl).not.toBeNull();
+    });
+
+    it('should NOT show empty state when loadError is true', async () => {
+      catalogueSpy.getPlayers.and.returnValue(throwError(() => new Error('Network error')));
+      await initializeCatalogue();
+
       const empty = fixture.nativeElement.querySelector('.catalogue-empty');
-      expect(empty).not.toBeNull();
+      expect(empty).toBeNull();
+    });
+
+    it('should show retry button in error state', async () => {
+      catalogueSpy.getPlayers.and.returnValue(throwError(() => new Error('Network error')));
+      await initializeCatalogue();
+
+      const retryBtn = fixture.nativeElement.querySelector('.catalogue-error__retry');
+      expect(retryBtn).not.toBeNull();
+    });
+
+    it('should recover after retry (reload resets loadError)', async () => {
+      catalogueSpy.getPlayers.and.returnValue(throwError(() => new Error('Network error')));
+      await initializeCatalogue();
+      expect(component.loadError).toBeTrue();
+
+      // Retry with successful response
+      catalogueSpy.getPlayers.and.returnValue(of(PLAYERS));
+      component.reload();
+      await waitForCatalogueDebounce();
+
+      expect(component.loadError).toBeFalse();
+      expect(component.filteredPlayers.length).toBe(3);
     });
   });
 });

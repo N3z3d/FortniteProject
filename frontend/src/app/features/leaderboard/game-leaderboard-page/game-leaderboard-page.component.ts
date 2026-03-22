@@ -81,4 +81,11 @@ export class GameLeaderboardPageComponent implements OnInit {
   trackByParticipantId(_index: number, entry: TeamDeltaLeaderboardEntry): string {
     return entry.participantId;
   }
+
+  getRankClass(rank: number): string {
+    if (rank === 1) return 'rank-gold';
+    if (rank === 2) return 'rank-silver';
+    if (rank === 3) return 'rank-bronze';
+    return '';
+  }
 }

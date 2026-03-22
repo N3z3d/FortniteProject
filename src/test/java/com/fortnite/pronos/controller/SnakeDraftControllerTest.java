@@ -1,6 +1,8 @@
 package com.fortnite.pronos.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.fortnite.pronos.dto.PlayerRecommendResponse;
 import com.fortnite.pronos.dto.SnakePickRequest;
@@ -35,6 +38,7 @@ class SnakeDraftControllerTest {
   @Mock private GameDraftService gameDraftService;
   @Mock private UserResolver userResolver;
   @Mock private DraftTrancheService draftTrancheService;
+  @Mock private SimpMessagingTemplate messagingTemplate;
   @Mock private HttpServletRequest httpRequest;
 
   private SnakeDraftController controller;
@@ -47,7 +51,11 @@ class SnakeDraftControllerTest {
   void setUp() {
     controller =
         new SnakeDraftController(
-            snakeDraftService, gameDraftService, userResolver, draftTrancheService);
+            snakeDraftService,
+            gameDraftService,
+            userResolver,
+            draftTrancheService,
+            messagingTemplate);
   }
 
   private User stubUser() {
@@ -58,7 +66,7 @@ class SnakeDraftControllerTest {
   }
 
   private SnakeTurnResponse buildTurnResponse() {
-    return new SnakeTurnResponse(draftId, "GLOBAL", userId, 1, 1, false);
+    return new SnakeTurnResponse(draftId, "GLOBAL", userId, null, 1, 1, false, null);
   }
 
   @Nested
@@ -149,7 +157,7 @@ class SnakeDraftControllerTest {
     void whenUserTurn_returns200WithNextTurnAndValidatePickCalled() {
       UUID nextParticipantId = UUID.randomUUID();
       SnakeTurnResponse nextTurn =
-          new SnakeTurnResponse(draftId, "GLOBAL", nextParticipantId, 1, 2, false);
+          new SnakeTurnResponse(draftId, "GLOBAL", nextParticipantId, null, 1, 2, false, null);
       SnakePickRequest request = new SnakePickRequest();
       request.setPlayerId(UUID.randomUUID());
       request.setRegion("GLOBAL");
@@ -163,6 +171,10 @@ class SnakeDraftControllerTest {
       assertThat(response.getBody().getData().participantId()).isEqualTo(nextParticipantId);
       verify(draftTrancheService).validatePick(gameId, "GLOBAL", request.getPlayerId());
       verify(gameDraftService).selectPlayer(gameId, userId, request.getPlayerId());
+      // Broadcast must happen AFTER selectPlayer so the observer's state refresh sees the pick
+      verify(messagingTemplate)
+          .convertAndSend(
+              eq(SnakeDraftService.TOPIC_PREFIX + gameId), any(SnakeTurnResponse.class));
     }
 
     @Test

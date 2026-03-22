@@ -146,7 +146,7 @@ describe('AdminDashboardComponent', () => {
     expect(component.visitAnalytics).toEqual(mockVisitAnalytics);
   });
 
-  it('should set error flag when API fails', () => {
+  it('should set summaryError when summary API fails (BUG-12: partial failure)', () => {
     adminService.getDashboardSummary.and.returnValue(throwError(() => new Error('fail')));
     adminService.getSystemHealth.and.returnValue(of(mockHealth));
     adminService.getRecentActivity.and.returnValue(of(mockActivity));
@@ -160,7 +160,33 @@ describe('AdminDashboardComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(component.error).toBeTrue();
+    expect(component.summaryError).toBeTrue();
+    expect(component.loading).toBeFalse();
+  });
+
+  it('BUG-12: when one section fails, other sections still load', () => {
+    adminService.getDashboardSummary.and.returnValue(throwError(() => new Error('network error')));
+    adminService.getSystemHealth.and.returnValue(throwError(() => new Error('network error')));
+    adminService.getRecentActivity.and.returnValue(of(mockActivity));
+    adminService.getSystemMetrics.and.returnValue(of(mockMetrics));
+    adminService.getAlerts.and.returnValue(of(mockAlerts));
+    adminService.getVisitAnalytics.and.returnValue(of(mockVisitAnalytics));
+    adminService.getRealTimeAnalytics.and.returnValue(of(mockRealTimeAnalytics));
+    adminService.getDatabaseTables.and.returnValue(of(mockDbTables));
+
+    fixture = TestBed.createComponent(AdminDashboardComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.summaryError).toBeTrue();
+    expect(component.healthError).toBeTrue();
+    expect(component.summary).toBeNull();
+    expect(component.health).toBeNull();
+    // Other sections loaded correctly despite the failures above
+    expect(component.activity).toEqual(mockActivity);
+    expect(component.metrics).toEqual(mockMetrics);
+    expect(component.alerts).toEqual(mockAlerts);
+    expect(component.visitAnalytics).toEqual(mockVisitAnalytics);
     expect(component.loading).toBeFalse();
   });
 

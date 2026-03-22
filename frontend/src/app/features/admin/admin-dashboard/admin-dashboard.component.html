@@ -11,15 +11,7 @@
     <p>{{ t.t('common.loading') }}</p>
   </div>
 
-  <div *ngIf="error && !loading" class="error-container">
-    <mat-icon class="error-icon">error_outline</mat-icon>
-    <p>{{ t.t('admin.dashboard.loadError') }}</p>
-    <button mat-raised-button color="primary" (click)="loadDashboard()">
-      {{ t.t('common.retry') }}
-    </button>
-  </div>
-
-  <div *ngIf="!loading && !error" class="dashboard-grid">
+  <div *ngIf="!loading" class="dashboard-grid">
     <!-- KPI Summary Card -->
     <mat-card class="dashboard-card kpi-card">
       <mat-card-header>
@@ -27,6 +19,9 @@
         <mat-card-title>{{ t.t('admin.dashboard.summary') }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <p *ngIf="summaryError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
         <div class="kpi-grid" *ngIf="summary">
           <div class="kpi-item">
             <span class="kpi-value">{{ summary.totalUsers }}</span>
@@ -59,7 +54,11 @@
         <mat-icon mat-card-avatar class="card-icon">monitor_heart</mat-icon>
         <mat-card-title>{{ t.t('admin.dashboard.health') }}</mat-card-title>
       </mat-card-header>
-      <mat-card-content *ngIf="health">
+      <mat-card-content>
+        <p *ngIf="healthError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
+        <ng-container *ngIf="health">
         <div class="health-status" [ngClass]="getStatusColor(health.status)">
           <mat-icon>{{ health.status === 'UP' ? 'check_circle' : 'error' }}</mat-icon>
           <span>{{ health.status }}</span>
@@ -89,6 +88,7 @@
             [color]="health.disk.usagePercent > 80 ? 'warn' : 'primary'">
           </mat-progress-bar>
         </div>
+        </ng-container>
       </mat-card-content>
     </mat-card>
 
@@ -98,7 +98,11 @@
         <mat-icon mat-card-avatar class="card-icon">timeline</mat-icon>
         <mat-card-title>{{ t.t('admin.dashboard.recentActivity') }}</mat-card-title>
       </mat-card-header>
-      <mat-card-content *ngIf="activity">
+      <mat-card-content>
+        <p *ngIf="activityError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
+        <ng-container *ngIf="activity">
         <div class="activity-stats">
           <div class="activity-stat">
             <mat-icon>sports_esports</mat-icon>
@@ -123,6 +127,7 @@
             <span class="recent-status badge-{{ game.status | lowercase }}">{{ game.status }}</span>
           </div>
         </div>
+        </ng-container>
       </mat-card-content>
     </mat-card>
 
@@ -133,7 +138,10 @@
         <mat-card-title>{{ t.t('admin.dashboard.alerts') }}</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="alert-list" *ngIf="alerts.length; else noAlerts">
+        <p *ngIf="alertsError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
+        <div class="alert-list" *ngIf="!alertsError && alerts.length; else noAlerts">
           <div class="alert-item" *ngFor="let alert of alerts" [ngClass]="getAlertSeverityClass(alert)">
             <div class="alert-header">
               <mat-icon>{{ getAlertSeverityIcon(alert) }}</mat-icon>
@@ -159,7 +167,11 @@
         <mat-icon mat-card-avatar class="card-icon">insights</mat-icon>
         <mat-card-title>{{ t.t('admin.dashboard.visits') }}</mat-card-title>
       </mat-card-header>
-      <mat-card-content *ngIf="visitAnalytics">
+      <mat-card-content>
+        <p *ngIf="visitAnalyticsError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
+        <ng-container *ngIf="visitAnalytics">
         <div class="visit-kpis">
           <div class="visit-kpi">
             <span class="visit-value">{{ visitAnalytics.pageViews }}</span>
@@ -203,6 +215,7 @@
             <span class="visit-count">{{ entry.visitCount }}</span>
           </div>
         </div>
+        </ng-container>
       </mat-card-content>
     </mat-card>
 
@@ -272,7 +285,11 @@
         <mat-icon mat-card-avatar class="card-icon">memory</mat-icon>
         <mat-card-title>{{ t.t('admin.dashboard.metrics') }}</mat-card-title>
       </mat-card-header>
-      <mat-card-content *ngIf="metrics">
+      <mat-card-content>
+        <p *ngIf="metricsError" class="section-error">
+          <mat-icon>warning</mat-icon> {{ t.t('admin.dashboard.sectionLoadError') }}
+        </p>
+        <ng-container *ngIf="metrics">
         <div class="metric-section">
           <h4>JVM</h4>
           <div class="metric-item">
@@ -306,6 +323,7 @@
             </span>
           </div>
         </div>
+        </ng-container>
       </mat-card-content>
     </mat-card>
   </div>

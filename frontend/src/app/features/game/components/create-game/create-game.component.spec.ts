@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -164,12 +165,7 @@ describe('CreateGameComponent', () => {
       canJoin: true
     };
 
-    gameService.createGame.and.returnValue({
-      subscribe: (callbacks: any) => {
-        callbacks.next(mockGame);
-        return { unsubscribe: () => {} };
-      }
-    } as any);
+    gameService.createGame.and.returnValue(of(mockGame));
 
     component.gameForm.patchValue({
       name: 'Test Game',
@@ -183,12 +179,7 @@ describe('CreateGameComponent', () => {
   });
 
   it('should handle game creation error', () => {
-    gameService.createGame.and.returnValue({
-      subscribe: (callbacks: any) => {
-        callbacks.error(new Error('Creation failed'));
-        return { unsubscribe: () => {} };
-      }
-    } as any);
+    gameService.createGame.and.returnValue(throwError(() => new Error('Creation failed')));
 
     component.gameForm.patchValue({
       name: 'Test Game',

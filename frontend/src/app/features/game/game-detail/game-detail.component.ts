@@ -174,7 +174,10 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     this.isStartingDraft = true;
     this.actions.startDraft(
       this.gameId,
-      () => this.loadGameDetails(),
+      () => {
+        this.loadGameDetails();
+        this.router.navigate(['/games', this.gameId, 'draft', 'snake']);
+      },
       () => {
         this.isStartingDraft = false;
       }
@@ -296,7 +299,10 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     this.isStartingDraft = true;
     this.actions.confirmStartDraft(
       this.gameId,
-      () => this.loadGameDetails(),
+      () => {
+        this.loadGameDetails();
+        this.router.navigate(['/games', this.gameId, 'draft', 'snake']);
+      },
       () => {
         this.isStartingDraft = false;
       }
@@ -373,6 +379,11 @@ export class GameDetailComponent implements OnInit, OnDestroy {
 
   getParticipantStatusLabel(participant: GameParticipant): string {
     return this.ui.getParticipantStatusLabel(participant);
+  }
+
+  getDraftRoute(game: Game): string[] {
+    const mode = game.draftMode === 'SIMULTANEOUS' ? 'simultaneous' : 'snake';
+    return ['/games', game.id, 'draft', mode];
   }
 
   private isNotFoundError(error: Error): boolean {

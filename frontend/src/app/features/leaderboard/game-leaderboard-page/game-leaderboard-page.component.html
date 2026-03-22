@@ -36,7 +36,10 @@
       </thead>
       <tbody>
         <tr *ngFor="let entry of entries; trackBy: trackByParticipantId">
-          <td class="rank-cell">{{ entry.rank }}</td>
+          <td class="rank-cell"
+              [class.rank-gold]="entry.rank === 1"
+              [class.rank-silver]="entry.rank === 2"
+              [class.rank-bronze]="entry.rank === 3">{{ entry.rank }}</td>
           <td class="username-cell">{{ entry.username }}</td>
           <td class="delta-cell" [class.positive]="entry.deltaPr > 0" [class.negative]="entry.deltaPr < 0">
             {{ formatDelta(entry.deltaPr) }}

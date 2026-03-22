@@ -31,8 +31,7 @@ export class PlayerCatalogueService {
 
   getPlayers(params: PlayerSearchParams = {}): Observable<AvailablePlayer[]> {
     return this.loadCataloguePlayers(params).pipe(
-      map(players => this.filterPlayers(players, params)),
-      catchError(() => of([] as AvailablePlayer[]))
+      map(players => this.filterPlayers(players, params))
     );
   }
 

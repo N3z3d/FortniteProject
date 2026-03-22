@@ -78,13 +78,12 @@ test('AUTH-LL-02: logout redirects to /login and navigating to /games is stable'
   await performLogout(page);
   expect(page.url()).toContain('/login');
 
-  // Navigate to /games after logout — either redirected to /login (guard active)
-  // or the page stays on /games (auto-login). Either way, the app must be stable.
+  // Navigate to /games after logout — auth guard should redirect to /login
   await page.goto('/games');
-  await page.waitForURL(/login|games/, { timeout: 8_000 });
+  await page.waitForURL(/\/login/, { timeout: 8_000 });
 
-  // App is stable: body is rendered, no freeze
-  await expect(page.locator('body')).toBeVisible();
+  // Verified: auth guard redirected to /login — store was cleared (no stale session)
+  expect(page.url()).toContain('/login');
 });
 
 // ---------------------------------------------------------------------------
@@ -135,7 +134,7 @@ test('AUTH-LL-04: switching from thibaut to teddy shows stable page (store not c
   await forceLoginWithProfile(page, 'teddy');
   expect(page.url()).toContain('/games');
 
-  // Page must be stable and body visible (no crash after store reset + reload)
+  // Page must be stable (no crash after store reset + reload)
   await expect(page.locator('body')).toBeVisible({ timeout: 10_000 });
 
   // Verify the store loaded content for teddy's session (game list or empty state)
@@ -143,4 +142,12 @@ test('AUTH-LL-04: switching from thibaut to teddy shows stable page (store not c
     '.game-card, .empty-state, .games-list, .game-home-container, app-game-home'
   ).first();
   await expect(storeLoaded).toBeVisible({ timeout: 10_000 });
+
+  // Verify no thibaut username is visible in the page — confirms store was reset (RC-5 fix)
+  // The profile button / nav bar typically shows the logged-in username
+  const thibautLabel = page.locator(
+    'button:has-text("thibaut"), [aria-label*="thibaut"], .username:text("thibaut")'
+  );
+  const thibautVisible = await thibautLabel.isVisible({ timeout: 2_000 }).catch(() => false);
+  expect(thibautVisible).toBe(false);
 });

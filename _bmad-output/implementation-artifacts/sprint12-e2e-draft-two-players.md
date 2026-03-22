@@ -1,6 +1,6 @@
 # Story Sprint 12 — E: E2E Draft Complet 2 Joueurs avec Timer
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint12-e2e-draft-two-players

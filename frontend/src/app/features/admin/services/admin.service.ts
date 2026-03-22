@@ -90,7 +90,7 @@ export class AdminService {
       .get<ApiResponse<AdminAlert[]>>(`${this.baseUrl}/alerts`, {
         params: { hours: hours.toString() }
       })
-      .pipe(map(r => r.data));
+      .pipe(map(r => r.data ?? []));
   }
 
   getAlertThresholds(): Observable<AlertThresholds> {

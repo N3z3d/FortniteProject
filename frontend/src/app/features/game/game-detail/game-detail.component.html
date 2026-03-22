@@ -337,7 +337,12 @@
 
         <mat-card-content>
           <p>{{ t.t('games.detail.draftInProgress') }}</p>
-          <button mat-raised-button color="primary" [routerLink]="['/games', game.id, 'draft', 'snake']">
+          <p *ngIf="game.draftMode" class="draft-mode-label">
+            <mat-icon>tune</mat-icon>
+            {{ t.t(game.draftMode === 'SIMULTANEOUS' ? 'games.detail.draftType.simultaneous' : 'games.detail.draftType.snake') }}
+          </p>
+          <button mat-raised-button color="primary"
+                  [routerLink]="getDraftRoute(game)">
             <mat-icon>visibility</mat-icon>
             {{ t.t('games.detail.viewDraft') }}
           </button>

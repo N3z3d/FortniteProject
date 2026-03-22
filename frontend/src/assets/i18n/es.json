@@ -511,6 +511,10 @@
       "draftPhase": "Fase de Draft",
       "draftSubtitle": "Los participantes están seleccionando sus jugadores",
       "draftInProgress": "El draft está en progreso. Los participantes ahora pueden seleccionar sus jugadores.",
+      "draftType": {
+        "snake": "Modo: Draft Serpiente",
+        "simultaneous": "Modo: Draft Simultáneo"
+      },
       "viewDraft": "Ver Draft",
       "deleteDisabledStatus": "La eliminación solo está disponible cuando la partida está en creación.",
       "deleteDisabledNotHost": "Solo el creador puede eliminar esta partida.",
@@ -1512,6 +1516,7 @@
       "visits": "Seguimiento de visitas",
       "refresh": "Actualizar",
       "loadError": "Error al cargar los datos.",
+      "sectionLoadError": "Error de carga",
       "realtime": "Analíticas en tiempo real",
       "database": "Explorador BDD"
     },

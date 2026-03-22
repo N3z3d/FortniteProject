@@ -13,12 +13,14 @@ import org.springframework.web.socket.config.annotation.StompWebSocketEndpointRe
 class WebSocketConfigTest {
 
   private WebSocketConfig webSocketConfig;
-  private WebSocketAuthInterceptor mockInterceptor;
+  private WebSocketAuthInterceptor mockAuthInterceptor;
+  private StompMdcInterceptor mockMdcInterceptor;
 
   @BeforeEach
   void setUp() {
-    mockInterceptor = mock(WebSocketAuthInterceptor.class);
-    webSocketConfig = new WebSocketConfig(mockInterceptor);
+    mockMdcInterceptor = mock(StompMdcInterceptor.class);
+    mockAuthInterceptor = mock(WebSocketAuthInterceptor.class);
+    webSocketConfig = new WebSocketConfig(mockMdcInterceptor, mockAuthInterceptor);
   }
 
   @Test

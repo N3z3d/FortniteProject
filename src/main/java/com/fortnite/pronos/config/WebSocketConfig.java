@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+  private final StompMdcInterceptor stompMdcInterceptor;
   private final WebSocketAuthInterceptor webSocketAuthInterceptor;
 
   @Override
@@ -30,6 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   @Override
   public void configureClientInboundChannel(ChannelRegistration registration) {
-    registration.interceptors(webSocketAuthInterceptor);
+    // stompMdcInterceptor runs first so that MDC is set before WebSocketAuthInterceptor logs fire
+    registration.interceptors(stompMdcInterceptor, webSocketAuthInterceptor);
   }
 }

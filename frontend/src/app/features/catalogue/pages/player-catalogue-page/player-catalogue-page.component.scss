@@ -120,6 +120,41 @@
   to { transform: rotate(360deg); }
 }
 
+// ── Error state ───────────────────────────────────────────────────────────
+.catalogue-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+  background: rgba(231, 76, 60, 0.08);
+  border: 1px solid rgba(231, 76, 60, 0.25);
+  border-radius: 8px;
+
+  &__message {
+    color: var(--gaming-error, #e74c3c);
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  &__retry {
+    padding: 8px 20px;
+    background: var(--gaming-primary, #6c5ce7);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--gaming-accent, #fdcb6e);
+      color: #1a1a2e;
+    }
+  }
+}
+
 // ── Empty state ───────────────────────────────────────────────────────────
 .catalogue-empty {
   display: flex;

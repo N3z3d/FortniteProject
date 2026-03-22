@@ -31,7 +31,9 @@ describe('DataSourceIndicator', () => {
   });
 
   it('should subscribe to data source status on init', () => {
-    expect(component.status).toBeNull();
+    vi.useFakeTimers();
+
+    fixture.detectChanges(); // trigger ngOnInit and subscribe to currentSource$
 
     const mockStatus: DataSourceStatus = {
       type: DataSourceType.DATABASE,
@@ -40,9 +42,11 @@ describe('DataSourceIndicator', () => {
       message: 'Connected'
     };
     statusSubject.next(mockStatus);
+    vi.advanceTimersByTime(500);
     fixture.detectChanges();
 
     expect(component.status).toEqual(mockStatus);
+    vi.useRealTimers();
   });
 
   it('should return badge-success for DATABASE', () => {

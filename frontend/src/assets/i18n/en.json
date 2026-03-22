@@ -511,6 +511,10 @@
       "draftPhase": "Draft Phase",
       "draftSubtitle": "Participants are selecting their players",
       "draftInProgress": "The draft is in progress. Participants can now select their players.",
+      "draftType": {
+        "snake": "Mode: Snake Draft",
+        "simultaneous": "Mode: Simultaneous Draft"
+      },
       "viewDraft": "View Draft",
       "deleteDisabledStatus": "Deletion is available only while the game is in creation.",
       "deleteDisabledNotHost": "Only the game creator can delete this game.",
@@ -1512,6 +1516,7 @@
       "visits": "Visit Tracking",
       "refresh": "Refresh",
       "loadError": "Failed to load dashboard data.",
+      "sectionLoadError": "Failed to load",
       "realtime": "Real-Time Analytics",
       "database": "Database Explorer"
     },

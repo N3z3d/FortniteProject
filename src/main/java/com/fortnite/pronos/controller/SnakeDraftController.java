@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,6 +40,7 @@ public class SnakeDraftController {
   private final GameDraftService gameDraftService;
   private final UserResolver userResolver;
   private final DraftTrancheService draftTrancheService;
+  private final SimpMessagingTemplate messagingTemplate;
 
   /**
    * Initializes the snake draft for the given game.
@@ -132,7 +134,12 @@ public class SnakeDraftController {
     SnakeTurnResponse nextTurn =
         snakeDraftService.validateAndAdvance(gameId, user.getId(), request.getRegion());
 
+    // selectPlayer persists the pick BEFORE broadcasting so the observer's state refresh
+    // sees the new pick in the DB (BUG-06 fix: broadcast order)
     gameDraftService.selectPlayer(gameId, user.getId(), request.getPlayerId());
+
+    // Broadcast AFTER persistence so any observer fetching board state sees the pick
+    messagingTemplate.convertAndSend(SnakeDraftService.TOPIC_PREFIX + gameId, nextTurn);
 
     return ResponseEntity.ok(ApiResponse.success(nextTurn));
   }

@@ -32,6 +32,7 @@ export interface ConfirmDialogData {
         mat-raised-button
         [color]="data.confirmColor || 'primary'"
         (click)="onConfirm()"
+        data-testid="confirm-dialog-confirm"
         cdkFocusInitial>
         {{ data.confirmText || 'Confirmer' }}
       </button>

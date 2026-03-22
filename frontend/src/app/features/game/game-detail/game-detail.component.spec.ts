@@ -322,6 +322,26 @@ describe('GameDetailComponent', () => {
     );
   }));
 
+  it('should navigate to /games/:id/draft/snake after startDraft success (BUG-10)', fakeAsync(() => {
+    gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    fixture.detectChanges();
+    tick();
+
+    // Invoke startDraft and capture the onSuccess callback
+    component.startDraft();
+    const [, onSuccess] = gameDetailActionsSpy.startDraft.calls.mostRecent().args as [
+      string,
+      () => void,
+      () => void,
+    ];
+
+    // Simulate startDraft API call succeeding
+    onSuccess();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/games', '1', 'draft', 'snake']);
+  }));
+
   it('should display participants with correct status', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
     gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
@@ -623,6 +643,23 @@ describe('GameDetailComponent', () => {
     expect(deleteButton?.disabled).toBeFalse();
     expect(compiled.querySelector('.delete-disabled-reason')).toBeNull();
   }));
+
+  // ===== BUG-11: Draft route resolves based on draftMode =====
+
+  it('getDraftRoute returns /draft/simultaneous when draftMode is SIMULTANEOUS (BUG-11)', () => {
+    const game: Game = { ...mockGame, draftMode: 'SIMULTANEOUS' };
+    expect(component.getDraftRoute(game)).toEqual(['/games', '1', 'draft', 'simultaneous']);
+  });
+
+  it('getDraftRoute returns /draft/snake when draftMode is SNAKE (BUG-11)', () => {
+    const game: Game = { ...mockGame, draftMode: 'SNAKE' };
+    expect(component.getDraftRoute(game)).toEqual(['/games', '1', 'draft', 'snake']);
+  });
+
+  it('getDraftRoute defaults to /draft/snake when draftMode is undefined (BUG-11 backward compat)', () => {
+    const game: Game = { ...mockGame };
+    expect(component.getDraftRoute(game)).toEqual(['/games', '1', 'draft', 'snake']);
+  });
 });
 
 

@@ -2,7 +2,6 @@ package com.fortnite.pronos.service.draft;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.fortnite.pronos.domain.draft.model.Draft;
 import com.fortnite.pronos.domain.draft.model.SnakeTurn;
@@ -46,7 +44,6 @@ class SnakeDraftServiceTest {
   @Mock private GameDomainRepositoryPort gameDomainRepository;
   @Mock private DraftDomainRepositoryPort draftDomainRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
-  @Mock private SimpMessagingTemplate messagingTemplate;
   @Mock private Random random;
 
   private SnakeDraftService service;
@@ -65,7 +62,6 @@ class SnakeDraftServiceTest {
             gameDomainRepository,
             draftDomainRepository,
             gameParticipantRepository,
-            messagingTemplate,
             random);
   }
 
@@ -224,10 +220,6 @@ class SnakeDraftServiceTest {
       assertThat(result.participantId()).isEqualTo(USER_B);
       assertThat(result.round()).isEqualTo(1);
       assertThat(result.pickNumber()).isEqualTo(2);
-      verify(messagingTemplate)
-          .convertAndSend(
-              eq(SnakeDraftService.TOPIC_PREFIX + DRAFT_ID + SnakeDraftService.TOPIC_SUFFIX),
-              any(SnakeTurnResponse.class));
     }
 
     @Test

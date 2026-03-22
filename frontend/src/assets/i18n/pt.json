@@ -511,6 +511,10 @@
       "draftPhase": "Fase de Draft",
       "draftSubtitle": "Os participantes estão selecionando seus jogadores",
       "draftInProgress": "O draft está em andamento. Os participantes agora podem selecionar seus jogadores.",
+      "draftType": {
+        "snake": "Modo: Draft Cobra",
+        "simultaneous": "Modo: Draft Simultâneo"
+      },
       "viewDraft": "Ver Draft",
       "deleteDisabledStatus": "A exclusão só está disponível enquanto a partida estiver em criação.",
       "deleteDisabledNotHost": "Somente o criador pode excluir esta partida.",
@@ -1512,6 +1516,7 @@
       "visits": "Rastreamento de visitas",
       "refresh": "Atualizar",
       "loadError": "Erro ao carregar os dados.",
+      "sectionLoadError": "Erro de carregamento",
       "realtime": "Análises em tempo real",
       "database": "Explorador BDD"
     },

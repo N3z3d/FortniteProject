@@ -519,7 +519,7 @@ test.describe.serial('DRAFT-2P: snake draft 2 players — multi-context E2E', ()
 
   // ─── DRAFT-2P-04: Draft completion status check ───────────────────────────────
 
-  test('DRAFT-2P-04: game is in a valid draft status (DRAFTING or ACTIVE) after setup', async ({
+  test('DRAFT-2P-04: game reaches ACTIVE status after all picks submitted', async ({
     request,
   }) => {
     test.setTimeout(60_000);
@@ -529,15 +529,8 @@ test.describe.serial('DRAFT-2P: snake draft 2 players — multi-context E2E', ()
       return;
     }
 
-    // Check current game status — should be DRAFTING (or ACTIVE if previous tests
-    // submitted all picks and the draft auto-completed)
-    const status = await fetchGameStatus(request, gameId);
-    expect(['DRAFTING', 'ACTIVE']).toContain(status);
-
-    // Attempt to complete the draft by submitting remaining picks via API
-    // We submit both players' picks and then call finish-draft
-    let secondPickAttempted = false;
-
+    // Submit the remaining pick (DRAFT-2P-01 submitted the first pick)
+    // With teamSize=1 and 2 players, 2 picks total are needed to complete the draft
     try {
       const turn = await fetchCurrentTurn(request, gameId);
       if (turn) {
@@ -553,41 +546,19 @@ test.describe.serial('DRAFT-2P: snake draft 2 players — multi-context E2E', ()
           const playerId = playerAssignment[pickerUsername];
           if (playerId) {
             await submitSnakePick(request, gameId, pickerUsername, playerId);
-            secondPickAttempted = true;
           }
         }
       }
     } catch (error) {
-      // Pick may already be submitted — not an error
       const message = error instanceof Error ? error.message : String(error);
-      console.info(`DRAFT-2P-04: second pick attempt: ${message}`);
+      // Pick may already be submitted by a previous test — log and continue
+      console.info(`DRAFT-2P-04: pick attempt: ${message}`);
     }
 
-    // Attempt finish-draft to transition to ACTIVE
-    if (secondPickAttempted || status === 'DRAFTING') {
-      try {
-        const finishResponse = await request.post(
-          `${BACKEND_URL}/api/draft/${gameId}/finish`,
-          { headers: authHeaders('thibaut') }
-        );
-
-        if (finishResponse.ok()) {
-          // Poll for ACTIVE status
-          await expect
-            .poll(() => fetchGameStatus(request, gameId), { timeout: 10_000 })
-            .toBe('ACTIVE');
-        } else {
-          // finish-draft may fail if not all picks are done — verify we're still in a valid state
-          const finalStatus = await fetchGameStatus(request, gameId);
-          expect(['DRAFTING', 'ACTIVE']).toContain(finalStatus);
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.info(`DRAFT-2P-04: finish-draft: ${message}`);
-        // Verify game is still in a valid state
-        const finalStatus = await fetchGameStatus(request, gameId);
-        expect(['DRAFTING', 'ACTIVE']).toContain(finalStatus);
-      }
-    }
+    // Poll for ACTIVE — the draft auto-completes when all picks are submitted
+    // (no explicit finish-draft call needed with snake draft auto-complete)
+    await expect
+      .poll(() => fetchGameStatus(request, gameId), { timeout: 15_000, intervals: [1_000, 2_000, 2_000, 3_000, 3_000] })
+      .toBe('ACTIVE');
   });
 });

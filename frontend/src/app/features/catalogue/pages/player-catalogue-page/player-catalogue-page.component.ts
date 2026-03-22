@@ -10,8 +10,8 @@ import { CommonModule } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-import { BehaviorSubject } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Subject, merge, of } from 'rxjs';
 
 import { AvailablePlayer } from '../../../draft/models/draft.interface';
 import {
@@ -55,6 +55,7 @@ export class PlayerCataloguePageComponent implements OnInit {
   filteredPlayers: AvailablePlayer[] = [];
   comparedPlayers: AvailablePlayer[] = [];
   loading = false;
+  loadError = false;
   currentSearchTerm = '';
 
   availableRegions: string[] = [];
@@ -67,14 +68,19 @@ export class PlayerCataloguePageComponent implements OnInit {
     hideUnavailable: true,
     hideTaken: false,
   });
+  private readonly forceLoad$ = new Subject<PlayerFilter>();
 
   ngOnInit(): void {
-    this.filter$
+    const debouncedFilter$ = this.filter$.pipe(
+      debounceTime(FILTER_DEBOUNCE_MS),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+    );
+
+    merge(debouncedFilter$, this.forceLoad$)
       .pipe(
-        debounceTime(FILTER_DEBOUNCE_MS),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         switchMap(filter => {
           this.loading = true;
+          this.loadError = false;
           this.currentSearchTerm = filter.searchTerm;
           this.cdr.markForCheck();
           return this.catalogueService.getPlayers({
@@ -82,7 +88,14 @@ export class PlayerCataloguePageComponent implements OnInit {
             tranche: filter.tranche,
             search: filter.searchTerm || null,
             available: filter.hideUnavailable ? true : undefined,
-          });
+          }).pipe(
+            catchError(() => {
+              this.loadError = true;
+              this.loading = false;
+              this.cdr.markForCheck();
+              return of([] as AvailablePlayer[]);
+            })
+          );
         }),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -98,6 +111,10 @@ export class PlayerCataloguePageComponent implements OnInit {
 
   onFilterChanged(filter: PlayerFilter): void {
     this.filter$.next(filter);
+  }
+
+  reload(): void {
+    this.forceLoad$.next(this.filter$.value);
   }
 
   onCardSelected(player: AvailablePlayer): void {

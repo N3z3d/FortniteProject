@@ -1,6 +1,6 @@
 # Story Sprint 12 — A: canDeactivate Guard sur Pages Draft
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint12-candeactivate-draft-guard

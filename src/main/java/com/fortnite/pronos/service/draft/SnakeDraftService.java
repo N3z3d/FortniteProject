@@ -1,5 +1,6 @@
 package com.fortnite.pronos.service.draft;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,15 +42,20 @@ import com.fortnite.pronos.model.GameParticipant;
 @Transactional
 public class SnakeDraftService {
 
-  static final String TOPIC_PREFIX = "/topic/draft/";
-  static final String TOPIC_SUFFIX = "/snake";
+  public static final String TOPIC_PREFIX = "/topic/draft/";
+
+  /**
+   * @deprecated Use {@link #TOPIC_PREFIX}+gameId — draftId-based topic removed by BUG-06 fix.
+   */
+  @Deprecated static final String TOPIC_SUFFIX = "/snake";
+
   static final String GLOBAL_REGION = "GLOBAL";
+  static final long TURN_DURATION_SECONDS = 60L;
 
   private final DraftPickOrchestratorService orchestratorService;
   private final GameDomainRepositoryPort gameDomainRepository;
   private final DraftDomainRepositoryPort draftDomainRepository;
   private final GameParticipantRepositoryPort gameParticipantRepository;
-  private final SimpMessagingTemplate messagingTemplate;
   private final Random random;
 
   public SnakeDraftService(
@@ -58,13 +63,11 @@ public class SnakeDraftService {
       GameDomainRepositoryPort gameDomainRepository,
       DraftDomainRepositoryPort draftDomainRepository,
       GameParticipantRepositoryPort gameParticipantRepository,
-      SimpMessagingTemplate messagingTemplate,
       Random random) {
     this.orchestratorService = orchestratorService;
     this.gameDomainRepository = gameDomainRepository;
     this.draftDomainRepository = draftDomainRepository;
     this.gameParticipantRepository = gameParticipantRepository;
-    this.messagingTemplate = messagingTemplate;
     this.random = random;
   }
 
@@ -95,7 +98,9 @@ public class SnakeDraftService {
       }
     }
 
-    return SnakeTurnResponse.from(draft.getId(), firstRegion, firstTurn);
+    Instant expiresAt = Instant.now().plusSeconds(TURN_DURATION_SECONDS);
+    String username = resolveUsername(firstTurn.participantId(), gameId);
+    return SnakeTurnResponse.from(draft.getId(), firstRegion, firstTurn, username, expiresAt);
   }
 
   /**
@@ -114,7 +119,11 @@ public class SnakeDraftService {
     Draft draft = draftOpt.get();
     return orchestratorService
         .getCurrentTurn(draft.getId(), region)
-        .map(turn -> SnakeTurnResponse.from(draft.getId(), region, turn));
+        .map(
+            turn -> {
+              String username = resolveUsername(turn.participantId(), gameId);
+              return SnakeTurnResponse.from(draft.getId(), region, turn, username, null);
+            });
   }
 
   /**
@@ -148,12 +157,28 @@ public class SnakeDraftService {
                     new InvalidDraftStateException(
                         "Failed to advance cursor for region: " + region));
 
-    SnakeTurnResponse nextResponse = SnakeTurnResponse.from(draft.getId(), region, nextTurn);
-    messagingTemplate.convertAndSend(TOPIC_PREFIX + draft.getId() + TOPIC_SUFFIX, nextResponse);
-    return nextResponse;
+    Instant expiresAt = Instant.now().plusSeconds(TURN_DURATION_SECONDS);
+    String nextUsername = resolveUsername(nextTurn.participantId(), gameId);
+    return SnakeTurnResponse.from(draft.getId(), region, nextTurn, nextUsername, expiresAt);
   }
 
   // ===== PRIVATE HELPERS =====
+
+  /**
+   * Resolves the username of a participant by their userId within a game.
+   *
+   * <p>Returns {@code null} if the participant is not found (defensive; avoids NPE on edge cases
+   * like a cursor pointing to a user who has left the game).
+   */
+  private String resolveUsername(UUID userId, UUID gameId) {
+    List<GameParticipant> participants =
+        gameParticipantRepository.findByGameIdWithUserFetch(gameId);
+    return participants.stream()
+        .filter(p -> p.getUser() != null && userId.equals(p.getUser().getId()))
+        .findFirst()
+        .map(p -> p.getUser().getUsername())
+        .orElse(null);
+  }
 
   private Game findGameOrThrow(UUID gameId) {
     return gameDomainRepository

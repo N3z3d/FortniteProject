@@ -64,7 +64,7 @@ describe('ThemeService', () => {
   });
 
   it('handles localStorage errors gracefully', () => {
-    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    const getItemSpy = vi.spyOn(localStorage as any, 'getItem').mockImplementation(() => {
       throw new Error('fail');
     });
 

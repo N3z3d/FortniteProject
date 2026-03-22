@@ -3,10 +3,10 @@
     <!-- Variables communes -->
     <property name="LOG_PATH" value="logs"/>
     
-    <!-- Pattern simplifié pour développement -->
+    <!-- Pattern développement : inclut correlationId pour traçabilité HTTP/STOMP -->
     <springProfile name="!prod">
-        <property name="CONSOLE_LOG_PATTERN" 
-                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] %-40.40logger{39} : %m%n"/>
+        <property name="CONSOLE_LOG_PATTERN"
+                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] [%X{correlationId:-}] %-40.40logger{39} : %m%n"/>
     </springProfile>
     
     <!-- SPRINT 4: ENHANCED PRODUCTION PATTERN WITH CORRELATION TRACKING -->

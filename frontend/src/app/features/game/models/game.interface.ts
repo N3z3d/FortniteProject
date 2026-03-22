@@ -22,6 +22,8 @@ export interface Game {
   teams?: Team[];
   /** Total count of available Fortnite players for draft selection */
   fortnitePlayerCount?: number;
+  /** Draft mode used when status is DRAFTING */
+  draftMode?: 'SNAKE' | 'SIMULTANEOUS';
 }
 
 // Interface pour les équipes
