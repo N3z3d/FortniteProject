@@ -2,6 +2,7 @@ package com.fortnite.pronos.service.draft;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import com.fortnite.pronos.domain.draft.model.SnakeTurn;
 import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftRegionCursorRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.dto.SnakeTurnResponse;
@@ -37,6 +39,7 @@ class SnakeDraftServiceBugFixTest {
   @Mock private DraftPickOrchestratorService orchestratorService;
   @Mock private GameDomainRepositoryPort gameDomainRepository;
   @Mock private DraftDomainRepositoryPort draftDomainRepository;
+  @Mock private DraftRegionCursorRepositoryPort cursorRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private Random random;
 
@@ -54,6 +57,7 @@ class SnakeDraftServiceBugFixTest {
             orchestratorService,
             gameDomainRepository,
             draftDomainRepository,
+            cursorRepository,
             gameParticipantRepository,
             random);
   }
@@ -101,12 +105,13 @@ class SnakeDraftServiceBugFixTest {
               List.of(
                   buildParticipantWithUsername(USER_A, "thibaut"),
                   buildParticipantWithUsername(USER_B, "teddy")));
-      when(orchestratorService.getOrInitTurn(eq(DRAFT_ID), eq("GLOBAL"), anyList()))
+      when(orchestratorService.getOrInitTurn(eq(DRAFT_ID), anyString(), anyList()))
           .thenReturn(firstTurn);
 
       SnakeTurnResponse result = service.initializeCursors(GAME_ID);
 
       assertThat(result.participantUsername()).isEqualTo("thibaut");
+      assertThat(result.region()).isEqualTo("EU");
     }
 
     @Test

@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -18,16 +20,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.domain.draft.model.Draft;
+import com.fortnite.pronos.domain.draft.model.DraftRegionCursor;
 import com.fortnite.pronos.domain.draft.model.SnakeTurn;
 import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameRegionRule;
 import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftRegionCursorRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.dto.SnakeTurnResponse;
@@ -43,6 +49,7 @@ class SnakeDraftServiceTest {
   @Mock private DraftPickOrchestratorService orchestratorService;
   @Mock private GameDomainRepositoryPort gameDomainRepository;
   @Mock private DraftDomainRepositoryPort draftDomainRepository;
+  @Mock private DraftRegionCursorRepositoryPort cursorRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private Random random;
 
@@ -61,6 +68,7 @@ class SnakeDraftServiceTest {
             orchestratorService,
             gameDomainRepository,
             draftDomainRepository,
+            cursorRepository,
             gameParticipantRepository,
             random);
   }
@@ -89,6 +97,13 @@ class SnakeDraftServiceTest {
     return GameParticipant.builder().user(user).build();
   }
 
+  private GameParticipant buildParticipant(UUID userId, String username) {
+    User user = new User();
+    user.setId(userId);
+    user.setUsername(username);
+    return GameParticipant.builder().user(user).build();
+  }
+
   private SnakeTurn buildTurn(UUID participantId, int round, int pick, boolean reversed) {
     return new SnakeTurn(participantId, round, pick, reversed);
   }
@@ -98,8 +113,8 @@ class SnakeDraftServiceTest {
   class InitializeCursors {
 
     @Test
-    @DisplayName("with no region rules creates GLOBAL cursor and returns first turn")
-    void withNoRegionRules_createsGlobalCursorAndReturnsFirstTurn() {
+    @DisplayName("with no region rules creates cursors for all 7 active regions")
+    void withNoRegionRules_createsAllActiveRegionCursors() {
       Game game = buildGame();
       Draft draft = buildDraft();
       SnakeTurn firstTurn = buildTurn(USER_A, 1, 1, false);
@@ -110,18 +125,19 @@ class SnakeDraftServiceTest {
           .thenReturn(
               List.of(
                   buildParticipant(USER_A), buildParticipant(USER_B), buildParticipant(USER_C)));
-      when(orchestratorService.getOrInitTurn(eq(DRAFT_ID), eq("GLOBAL"), anyList()))
+      when(orchestratorService.getOrInitTurn(eq(DRAFT_ID), anyString(), anyList()))
           .thenReturn(firstTurn);
 
       SnakeTurnResponse result = service.initializeCursors(GAME_ID);
 
       assertThat(result.draftId()).isEqualTo(DRAFT_ID);
-      assertThat(result.region()).isEqualTo("GLOBAL");
+      assertThat(result.region()).isEqualTo("EU");
       assertThat(result.participantId()).isEqualTo(USER_A);
       assertThat(result.round()).isEqualTo(1);
-      assertThat(result.pickNumber()).isEqualTo(1);
-      assertThat(result.reversed()).isFalse();
-      verify(orchestratorService).getOrInitTurn(eq(DRAFT_ID), eq("GLOBAL"), anyList());
+      verify(orchestratorService, times(7)).getOrInitTurn(eq(DRAFT_ID), anyString(), anyList());
+      verify(orchestratorService).getOrInitTurn(eq(DRAFT_ID), eq("EU"), anyList());
+      verify(orchestratorService).getOrInitTurn(eq(DRAFT_ID), eq("NAW"), anyList());
+      verify(orchestratorService).getOrInitTurn(eq(DRAFT_ID), eq("ASIA"), anyList());
     }
 
     @Test
@@ -166,15 +182,22 @@ class SnakeDraftServiceTest {
     void whenCursorExists_returnsTurn() {
       Draft draft = buildDraft();
       SnakeTurn turn = buildTurn(USER_B, 1, 2, false);
+      Instant turnStartedAt = Instant.parse("2026-04-03T10:00:00Z");
+      DraftRegionCursor cursor =
+          DraftRegionCursor.restore(
+              DRAFT_ID, "GLOBAL", 1, 2, List.of(USER_A, USER_B, USER_C), turnStartedAt);
 
       when(draftDomainRepository.findActiveByGameId(GAME_ID)).thenReturn(Optional.of(draft));
       when(orchestratorService.getCurrentTurn(DRAFT_ID, "GLOBAL")).thenReturn(Optional.of(turn));
+      when(cursorRepository.findByDraftIdAndRegion(DRAFT_ID, "GLOBAL"))
+          .thenReturn(Optional.of(cursor));
 
       Optional<SnakeTurnResponse> result = service.getCurrentTurn(GAME_ID, "GLOBAL");
 
       assertThat(result).isPresent();
       assertThat(result.get().participantId()).isEqualTo(USER_B);
       assertThat(result.get().round()).isEqualTo(1);
+      assertThat(result.get().expiresAt()).isEqualTo(turnStartedAt.plusSeconds(60));
     }
 
     @Test
@@ -196,6 +219,29 @@ class SnakeDraftServiceTest {
       Optional<SnakeTurnResponse> result = service.getCurrentTurn(GAME_ID, "GLOBAL");
 
       assertThat(result).isEmpty();
+    }
+  }
+
+  @Nested
+  @DisplayName("expiresAt — non-null for all active regions")
+  class ExpiresAtRegions {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"EU", "NAW", "BR", "ASIA", "OCE", "NAC", "ME"})
+    @DisplayName("PICK_PROMPT event has non-null expiresAt for all active regions")
+    void buildPickPromptEvent_shouldHaveNonNullExpiresAt(String region) {
+      Draft draft = buildDraft();
+      SnakeTurn currentTurn = buildTurn(USER_A, 1, 1, false);
+      SnakeTurn nextTurn = buildTurn(USER_B, 1, 2, false);
+
+      when(draftDomainRepository.findActiveByGameId(GAME_ID)).thenReturn(Optional.of(draft));
+      when(orchestratorService.getCurrentTurn(DRAFT_ID, region))
+          .thenReturn(Optional.of(currentTurn));
+      when(orchestratorService.advance(DRAFT_ID, region)).thenReturn(Optional.of(nextTurn));
+
+      SnakeTurnResponse result = service.validateAndAdvance(GAME_ID, USER_A, region);
+
+      assertThat(result.expiresAt()).isNotNull();
     }
   }
 
@@ -223,6 +269,26 @@ class SnakeDraftServiceTest {
     }
 
     @Test
+    @DisplayName("when next participant is found returns participantUsername in response")
+    void whenNextParticipantFound_returnsParticipantUsername() {
+      Draft draft = buildDraft();
+      SnakeTurn currentTurn = buildTurn(USER_A, 1, 1, false);
+      SnakeTurn nextTurn = buildTurn(USER_B, 1, 2, false);
+
+      when(draftDomainRepository.findActiveByGameId(GAME_ID)).thenReturn(Optional.of(draft));
+      when(orchestratorService.getCurrentTurn(DRAFT_ID, "GLOBAL"))
+          .thenReturn(Optional.of(currentTurn));
+      when(orchestratorService.advance(DRAFT_ID, "GLOBAL")).thenReturn(Optional.of(nextTurn));
+      when(gameParticipantRepository.findByGameIdWithUserFetch(GAME_ID))
+          .thenReturn(
+              List.of(buildParticipant(USER_A, "KARIM"), buildParticipant(USER_B, "THOMAS")));
+
+      SnakeTurnResponse result = service.validateAndAdvance(GAME_ID, USER_A, "GLOBAL");
+
+      assertThat(result.participantUsername()).isEqualTo("THOMAS");
+    }
+
+    @Test
     @DisplayName("when wrong user throws NotYourTurnException")
     void whenWrongUser_throwsNotYourTurnException() {
       Draft draft = buildDraft();
@@ -234,6 +300,33 @@ class SnakeDraftServiceTest {
 
       assertThatThrownBy(() -> service.validateAndAdvance(GAME_ID, USER_B, "GLOBAL"))
           .isInstanceOf(NotYourTurnException.class);
+    }
+
+    @Test
+    @DisplayName("two consecutive picks both emit non-null expiresAt (PICK_PROMPT sequence)")
+    void twoConsecutivePicks_bothHaveNonNullExpiresAt() {
+      Draft draft = buildDraft();
+      SnakeTurn turn1 = buildTurn(USER_A, 1, 1, false);
+      SnakeTurn turn2 = buildTurn(USER_B, 1, 2, false);
+      SnakeTurn turn3 = buildTurn(USER_A, 2, 1, true);
+
+      when(draftDomainRepository.findActiveByGameId(GAME_ID)).thenReturn(Optional.of(draft));
+      when(orchestratorService.getCurrentTurn(DRAFT_ID, "GLOBAL"))
+          .thenReturn(Optional.of(turn1))
+          .thenReturn(Optional.of(turn2));
+      when(orchestratorService.advance(DRAFT_ID, "GLOBAL"))
+          .thenReturn(Optional.of(turn2))
+          .thenReturn(Optional.of(turn3));
+
+      SnakeTurnResponse response1 = service.validateAndAdvance(GAME_ID, USER_A, "GLOBAL");
+      SnakeTurnResponse response2 = service.validateAndAdvance(GAME_ID, USER_B, "GLOBAL");
+
+      assertThat(response1.expiresAt()).isNotNull();
+      assertThat(response1.participantId()).isEqualTo(USER_B);
+      assertThat(response2.expiresAt()).isNotNull();
+      assertThat(response2.participantId()).isEqualTo(USER_A);
+      assertThat(response2.round()).isEqualTo(2);
+      assertThat(response2.reversed()).isTrue();
     }
 
     @Test

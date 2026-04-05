@@ -34,7 +34,7 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 04-03-2026
+generated: 22-03-2026
 project: FortniteProject
 project_key: NOKEY
 tracking_system: file-system
@@ -948,26 +948,149 @@ sprint-13:
 
   sprint13-retrospective: done
 
-  # ============================================================
-  # SPRINT 14 — Stabilisation draft + expérience joueur complète
-  # ============================================================
-  # Objectif : Thibaut et Teddy jouent une partie complète de A à Z sans bug
-  # Critère de succès : draft complet (tous slots remplis, ordre serpent, timer sync, région respectée) + leaderboard lisible
-  # DoD renforcée : toute story draft = testée avec 2 comptes réels en Docker avant done
-  # Ref : sprint-change-proposal-2026-03-22.md
+# ============================================================
+# SPRINT 14 — Stabilisation draft + expérience joueur complète
+# 2026-03-22 — Objectif: Thibaut et Teddy jouent une partie complète de A à Z sans bug
+# Issu de: retro Sprint 13 (8.5/10, 3 action items) + Sprint Change Proposal 2026-03-22
+# Critère de succès: draft complet (tous slots remplis, ordre serpent, timer sync, région respectée) + leaderboard lisible
+# DoD renforcée: toute story draft = testée avec 2 comptes réels en Docker avant done
+# Ref: sprint-change-proposal-2026-03-22.md
+# ⛔ NE PAS RE-PROPOSER: hébergement/staging (deferred-future)
+# ============================================================
 
-  # P0 — Bloquants
-  sprint14-fix-draft-crash-tour2: backlog
-  sprint14-fix-timer-server-sync: backlog
-  sprint14-fix-region-filter-draft: backlog
+sprint-14:
+  description: "Stabilisation draft + expérience joueur complète"
+  goal: "Thibaut et Teddy jouent une partie complète de A à Z sans bug — draft complet, timer sync, région respectée, leaderboard lisible"
+  start_date: "2026-03-22"
+  status: in-progress
 
+  # Tracing des action items Sprint 13 (retro 2026-03-22, score 8.5/10)
+  sprint-13-retrospective-globale-action-tracking: done
+  # A1→sprint14-fix-draft-crash-tour2 (validation Docker réelle BUG-01/02/04)
+  # A2→DoD §7 (doc créée = maintenue dans même PR, sinon ne pas créer)
+  # A3→spec diagramme Mermaid dans story (rendu GitHub-first + exemple de référence)
+
+  # ⚠️  DOD DRAFT RENFORCÉE (pre-mortem + user focus group):
+  # Toute story P0 draft = testée session Docker 2 comptes réels
+  # Alternative si Teddy indisponible : 2 fenêtres navigateur même machine, sessions distinctes
+  # ⛔ BLOQUANT : session Docker 2 comptes validée AVANT de marquer done
+
+  # ----------------------------------------------------------
+  # ORDRE D'EXÉCUTION RECOMMANDÉ (matrice + élicitation avancée)
+  # quick wins d'abord → complexité croissante
+  # 1. fix-region-filter-draft   (score 7.75 — effort faible, risque faible)
+  # 2. desactiver-draft-simultane-ui (score 7.70 — ~30 min, réduit confusion)
+  # 3. fix-participants-count    (score 7.20 — quick win P1)
+  # 4. fix-timer-server-sync     (score 7.25 — complexe backend)
+  # 5. fix-draft-crash-tour2     (score 7.05 — le plus complexe, logs d'abord)
+  # 6. ux-notification-tour      (score 7.00 — inclure mobile)
+  # 7. fix-leaderboard-design    (score 6.70 — données avant design)
+  # 8. e2e-ui-draft-complet      (score 4.25 — ACs indépendants, parallélisable)
+  # ----------------------------------------------------------
+
+  # ----------------------------------------------------------
+  # P0 — Bloquants (sans ces fixes, impossible de jouer)
+  # Root causes identifiées via 5 Whys + Pre-mortem (élicitation avancée)
+  # ----------------------------------------------------------
+
+  # QUICK WIN P0 — Filtre région automatique dans liste draft
+  # Seuls les joueurs de la région courante du curseur sont affichés (pas de filtre manuel)
+  # Root cause: frontend liste tous les joueurs, curseur région ignoré côté UI
+  # AC supplémentaire (what-if D): vérifier DraftRegionCursor.currentRegionIndex en DB après pick
+  # AC backend: validation région dans validatePickByDraftId() — pick hors-région → 400
+  # Story file: sprint14-fix-region-filter-draft.md
+  sprint14-fix-region-filter-draft: review  # 2026-04-04: catalogue runtime fixed/revalidated, 2-account join/start + EU-only filter + wrong-region 400 confirmed, plus full 15-pick run with per-pick DB cursor trace
+
+  # QUICK WIN P0 (promu de P1 — score 7.70, ~30min, réduit confusion Teddy)
+  # Masquer mode "Simultané" dans création de partie (désactivation visuelle, code backend intact)
+  # Guard CanActivate sur route /simultaneous → redirect /snake si draftMode ≠ SIMULTANEOUS
+  # Story file: sprint14-desactiver-draft-simultane-ui.md
+  sprint14-desactiver-draft-simultane-ui: done
+
+  # Timer 100% serveur — DraftTimerComponent calcule depuis expiresAt (ISO-8601 backend)
+  # Root cause (pre-mortem): expiresAt null dans certaines régions de SnakeDraftService
+  # AC backend EXPLICITE: expiresAt non-null dans TOUS les STOMP PICK_PROMPT, toutes régions
+  # AC: timer synchronisé sur 2 écrans + resync après reconnexion WebSocket + banner reconnexion
+  # AC: @ParameterizedTest 8 régions expiresAt non-null
+  # Story file: sprint14-fix-timer-server-sync.md
+  sprint14-fix-timer-server-sync: review  # code review done 2026-03-28, 4 fixes applied — Docker AC pending
+
+  # Crash Angular au tour 2 en multi-région
+  # Root cause (5 Whys): currentPlayer → null entre PICK_MADE et PICK_PROMPT
+  #   → *ngIf détruit sous-composant → unsubscribe draftEvents$ → PICK_PROMPT tour 2 perdu
+  # Fix défense en profondeur:
+  #   Fix 1: draftEvents$ → ReplaySubject(1) dans WebSocketService
+  #   Fix 2: remplacer *ngIf="currentPlayer" par @if(phase !== 'idle')
+  #   Fix 3: inclure nextPlayerId dans PICK_MADE event → éliminer le gap null
+  # AC: logs backend BEFORE/AFTER advanceCursor() J1 (OBLIGATOIRE avant tout fix)
+  # AC: isSubmitting signal + message 409 lisible
+  # AC: boundary check DraftRegionCursor.advanceCursor()
+  # ⚠️ Faire EN DERNIER des P0 — le plus complexe, dépend de fix-timer-server-sync DONE
+  # Story file: sprint14-fix-draft-crash-tour2.md
+  sprint14-fix-draft-crash-tour2: review  # 2026-04-04: preuve UI multi-region acquise (6 picks / 3 regions / 2 comptes), passage review avec waiver explicite du protocole diagnostic pre-fix
+
+  # ----------------------------------------------------------
   # P1 — Expérience joueur
-  sprint14-ux-notification-tour: backlog
-  sprint14-fix-leaderboard-design: backlog
-  sprint14-fix-participants-count: backlog
-  sprint14-desactiver-draft-simultane-ui: backlog
+  # ----------------------------------------------------------
 
+  # QUICK WIN P1 — Fix "2/5 participants" — maxParticipants non respecté dans GameDto→Game
+  # (score 7.20, effort faible, aucune dépendance)
+  sprint14-fix-participants-count: backlog
+
+  # Bannière "TON TOUR" vive + "Tour de [Nom]" adversaire + animation changement de tour
+  # User focus group: mobile = signal FORT obligatoire (navigator.vibrate() + aria-live assertive)
+  # Desktop = bannière P1, Mobile = P0 (Teddy sur téléphone a raté 3 tours → abandon)
+  sprint14-ux-notification-tour: backlog
+
+  # Refonte leaderboard gaming theme (Rajdhani, médailles or/argent/bronze, deltas vert/rouge)
+  # Priorité réelle (user focus group): fix données hardcodées ("147 joueurs draftés") AVANT design
+  # Sous-tâches: (1) fix données hardcodées [critique], (2) refonte visuelle [nice-to-have]
+  sprint14-fix-leaderboard-design: backlog
+
+  # ----------------------------------------------------------
   # P2 — Infrastructure qualité
+  # ----------------------------------------------------------
+
+  # 1 test Playwright E2E UI : 2 contextes navigateur, draft complet via clic réel
+  # What-if E: structurer en ACs indépendants → détection continue pendant les fixes P0
+  # timeout 120s minimum, assertions APRÈS draft complet (état final 2 équipes vérifié)
+  # Remplace les 4 tests DRAFT-2P qui se marquent skipped
   sprint14-e2e-ui-draft-complet: backlog
+
+  # ----------------------------------------------------------
+  # Post-session Docker — bugs découverts lors du test réel 2026-03-26
+  # ----------------------------------------------------------
+
+  # P0 — Endpoint /api/games/{id}/archive manquant → 404 → archivage impossible
+  # Cause: route non créée côté backend. Conséquence: limite 5 parties bloquante (impossible de libérer)
+  # Story file: sprint14-fix-archive-endpoint.md
+  sprint14-fix-archive-endpoint: done
+
+  # P0 — Joueurs non-sélectionnables sans explication (tranche violation silencieuse)
+  # Cause: DraftTrancheService rejette le pick (400) mais le frontend affiche rien
+  # Fix: griser les joueurs hors-tranche + tooltip "Rang trop élevé pour ce slot"
+  # Story file: sprint14-fix-tranche-ui.md
+  # UI done (info bar, grayed players, filter toggle, error messages) — backend tranche refonte → sprint14-refonte-tranche-system
+  sprint14-fix-tranche-ui: done
+
+  # P1 — Draft ne s'affiche pas automatiquement chez Teddy quand Thibaut lance la draft
+  # Cause: aucun event WS "DRAFT_STARTED" broadcast + aucune redirection auto côté frontend
+  # Fix: backend broadcast DRAFT_STARTED sur /topic/game/{id} + frontend redirect vers /draft/snake
+  # Story file: sprint14-fix-draft-start-notification.md
+  sprint14-fix-draft-start-notification: backlog
+
+  # P2 — Timer peut se resetter à 60s si getSnakeBoardState() refreshe durationSeconds seul
+  # Cause: ngOnChanges DraftTimerComponent redémarre sur durationSeconds même si serverExpiresAt déjà set
+  # Fix: ne pas redémarrer si serverExpiresAt est présent et encore dans le futur
+  # Story file: sprint14-fix-timer-reset-on-refresh.md
+  sprint14-fix-timer-reset-on-refresh: backlog
+
+  # P0 BLOQUANT — Refonte systeme de tranches : calcul dynamique par region
+  # Cause: tranche stockee comme attribut joueur (players.tranche) au lieu de calcul dynamique
+  # Regle: floor = (regionRound - 1) * trancheSize + 1, reset a 1 quand on change de region
+  # Rang joueur = position dans classement totalPoints DESC de sa region (pas attribut fixe)
+  # Session Docker 2026-03-29: draft bloquee apres ~10 rounds, epuisement premature
+  # Story file: sprint14-refonte-tranche-system.md
+  sprint14-refonte-tranche-system: done  # 2026-03-31: BUG-D2 duplicate check, BUG-D6 catalogue sort, BUG-D7 French errors, E2E 8/8 green Docker validated
 
   sprint14-retrospective: optional

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,11 +23,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.ValidationService;
 
@@ -83,6 +86,51 @@ class CreateGameUseCaseTest {
     verify(gameDomainRepositoryPort).countByCreatorAndStatusIn(eq(userId), anyList());
     verify(gameDomainRepositoryPort).save(any(Game.class));
     // No invitation code generated at creation (manual generation policy)
+  }
+
+  @Test
+  void shouldPersistRequestedRegionRulesInCreatedGame() {
+    request.setRegionRules(
+        Map.of(Player.Region.EU, 1, Player.Region.NAW, 1, Player.Region.ASIA, 1));
+
+    when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(0L);
+    when(gameDomainRepositoryPort.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    createGameUseCase.execute(userId, request);
+
+    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
+    verify(gameDomainRepositoryPort).save(gameCaptor.capture());
+
+    Map<PlayerRegion, Integer> persistedRules =
+        gameCaptor.getValue().getRegionRules().stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    rule -> rule.getRegion(), rule -> rule.getMaxPlayers()));
+
+    assertThat(persistedRules)
+        .containsEntry(PlayerRegion.EU, 1)
+        .containsEntry(PlayerRegion.NAW, 1)
+        .containsEntry(PlayerRegion.ASIA, 1)
+        .hasSize(3);
+  }
+
+  @Test
+  void shouldPopulateDefaultRegionRulesWhenRequestOmitsThem() {
+    when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(0L);
+    when(gameDomainRepositoryPort.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    createGameUseCase.execute(userId, request);
+
+    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
+    verify(gameDomainRepositoryPort).save(gameCaptor.capture());
+
+    assertThat(gameCaptor.getValue().getRegionRules())
+        .extracting(rule -> rule.getRegion())
+        .containsExactlyInAnyOrderElementsOf(PlayerRegion.ACTIVE_REGIONS);
   }
 
   @Test

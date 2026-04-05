@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 import { UserContextService } from './user-context.service';
@@ -31,6 +31,7 @@ export interface DraftEventMessage {
   event: string;
   draftId: string;
   participantId?: string;
+  participantUsername?: string;
   playerId?: string;
   playerName?: string;
   nextParticipantId?: string;
@@ -62,7 +63,7 @@ export class WebSocketService implements OnDestroy {
   private connectionStatus$ = new BehaviorSubject<boolean>(false);
   private readonly tradeNotifications$ = new Subject<TradeNotification>();
   private readonly gameNotifications$ = new Subject<GameNotification>();
-  private readonly draftEvents$ = new Subject<DraftEventMessage>();
+  private readonly draftEvents$ = new ReplaySubject<DraftEventMessage>(1);
   private readonly simultaneousEvents$ = new Subject<SimultaneousEventMessage>();
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;

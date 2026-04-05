@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { ScrollingModule } from '@angular/cdk/scrolling';
@@ -36,7 +35,6 @@ const BOARD_POLL_INTERVAL_MS = 5_000;
     CommonModule,
     MatToolbarModule,
     MatButtonModule,
-    MatTabsModule,
     MatIconModule,
     ScrollingModule,
     DraftTimerComponent,
@@ -57,6 +55,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
 
   gameId: string | null = null;
   draft: DraftBoardState | null = null;
+  phase: 'warmup' | 'my-turn' | 'waiting' | 'idle' | 'done' = 'idle';
   participants: SnakeParticipant[] = [];
   currentIndex = 0;
   isMyTurn = false;
@@ -64,11 +63,17 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
   selectedPlayer: AvailablePlayer | null = null;
   recommendedPlayer: AvailablePlayer | null = null;
   wsConnected = true;
+  isReconnecting = false;
   regions: string[] = [];
-  activeRegionIndex = 0;
   isPickPending = false;
   pickExpiresAt: string | null = null;
+  currentRegion = 'GLOBAL';
+  trancheFloor = 1;
+  tranchesEnabled = true;
+  hideIneligible = false;
 
+  /** playerId → dynamic rank within current region (1-based, computed from totalPoints DESC) */
+  private regionPlayerRanks = new Map<string, number>();
   private activeFilter: PlayerFilter | null = null;
 
   ngOnInit(): void {
@@ -93,7 +98,38 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
 
   onFilterChange(filter: PlayerFilter): void {
     this.activeFilter = filter;
-    this.filteredPlayers = this.applyFilter(this.draft?.availablePlayers ?? [], filter);
+    const regionFiltered = this.applyRegionFilter(this.draft?.availablePlayers ?? []);
+    this.filteredPlayers = this.applyFilter(regionFiltered, filter);
+  }
+
+  isPlayerEligible(player: AvailablePlayer): boolean {
+    if (!this.tranchesEnabled) return true;
+    const rank = this.regionPlayerRanks.get(player.id) ?? Number.MAX_SAFE_INTEGER;
+    return rank >= this.trancheFloor;
+  }
+
+  toggleHideIneligible(): void {
+    this.hideIneligible = !this.hideIneligible;
+    const regionFiltered = this.applyRegionFilter(this.draft?.availablePlayers ?? []);
+    this.filteredPlayers = this.applyFilter(regionFiltered, this.activeFilter);
+  }
+
+  onRegionSelect(region: string): void {
+    if (!this.gameId || !region || region === this.currentRegion || this.isPickPending) {
+      return;
+    }
+
+    this.selectedPlayer = null;
+    this.currentRegion = region;
+
+    if (this.draft) {
+      const regionFiltered = this.applyRegionFilter(this.draft.availablePlayers, region);
+      this.regionPlayerRanks = this.computeRegionRanks(regionFiltered);
+      this.filteredPlayers = this.applyFilter(regionFiltered, this.activeFilter);
+      this.recommendedPlayer = null;
+    }
+
+    this.refreshDraftState(this.gameId, region);
   }
 
   onPlayerSelect(player: AvailablePlayer): void {
@@ -120,7 +156,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
 
     this.isPickPending = true;
     this.draftService
-      .submitSnakePick(this.gameId, player.id)
+      .submitSnakePick(this.gameId, player.id, this.currentRegion)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: state => {
@@ -129,15 +165,36 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
           this.selectedPlayer = null;
           this.isPickPending = false;
         },
-        error: () => {
+        error: (err: { status?: number; error?: { message?: string; error?: string } }) => {
           this.isPickPending = false;
+          this.selectedPlayer = null;
+          const backendMsg = err?.error?.message || err?.error?.error || '';
+          let userMsg: string;
+          if (err?.status === 409) {
+            userMsg = 'Ce joueur a déjà été sélectionné, choisissez un autre.';
+          } else if (err?.status === 400) {
+            userMsg = this.translateBackendError(backendMsg);
+          } else {
+            userMsg = 'Erreur inattendue, veuillez réessayer.';
+          }
+          this.snackBar.open(userMsg, undefined, {
+            duration: PICK_CONFIRM_SNACKBAR_DURATION_MS,
+            panelClass: 'snack-pick-error',
+          });
+          if (this.gameId) {
+            this.refreshDraftState(this.gameId, this.currentRegion);
+          }
         },
       });
   }
 
   private loadDraftState(gameId: string): void {
+    this.refreshDraftState(gameId);
+  }
+
+  private refreshDraftState(gameId: string, regionHint?: string | null): void {
     this.draftService
-      .getSnakeBoardState(gameId)
+      .getSnakeBoardState(gameId, regionHint ?? undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(state => this.applyDraftState(state));
   }
@@ -166,20 +223,50 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
       .pipe(skip(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(connected => {
         this.wsConnected = connected;
+        // When disconnected, enter reconnecting state.
+        // When reconnected, clear reconnecting state immediately (PICK_PROMPT will recalibrate timer).
+        if (!connected) {
+          this.isReconnecting = true;
+        } else {
+          this.isReconnecting = false;
+        }
       });
   }
 
   private applyDraftState(state: DraftBoardState): void {
     this.draft = state;
+    this.currentRegion = state.currentRegion ?? 'GLOBAL';
+    this.pickExpiresAt = state.pickExpiresAt ?? null;
     this.participants = this.extractParticipants(state);
     this.currentIndex = this.computeCurrentIndex(state);
     this.isMyTurn = this.computeIsMyTurn(state);
     this.regions = this.extractRegions(state);
-    this.filteredPlayers = this.applyFilter(state.availablePlayers, this.activeFilter);
-    this.recommendedPlayer = this.computeRecommendation(state.availablePlayers);
+    this.trancheFloor = state.trancheFloor ?? 1;
+    this.tranchesEnabled = state.tranchesEnabled ?? true;
+    const regionFiltered = this.applyRegionFilter(state.availablePlayers);
+    this.regionPlayerRanks = this.computeRegionRanks(regionFiltered);
+    this.filteredPlayers = this.applyFilter(regionFiltered, this.activeFilter);
+    this.recommendedPlayer = this.resolveRecommendedPlayer(state, regionFiltered);
+    // Update phase — keeps draft content mounted during turn transitions (BUG-01 fix)
+    if (this.isDraftDone()) {
+      this.phase = 'done';
+    } else if (this.isMyTurn) {
+      this.phase = 'my-turn';
+    } else if (this.phase === 'idle') {
+      this.phase = 'warmup';
+    } else {
+      this.phase = 'waiting';
+    }
   }
 
-  private handleDraftEvent(event: { event?: string; draftId?: string; round?: number; expiresAt?: string }): void {
+  private handleDraftEvent(event: { event?: string; draftId?: string; round?: number; expiresAt?: string; region?: string; participantId?: string; participantUsername?: string }): void {
+    if (!this.draft?.draft.id) {
+      return;
+    }
+    if (event.draftId && event.draftId !== this.draft.draft.id) {
+      return;
+    }
+
     // BUG-06 fix: accept both DraftEventMessage (event field) and SnakeTurnResponse-shaped
     // broadcasts (round + draftId, no event field) from the backend snake draft service.
     const isTurnEvent =
@@ -188,12 +275,26 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
       (event.round !== undefined && event.draftId !== undefined);
 
     if (isTurnEvent) {
+      if (event.region) {
+        this.currentRegion = event.region;
+      }
       if (event.expiresAt) {
         this.pickExpiresAt = event.expiresAt;
       }
+      // BUG-01 fix: use nextPlayerId from WS broadcast to transition phase optimistically
+      // before getSnakeBoardState() completes — eliminates null gap between PICK_MADE/PICK_PROMPT.
+      if (event.participantId !== undefined && this.phase !== 'idle' && this.phase !== 'done') {
+        const currentUsername = this.userContext.getCurrentUser()?.username;
+        const nextUsername = this.resolveTurnUsername(event.participantId, event.participantUsername);
+        const isNext = !!currentUsername &&
+          !!nextUsername &&
+          nextUsername.toLowerCase() === currentUsername.toLowerCase();
+        this.phase = isNext ? 'my-turn' : 'waiting';
+        this.isMyTurn = isNext;
+      }
       if (this.gameId) {
         this.draftService
-          .getSnakeBoardState(this.gameId)
+          .getSnakeBoardState(this.gameId, event.region ?? this.currentRegion)
           .pipe(
             takeUntilDestroyed(this.destroyRef),
             catchError(() => EMPTY)
@@ -226,6 +327,11 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
   }
 
   private extractRegions(state: DraftBoardState): string[] {
+    const configuredRegions = (state.regions ?? []).filter(region => !!region);
+    if (configuredRegions.length > 0) {
+      return configuredRegions;
+    }
+
     const seen = new Set<string>();
     state.availablePlayers.forEach(p => {
       if (p.region) seen.add(String(p.region));
@@ -233,9 +339,28 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     return Array.from(seen).sort();
   }
 
+  /**
+   * Computes dynamic rank (1-based) for each player within the region, sorted by totalPoints DESC.
+   * Rank 1 = highest points = best player.
+   */
+  private computeRegionRanks(regionPlayers: AvailablePlayer[]): Map<string, number> {
+    const sorted = [...regionPlayers].sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
+    const ranks = new Map<string, number>();
+    sorted.forEach((p, i) => ranks.set(p.id, i + 1));
+    return ranks;
+  }
+
+  private applyRegionFilter(players: AvailablePlayer[], region = this.currentRegion): AvailablePlayer[] {
+    if (!region || region === 'GLOBAL') return players;
+    return players.filter(p => p.region === region);
+  }
+
   private applyFilter(players: AvailablePlayer[], filter: PlayerFilter | null): AvailablePlayer[] {
-    if (!filter) return players;
-    return players.filter(player => this.matchesFilter(player, filter));
+    let result = filter ? players.filter(player => this.matchesFilter(player, filter)) : players;
+    if (this.hideIneligible && this.tranchesEnabled) {
+      result = result.filter(p => this.isPlayerEligible(p));
+    }
+    return result;
   }
 
   private matchesFilter(player: AvailablePlayer, filter: PlayerFilter): boolean {
@@ -257,17 +382,53 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     return true;
   }
 
+  private translateBackendError(msg: string): string {
+    if (msg.includes('Tranche violation')) {
+      const rankMatch = msg.match(/rank (\d+)/);
+      const floorMatch = msg.match(/floor (\d+)/);
+      const rank = rankMatch ? rankMatch[1] : '?';
+      const floor = floorMatch ? floorMatch[1] : '?';
+      return `Ce joueur est trop bien classé pour ce slot (rang ${rank}, minimum requis : ${floor}).`;
+    }
+    if (msg.includes('Joueur hors region')) {
+      return msg;
+    }
+    const requiredRegionMatch = msg.match(/required region ([A-Z]+)/);
+    if (requiredRegionMatch) {
+      return `Joueur hors region - region attendue : ${requiredRegionMatch[1]}`;
+    }
+    if (msg.includes('Region violation')) {
+      return 'Ce joueur ne correspond pas à la région en cours.';
+    }
+    if (msg.includes('already selected')) {
+      return 'Ce joueur a déjà été sélectionné, choisissez un autre.';
+    }
+    return msg || 'Sélection invalide — vérifiez la région et la tranche.';
+  }
+
   private isDraftDone(): boolean {
     const status = this.draft?.status;
     return status === 'COMPLETED' || status === 'CANCELLED';
   }
 
-  private computeRecommendation(players: AvailablePlayer[]): AvailablePlayer | null {
-    const available = players.filter(p => p.available !== false && p.selected !== true);
-    if (!available.length) return null;
-    return available.reduce((best, p) =>
-      (p.totalPoints ?? 0) > (best.totalPoints ?? 0) ? p : best
-    );
+  private resolveRecommendedPlayer(
+    state: DraftBoardState,
+    players: AvailablePlayer[]
+  ): AvailablePlayer | null {
+    if (!state.recommendedPlayerId) {
+      return null;
+    }
+    return players.find(player => player.id === state.recommendedPlayerId) ?? null;
+  }
+
+  private resolveTurnUsername(
+    participantId: string,
+    participantUsername?: string
+  ): string | undefined {
+    if (participantUsername) {
+      return participantUsername;
+    }
+    return this.participants.find(participant => participant.id === participantId)?.username;
   }
 
   private startPollingFallback(gameId: string): void {
@@ -276,7 +437,9 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
         takeUntilDestroyed(this.destroyRef),
         switchMap(() =>
           this.isDraftActive()
-            ? this.draftService.getSnakeBoardState(gameId).pipe(catchError(() => EMPTY))
+            ? this.draftService
+                .getSnakeBoardState(gameId, this.currentRegion)
+                .pipe(catchError(() => EMPTY))
             : EMPTY
         )
       )
@@ -285,7 +448,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
 
   private showNarrativeToast(player: AvailablePlayer): void {
     const region = player.region ? String(player.region) : '';
-    const rank = player.totalPoints ? `Rank ${player.totalPoints}` : '';
+    const rank = player.totalPoints ? `${player.totalPoints} pts` : '';
     this.snackBar.open(
       `Tu as selectionne ${player.username} - ${rank} ${region}`.trim(),
       undefined,

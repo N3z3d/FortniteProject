@@ -9,7 +9,7 @@ import com.fortnite.pronos.domain.draft.model.SnakeTurn;
  * DTO representing the current (or next) turn in a snake draft.
  *
  * <p>Returned by all snake draft endpoints and broadcast via WebSocket. The {@code expiresAt} field
- * is populated for WebSocket broadcasts so clients can sync their timer with the server.
+ * is populated whenever the server can resolve the persisted pick window.
  */
 public record SnakeTurnResponse(
     UUID draftId,
@@ -25,8 +25,8 @@ public record SnakeTurnResponse(
    * Factory method for query and WebSocket endpoints.
    *
    * <p>Pass {@code participantUsername} when available to avoid client-side UUID→username
-   * resolution that can desync (BUG-06). Pass {@code expiresAt} for WebSocket broadcasts so clients
-   * can sync their timer with the server; pass {@code null} for query endpoints.
+   * resolution that can desync (BUG-06). Pass {@code expiresAt} whenever the server can resolve the
+   * authoritative pick window so clients can sync their timer from persisted state.
    */
   public static SnakeTurnResponse from(
       UUID draftId, String region, SnakeTurn turn, String participantUsername, Instant expiresAt) {

@@ -127,7 +127,7 @@ export interface AvailablePlayer {
   id: string;
   username: string;
   nickname: string; // Alias pour username pour compatibilité
-  region: any; // Simplifié pour éviter les erreurs de types
+  region: string | undefined;
   tranche: any; // Niveau de jeu (débutant, intermédiaire, expert, etc.)
   stats?: PlayerStats | any;
   totalPoints?: number; // Points totaux calculés
@@ -351,6 +351,18 @@ export interface DraftBoardState {
     startedAt?: string | Date;
     finishedAt?: string | null | Date;
   };
+  /** Configured regions for this snake draft; used by the UI to switch slots explicitly. */
+  regions?: string[];
+  /** Region of the active draft cursor (e.g. "EU", "ASIA"). "GLOBAL" means no region filter. */
+  currentRegion?: string;
+  /** Server-authoritative expiration timestamp for the active pick window. */
+  pickExpiresAt?: string | null;
+  /** Backend recommendation already validated against current region/tranche rules. */
+  recommendedPlayerId?: string | null;
+  /** Minimum tranche floor for current pick. Players with tranche < this are ineligible. */
+  trancheFloor?: number;
+  /** Whether tranches are enabled for this game. */
+  tranchesEnabled?: boolean;
   // Forme aplatie acceptée par certains tests legacy
   gameId?: string;
   status?: DraftStatus | string;

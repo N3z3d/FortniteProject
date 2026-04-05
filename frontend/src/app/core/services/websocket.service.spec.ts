@@ -97,7 +97,19 @@ describe('WebSocketService', () => {
     expect(url).toBe(`${environment.apiUrl}/ws`);
   });
 
-  describe('buildConnectHeaders — production mode', () => {
+  it('replays the last draft event through service.draftEvents to late subscribers', () => {
+    const event = { event: 'PICK_PROMPT', draftId: 'draft-1', participantUsername: 'KARIM' };
+    (service as any).draftEvents$.next(event);
+
+    let received: unknown;
+    service.draftEvents.pipe(take(1)).subscribe(value => {
+      received = value;
+    });
+
+    expect(received).toEqual(event);
+  });
+
+  describe('buildConnectHeaders - production mode', () => {
     let originalProduction: boolean;
 
     beforeEach(() => {

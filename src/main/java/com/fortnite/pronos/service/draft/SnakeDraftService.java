@@ -8,13 +8,17 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fortnite.pronos.domain.draft.model.Draft;
 import com.fortnite.pronos.domain.draft.model.SnakeTurn;
 import com.fortnite.pronos.domain.game.model.Game;
+import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.DraftDomainRepositoryPort;
+import com.fortnite.pronos.domain.port.out.DraftRegionCursorRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
 import com.fortnite.pronos.dto.SnakeTurnResponse;
@@ -42,6 +46,8 @@ import com.fortnite.pronos.model.GameParticipant;
 @Transactional
 public class SnakeDraftService {
 
+  private static final Logger log = LoggerFactory.getLogger(SnakeDraftService.class);
+
   public static final String TOPIC_PREFIX = "/topic/draft/";
 
   /**
@@ -55,6 +61,7 @@ public class SnakeDraftService {
   private final DraftPickOrchestratorService orchestratorService;
   private final GameDomainRepositoryPort gameDomainRepository;
   private final DraftDomainRepositoryPort draftDomainRepository;
+  private final DraftRegionCursorRepositoryPort cursorRepository;
   private final GameParticipantRepositoryPort gameParticipantRepository;
   private final Random random;
 
@@ -62,11 +69,13 @@ public class SnakeDraftService {
       DraftPickOrchestratorService orchestratorService,
       GameDomainRepositoryPort gameDomainRepository,
       DraftDomainRepositoryPort draftDomainRepository,
+      DraftRegionCursorRepositoryPort cursorRepository,
       GameParticipantRepositoryPort gameParticipantRepository,
       Random random) {
     this.orchestratorService = orchestratorService;
     this.gameDomainRepository = gameDomainRepository;
     this.draftDomainRepository = draftDomainRepository;
+    this.cursorRepository = cursorRepository;
     this.gameParticipantRepository = gameParticipantRepository;
     this.random = random;
   }
@@ -98,7 +107,12 @@ public class SnakeDraftService {
       }
     }
 
-    Instant expiresAt = Instant.now().plusSeconds(TURN_DURATION_SECONDS);
+    Instant expiresAt = resolveTurnExpiresAt(draft.getId(), firstRegion);
+    log.debug(
+        "PICK_PROMPT built: region={}, expiresAt={}, currentPlayerId={}",
+        firstRegion,
+        expiresAt,
+        firstTurn.participantId());
     String username = resolveUsername(firstTurn.participantId(), gameId);
     return SnakeTurnResponse.from(draft.getId(), firstRegion, firstTurn, username, expiresAt);
   }
@@ -122,7 +136,8 @@ public class SnakeDraftService {
         .map(
             turn -> {
               String username = resolveUsername(turn.participantId(), gameId);
-              return SnakeTurnResponse.from(draft.getId(), region, turn, username, null);
+              Instant expiresAt = resolveTurnExpiresAt(draft.getId(), region);
+              return SnakeTurnResponse.from(draft.getId(), region, turn, username, expiresAt);
             });
   }
 
@@ -149,6 +164,12 @@ public class SnakeDraftService {
       throw new NotYourTurnException("It is not your turn to pick");
     }
 
+    log.debug(
+        "advanceCursor BEFORE: region={}, currentParticipantId={}, draftId={}",
+        region,
+        currentTurn.participantId(),
+        draft.getId());
+
     SnakeTurn nextTurn =
         orchestratorService
             .advance(draft.getId(), region)
@@ -157,7 +178,20 @@ public class SnakeDraftService {
                     new InvalidDraftStateException(
                         "Failed to advance cursor for region: " + region));
 
-    Instant expiresAt = Instant.now().plusSeconds(TURN_DURATION_SECONDS);
+    log.debug(
+        "advanceCursor AFTER: region={}, nextParticipantId={}, round={}, pick={}, draftId={}",
+        region,
+        nextTurn.participantId(),
+        nextTurn.round(),
+        nextTurn.pickNumber(),
+        draft.getId());
+
+    Instant expiresAt = resolveTurnExpiresAt(draft.getId(), region);
+    log.debug(
+        "PICK_PROMPT built: region={}, expiresAt={}, currentPlayerId={}",
+        region,
+        expiresAt,
+        nextTurn.participantId());
     String nextUsername = resolveUsername(nextTurn.participantId(), gameId);
     return SnakeTurnResponse.from(draft.getId(), region, nextTurn, nextUsername, expiresAt);
   }
@@ -205,6 +239,15 @@ public class SnakeDraftService {
 
   private List<String> resolveRegions(Game game) {
     List<String> regions = game.getRegionRules().stream().map(r -> r.getRegion().name()).toList();
-    return regions.isEmpty() ? List.of(GLOBAL_REGION) : regions;
+    return regions.isEmpty()
+        ? PlayerRegion.ACTIVE_REGIONS.stream().map(Enum::name).toList()
+        : regions;
+  }
+
+  private Instant resolveTurnExpiresAt(UUID draftId, String region) {
+    return cursorRepository
+        .findByDraftIdAndRegion(draftId, region)
+        .map(cursor -> cursor.getTurnStartedAt().plusSeconds(TURN_DURATION_SECONDS))
+        .orElseGet(() -> Instant.now().plusSeconds(TURN_DURATION_SECONDS));
   }
 }

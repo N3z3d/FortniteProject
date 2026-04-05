@@ -74,6 +74,17 @@
   }
 }
 
+// ===== RECONNECTION BANNER (neutral, non-alarming) =====
+
+.reconnection-banner {
+  padding: 4px var(--space-md);
+  background: #555;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+}
+
 // ===== DRAFT CONTENT =====
 
 .draft-content {
@@ -102,10 +113,63 @@
   align-self: flex-start;
 }
 
+// ===== TRANCHE INFO BAR =====
+
+.tranche-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 6px 12px;
+  background: rgba(245, 166, 35, 0.08);
+  border: 1px solid rgba(245, 166, 35, 0.2);
+  border-radius: 4px;
+  flex-shrink: 0;
+
+  .tranche-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-action);
+  }
+
+  .btn-toggle-ineligible {
+    font-size: 0.75rem;
+    min-height: 28px;
+    line-height: 28px;
+    padding: 0 12px;
+  }
+}
+
+// ===== INELIGIBLE PLAYER =====
+
+.ineligible-tranche {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.6);
+}
+
 // ===== REGION TABS =====
 
-.region-tabs {
+.region-tabs,
+.region-switcher {
   flex-shrink: 0;
+}
+
+.region-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.region-chip {
+  min-width: 72px;
+  font-weight: 600;
+}
+
+.region-chip--active {
+  background: rgba(245, 166, 35, 0.12);
+  border-color: rgba(245, 166, 35, 0.5);
+  color: var(--color-action) !important;
 }
 
 // ===== RECOMMEND BAR =====

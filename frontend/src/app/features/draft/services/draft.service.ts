@@ -5,6 +5,7 @@ import {
   Observable,
   Subscription,
   forkJoin,
+  of,
   throwError,
   timer
 } from 'rxjs';
@@ -53,6 +54,7 @@ interface CataloguePlayerDto {
   tranche: string;
   locked: boolean;
   currentSeason?: number | null;
+  prPoints?: number | null;
 }
 
 interface SnakeTurnDto {
@@ -62,6 +64,15 @@ interface SnakeTurnDto {
   round: number;
   pickNumber: number;
   reversed: boolean;
+  expiresAt?: string | null;
+}
+
+interface SnakeRecommendationDto {
+  id: string;
+  nickname: string;
+  region: string | null;
+  tranche: string | null;
+  trancheFloor: number;
 }
 
 interface ApiEnvelope<T> {
@@ -91,6 +102,8 @@ interface SnakeBoardParticipantUserDto {
 
 interface SnakeBoardGameDetailDto {
   gameId: string;
+  regions?: string[];
+  tranchesEnabled?: boolean;
   draftInfo?: {
     draftId: string;
     status: string;
@@ -109,6 +122,7 @@ interface SnakePickRequest {
 const DEFAULT_CURRENT_SEASON = 2025;
 const DEFAULT_SNAKE_REGION = 'GLOBAL';
 const DEFAULT_SNAKE_PICK_DURATION_SECONDS = 60;
+const SNAKE_REGION_STORAGE_KEY_PREFIX = 'draft:snake:region:';
 
 @Injectable({
   providedIn: 'root'
@@ -155,18 +169,34 @@ export class DraftService implements OnDestroy {
     );
   }
 
-  getSnakeBoardState(gameId: string): Observable<DraftBoardState> {
-    return forkJoin({
-      detail: this.loadSnakeGameDetail(gameId),
-      participantUsers: this.loadSnakeParticipantUsers(gameId),
-      availablePlayers: this.loadSnakeCataloguePlayers(),
-      turn: this.loadSnakeTurn(gameId),
-    }).pipe(
-      map(({ detail, participantUsers, availablePlayers, turn }) =>
-        this.buildSnakeBoardState(gameId, detail, participantUsers, availablePlayers, turn)
-      ),
+  getSnakeBoardState(gameId: string, regionHint?: string): Observable<DraftBoardState> {
+    return this.loadSnakeGameDetail(gameId).pipe(
+      switchMap(detail => {
+        const region = this.resolveSnakeBoardRegion(gameId, detail, regionHint);
+        return this.loadSnakeTurn(gameId, region).pipe(
+          switchMap(turn =>
+            forkJoin({
+              participantUsers: this.loadSnakeParticipantUsers(gameId),
+              availablePlayers: this.loadSnakeCataloguePlayers(),
+              recommendation: this.loadSnakeRecommendation(gameId, turn.region),
+            }).pipe(
+              map(({ participantUsers, availablePlayers, recommendation }) =>
+                this.buildSnakeBoardState(
+                  gameId,
+                  detail,
+                  participantUsers,
+                  availablePlayers,
+                  turn,
+                  recommendation
+                )
+              )
+            )
+          )
+        );
+      }),
       tap(state => {
         this.currentGameIdSubject.next(gameId);
+        this.persistSnakeRegion(gameId, state.currentRegion);
         this.updateDraftState(state);
       }),
       catchError(this.handleError.bind(this))
@@ -182,10 +212,7 @@ export class DraftService implements OnDestroy {
 
     return this.http
       .post<ApiEnvelope<SnakeTurnDto>>(`${this.gamesApiUrl}/${gameId}/draft/snake/pick`, request)
-      .pipe(
-        switchMap(() => this.getSnakeBoardState(gameId)),
-        catchError(this.handleError.bind(this))
-      );
+      .pipe(switchMap(response => this.getSnakeBoardState(gameId, response.data.region)));
   }
 
   makePlayerSelection(gameId: string, playerId: string): Observable<DraftPick> {
@@ -373,11 +400,31 @@ export class DraftService implements OnDestroy {
       .pipe(map(players => players.map(player => this.mapSnakeCataloguePlayer(player))));
   }
 
-  private loadSnakeTurn(gameId: string): Observable<SnakeTurnDto> {
-    const turnUrl = `${this.gamesApiUrl}/${gameId}/draft/snake/turn?region=${DEFAULT_SNAKE_REGION}`;
+  private loadSnakeTurn(gameId: string, region: string): Observable<SnakeTurnDto> {
+    const turnUrl = `${this.gamesApiUrl}/${gameId}/draft/snake/turn?region=${region}`;
     return this.http.get<ApiEnvelope<SnakeTurnDto>>(turnUrl).pipe(
       map(response => response.data),
       catchError((error: HttpErrorResponse) => this.initializeSnakeTurn(gameId, error))
+    );
+  }
+
+  private loadSnakeRecommendation(
+    gameId: string,
+    region: string
+  ): Observable<SnakeRecommendationDto | null> {
+    const recommendUrl = `${this.gamesApiUrl}/${gameId}/draft/snake/recommend?region=${region}`;
+    return this.http.get<ApiEnvelope<SnakeRecommendationDto>>(recommendUrl).pipe(
+      map(response => response.data ?? null),
+      catchError((error: HttpErrorResponse) => {
+        if (error.status !== 404) {
+          this.logger.warn('DraftService: snake recommendation unavailable', {
+            gameId,
+            region,
+            status: error.status,
+          });
+        }
+        return of(null);
+      })
     );
   }
 
@@ -399,7 +446,8 @@ export class DraftService implements OnDestroy {
     detail: SnakeBoardGameDetailDto,
     participantUsers: SnakeBoardParticipantUserDto[],
     availablePlayers: AvailablePlayer[],
-    turn: SnakeTurnDto
+    turn: SnakeTurnDto,
+    recommendation: SnakeRecommendationDto | null
   ): DraftBoardState {
     const selectedPlayers = this.collectSelectedPlayers(detail.participants);
     const currentParticipantId = this.resolveCurrentSnakeParticipantId(
@@ -412,8 +460,16 @@ export class DraftService implements OnDestroy {
       this.mapSnakeParticipant(participant, currentParticipant?.id)
     );
 
+    const trancheFloor = this.computeTrancheFloor(turn.round, turn.pickNumber, participants.length);
+
     return {
       draft: this.buildSnakeDraftSummary(gameId, detail, turn),
+      regions: detail.regions ?? [],
+      currentRegion: turn.region,
+      pickExpiresAt: turn.expiresAt ?? null,
+      recommendedPlayerId: recommendation?.id ?? null,
+      trancheFloor,
+      tranchesEnabled: detail.tranchesEnabled ?? true,
       gameId,
       status: detail.draftInfo?.status ?? 'ACTIVE',
       currentRound: turn.round,
@@ -436,6 +492,7 @@ export class DraftService implements OnDestroy {
       nickname: player.nickname,
       region: player.region,
       tranche: player.tranche,
+      totalPoints: player.prPoints ?? 0,
       available: !player.locked,
       currentSeason: player.currentSeason ?? DEFAULT_CURRENT_SEASON,
       selected: false,
@@ -555,6 +612,50 @@ export class DraftService implements OnDestroy {
       selected: isSelected,
       available: player.available !== false && !isSelected,
     };
+  }
+
+  /**
+   * Computes the tranche floor for the current pick.
+   * Formula: trancheSize = 5 + (participants - 2), slot = (round-1)*participants + pick,
+   * floor = (slot-1)*trancheSize + 1.
+   */
+  private computeTrancheFloor(round: number, _pickNumber: number, participantCount: number): number {
+    const trancheSize = 5 + Math.max(0, participantCount - 2);
+    // Floor is round-based: all participants in the same round share the same floor.
+    return (round - 1) * trancheSize + 1;
+  }
+
+  private resolveSnakeBoardRegion(
+    gameId: string,
+    detail: SnakeBoardGameDetailDto,
+    regionHint?: string
+  ): string {
+    const configuredRegions = detail.regions ?? [];
+    const persistedRegion = this.readPersistedSnakeRegion(gameId);
+    const candidate = regionHint ?? persistedRegion ?? configuredRegions[0] ?? DEFAULT_SNAKE_REGION;
+    if (!configuredRegions.length || candidate === DEFAULT_SNAKE_REGION) {
+      return candidate;
+    }
+    return configuredRegions.includes(candidate) ? candidate : configuredRegions[0];
+  }
+
+  private readPersistedSnakeRegion(gameId: string): string | undefined {
+    try {
+      return sessionStorage.getItem(`${SNAKE_REGION_STORAGE_KEY_PREFIX}${gameId}`) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private persistSnakeRegion(gameId: string, region?: string | null): void {
+    if (!region) {
+      return;
+    }
+    try {
+      sessionStorage.setItem(`${SNAKE_REGION_STORAGE_KEY_PREFIX}${gameId}`, region);
+    } catch {
+      // Ignore storage failures (private mode, security settings).
+    }
   }
 
   private buildSnakeProgress(
