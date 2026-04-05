@@ -17,6 +17,8 @@ describe('DraftService snake runtime contract', () => {
 
   const detailResponse = {
     gameId: 'game-1',
+    regions: ['EU', 'NAW'],
+    tranchesEnabled: true,
     draftInfo: {
       draftId: 'draft-1',
       status: 'ACTIVE',
@@ -71,11 +73,23 @@ describe('DraftService snake runtime contract', () => {
     success: true,
     data: {
       draftId: 'draft-1',
-      region: 'GLOBAL',
+      region: 'EU',
       participantId: 'user-2',
       round: 1,
       pickNumber: 2,
       reversed: false,
+      expiresAt: '2026-04-03T10:01:00Z',
+    },
+  };
+
+  const recommendEnvelope = {
+    success: true,
+    data: {
+      id: 'player-2',
+      nickname: 'Queasy',
+      region: 'EU',
+      tranche: 'expert',
+      trancheFloor: 6,
     },
   };
 
@@ -104,6 +118,7 @@ describe('DraftService snake runtime contract', () => {
 
   afterEach(() => {
     service.stopAutoRefresh();
+    sessionStorage.clear();
     httpMock.verify();
   });
 
@@ -115,20 +130,27 @@ describe('DraftService snake runtime contract', () => {
     });
 
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/details`).flush(detailResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
+      .flush(turnEnvelope);
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
     httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
     httpMock
-      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=GLOBAL`)
-      .flush(turnEnvelope);
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush(recommendEnvelope);
 
     expect(emittedState).toBeDefined();
     expect(emittedState!.draft.id).toBe('draft-1');
     expect(emittedState!.draft.totalRounds).toBe(3);
     expect(emittedState!.currentParticipant?.username).toBe('teddy');
+    expect(emittedState!.pickExpiresAt).toBe('2026-04-03T10:01:00Z');
+    expect(emittedState!.recommendedPlayerId).toBe('player-2');
+    expect(emittedState!.tranchesEnabled).toBeTrue();
     expect(emittedState!.participants.length).toBe(2);
     expect(emittedState!.availablePlayers[0].selected).toBeTrue();
     expect(emittedState!.availablePlayers[0].available).toBeFalse();
     expect(emittedState!.availablePlayers[1].available).toBeTrue();
+    expect(emittedState!.availablePlayers[1].totalPoints).toBeUndefined();
     expect(emittedState!.progress?.totalRounds).toBe(3);
     expect(emittedState!.progress?.totalPicks).toBe(6);
     expect(emittedState!.progress?.completedPicks).toBe(1);
@@ -142,14 +164,17 @@ describe('DraftService snake runtime contract', () => {
     });
 
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/details`).flush(detailResponse);
-    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
-    httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
     httpMock
-      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=GLOBAL`)
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
       .flush(null, { status: 404, statusText: 'Not Found' });
     httpMock
       .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/initialize`)
       .flush(turnEnvelope);
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
+    httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush(recommendEnvelope);
 
     expect(emittedState).toBeDefined();
     expect(emittedState!.currentParticipant?.id).toBe('participant-2');
@@ -170,15 +195,78 @@ describe('DraftService snake runtime contract', () => {
         { ...detailResponse.participants[1], username: 'TEDDY' },
       ],
     });
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
+      .flush(turnEnvelope);
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
     httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
     httpMock
-      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=GLOBAL`)
-      .flush(turnEnvelope);
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush(recommendEnvelope);
 
     expect(emittedState).toBeDefined();
     expect(emittedState!.currentParticipant?.id).toBe('participant-2');
     expect(emittedState!.currentParticipant?.username).toBe('TEDDY');
+  });
+
+  it('reuses the persisted snake region on reload before falling back to the first configured region', () => {
+    sessionStorage.setItem('draft:snake:region:game-1', 'NAW');
+
+    service.getSnakeBoardState('game-1').subscribe();
+
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/details`).flush(detailResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=NAW`)
+      .flush({ ...turnEnvelope, data: { ...turnEnvelope.data, region: 'NAW' } });
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
+    httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=NAW`)
+      .flush({ ...recommendEnvelope, data: { ...recommendEnvelope.data, region: 'NAW' } });
+  });
+
+  it('degrades gracefully when snake recommendation is unavailable', () => {
+    let emittedState: DraftBoardState | undefined;
+
+    service.getSnakeBoardState('game-1').subscribe(state => {
+      emittedState = state;
+    });
+
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/details`).flush(detailResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
+      .flush({ ...turnEnvelope, data: { ...turnEnvelope.data, region: 'EU' } });
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
+    httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(emittedState).toBeDefined();
+    expect(emittedState!.recommendedPlayerId).toBeNull();
+  });
+
+  it('propagates tranchesEnabled from the game detail payload', () => {
+    let emittedState: DraftBoardState | undefined;
+
+    service.getSnakeBoardState('game-1').subscribe(state => {
+      emittedState = state;
+    });
+
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/details`)
+      .flush({ ...detailResponse, tranchesEnabled: false });
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
+      .flush({ ...turnEnvelope, data: { ...turnEnvelope.data, region: 'EU' } });
+    httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
+    httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush({ ...recommendEnvelope, data: { ...recommendEnvelope.data, region: 'EU' } });
+
+    expect(emittedState).toBeDefined();
+    expect(emittedState!.tranchesEnabled).toBeFalse();
   });
 
   it('posts a snake pick then reloads the board state', () => {
@@ -197,11 +285,14 @@ describe('DraftService snake runtime contract', () => {
     pickRequest.flush(turnEnvelope);
 
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/details`).flush(detailResponse);
+    httpMock
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=EU`)
+      .flush(turnEnvelope);
     httpMock.expectOne(`${apiBaseUrl}/api/games/game-1/participants`).flush(participantUsersResponse);
     httpMock.expectOne(`${apiBaseUrl}/players/catalogue`).flush(catalogueResponse);
     httpMock
-      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/turn?region=GLOBAL`)
-      .flush(turnEnvelope);
+      .expectOne(`${apiBaseUrl}/api/games/game-1/draft/snake/recommend?region=EU`)
+      .flush(recommendEnvelope);
 
     expect(emittedState).toBeDefined();
     expect(emittedState!.currentParticipant?.username).toBe('teddy');

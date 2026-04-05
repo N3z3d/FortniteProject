@@ -27,6 +27,15 @@ const TURN_CHANGED_EVENT = 'TURN_CHANGED';
 const PICK_CONFIRM_SNACKBAR_DURATION_MS = 3_000;
 /** Fallback polling interval (ms) — refreshes board state when WS events may be missed. */
 const BOARD_POLL_INTERVAL_MS = 5_000;
+const REGION_LOAD_ERROR_MESSAGE = 'Impossible de charger cette region, veuillez reessayer.';
+
+interface RegionSelectionSnapshot {
+  currentRegion: string;
+  filteredPlayers: AvailablePlayer[];
+  recommendedPlayer: AvailablePlayer | null;
+  selectedPlayer: AvailablePlayer | null;
+  regionPlayerRanks: Map<string, number>;
+}
 
 @Component({
   selector: 'app-snake-draft-page',
@@ -119,6 +128,7 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
       return;
     }
 
+    const previousState = this.captureRegionSelectionSnapshot();
     this.selectedPlayer = null;
     this.currentRegion = region;
 
@@ -129,7 +139,13 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
       this.recommendedPlayer = null;
     }
 
-    this.refreshDraftState(this.gameId, region);
+    this.refreshDraftState(this.gameId, region, () => {
+      this.restoreRegionSelectionSnapshot(previousState);
+      this.snackBar.open(REGION_LOAD_ERROR_MESSAGE, undefined, {
+        duration: PICK_CONFIRM_SNACKBAR_DURATION_MS,
+        panelClass: 'snack-pick-error',
+      });
+    });
   }
 
   onPlayerSelect(player: AvailablePlayer): void {
@@ -192,11 +208,14 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
     this.refreshDraftState(gameId);
   }
 
-  private refreshDraftState(gameId: string, regionHint?: string | null): void {
+  private refreshDraftState(gameId: string, regionHint?: string | null, onError?: () => void): void {
     this.draftService
       .getSnakeBoardState(gameId, regionHint ?? undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(state => this.applyDraftState(state));
+      .subscribe({
+        next: state => this.applyDraftState(state),
+        error: () => onError?.(),
+      });
   }
 
   private subscribeToWebSocket(gameId: string): void {
@@ -281,8 +300,8 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
       if (event.expiresAt) {
         this.pickExpiresAt = event.expiresAt;
       }
-      // BUG-01 fix: use nextPlayerId from WS broadcast to transition phase optimistically
-      // before getSnakeBoardState() completes — eliminates null gap between PICK_MADE/PICK_PROMPT.
+      // BUG-01 fix: use participantUsername from the WS payload to transition phase optimistically
+      // before getSnakeBoardState() completes — eliminates the PICK_MADE/PICK_PROMPT null gap.
       if (event.participantId !== undefined && this.phase !== 'idle' && this.phase !== 'done') {
         const currentUsername = this.userContext.getCurrentUser()?.username;
         const nextUsername = this.resolveTurnUsername(event.participantId, event.participantUsername);
@@ -344,10 +363,33 @@ export class SnakeDraftPageComponent implements OnInit, OnDestroy, ComponentWith
    * Rank 1 = highest points = best player.
    */
   private computeRegionRanks(regionPlayers: AvailablePlayer[]): Map<string, number> {
-    const sorted = [...regionPlayers].sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
     const ranks = new Map<string, number>();
-    sorted.forEach((p, i) => ranks.set(p.id, i + 1));
+    const rankedPlayers = regionPlayers
+      .filter((player): player is AvailablePlayer & { totalPoints: number } => player.totalPoints !== undefined && player.totalPoints !== null)
+      .sort((a, b) => b.totalPoints - a.totalPoints);
+    rankedPlayers.forEach((player, index) => ranks.set(player.id, index + 1));
+    regionPlayers
+      .filter(player => player.totalPoints === undefined || player.totalPoints === null)
+      .forEach(player => ranks.set(player.id, Number.MAX_SAFE_INTEGER));
     return ranks;
+  }
+
+  private captureRegionSelectionSnapshot(): RegionSelectionSnapshot {
+    return {
+      currentRegion: this.currentRegion,
+      filteredPlayers: [...this.filteredPlayers],
+      recommendedPlayer: this.recommendedPlayer,
+      selectedPlayer: this.selectedPlayer,
+      regionPlayerRanks: new Map(this.regionPlayerRanks),
+    };
+  }
+
+  private restoreRegionSelectionSnapshot(snapshot: RegionSelectionSnapshot): void {
+    this.currentRegion = snapshot.currentRegion;
+    this.filteredPlayers = [...snapshot.filteredPlayers];
+    this.recommendedPlayer = snapshot.recommendedPlayer;
+    this.selectedPlayer = snapshot.selectedPlayer;
+    this.regionPlayerRanks = new Map(snapshot.regionPlayerRanks);
   }
 
   private applyRegionFilter(players: AvailablePlayer[], region = this.currentRegion): AvailablePlayer[] {

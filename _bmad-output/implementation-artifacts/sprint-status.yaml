@@ -1027,7 +1027,7 @@ sprint-14:
   # AC: boundary check DraftRegionCursor.advanceCursor()
   # ⚠️ Faire EN DERNIER des P0 — le plus complexe, dépend de fix-timer-server-sync DONE
   # Story file: sprint14-fix-draft-crash-tour2.md
-  sprint14-fix-draft-crash-tour2: review  # 2026-04-04: preuve UI multi-region acquise (6 picks / 3 regions / 2 comptes), passage review avec waiver explicite du protocole diagnostic pre-fix
+  sprint14-fix-draft-crash-tour2: done  # 2026-04-05: code review BMAD cloture, waiver AC 0/1 accepte, AC 6 alignee sur participantUsername, patches frontend verifies
 
   # ----------------------------------------------------------
   # P1 — Expérience joueur

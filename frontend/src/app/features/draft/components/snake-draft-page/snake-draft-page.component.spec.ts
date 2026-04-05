@@ -226,6 +226,29 @@ describe('SnakeDraftPageComponent', () => {
     expect(draftServiceSpy.getSnakeBoardState).toHaveBeenCalledWith('game1', 'NAW');
   });
 
+  it('should restore the previous region state when the regional reload fails', () => {
+    draftServiceSpy.getSnakeBoardState.calls.reset();
+    draftServiceSpy.getSnakeBoardState.and.returnValue(throwError(() => new Error('reload failed')));
+    component.currentRegion = 'EU';
+    component.filteredPlayers = [PLAYERS[1]];
+    component.selectedPlayer = PLAYERS[1];
+    component.recommendedPlayer = PLAYERS[1];
+    (component as any).regionPlayerRanks = new Map([['p2', 2]]);
+
+    component.onRegionSelect('NAW');
+
+    expect(component.currentRegion).toBe('EU');
+    expect(component.filteredPlayers).toEqual([PLAYERS[1]]);
+    expect(component.selectedPlayer).toBe(PLAYERS[1]);
+    expect(component.recommendedPlayer).toBe(PLAYERS[1]);
+    expect((component as any).regionPlayerRanks.get('p2')).toBe(2);
+    expect(snackBarSpy.open).toHaveBeenCalledWith(
+      jasmine.stringContaining('charger cette region'),
+      undefined,
+      jasmine.any(Object)
+    );
+  });
+
   it('should ignore region selection when the requested region is already active', () => {
     draftServiceSpy.getSnakeBoardState.calls.reset();
     component.currentRegion = 'EU';
@@ -517,6 +540,26 @@ describe('SnakeDraftPageComponent', () => {
     const player: AvailablePlayer = { id: 'pz', username: 'ANY', nickname: 'ANY', region: 'EU', tranche: '1-5', totalPoints: 5, currentSeason: 1 };
 
     expect(component.isPlayerEligible(player)).toBe(true);
+  });
+
+  it('should keep players without PR score eligible when tranche gating is enabled', () => {
+    component.tranchesEnabled = true;
+    component.trancheFloor = 50;
+    const unrankedPlayer: AvailablePlayer = {
+      id: 'no-pr',
+      username: 'NO-PR',
+      nickname: 'NO-PR',
+      region: 'EU',
+      tranche: 'unknown',
+      currentSeason: 1,
+    };
+
+    (component as any).regionPlayerRanks = (component as any).computeRegionRanks([
+      PLAYERS[1],
+      unrankedPlayer,
+    ]);
+
+    expect(component.isPlayerEligible(unrankedPlayer)).toBe(true);
   });
 
   it('should filter ineligible players when hideIneligible is toggled', () => {

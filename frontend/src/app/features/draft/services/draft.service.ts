@@ -492,7 +492,7 @@ export class DraftService implements OnDestroy {
       nickname: player.nickname,
       region: player.region,
       tranche: player.tranche,
-      totalPoints: player.prPoints ?? 0,
+      totalPoints: player.prPoints ?? undefined,
       available: !player.locked,
       currentSeason: player.currentSeason ?? DEFAULT_CURRENT_SEASON,
       selected: false,
