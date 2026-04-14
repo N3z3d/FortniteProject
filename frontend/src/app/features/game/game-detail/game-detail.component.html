@@ -132,6 +132,7 @@
 
             <!-- Leave Game Button (Participant non-host) -->
             <button mat-raised-button
+                    class="leave-game-btn"
                     color="accent"
                     *ngIf="canLeaveGame()"
                     (click)="confirmLeave()"
