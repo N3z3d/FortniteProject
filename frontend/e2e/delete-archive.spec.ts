@@ -26,20 +26,20 @@ const DA_PREFIX = 'E2E-DA-';
 // ---------------------------------------------------------------------------
 
 async function loginWithRealJwt(page: Page, username: 'thibaut' | 'teddy'): Promise<void> {
+  await page.goto(`${BASE_URL}/login`);
   // Clear any residual session from a previous test running in the same browser context
   await page.evaluate(() => {
     sessionStorage.clear();
     localStorage.clear();
   });
-  await page.goto(`${BASE_URL}/login`);
   const profileBtn = page.locator(
     `button:has-text("${username}"), [role="button"]:has-text("${username}")`
   ).first();
   await profileBtn.waitFor({ state: 'visible', timeout: 15_000 });
   await profileBtn.click();
   await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 15_000 });
-  // Wait for the app to fully stabilize (auth cookie/localStorage committed) before next navigation
-  await page.waitForLoadState('networkidle', { timeout: 10_000 });
+  // Wait for resources to load (networkidle avoided — WebSocket keeps network busy)
+  await page.waitForLoadState('load', { timeout: 10_000 });
 }
 
 /** EU Tranche 1 player from V1001__seed_e2e_users_and_players.sql */

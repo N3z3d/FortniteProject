@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,6 +24,7 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
+import { WebSocketService } from '../../../core/services/websocket.service';
 
 @Component({
   selector: 'app-game-detail',
@@ -66,6 +67,7 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     private readonly uiFeedback: UiErrorFeedbackService,
     private readonly logger: LoggerService,
     private readonly gamesRealtimeService: GamesRealtimeService,
+    private readonly websocketService: WebSocketService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
   ) { }
@@ -75,9 +77,11 @@ export class GameDetailComponent implements OnInit, OnDestroy {
       this.gameId = params['id'];
       if (this.gameId) {
         this.loadGameDetails();
+        this.websocketService.subscribeToGameEvents(this.gameId);
       }
     });
     this.subscribeToRealtimeUpdates();
+    this.subscribeToDraftStarted();
   }
 
   ngOnDestroy(): void {
@@ -89,7 +93,7 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.participantsError = null;
-    this.userGamesStore.refreshGames().subscribe({
+    this.userGamesStore.refreshGames().pipe(takeUntil(this.destroy$)).subscribe({
       next: (games) => {
         if (!this.isGameVisibleForCurrentUser(games)) {
           this.handleInaccessibleGame();
@@ -409,6 +413,20 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     this.userGamesStore.removeGame(this.gameId);
     this.uiFeedback.showError(null, 'games.detail.gameUnavailable', { duration: 5000 });
     this.router.navigate(['/games']);
+  }
+
+  private subscribeToDraftStarted(): void {
+    this.websocketService.gameNotifications
+      .pipe(
+        takeUntil(this.destroy$),
+        filter(n => !!n && n.type === 'DRAFT_STARTED' && n.gameId === this.gameId)
+      )
+      .subscribe(() => {
+        if (this.router.url.includes('draft')) {
+          return;
+        }
+        this.router.navigate(['/games', this.gameId, 'draft', 'snake']);
+      });
   }
 
   private subscribeToRealtimeUpdates(): void {

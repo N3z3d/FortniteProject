@@ -81,8 +81,11 @@ export class UserGamesStore {
       return of(state.games);
     }
 
-    // Prevent duplicate requests
-    if (state.loading) {
+    // Prevent duplicate requests only for non-forced refreshes.
+    // Force-refresh (called by game-detail on navigation) must always make a fresh API call;
+    // returning the BehaviorSubject here would emit [] immediately while the concurrent load
+    // is still in flight, causing isGameVisibleForCurrentUser([]) → handleInaccessibleGame().
+    if (!forceRefresh && state.loading) {
       this.logger.debug('UserGamesStore: load already in progress');
       return this.games$.asObservable();
     }
