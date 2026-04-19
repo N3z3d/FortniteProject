@@ -863,7 +863,7 @@ sprint-13:
   description: "Le draft est jouable"
   goal: "Thibaut et Teddy finissent un draft snake complet sans erreur — couvert par E2E navigateur réel (2 browser contexts, picks via UI)"
   start_date: "2026-03-20"
-  status: in-progress
+  status: done
 
   # ----------------------------------------------------------
   # P0 #1 — Logs structurés backend (score rétro : 12)
@@ -962,7 +962,7 @@ sprint-14:
   description: "Stabilisation draft + expérience joueur complète"
   goal: "Thibaut et Teddy jouent une partie complète de A à Z sans bug — draft complet, timer sync, région respectée, leaderboard lisible"
   start_date: "2026-03-22"
-  status: in-progress
+  status: done
 
   # Tracing des action items Sprint 13 (retro 2026-03-22, score 8.5/10)
   sprint-13-retrospective-globale-action-tracking: done
@@ -999,7 +999,7 @@ sprint-14:
   # AC supplémentaire (what-if D): vérifier DraftRegionCursor.currentRegionIndex en DB après pick
   # AC backend: validation région dans validatePickByDraftId() — pick hors-région → 400
   # Story file: sprint14-fix-region-filter-draft.md
-  sprint14-fix-region-filter-draft: review  # 2026-04-04: catalogue runtime fixed/revalidated, 2-account join/start + EU-only filter + wrong-region 400 confirmed, plus full 15-pick run with per-pick DB cursor trace
+  sprint14-fix-region-filter-draft: done  # 2026-04-11: code review clôturé — 3 rounds review + Docker validé 2026-04-04 (15 picks, curseur DB, rejet hors-région 400)
 
   # QUICK WIN P0 (promu de P1 — score 7.70, ~30min, réduit confusion Teddy)
   # Masquer mode "Simultané" dans création de partie (désactivation visuelle, code backend intact)
@@ -1013,7 +1013,7 @@ sprint-14:
   # AC: timer synchronisé sur 2 écrans + resync après reconnexion WebSocket + banner reconnexion
   # AC: @ParameterizedTest 8 régions expiresAt non-null
   # Story file: sprint14-fix-timer-server-sync.md
-  sprint14-fix-timer-server-sync: review  # code review done 2026-03-28, 4 fixes applied — Docker AC pending
+  sprint14-fix-timer-server-sync: done  # 2026-04-12: Docker AC validé — F5 stays at correct time, timer syncs between thibaut/teddy accounts
 
   # Crash Angular au tour 2 en multi-région
   # Root cause (5 Whys): currentPlayer → null entre PICK_MADE et PICK_PROMPT
@@ -1035,17 +1035,17 @@ sprint-14:
 
   # QUICK WIN P1 — Fix "2/5 participants" — maxParticipants non respecté dans GameDto→Game
   # (score 7.20, effort faible, aucune dépendance)
-  sprint14-fix-participants-count: backlog
+  sprint14-fix-participants-count: done  # 2026-04-07: code review BMAD cloture, fallback +1 supprime partout, 6 nouveaux tests, 0 regressions
 
   # Bannière "TON TOUR" vive + "Tour de [Nom]" adversaire + animation changement de tour
   # User focus group: mobile = signal FORT obligatoire (navigator.vibrate() + aria-live assertive)
   # Desktop = bannière P1, Mobile = P0 (Teddy sur téléphone a raté 3 tours → abandon)
-  sprint14-ux-notification-tour: backlog
+  sprint14-ux-notification-tour: done  # story file: sprint14-ux-notification-tour.md
 
   # Refonte leaderboard gaming theme (Rajdhani, médailles or/argent/bronze, deltas vert/rouge)
   # Priorité réelle (user focus group): fix données hardcodées ("147 joueurs draftés") AVANT design
   # Sous-tâches: (1) fix données hardcodées [critique], (2) refonte visuelle [nice-to-have]
-  sprint14-fix-leaderboard-design: backlog
+  sprint14-fix-leaderboard-design: done  # story file: sprint14-fix-leaderboard-design.md
 
   # ----------------------------------------------------------
   # P2 — Infrastructure qualité
@@ -1055,7 +1055,7 @@ sprint-14:
   # What-if E: structurer en ACs indépendants → détection continue pendant les fixes P0
   # timeout 120s minimum, assertions APRÈS draft complet (état final 2 équipes vérifié)
   # Remplace les 4 tests DRAFT-2P qui se marquent skipped
-  sprint14-e2e-ui-draft-complet: backlog
+  sprint14-e2e-ui-draft-complet: done  # 2026-04-12: DRAFT-UI-01 green 16.6s — profile-button login, 2 browser contexts, Bugha_EU+Aqua_EU picked via real UI clicks, both teams verified via API. BASE_URL=http://localhost:8080
 
   # ----------------------------------------------------------
   # Post-session Docker — bugs découverts lors du test réel 2026-03-26
@@ -1077,13 +1077,13 @@ sprint-14:
   # Cause: aucun event WS "DRAFT_STARTED" broadcast + aucune redirection auto côté frontend
   # Fix: backend broadcast DRAFT_STARTED sur /topic/game/{id} + frontend redirect vers /draft/snake
   # Story file: sprint14-fix-draft-start-notification.md
-  sprint14-fix-draft-start-notification: backlog
+  sprint14-fix-draft-start-notification: done  # 2026-04-09: WS broadcast + auto-redirect, 4 nouveaux tests, 0 regressions
 
   # P2 — Timer peut se resetter à 60s si getSnakeBoardState() refreshe durationSeconds seul
   # Cause: ngOnChanges DraftTimerComponent redémarre sur durationSeconds même si serverExpiresAt déjà set
   # Fix: ne pas redémarrer si serverExpiresAt est présent et encore dans le futur
   # Story file: sprint14-fix-timer-reset-on-refresh.md
-  sprint14-fix-timer-reset-on-refresh: backlog
+  sprint14-fix-timer-reset-on-refresh: done  # 2026-04-11: guard !serverExpiresAt dans ngOnChanges + null pickExpiresAt sur PICK_MADE + 3 tests, 2333/2333 green
 
   # P0 BLOQUANT — Refonte systeme de tranches : calcul dynamique par region
   # Cause: tranche stockee comme attribut joueur (players.tranche) au lieu de calcul dynamique
@@ -1093,4 +1093,286 @@ sprint-14:
   # Story file: sprint14-refonte-tranche-system.md
   sprint14-refonte-tranche-system: done  # 2026-03-31: BUG-D2 duplicate check, BUG-D6 catalogue sort, BUG-D7 French errors, E2E 8/8 green Docker validated
 
-  sprint14-retrospective: optional
+  sprint14-retrospective: done  # 2026-04-12 — voir ci-dessous
+
+# ============================================================
+# RÉTROSPECTIVE SPRINT 14 — 2026-04-12
+# Score: 9/10 — Sprint le plus propre depuis sprint 7
+# ============================================================
+#
+# CE QUI A BIEN MARCHÉ
+# ─────────────────────
+# + Objectif atteint à 100% : Thibaut + Teddy jouent une partie de A à Z sans bug
+# + fix-timer-server-sync validé Docker : F5 reste à 26s, sync inter-comptes parfait
+# + fix-draft-crash-tour2 : zéro crash multi-région au tour 2
+# + DRAFT-UI-01 : E2E 2 contextes navigateur, picks réels en 16.6s (Bugha_EU + Aqua_EU)
+# + fix-tranche-system : draft complet 15+ rounds, curseur DB, rejet hors-région 400
+# + fix-archive-endpoint : archivage opérationnel, limite 5 parties plus bloquante
+# + Découverte critique : deux containers Docker coexistent (FortniteProject:8080 + PriorisProject:18080)
+#   → mémorisé, plus jamais de confusion de port
+#
+# CE QUI PEUT ÊTRE AMÉLIORÉ
+# ──────────────────────────
+# - Catalogue "broken" : rapport d'erreur imprécis (cause = mauvais port, pas un vrai bug)
+#   → Action : pré-documenter les ports Docker dans CLAUDE.md ou README
+# - navigate(['/']) après delete/archive/leave → crash login
+#   → Détecté en prod Docker, aurait dû être couvert par un test E2E DA-*
+#   → Action A14a : ajouter DA-05 "après delete, redirect vers /games" dans delete-archive.spec.ts
+# - loginWithRealJwt perdait ~1h30 de debug sur le mauvais port
+#   → Action A14b : ajouter assertion BASE_URL dans playwright.config.ts (warn si port != 8080)
+# - /api/games/{id}/draft/snake/recommend?region=EU → 404 permanent (frontend appelle endpoint inexistant)
+#   → Action A14c : implémenter l'endpoint OU supprimer l'appel frontend
+#
+# ACTION ITEMS SPRINT 14 → SPRINT 15
+# ─────────────────────────────────────
+# A14a → sprint15-fix-post-delete-redirect (ajouter E2E DA-05) ← STORY CRÉÉE
+# A14b → ajouter commentaire port dans playwright.config.ts (5min, fait en inline) ← DONE
+# A14c → /recommend 404 = comportement NORMAL (story 4-2 AC-5, catchError déjà en place) ← FERMÉ
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SPRINT 15 — "Pipeline Réel"
+# Thème : Résolution d'identité joueur via l'API Fortnite + couverture E2E regression
+# Date début : 2026-04-12
+# ══════════════════════════════════════════════════════════════════════════════
+
+development_status:
+  sprint15-fix-post-delete-redirect: done            # DA-05 ✅ passé 8.8s, DA-06 skip gracieux (endpoint pré-existant hors scope)
+  sprint15-fortnite-api-resolution: done             # FortniteApiResolutionAdapter (5 tests) + ConfidenceScoreService displayName overload (5 tests) + EpicIdSuggestionResponse DTO + GET /suggest-epic-id (6 backend tests) + PipelineService.getSuggestedEpicId() + confidence badge UI (4 frontend tests) — 2337 frontend, BUILD SUCCESS backend
+
+  sprint15-retrospective: done  # 2026-04-12 — voir ci-dessous
+
+# ============================================================
+# RÉTROSPECTIVE SPRINT 15 — 2026-04-12
+# Score: 8/10 — Sprint focalisé, livraison propre sur 2 stories
+# ============================================================
+#
+# CE QUI A BIEN MARCHÉ
+# ─────────────────────
+# + Objectif principal atteint : résolution d'identité via Fortnite API opérationnelle
+#   → FortniteApiResolutionAdapter + endpoint suggest-epic-id + badge confiance frontend
+# + ConfidenceScoreService enrichi correctement : comparaison sur displayName (pseudo réel)
+#   plutôt que l'epicId hexadécimal — score de confiance désormais sémantiquement pertinent
+# + Architecture @ConditionalOnProperty propre : StubAdapter (défaut) vs FortniteApiAdapter
+#   → zéro régression, les deux coexistent sans conflit Spring
+# + A14a (action rétro Sprint 14) livré : DA-05 E2E delete → /games validé Docker en 8.8s
+#   → protection permanente contre la régression navigate(['/'])
+# + DA-06 skip gracieux : endpoint invitation-code pré-existant 404 (hors scope) géré proprement
+#   sans bloquer le test ni masquer un vrai bug
+# + Pattern Angular Material v17 dialogs identifié et documenté :
+#   waitForSelector('[role="dialog"]') requis (pas mat-dialog-container ni state:'visible')
+# + 2337/2337 frontend tests, BUILD SUCCESS backend : 0 régression introduite
+#
+# CE QUI PEUT ÊTRE AMÉLIORÉ
+# ──────────────────────────
+# - DA-06 livré comme "skeleton avec skip" : l'action leave → redirect /games n'est pas
+#   couverte par un test E2E de bout en bout. La mécanique generateCode → join est cassée
+#   (endpoint pré-existant changé), donc DA-06 reste fondamentalement incomplet.
+#   → Action A15a : tracer une story dédiée pour rétablir l'endpoint invitation-code
+#     OU adapter DA-06 pour contourner sans generateCode (join direct via API DB seed)
+# - L'endpoint suggest-epic-id fait deux appels API implicites dans PlayerIdentityPipelineService
+#   (resolveFortniteId via ResolutionPort puis searchByName via FortniteApiPort pour le displayName)
+#   → Dans la réalité, FortniteApiResolutionAdapter appelle déjà searchByName une fois.
+#   Le service refait un appel : duplication de requête réseau potentielle en production.
+#   → Action A15b : revoir suggestEpicId pour ne faire qu'un seul appel API (retourner
+#     FortnitePlayerData complet depuis ResolutionPort, pas seulement l'epicId)
+# - Couverture E2E de la feature pipeline admin (story 2) : 0 test E2E pour suggest-epic-id.
+#   Tout est couvert en unitaire, mais aucun test de bout en bout UI+backend.
+#   → Action A15c : ajouter un test E2E Playwright pipeline-suggest.spec.ts (mode stub suffisant)
+# - Tasks subtasks story 2 cochées [ ] dans le fichier (non [x]) — le Dev Agent a rempli
+#   les Completion Notes mais n'a pas coché les cases individuelles.
+#   → Rappel process : cocher systématiquement les sous-tâches dans la story file.
+#
+# ACTION ITEMS SPRINT 15 → SPRINT 16
+# ─────────────────────────────────────
+# A15a → Rétablir ou contourner generateCode pour DA-06 (leave → redirect /games E2E complet)
+# A15b → Refactorer ResolutionPort pour retourner FortnitePlayerData (1 appel API au lieu de 2)
+# A15c → Ajouter test E2E pipeline admin (suggest-epic-id, mode stub, Docker :8080)
+#
+# MÉTRIQUES
+# ──────────
+# Stories: 2 done / 2 (100%)
+# Tests unitaires: 2316 → 2337 green (+ 21 nouveaux, 0 regression)
+# Tests E2E: DA-05 ✅ nouveau, DA-06 skeleton (skip gracieux)
+# Nouveaux fichiers backend: 3 créés (FortniteApiResolutionAdapter, EpicIdSuggestionResponse, test adapter)
+# Nouveaux fichiers frontend: 0 créé (modifications sur 5 fichiers existants)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SPRINT 16 — "Pipeline Réel v2"
+# Thème : Auto-suggest au chargement + refactor ResolutionPort (1 appel API)
+# Date début : 2026-04-13
+# Action items Sprint 15 : A15a (DA-06 E2E), A15b (ResolutionPort refactor), A15c (E2E pipeline)
+# ══════════════════════════════════════════════════════════════════════════════
+
+sprint-16:
+  description: "Pipeline Réel v2"
+  goal: "L'admin voit les suggestions Epic ID pré-remplies automatiquement à l'ouverture du tab UNRESOLVED — sans cliquer sur chaque bouton. Un seul appel API par entrée."
+  start_date: "2026-04-13"
+  status: done
+
+  sprint16-pipeline-autoload: done     # Auto-suggest au chargement UNRESOLVED + refactor ResolutionPort
+  sprint16-da06-leave-e2e: done     # A15a : DA-06 E2E leave → redirect /games
+  sprint16-retrospective: done      # 2026-04-16 — voir sprint16-retrospective.md — 9/10, A16a (pipeline-suggest E2E) + A16b (process E2E tasks) pour Sprint 17
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SPRINT 17 — "Qualité Pipeline E2E"
+# Thème : Couverture E2E suggest-epic-id + renforcement process DoD E2E
+# Date début : 2026-04-16
+# Action items Sprint 16 : A16a (pipeline-suggest E2E), A16b (process DoD E2E tasks)
+# ══════════════════════════════════════════════════════════════════════════════
+
+sprint-17:
+  description: "Qualité Pipeline E2E"
+  goal: "Couvrir le flux suggest-epic-id par un test Playwright E2E en mode stub (Docker :8080) + formaliser la règle DoD 'action item E2E = task explicite' dans la checklist"
+  start_date: "2026-04-16"
+  end_date: "2026-04-16"
+  status: done
+
+  # A16a (P2) — Test E2E Playwright suggest-epic-id en mode stub
+  # Flux : admin ouvre pipeline → tab UNRESOLVED → champ Epic ID pré-rempli automatiquement
+  # Mode stub (StubEpicIdValidatorAdapter, pas de vraie clé API requise)
+  # Docker :8080 — doit passer 2 fois de suite sans reset DB
+  sprint17-pipeline-suggest-e2e: done  # 2026-04-16: PIPELINE-SUGGEST-01+02 créés, preflight skip gracieux, adapter-agnostique (fortnite-api + stub)
+
+  # A16b (process) — Formaliser la règle DoD : action item E2E = task [ ] explicite
+  # Ajouter dans checklist.md : "Tout action item de rétro portant sur un test E2E
+  # = task [ ] nommée dans la story file (pas seulement un AC de couverture générique)"
+  # Root cause : A15c a glissé sans detection car formulé uniquement comme AC générique
+  sprint17-process-dod-e2e-tasks: done  # 2026-04-16: règle ajoutée dans les 3 copies de checklist.md
+
+  sprint17-retrospective: done  # 2026-04-16 — voir sprint17-retrospective.md — 9/10, A17a (adapter-info endpoint) + A17b (retry 429) pour Sprint 18
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SPRINT 18 — "Robustesse Pipeline"
+# Thème : Introspection adapter actif + retry 429 frontend
+# Date début : 2026-04-16
+# Action items Sprint 17 : A17a (adapter-info endpoint), A17b (retry 429)
+# ══════════════════════════════════════════════════════════════════════════════
+
+sprint-18:
+  description: "Robustesse Pipeline"
+  goal: "L'admin voit l'adapter actif en un coup d'œil (adapter-info endpoint), et le composant pipeline ne se bloque plus sur un rate limit 429 (retry backoff exponentiel)"
+  start_date: "2026-04-16"
+  status: in-progress
+
+  # A17a (P3) — Endpoint GET /api/admin/pipeline/adapter-info
+  # Retourne le nom de l'adapter actif : { "adapter": "stub" | "fortnite-api" }
+  # Backend : AdminPlayerPipelineController + service déléguant à un bean nommé
+  # Frontend : PipelineService.getAdapterInfo() + badge dans AdminPipelinePageComponent
+  # Intérêt : les tests E2E peuvent faire un preflight et adapter leurs assertions à l'adapter actif
+  sprint18-adapter-info-endpoint: done  # 2026-04-17: A17a livré — adapter-info endpoint + badge frontend, 6+6 tests verts. 2026-04-17: code review — 3 patches (aria-label, CSS unknown, FortnitePlayerData.stub factory), D1 suggestEpicId validé (story suivi à créer), D3 Javadoc contrat clarifié
+
+  # A17b (P3) — Retry backoff exponentiel sur 429 dans PipelineService.getSuggestedEpicId()
+  # Frontend : 3 tentatives max, délais 1s / 2s / 4s, erreur finale relayée à l'appelant
+  # Composant : suggestLoading reste true pendant les retries, message "rate limit..." visible
+  # Tests unitaires : cas 429-then-success, cas 429-permanent (3 échecs → error finale)
+  sprint18-retry-429-pipeline: done  # 2026-04-17: A17b livré — retry backoff 429 PipelineService + message rate-limit composant, 10 tests ajoutés, 2356/2356 verts. Code review: 4 patches (P1 guard concurrent, P2 type tuple, P4 reduced-motion, P5 test delay[1])
+
+  sprint18-retrospective: done  # 2026-04-18 — voir sprint18-retrospective.md — 9/10, 5 action items (A18a-e) pour Sprint 19
+  status: done
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SPRINT 19 — "Expérience joueur solide"
+# Thème : Corrections bugs session test réel (Thibaut + Teddy) + sécurité invitation
+# Date début : 2026-04-18
+# Sources : session test 2026-04-18 (8 bugs/features) + retro Sprint 18 (A18b-e)
+# Séquence : P0 regressions → P0 sécurité → P1 bugs → P2 UX → P3 tech debt
+# ══════════════════════════════════════════════════════════════════════════════
+
+sprint-19:
+  description: "Expérience joueur solide"
+  goal: "Thibaut et Teddy jouent sans confusion : leaderboard lisible, code invitation sécurisé, draft notification fonctionnelle, catalogue honnête"
+  start_date: "2026-04-18"
+  status: in-progress
+
+  # Tracing des action items Sprint 18 (retro 2026-04-18)
+  sprint-18-retrospective-globale-action-tracking: done
+  # A18a→checklist.md (fait en retro) A18b→sprint19-fix-deprecated-resolution A18c→sprint19-fix-resolution-adapter-config A18d→sprint19-fix-ratelimit-ux A18e→sprint19-suggest-epic-id-robustness
+
+  # ----------------------------------------------------------
+  # Phase 0 — P0 : Régressions bloquantes (session test 2026-04-18)
+  # Ces fixes bloquent une vraie session de jeu complète
+  # ----------------------------------------------------------
+
+  # BUG-S19-B — Leaderboard : régression UI (était beau sprint 14, maintenant dégradé)
+  # Root cause : identifier le commit de régression via git log -- frontend/src/app/features/
+  # Fix : restaurer le visuel Rajdhani + médailles or/argent/bronze + deltas vert/rouge
+  # AC : leaderboard identique ou meilleur qu'en sprint 14 (gaming theme cohérent)
+  sprint19-fix-leaderboard-regression: done  # 2026-04-18: code review clôturé — P2 .empty-state h3 Orbitron→Rajdhani, P3 spans fusionnés, emojis médailles conservés (décision review)
+
+  # BUG-S19-F — Draft lancée : Teddy non notifié (régression sprint14-fix-draft-start-notification)
+  # Root cause : DRAFT_STARTED broadcast WS implémenté (sprint 14) mais ne parvient pas à Teddy
+  # Hypothèses : Teddy n'est pas sur la bonne page au moment du broadcast OU le WS n'est plus subscribed
+  # Fix : investiguer les logs STOMP + s'assurer que l'event est reçu peu importe la page courante de Teddy
+  # AC : Thibaut lance draft → Teddy voit notification ou redirect dans les 3 secondes
+  sprint19-fix-draft-notification: done  # 2026-04-19: code review clôturé — 6 patches (ReplaySubject→Subject, churn guard, gameId filter, url /draft/, RC-3 test end-to-end, tests loading), 2365/2365 green
+
+  # ----------------------------------------------------------
+  # Phase 1 — P0 : Sécurité (session test 2026-04-18)
+  # ----------------------------------------------------------
+
+  # BUG-S19-E — Code invitation visible par les non-créateurs
+  # Root cause : bouton/dialog code invitation non conditionné à isCreator()
+  # Fix : masquer le bouton "Code d'invitation" pour tous les participants non-créateurs
+  # AC : Teddy (participant) ne voit pas le bouton code invitation
+  # AC : Thibaut (créateur) voit et peut partager le code
+  sprint19-fix-invitation-code-security: done  # 2026-04-19: *ngIf condition corrigée (line 273) — canRegenerateCode() uniquement ; 2 nouveaux tests DOM ; 2367/2367 green. Code review clôturé — P3 assertion renforcée (not.toHaveBeenCalled), 4 défers pre-existing, D1 conservé
+
+  # ----------------------------------------------------------
+  # Phase 2 — P1 : Bugs UX (session test 2026-04-18)
+  # ----------------------------------------------------------
+
+  # BUG-S19-A — Catalogue : données seed affichées sans indication "mode démo"
+  # Root cause : seed SQL V1002 peuple la DB avec des faux joueurs (bugha_EU, Aqua_EU...)
+  # Fix : bannière "Données de démonstration — pipeline non activé" si scraping jamais déclenché
+  # OU état vide avec message clair si aucune donnée réelle détectable
+  # AC : un utilisateur comprend immédiatement que les données ne sont pas réelles
+  sprint19-fix-catalogue-demo-banner: done  # 2026-04-19: code review — 6 patches (isDemo status filter, double catchError, Cache-Control, SecurityRequirements, JsonProperty, role=status ARIA). ✅
+
+  # BUG-S19-C — Bouton Draft accessible sans partie active → "Erreur serveur"
+  # Root cause : route /draft accessible sans game_id valide, aucun guard
+  # Fix : supprimer ou conditionner l'affichage du bouton Draft selon l'état de la partie
+  # AC : impossible d'accéder à /draft sans partie en cours avec statut DRAFT_IN_PROGRESS
+  sprint19-fix-draft-button-guard: review  # 2026-04-19: guard draftStatusGuard créé + 4 routes protégées, 8 nouveaux tests, 2382/2382 green (1 pre-existing failure catalogue)
+
+  # ----------------------------------------------------------
+  # Phase 3 — P2 : UX améliorations (session test 2026-04-18)
+  # ----------------------------------------------------------
+
+  # BUG-S19-D — Rejoindre une partie → arrive sur dashboard au lieu de la page partie
+  # Fix : redirect vers /games/{id} après join success
+  # AC : après join via code → atterrissage direct sur la page de la partie rejointe
+  sprint19-fix-join-redirect: backlog
+
+  # FEAT-S19-H — Écran d'attente draft : interstitiel "Draft en cours" chez Teddy
+  # Complémentaire à sprint19-fix-draft-notification (qui est le fix minimum)
+  # Fix : page interstitielle avec bouton "Je suis prêt" + chrono X minutes avant start automatique
+  # AC : Teddy voit clairement qu'une draft démarre et peut confirmer sa présence
+  sprint19-ux-draft-waiting-screen: backlog
+
+  # ----------------------------------------------------------
+  # Phase 4 — P3 : Tech debt retro Sprint 18 (A18b-e)
+  # ----------------------------------------------------------
+
+  # A18b — Nettoyer migration @Deprecated resolveFortniteId → resolvePlayer
+  # Migrer ResolutionQueueService + PrIngestionRowProcessor + guard NPE epicAccountId == null
+  sprint19-fix-deprecated-resolution: backlog
+
+  # A18c — RESOLUTION_ADAPTER invalide → message explicite au boot (pas NoSuchBeanDefinitionException)
+  sprint19-fix-resolution-adapter-config: backlog
+
+  # A18d — Feedback épuisement rate-limit : snackbar après 3 retries 429 épuisés
+  sprint19-fix-ratelimit-ux: backlog
+
+  # A18e — Story suggest-epic-id-robustness : gestion rate-limit/timeout côté service
+  sprint19-suggest-epic-id-robustness: backlog
+
+  # ----------------------------------------------------------
+  # P3 : Feature code invitation (non bloquant, à faire si capacity)
+  # ----------------------------------------------------------
+
+  # FEAT-S19-G — Code invitation : usage unique + suppression manuelle
+  # Une fois le code utilisé → invalidé automatiquement
+  # Bouton "Supprimer le code" côté créateur
+  sprint19-feat-invitation-code-advanced: backlog
+
+  sprint19-retrospective: optional
