@@ -2,15 +2,25 @@ package com.fortnite.pronos.domain.port.out;
 
 import java.util.Optional;
 
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
+
 public interface ResolutionPort {
 
   /**
-   * Resolves a FortniteTracker display name to a Fortnite Epic Account ID.
+   * Resolves a display name to a Fortnite player, returning full player data.
+   *
+   * <p>Implementations should return {@code Optional.empty()} when the player is not found
+   * <strong>or</strong> when the external call fails (resilient contract). Callers cannot
+   * distinguish the two cases — use the result only as a best-effort suggestion.
    *
    * @param pseudo the display name scraped from FortniteTracker
-   * @param region the region of origin (context for retry / logging)
-   * @return Optional.of(epicId) if resolved, Optional.empty() if not found
-   * @throws RuntimeException if the external call fails — caller must catch
+   * @param region the region of origin (context for logging)
+   * @return Optional.of(playerData) if resolved, Optional.empty() if not found or API unavailable
    */
-  Optional<String> resolveFortniteId(String pseudo, String region);
+  Optional<FortnitePlayerData> resolvePlayer(String pseudo, String region);
+
+  /** Returns the adapter identifier (e.g. "stub", "fortnite-api"). */
+  default String adapterName() {
+    return "unknown";
+  }
 }

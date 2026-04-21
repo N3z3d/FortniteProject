@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
 import com.fortnite.pronos.domain.port.out.ResolutionPort;
+import com.fortnite.pronos.service.admin.ConfidenceScoreService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,11 +24,15 @@ public class ResolutionQueueService {
 
   private final ResolutionPort resolutionPort;
   private final PlayerIdentityRepositoryPort identityRepository;
+  private final ConfidenceScoreService confidenceScoreService;
 
   public ResolutionQueueService(
-      ResolutionPort resolutionPort, PlayerIdentityRepositoryPort identityRepository) {
+      ResolutionPort resolutionPort,
+      PlayerIdentityRepositoryPort identityRepository,
+      ConfidenceScoreService confidenceScoreService) {
     this.resolutionPort = resolutionPort;
     this.identityRepository = identityRepository;
+    this.confidenceScoreService = confidenceScoreService;
   }
 
   /**
@@ -54,21 +60,35 @@ public class ResolutionQueueService {
   }
 
   private boolean isInvalidEntry(PlayerIdentityEntry entry) {
-    return entry.getPlayerUsername() == null || entry.getPlayerUsername().isBlank();
+    return entry.getPlayerUsername() == null
+        || entry.getPlayerUsername().isBlank()
+        || entry.getPlayerRegion() == null
+        || entry.getPlayerRegion().isBlank();
   }
 
   private int tryResolveEntry(PlayerIdentityEntry entry) {
     try {
-      Optional<String> epicId =
-          resolutionPort.resolveFortniteId(entry.getPlayerUsername(), entry.getPlayerRegion());
-      if (epicId.isPresent()) {
-        entry.resolve(epicId.get(), 100, "AUTO");
+      Optional<FortnitePlayerData> result =
+          resolutionPort.resolvePlayer(entry.getPlayerUsername(), entry.getPlayerRegion());
+      if (result.isPresent()) {
+        FortnitePlayerData data = result.get();
+        if (!hasValidEpicAccountId(data)) {
+          log.warn(
+              "Skipping resolution with missing Epic Account ID: pseudo='{}' region={}",
+              entry.getPlayerUsername(),
+              entry.getPlayerRegion());
+          return 0;
+        }
+        String epicAccountId = data.epicAccountId();
+        int score = confidenceScoreService.compute(entry, epicAccountId, data.displayName());
+        entry.resolve(epicAccountId, score, "AUTO");
         identityRepository.save(entry);
         log.info(
-            "Resolved: pseudo='{}' region={} epicId={}",
+            "Resolved: pseudo='{}' region={} epicId={} score={}",
             entry.getPlayerUsername(),
             entry.getPlayerRegion(),
-            epicId.get());
+            epicAccountId,
+            score);
         return 1;
       }
       log.debug(
@@ -83,5 +103,9 @@ public class ResolutionQueueService {
           e.getMessage());
     }
     return 0;
+  }
+
+  private boolean hasValidEpicAccountId(FortnitePlayerData data) {
+    return data.epicAccountId() != null && !data.epicAccountId().isBlank();
   }
 }

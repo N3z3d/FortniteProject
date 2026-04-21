@@ -13,8 +13,12 @@ import org.springframework.stereotype.Service;
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
 import com.fortnite.pronos.domain.player.identity.model.RegionalStatRow;
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
 import com.fortnite.pronos.domain.port.out.EpicIdValidatorPort;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ResolutionPort;
+import com.fortnite.pronos.dto.admin.AdapterInfoResponse;
+import com.fortnite.pronos.dto.admin.EpicIdSuggestionResponse;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
 import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
@@ -37,6 +41,7 @@ public class PlayerIdentityPipelineService {
   private final SimpMessagingTemplate messagingTemplate;
   private final ConfidenceScoreService confidenceScoreService;
   private final EpicIdValidatorPort epicIdValidator;
+  private final ResolutionPort resolutionPort;
 
   public List<PlayerIdentityEntryResponse> getUnresolved() {
     return getUnresolved(0, DEFAULT_PAGE_SIZE);
@@ -72,6 +77,10 @@ public class PlayerIdentityPipelineService {
     return new PipelineCountResponse(unresolved, resolved);
   }
 
+  public AdapterInfoResponse getAdapterInfo() {
+    return new AdapterInfoResponse(resolutionPort.adapterName());
+  }
+
   public PlayerIdentityEntryResponse resolve(UUID playerId, String epicId, String resolvedBy) {
     if (!epicIdValidator.validate(epicId)) {
       throw new InvalidEpicIdException(epicId);
@@ -104,6 +113,33 @@ public class PlayerIdentityPipelineService {
     PlayerIdentityEntry saved = identityRepository.save(entry);
     log.info("Player {} metadata corrected by {}", playerId, correctedBy);
     return toResponse(saved);
+  }
+
+  public EpicIdSuggestionResponse suggestEpicId(UUID playerId) {
+    PlayerIdentityEntry entry = findEntry(playerId);
+    try {
+      return resolutionPort
+          .resolvePlayer(entry.getPlayerUsername(), entry.getPlayerRegion())
+          .map(data -> toSuggestion(entry, data))
+          .orElse(EpicIdSuggestionResponse.notFound());
+    } catch (RuntimeException e) {
+      log.warn(
+          "suggestEpicId: resolution unavailable for player {} ({}): {}",
+          playerId,
+          entry.getPlayerUsername(),
+          e.getMessage());
+      return EpicIdSuggestionResponse.notFound();
+    }
+  }
+
+  private EpicIdSuggestionResponse toSuggestion(
+      PlayerIdentityEntry entry, FortnitePlayerData data) {
+    String epicAccountId = data.epicAccountId();
+    if (epicAccountId == null || epicAccountId.isBlank()) {
+      return EpicIdSuggestionResponse.notFound();
+    }
+    int score = confidenceScoreService.compute(entry, epicAccountId, data.displayName());
+    return new EpicIdSuggestionResponse(epicAccountId, data.displayName(), score, true);
   }
 
   public List<PipelineRegionalStatsDto> getRegionalStats() {

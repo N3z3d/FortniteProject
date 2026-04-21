@@ -19,8 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
 import com.fortnite.pronos.domain.port.out.ResolutionPort;
+import com.fortnite.pronos.service.admin.ConfidenceScoreService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResolutionQueueService")
@@ -28,16 +30,22 @@ class ResolutionQueueServiceTest {
 
   @Mock private ResolutionPort resolutionPort;
   @Mock private PlayerIdentityRepositoryPort identityRepository;
+  @Mock private ConfidenceScoreService confidenceScoreService;
 
   private ResolutionQueueService service;
 
   @BeforeEach
   void setUp() {
-    service = new ResolutionQueueService(resolutionPort, identityRepository);
+    service =
+        new ResolutionQueueService(resolutionPort, identityRepository, confidenceScoreService);
   }
 
   private PlayerIdentityEntry unresolvedEntry(String pseudo, String region) {
     return new PlayerIdentityEntry(UUID.randomUUID(), pseudo, region, LocalDateTime.now());
+  }
+
+  private FortnitePlayerData playerData(String epicId, String displayName) {
+    return new FortnitePlayerData(epicId, displayName, 0, 0, 0, 0, 0.0, 0.0, 0);
   }
 
   @Nested
@@ -52,10 +60,11 @@ class ResolutionQueueServiceTest {
       var e3 = unresolvedEntry("PlayerC", "BR");
       when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED))
           .thenReturn(List.of(e1, e2, e3));
-      when(resolutionPort.resolveFortniteId(any(), any()))
-          .thenReturn(Optional.of("EPIC-001"))
-          .thenReturn(Optional.of("EPIC-002"))
-          .thenReturn(Optional.of("EPIC-003"));
+      when(resolutionPort.resolvePlayer(any(), any()))
+          .thenReturn(Optional.of(playerData("EPIC-001", "PlayerA")))
+          .thenReturn(Optional.of(playerData("EPIC-002", "PlayerB")))
+          .thenReturn(Optional.of(playerData("EPIC-003", "PlayerC")));
+      when(confidenceScoreService.compute(any(), any(), any())).thenReturn(85);
 
       int resolved = service.processUnresolvedBatch();
 
@@ -68,6 +77,21 @@ class ResolutionQueueServiceTest {
     }
 
     @Test
+    @DisplayName("Uses real confidence score from ConfidenceScoreService (not hardcoded 100)")
+    void shouldUseRealConfidenceScore() {
+      var entry = unresolvedEntry("Bugha", "EU");
+      when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED)).thenReturn(List.of(entry));
+      when(resolutionPort.resolvePlayer("Bugha", "EU"))
+          .thenReturn(Optional.of(playerData("bugha-epic-123", "Bugha")));
+      when(confidenceScoreService.compute(entry, "bugha-epic-123", "Bugha")).thenReturn(95);
+
+      service.processUnresolvedBatch();
+
+      assertThat(entry.getConfidenceScore()).isEqualTo(95);
+      verify(confidenceScoreService).compute(entry, "bugha-epic-123", "Bugha");
+    }
+
+    @Test
     @DisplayName("Returns 0 when no UNRESOLVED entries exist")
     void shouldReturnZeroWhenNothingToProcess() {
       when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED)).thenReturn(List.of());
@@ -75,7 +99,7 @@ class ResolutionQueueServiceTest {
       int resolved = service.processUnresolvedBatch();
 
       assertThat(resolved).isZero();
-      verify(resolutionPort, never()).resolveFortniteId(any(), any());
+      verify(resolutionPort, never()).resolvePlayer(any(), any());
       verify(identityRepository, never()).save(any());
     }
   }
@@ -91,9 +115,10 @@ class ResolutionQueueServiceTest {
       var unresolved = unresolvedEntry("UnknownPlayer", "ME");
       when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED))
           .thenReturn(List.of(resolved, unresolved));
-      when(resolutionPort.resolveFortniteId("ResolvedPlayer", "EU"))
-          .thenReturn(Optional.of("EPIC-XYZ"));
-      when(resolutionPort.resolveFortniteId("UnknownPlayer", "ME")).thenReturn(Optional.empty());
+      when(resolutionPort.resolvePlayer("ResolvedPlayer", "EU"))
+          .thenReturn(Optional.of(playerData("EPIC-XYZ", "ResolvedPlayer")));
+      when(resolutionPort.resolvePlayer("UnknownPlayer", "ME")).thenReturn(Optional.empty());
+      when(confidenceScoreService.compute(any(), any(), any())).thenReturn(80);
 
       int count = service.processUnresolvedBatch();
 
@@ -116,9 +141,11 @@ class ResolutionQueueServiceTest {
       var ok = unresolvedEntry("OkPlayer", "ASIA");
       when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED))
           .thenReturn(List.of(failing, ok));
-      when(resolutionPort.resolveFortniteId("FailPlayer", "OCE"))
+      when(resolutionPort.resolvePlayer("FailPlayer", "OCE"))
           .thenThrow(new RuntimeException("timeout"));
-      when(resolutionPort.resolveFortniteId("OkPlayer", "ASIA")).thenReturn(Optional.of("EPIC-OK"));
+      when(resolutionPort.resolvePlayer("OkPlayer", "ASIA"))
+          .thenReturn(Optional.of(playerData("EPIC-OK", "OkPlayer")));
+      when(confidenceScoreService.compute(any(), any(), any())).thenReturn(75);
 
       int count = service.processUnresolvedBatch();
 
@@ -136,7 +163,41 @@ class ResolutionQueueServiceTest {
       int count = service.processUnresolvedBatch();
 
       assertThat(count).isZero();
-      verify(resolutionPort, never()).resolveFortniteId(any(), any());
+      verify(resolutionPort, never()).resolvePlayer(any(), any());
+      verify(identityRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Keeps entry unresolved when resolved player data has null Epic Account ID")
+    void shouldSkipResolvedDataWithNullEpicAccountId() {
+      var entry = unresolvedEntry("Bugha", "EU");
+      when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED)).thenReturn(List.of(entry));
+      when(resolutionPort.resolvePlayer("Bugha", "EU"))
+          .thenReturn(Optional.of(playerData(null, "Bugha")));
+
+      int count = service.processUnresolvedBatch();
+
+      assertThat(count).isZero();
+      assertThat(entry.getStatus()).isEqualTo(IdentityStatus.UNRESOLVED);
+      assertThat(entry.getEpicId()).isNull();
+      verifyNoInteractions(confidenceScoreService);
+      verify(identityRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Keeps entry unresolved when resolved player data has blank Epic Account ID")
+    void shouldSkipResolvedDataWithBlankEpicAccountId() {
+      var entry = unresolvedEntry("Aqua", "EU");
+      when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED)).thenReturn(List.of(entry));
+      when(resolutionPort.resolvePlayer("Aqua", "EU"))
+          .thenReturn(Optional.of(playerData("  ", "Aqua")));
+
+      int count = service.processUnresolvedBatch();
+
+      assertThat(count).isZero();
+      assertThat(entry.getStatus()).isEqualTo(IdentityStatus.UNRESOLVED);
+      assertThat(entry.getEpicId()).isNull();
+      verifyNoInteractions(confidenceScoreService);
       verify(identityRepository, never()).save(any());
     }
   }
@@ -148,8 +209,12 @@ class ResolutionQueueServiceTest {
     @Test
     @DisplayName("Service works identically with any ResolutionPort implementation")
     void shouldWorkWithAnyResolutionPortImplementation() {
-      ResolutionPort alternativeAdapter = (pseudo, region) -> Optional.of("ALT-" + pseudo);
-      var svc = new ResolutionQueueService(alternativeAdapter, identityRepository);
+      ConfidenceScoreService realScoreService = new ConfidenceScoreService();
+      ResolutionPort alternativeAdapter =
+          (pseudo, region) ->
+              Optional.of(new FortnitePlayerData("ALT-" + pseudo, pseudo, 0, 0, 0, 0, 0.0, 0.0, 0));
+      var svc =
+          new ResolutionQueueService(alternativeAdapter, identityRepository, realScoreService);
       var entry = unresolvedEntry("TestPlayer", "NAW");
       when(identityRepository.findByStatus(IdentityStatus.UNRESOLVED)).thenReturn(List.of(entry));
 

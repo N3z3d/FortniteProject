@@ -27,8 +27,12 @@ import com.fortnite.pronos.domain.player.identity.model.IdentityStatus;
 import com.fortnite.pronos.domain.player.identity.model.MetadataCorrection;
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
 import com.fortnite.pronos.domain.player.identity.model.RegionalStatRow;
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
 import com.fortnite.pronos.domain.port.out.EpicIdValidatorPort;
 import com.fortnite.pronos.domain.port.out.PlayerIdentityRepositoryPort;
+import com.fortnite.pronos.domain.port.out.ResolutionPort;
+import com.fortnite.pronos.dto.admin.AdapterInfoResponse;
+import com.fortnite.pronos.dto.admin.EpicIdSuggestionResponse;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
 import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
@@ -43,6 +47,7 @@ class PlayerIdentityPipelineServiceTest {
   @Mock private SimpMessagingTemplate messagingTemplate;
   @Mock private ConfidenceScoreService confidenceScoreService;
   @Mock private EpicIdValidatorPort epicIdValidator;
+  @Mock private ResolutionPort resolutionPort;
 
   @InjectMocks private PlayerIdentityPipelineService service;
 
@@ -382,6 +387,130 @@ class PlayerIdentityPipelineServiceTest {
 
       assertThat(result.correctedRegion()).isEqualTo("BR");
       assertThat(result.correctedUsername()).isNull();
+    }
+  }
+
+  @Nested
+  @DisplayName("suggestEpicId")
+  class SuggestEpicId {
+
+    private FortnitePlayerData playerData(String epicId, String displayName) {
+      return new FortnitePlayerData(epicId, displayName, 0, 0, 0, 0, 0.0, 0.0, 0);
+    }
+
+    @Test
+    @DisplayName("returns suggestion via ResolutionPort (1 appel API)")
+    void returns_suggestion_when_found() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Bugha");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(resolutionPort.resolvePlayer("Bugha", "EU"))
+          .thenReturn(Optional.of(playerData("abc123", "Bugha")));
+      when(confidenceScoreService.compute(entry, "abc123", "Bugha")).thenReturn(95);
+
+      EpicIdSuggestionResponse result = service.suggestEpicId(pid);
+
+      assertThat(result.found()).isTrue();
+      assertThat(result.suggestedEpicId()).isEqualTo("abc123");
+      assertThat(result.displayName()).isEqualTo("Bugha");
+      assertThat(result.confidenceScore()).isEqualTo(95);
+    }
+
+    @Test
+    @DisplayName("returns notFound when ResolutionPort returns empty")
+    void returns_not_found_when_api_empty() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Unknown");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(resolutionPort.resolvePlayer("Unknown", "EU")).thenReturn(Optional.empty());
+
+      EpicIdSuggestionResponse result = service.suggestEpicId(pid);
+
+      assertThat(result.found()).isFalse();
+      assertThat(result.suggestedEpicId()).isNull();
+      assertThat(result.confidenceScore()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("returns notFound when resolved player data has null Epic Account ID")
+    void returns_not_found_when_epic_account_id_is_null() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Bugha");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(resolutionPort.resolvePlayer("Bugha", "EU"))
+          .thenReturn(Optional.of(playerData(null, "Bugha")));
+
+      EpicIdSuggestionResponse result = service.suggestEpicId(pid);
+
+      assertThat(result.found()).isFalse();
+      assertThat(result.suggestedEpicId()).isNull();
+      verify(confidenceScoreService, never()).compute(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("returns notFound when resolved player data has blank Epic Account ID")
+    void returns_not_found_when_epic_account_id_is_blank() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Aqua");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(resolutionPort.resolvePlayer("Aqua", "EU"))
+          .thenReturn(Optional.of(playerData("  ", "Aqua")));
+
+      EpicIdSuggestionResponse result = service.suggestEpicId(pid);
+
+      assertThat(result.found()).isFalse();
+      assertThat(result.suggestedEpicId()).isNull();
+      verify(confidenceScoreService, never()).compute(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("returns notFound when ResolutionPort throws exception")
+    void returns_not_found_on_api_error() {
+      UUID pid = UUID.randomUUID();
+      PlayerIdentityEntry entry = buildUnresolved(pid, "Aqua");
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.of(entry));
+      when(resolutionPort.resolvePlayer("Aqua", "EU"))
+          .thenThrow(new RuntimeException("API unavailable"));
+
+      EpicIdSuggestionResponse result = service.suggestEpicId(pid);
+
+      assertThat(result.found()).isFalse();
+      assertThat(result.suggestedEpicId()).isNull();
+    }
+
+    @Test
+    @DisplayName("throws PlayerIdentityNotFoundException when entry not found")
+    void throws_when_player_not_found() {
+      UUID pid = UUID.randomUUID();
+      when(identityRepository.findByPlayerId(pid)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> service.suggestEpicId(pid))
+          .isInstanceOf(PlayerIdentityNotFoundException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("getAdapterInfo")
+  class GetAdapterInfo {
+
+    @Test
+    @DisplayName("returns adapter name from ResolutionPort")
+    void returns_adapter_name_from_resolution_port() {
+      when(resolutionPort.adapterName()).thenReturn("stub");
+
+      AdapterInfoResponse result = service.getAdapterInfo();
+
+      assertThat(result.adapter()).isEqualTo("stub");
+    }
+
+    @Test
+    @DisplayName("returns fortnite-api when real adapter is active")
+    void returns_fortnite_api_adapter_name() {
+      when(resolutionPort.adapterName()).thenReturn("fortnite-api");
+
+      AdapterInfoResponse result = service.getAdapterInfo();
+
+      assertThat(result.adapter()).isEqualTo("fortnite-api");
     }
   }
 }

@@ -1332,7 +1332,7 @@ sprint-19:
   # Root cause : route /draft accessible sans game_id valide, aucun guard
   # Fix : supprimer ou conditionner l'affichage du bouton Draft selon l'état de la partie
   # AC : impossible d'accéder à /draft sans partie en cours avec statut DRAFT_IN_PROGRESS
-  sprint19-fix-draft-button-guard: review  # 2026-04-19: guard draftStatusGuard créé + 4 routes protégées, 8 nouveaux tests, 2382/2382 green (1 pre-existing failure catalogue)
+  sprint19-fix-draft-button-guard: done  # 2026-04-19: guard draftStatusGuard créé + 4 routes protégées, 8 nouveaux tests. 2026-04-20: code review clôturé — D1 draftAuditGuard créé (DRAFTING|ACTIVE|FINISHED|COMPLETED|CANCELLED) pour /audit, P1 CANCELLED/COMPLETED tests, P2 callFake robuste. 2396/2396 (1 pre-existing catalogue)
 
   # ----------------------------------------------------------
   # Phase 3 — P2 : UX améliorations (session test 2026-04-18)
@@ -1341,13 +1341,13 @@ sprint-19:
   # BUG-S19-D — Rejoindre une partie → arrive sur dashboard au lieu de la page partie
   # Fix : redirect vers /games/{id} après join success
   # AC : après join via code → atterrissage direct sur la page de la partie rejointe
-  sprint19-fix-join-redirect: backlog
+  sprint19-fix-join-redirect: done  # 2026-04-20: navigate ['/games', id, 'dashboard'] → ['/games', id] (×2), tests mis à jour 24/24 green
 
   # FEAT-S19-H — Écran d'attente draft : interstitiel "Draft en cours" chez Teddy
   # Complémentaire à sprint19-fix-draft-notification (qui est le fix minimum)
   # Fix : page interstitielle avec bouton "Je suis prêt" + chrono X minutes avant start automatique
   # AC : Teddy voit clairement qu'une draft démarre et peut confirmer sa présence
-  sprint19-ux-draft-waiting-screen: backlog
+  sprint19-ux-draft-waiting-screen: done
 
   # ----------------------------------------------------------
   # Phase 4 — P3 : Tech debt retro Sprint 18 (A18b-e)
@@ -1355,7 +1355,7 @@ sprint-19:
 
   # A18b — Nettoyer migration @Deprecated resolveFortniteId → resolvePlayer
   # Migrer ResolutionQueueService + PrIngestionRowProcessor + guard NPE epicAccountId == null
-  sprint19-fix-deprecated-resolution: backlog
+  sprint19-fix-deprecated-resolution: done
 
   # A18c — RESOLUTION_ADAPTER invalide → message explicite au boot (pas NoSuchBeanDefinitionException)
   sprint19-fix-resolution-adapter-config: backlog
