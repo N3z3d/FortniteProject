@@ -549,3 +549,87 @@ Notes :
 Notes :
 - Commit cree : `fix(pipeline): remove deprecated resolution bridge`.
 - Commande BMAD recommandee dans une autre session agent : `$bmad-create-story create story sprint19-fix-resolution-adapter-config`.
+
+---
+
+# Session 2026-04-21 - Create story BMAD sprint19-fix-resolution-adapter-config
+
+## Plan
+
+- [x] Charger la skill `bmad-create-story`, lire le workflow BMAD effectif et confirmer le fallback de chemin
+- [x] Lire les artefacts projet requis et analyser la story cible `sprint19-fix-resolution-adapter-config`
+- [x] Cartographier le code de configuration resolution adapter et les tests existants
+- [x] Creer la story BMAD en `ready-for-dev` avec ACs, taches TDD, garde-fous architecture et validations
+- [x] Mettre a jour `sprint-status.yaml`, relire la checklist BMAD et documenter le resultat
+
+## Review
+
+- [x] Story creee
+- [x] Sprint status synchronise
+- [x] Checklist BMAD relue
+- [x] Prochaines etapes documentees
+
+Notes :
+- Workflow legacy demande par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/create-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-create-story/workflow.md`.
+- Story creee : `_bmad-output/implementation-artifacts/sprint19-fix-resolution-adapter-config.md`.
+- `sprint-status.yaml` mis a jour : `sprint19-fix-resolution-adapter-config: ready-for-dev`.
+- Decision de story : `RESOLUTION_ADAPTER` absent doit activer `stub`; valeur blank explicite ou inconnue doit echouer en fail-fast avec message clair, sans fallback silencieux vers `stub`.
+- Checklist BMAD relue : contradiction initiale `null` vs propriete absente corrigee dans la Task 3.3.
+- Prochaine commande BMAD : `$bmad-dev-story sprint19-fix-resolution-adapter-config`.
+
+---
+
+# Session 2026-04-21 - Dev story BMAD sprint19-fix-resolution-adapter-config
+
+## Plan
+
+- [x] Charger la skill `bmad-dev-story`, le workflow effectif, la config BMAD, le project context, les lecons et la story cible
+- [x] Passer la story et le sprint tracking en `in-progress`
+- [x] Ecrire les tests rouges `ApplicationContextRunner` pour `resolution.adapter` absent, `stub`, `fortnite-api`, blank et inconnu
+- [x] Corriger le defaut `application.yml` et ajouter une validation fail-fast actionnable sans changer le port metier
+- [x] Executer les validations backend ciblees, `rg resolveFortniteId`, puis documenter les dettes de regression large si elles reapparaissent
+- [x] Mettre a jour la story BMAD, `sprint-status.yaml` et cette revue avec les preuves avant passage en `review`
+
+## Review
+
+- [x] Tests rouges puis verts executes
+- [x] Validation fail-fast et defaut YAML appliques
+- [x] Validation backend ciblee executee
+- [x] Regression large lancee et dettes pre-existantes documentees
+- [x] Story et sprint status passes en `review`
+
+Notes :
+- `ResolutionAdapterConfiguration` valide `resolution.adapter` via `BeanFactoryPostProcessor`, donc les valeurs blank/inconnues echouent avant une injection opaque de `ResolutionPort`.
+- `application.yml` utilise maintenant `resolution.adapter: ${RESOLUTION_ADAPTER:stub}` et documente le mode `fortnite-api` avec `FORTNITE_API_KEY`.
+- Red TDD confirme : le test de configuration echouait avant creation du validateur; green cible ensuite : `ResolutionAdapterConfigurationTest` -> 6 tests, 0 failure.
+- Validation ciblee : `mvn -Dtest="ResolutionAdapterConfigurationTest,FortniteApiResolutionAdapterTest,ResolutionQueueServiceTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest" test --no-transfer-progress` -> 61 tests, 0 failure.
+- `rg -n "resolveFortniteId" src/main src/test` -> zero resultat.
+- Regression large : `mvn test --no-transfer-progress` echoue uniquement sur dettes pre-existantes documentees (`CouplingTest` / `GameDraftService` 8 deps, `GameDataIntegrationTest` fixtures, `GameStatisticsServiceTddTest.shouldMapNullPlayerIdsToUnknown` NPE).
+
+---
+
+# Session 2026-04-22 - Code review BMAD sprint19-fix-resolution-adapter-config
+
+## Plan
+
+- [x] Charger la skill `bmad-code-review`, le workflow effectif, la config BMAD, le contexte projet et les lecons
+- [x] Isoler le diff cible depuis la story dans un worktree globalement sale
+- [x] Lancer les couches Blind Hunter, Edge Case Hunter et Acceptance Auditor
+- [x] Trier les findings, verifier le seul patch potentiel par reproduction ciblee, puis documenter les dettes hors scope
+- [x] Executer la validation backend ciblee et synchroniser la story avec le sprint status
+
+## Review
+
+- [x] Workflow BMAD code-review execute
+- [x] Findings normalises et tries
+- [x] Faux positif whitespace reproduit puis rejete
+- [x] Dette `FORTNITE_API_KEY` deferree
+- [x] Story et sprint status passes en `done`
+
+Notes :
+- Workflow legacy annonce par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/code-review/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-code-review/workflow.md`.
+- Review layers : Acceptance Auditor valide les ACs; Blind/Edge ont signale `RESOLUTION_ADAPTER` absent en prod, whitespace autour des valeurs, et absence de validation `FORTNITE_API_KEY`.
+- Triage : le fallback `stub` quand la variable est absente est voulu par AC1; le whitespace autour d'une valeur valide ne reproduit pas l'erreur opaque annoncee; l'absence de `FORTNITE_API_KEY` en mode `fortnite-api` est une dette pre-existante hors AC.
+- Dette ajoutee : `_bmad-output/implementation-artifacts/deferred-work.md` trace `fortnite-api` sans `FORTNITE_API_KEY`.
+- Tracking backlog cree : `sprint19-fix-fortnite-api-key-config` dans `sprint-status.yaml`.
+- Validation ciblee review : `mvn -Dtest=ResolutionAdapterConfigurationTest test --no-transfer-progress` -> 6 tests, 0 failure.

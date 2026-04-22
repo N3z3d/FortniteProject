@@ -17,7 +17,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fortnite.pronos.dto.admin.AdapterInfoResponse;
 import com.fortnite.pronos.dto.admin.CorrectMetadataRequest;
+import com.fortnite.pronos.dto.admin.EpicIdSuggestionResponse;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
 import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
@@ -232,6 +234,44 @@ class AdminPlayerPipelineControllerTest {
     }
   }
 
+  @Nested
+  @DisplayName("suggestEpicId")
+  class SuggestEpicId {
+
+    @Test
+    @DisplayName("returns 200 with suggestion when API finds player")
+    void returns_suggestion_when_found() {
+      UUID playerId = UUID.randomUUID();
+      EpicIdSuggestionResponse suggestion =
+          new EpicIdSuggestionResponse("abc123epicid", "Bugha", 90, true);
+      when(pipelineService.suggestEpicId(playerId)).thenReturn(suggestion);
+
+      var response = controller.suggestEpicId(playerId);
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().found()).isTrue();
+      assertThat(response.getBody().suggestedEpicId()).isEqualTo("abc123epicid");
+      assertThat(response.getBody().confidenceScore()).isEqualTo(90);
+      verify(pipelineService).suggestEpicId(playerId);
+    }
+
+    @Test
+    @DisplayName("returns 200 with notFound response when API has no match")
+    void returns_not_found_response() {
+      UUID playerId = UUID.randomUUID();
+      when(pipelineService.suggestEpicId(playerId)).thenReturn(EpicIdSuggestionResponse.notFound());
+
+      var response = controller.suggestEpicId(playerId);
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().found()).isFalse();
+      assertThat(response.getBody().suggestedEpicId()).isNull();
+      assertThat(response.getBody().confidenceScore()).isEqualTo(0);
+    }
+  }
+
   private PlayerIdentityEntryResponse sampleResponse(String status) {
     return new PlayerIdentityEntryResponse(
         UUID.randomUUID(),
@@ -250,5 +290,34 @@ class AdminPlayerPipelineControllerTest {
         null,
         null,
         null);
+  }
+
+  @Nested
+  @DisplayName("getAdapterInfo")
+  class GetAdapterInfo {
+
+    @Test
+    @DisplayName("returns 200 with stub adapter name")
+    void returns_stub_adapter_info() {
+      when(pipelineService.getAdapterInfo()).thenReturn(new AdapterInfoResponse("stub"));
+
+      var response = controller.getAdapterInfo();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody()).isNotNull();
+      assertThat(response.getBody().adapter()).isEqualTo("stub");
+      verify(pipelineService).getAdapterInfo();
+    }
+
+    @Test
+    @DisplayName("returns 200 with fortnite-api adapter name")
+    void returns_fortnite_api_adapter_info() {
+      when(pipelineService.getAdapterInfo()).thenReturn(new AdapterInfoResponse("fortnite-api"));
+
+      var response = controller.getAdapterInfo();
+
+      assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+      assertThat(response.getBody().adapter()).isEqualTo("fortnite-api");
+    }
   }
 }

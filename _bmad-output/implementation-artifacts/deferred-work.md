@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of sprint19-fix-resolution-adapter-config (2026-04-22)
+
+- D1 - `fortnite-api` peut demarrer sans `FORTNITE_API_KEY`, puis retourner silencieusement `not found` au premier lookup [FortniteApiAdapter.java:35] - dette de configuration pre-existante; la story courante cible uniquement la validation de `resolution.adapter`. Tracking cree : `sprint19-fix-fortnite-api-key-config`.
+
 ## Deferred from: code review of sprint19-fix-join-redirect (2026-04-20)
 
 - W1 — Double navigate pré-existant dans `JoinGameComponent` : snackbar action (5s) + setTimeout (1s) peuvent appeler `router.navigate(['/games', id])` deux fois si l'utilisateur clique "View" avant 1s — inoffensif mais code smell [join-game.component.ts:71-81]

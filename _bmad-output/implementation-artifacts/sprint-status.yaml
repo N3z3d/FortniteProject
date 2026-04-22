@@ -1358,13 +1358,16 @@ sprint-19:
   sprint19-fix-deprecated-resolution: done
 
   # A18c — RESOLUTION_ADAPTER invalide → message explicite au boot (pas NoSuchBeanDefinitionException)
-  sprint19-fix-resolution-adapter-config: backlog
+  sprint19-fix-resolution-adapter-config: done
 
   # A18d — Feedback épuisement rate-limit : snackbar après 3 retries 429 épuisés
   sprint19-fix-ratelimit-ux: backlog
 
   # A18e — Story suggest-epic-id-robustness : gestion rate-limit/timeout côté service
   sprint19-suggest-epic-id-robustness: backlog
+
+  # Review follow-up — fortnite-api sans FORTNITE_API_KEY doit echouer au boot ou afficher une erreur config explicite
+  sprint19-fix-fortnite-api-key-config: backlog
 
   # ----------------------------------------------------------
   # P3 : Feature code invitation (non bloquant, à faire si capacity)

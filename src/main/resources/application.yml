@@ -199,6 +199,11 @@ database:
     enable-query-analysis: true
     enable-connection-monitoring: true
 
+resolution:
+  # Default local mode is stub when RESOLUTION_ADAPTER is absent.
+  # Use RESOLUTION_ADAPTER=fortnite-api with a valid FORTNITE_API_KEY for live resolution.
+  adapter: ${RESOLUTION_ADAPTER:stub}
+
 fortnite:
   api:
     key: ${FORTNITE_API_KEY:}

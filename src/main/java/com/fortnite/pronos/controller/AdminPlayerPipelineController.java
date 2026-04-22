@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fortnite.pronos.dto.admin.AdapterInfoResponse;
 import com.fortnite.pronos.dto.admin.CorrectMetadataRequest;
+import com.fortnite.pronos.dto.admin.EpicIdSuggestionResponse;
 import com.fortnite.pronos.dto.admin.PipelineCountResponse;
 import com.fortnite.pronos.dto.admin.PipelineRegionalStatsDto;
 import com.fortnite.pronos.dto.admin.PlayerIdentityEntryResponse;
@@ -49,6 +51,11 @@ public class AdminPlayerPipelineController {
   public ResponseEntity<List<PlayerIdentityEntryResponse>> getResolved(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
     return ResponseEntity.ok(pipelineService.getResolved(page, size));
+  }
+
+  @GetMapping("/pipeline/adapter-info")
+  public ResponseEntity<AdapterInfoResponse> getAdapterInfo() {
+    return ResponseEntity.ok(pipelineService.getAdapterInfo());
   }
 
   @GetMapping("/pipeline/count")
@@ -89,6 +96,11 @@ public class AdminPlayerPipelineController {
         request.playerId().toString(),
         "reason=" + request.reason());
     return ResponseEntity.ok(result);
+  }
+
+  @GetMapping("/{playerId}/suggest-epic-id")
+  public ResponseEntity<EpicIdSuggestionResponse> suggestEpicId(@PathVariable UUID playerId) {
+    return ResponseEntity.ok(pipelineService.suggestEpicId(playerId));
   }
 
   @PatchMapping("/{playerId}/metadata")

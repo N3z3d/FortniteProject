@@ -13,4 +13,9 @@ public record FortnitePlayerData(
     int matches,
     double kd,
     double winRate,
-    int minutesPlayed) {}
+    int minutesPlayed) {
+
+  public static FortnitePlayerData stub(String epicAccountId, String displayName) {
+    return new FortnitePlayerData(epicAccountId, displayName, 0, 0, 0, 0, 0.0, 0.0, 0);
+  }
+}

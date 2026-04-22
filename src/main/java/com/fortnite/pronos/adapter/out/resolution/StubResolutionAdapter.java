@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import com.fortnite.pronos.domain.player.model.FortnitePlayerData;
 import com.fortnite.pronos.domain.port.out.ResolutionPort;
 
 /**
@@ -22,10 +23,16 @@ import com.fortnite.pronos.domain.port.out.ResolutionPort;
 public class StubResolutionAdapter implements ResolutionPort {
 
   @Override
-  public Optional<String> resolveFortniteId(String pseudo, String region) {
+  public String adapterName() {
+    return "stub";
+  }
+
+  @Override
+  public Optional<FortnitePlayerData> resolvePlayer(String pseudo, String region) {
     if (pseudo == null || pseudo.isBlank()) {
       return Optional.empty();
     }
-    return Optional.of("STUB-EPIC-" + pseudo.toUpperCase(Locale.ROOT));
+    String fakeEpicId = "STUB-EPIC-" + pseudo.toUpperCase(Locale.ROOT);
+    return Optional.of(FortnitePlayerData.stub(fakeEpicId, pseudo));
   }
 }
