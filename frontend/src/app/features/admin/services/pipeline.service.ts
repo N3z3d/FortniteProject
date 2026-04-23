@@ -1,17 +1,29 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, of, retry, timer } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   PlayerIdentityEntry,
+  EpicIdSuggestion,
   PipelineCount,
   PipelineRegionalStats,
   ResolvePlayerRequest,
   RejectPlayerRequest,
   CorrectMetadataRequest,
   ScrapeLogEntry,
-  PipelineAlertStatus
+  PipelineAlertStatus,
+  AdapterInfo
 } from '../models/admin.models';
+
+const SUGGEST_RETRY_COUNT = 3;
+// retryCount is 1-indexed (1..SUGGEST_RETRY_COUNT), matching array indices 0..length-1
+const SUGGEST_RETRY_DELAYS_MS: readonly [number, number, number] = [1_000, 2_000, 4_000];
+
+export interface SuggestEpicIdRetryCallbacks {
+  onRetry?: () => void;
+  onRateLimitExhausted?: () => void;
+  onResolutionUnavailable?: () => void;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PipelineService {
@@ -74,9 +86,49 @@ export class PipelineService {
       .pipe(catchError(() => of(null)));
   }
 
+  getSuggestedEpicId(
+    playerId: string,
+    callbacks: SuggestEpicIdRetryCallbacks = {}
+  ): Observable<EpicIdSuggestion | null> {
+    return this.http
+      .get<EpicIdSuggestion>(`${this.baseUrl}/${playerId}/suggest-epic-id`)
+      .pipe(
+        retry({
+          count: SUGGEST_RETRY_COUNT,
+          delay: (error: unknown, retryCount: number) => {
+            if (!this.isRateLimitError(error)) throw error;
+            callbacks.onRetry?.();
+            return timer(SUGGEST_RETRY_DELAYS_MS[retryCount - 1]);
+          }
+        }),
+        catchError((error: unknown) => {
+          if (this.isRateLimitError(error)) {
+            callbacks.onRateLimitExhausted?.();
+          } else if (this.isResolutionUnavailableError(error)) {
+            callbacks.onResolutionUnavailable?.();
+          }
+          return of(null);
+        })
+      );
+  }
+
+  private isRateLimitError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && error.status === 429;
+  }
+
+  private isResolutionUnavailableError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500);
+  }
+
   getAvailableRegions(): Observable<string[]> {
     return this.http
       .get<string[]>(`${this.metaBaseUrl}/regions`)
       .pipe(catchError(() => of([])));
+  }
+
+  getAdapterInfo(): Observable<AdapterInfo | null> {
+    return this.http
+      .get<AdapterInfo>(`${this.baseUrl}/pipeline/adapter-info`)
+      .pipe(catchError(() => of(null)));
   }
 }

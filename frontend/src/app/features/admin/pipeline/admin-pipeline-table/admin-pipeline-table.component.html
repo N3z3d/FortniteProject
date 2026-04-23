@@ -29,13 +29,38 @@
       <th mat-header-cell *matHeaderCellDef>Epic ID</th>
       <td mat-cell *matCellDef="let entry" class="cell--epic-id">
         <ng-container *ngIf="mode === 'unresolved'; else readonlyEpicId">
-          <input
-            class="epic-id-input"
-            type="text"
-            [formControl]="getControl(entry.playerId)"
-            placeholder="epic_id_joueur"
-            [attr.aria-label]="'Saisir l\'Epic ID pour ' + entry.playerUsername"
-            (keydown)="onKeydown($event, entry)" />
+          <div class="epic-id-field">
+            <input
+              class="epic-id-input"
+              type="text"
+              [formControl]="getControl(entry.playerId)"
+              placeholder="epic_id_joueur"
+              [attr.aria-label]="'Saisir l\'Epic ID pour ' + entry.playerUsername"
+              (keydown)="onKeydown($event, entry)" />
+            <button
+              mat-icon-button
+              class="btn-suggest"
+              type="button"
+              [disabled]="isSuggestLoading(entry.playerId)"
+              [attr.aria-label]="'Suggérer Epic ID pour ' + entry.playerUsername"
+              matTooltip="Suggérer via API Fortnite"
+              (click)="onSuggest(entry)">
+              <mat-icon>{{ isSuggestLoading(entry.playerId) ? 'hourglass_empty' : 'auto_fix_high' }}</mat-icon>
+            </button>
+            <span
+              *ngIf="isRateLimitLoading(entry.playerId)"
+              class="rate-limit-hint"
+              role="status"
+              aria-live="polite">Rate limit…</span>
+          </div>
+          <span
+            *ngIf="getSuggestion(entry.playerId)?.found && getSuggestion(entry.playerId) as suggestion"
+            class="confidence-badge"
+            [class]="scoreClass(suggestion.confidenceScore)"
+            [attr.aria-label]="'Confiance ' + suggestion.confidenceScore + '%'">
+            {{ suggestion.confidenceScore }}%
+            <span *ngIf="suggestion.displayName" class="confidence-badge__name">{{ suggestion.displayName }}</span>
+          </span>
         </ng-container>
         <ng-template #readonlyEpicId>
           <span class="epic-id-readonly">{{ entry.epicId ?? '—' }}</span>
@@ -100,6 +125,10 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="pipeline-row"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns;"
+      class="pipeline-row"
+      [attr.data-player-id]="row.playerId"></tr>
   </table>
 </div>

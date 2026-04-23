@@ -633,3 +633,262 @@ Notes :
 - Dette ajoutee : `_bmad-output/implementation-artifacts/deferred-work.md` trace `fortnite-api` sans `FORTNITE_API_KEY`.
 - Tracking backlog cree : `sprint19-fix-fortnite-api-key-config` dans `sprint-status.yaml`.
 - Validation ciblee review : `mvn -Dtest=ResolutionAdapterConfigurationTest test --no-transfer-progress` -> 6 tests, 0 failure.
+
+---
+
+# Session 2026-04-22 - Create story BMAD sprint19-fix-fortnite-api-key-config
+
+## Plan
+
+- [x] Charger la skill `bmad-create-story`, le workflow effectif, la config BMAD et les lecons
+- [x] Analyser la dette review `fortnite-api` sans `FORTNITE_API_KEY` et les fichiers backend concernes
+- [x] Creer la story BMAD en `ready-for-dev` avec ACs, taches TDD et garde-fous architecture
+- [x] Mettre a jour `sprint-status.yaml` de `backlog` vers `ready-for-dev`
+- [x] Relire la story contre la checklist BMAD et donner la commande exacte pour la suite
+
+## Review
+
+- [x] Story creee : `_bmad-output/implementation-artifacts/sprint19-fix-fortnite-api-key-config.md`
+- [x] Sprint status synchronise : `sprint19-fix-fortnite-api-key-config: ready-for-dev`
+- [x] Verification documentaire executee via `rg` sur la story, le sprint status et ce fichier
+- [x] `git diff --check` execute sur les fichiers suivis modifies; uniquement warnings CRLF/LF existants
+
+Notes :
+- Decision recommandee encodee dans la story : `resolution.adapter=fortnite-api` sans `FORTNITE_API_KEY` doit echouer au boot; mode local sans secret reste `stub`.
+- Relecture independante : aucun ecart bloquant; AC Docker resserre pour exiger explicitement `RESOLUTION_ADAPTER=${RESOLUTION_ADAPTER:-stub}` et `FORTNITE_API_KEY=${FORTNITE_API_KEY:-}`.
+- Aucun code applicatif n'a ete implemente dans cette etape; la prochaine commande doit lancer le workflow dev-story.
+- Prochaine commande BMAD : `$bmad-dev-story sprint19-fix-fortnite-api-key-config`.
+
+---
+
+# Session 2026-04-22 - Dev story BMAD sprint19-fix-fortnite-api-key-config
+
+## Plan
+
+- [x] Charger la skill `bmad-dev-story`, le workflow effectif, la config BMAD, le project context, les lecons et la story cible
+- [x] Passer la story et le sprint tracking en `in-progress`
+- [x] Executer le cycle TDD Red -> Green -> Refactor sur la validation `FORTNITE_API_KEY` obligatoire en mode `fortnite-api`
+- [x] Aligner `docker-compose.local.yml` pour demarrer localement en `stub` sans secret par defaut
+- [x] Executer les validations BMAD ciblees, `rg resolveFortniteId`, puis documenter les dettes de regression large si elles reapparaissent
+- [x] Mettre a jour la story BMAD, `sprint-status.yaml` et cette revue avec les preuves avant passage en `review`
+
+## Review
+
+- [x] Tests rouges puis verts executes
+- [x] Validation fail-fast et configuration Docker appliquees
+- [x] Validation backend ciblee executee
+- [x] Story et sprint status passes en `review`
+
+Notes :
+- Story cible : `_bmad-output/implementation-artifacts/sprint19-fix-fortnite-api-key-config.md`.
+- Workflow attendu par la skill introuvable dans l'ancien chemin `_bmad/bmm/workflows/...`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-dev-story/workflow.md`.
+- Red TDD : `ResolutionAdapterConfigurationTest` echouait sur 3 cas car le contexte demarrait encore sans cle API en mode `fortnite-api`.
+- Green cible : `ResolutionAdapterConfigurationTest` -> 9 tests, 0 failure.
+- Validation ciblee BMAD : `mvn -Dtest="ResolutionAdapterConfigurationTest,FortniteApiAdapterTest,FortniteApiAdapterIntegrationTest,FortniteApiSpringWiringTest,FortniteApiResolutionAdapterTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest" test --no-transfer-progress` -> 78 tests, 0 failure.
+- `rg -n "resolveFortniteId" src/main src/test` -> zero resultat.
+- Regression large : `mvn test --no-transfer-progress` -> 2613 tests, 5 failures, 1 error, 9 skipped; echecs hors scope deja documentes sur `CouplingTest`, `GameDataIntegrationTest`, `GameStatisticsServiceTddTest.shouldMapNullPlayerIdsToUnknown`.
+
+---
+
+# Session 2026-04-22 - Code review BMAD sprint19-fix-fortnite-api-key-config
+
+## Plan
+
+- [x] Charger la skill `bmad-code-review`, le workflow effectif, la config BMAD, le contexte projet et les lecons
+- [x] Isoler le diff cible depuis la story dans un worktree globalement sale
+- [x] Lancer les couches Blind Hunter, Edge Case Hunter et Acceptance Auditor
+- [x] Trier les findings et confirmer qu'aucun patch n'est requis
+- [x] Executer la validation backend ciblee et synchroniser la story avec le sprint status
+
+## Review
+
+- [x] Workflow BMAD code-review execute
+- [x] Review layers termines sans finding bloquant
+- [x] Triage clean review effectue
+- [x] Validation ciblee executee
+- [x] Story et sprint status passes en `done`
+
+Notes :
+- Workflow legacy annonce par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/code-review/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-code-review/workflow.md`.
+- Review layers : Blind Hunter, Edge Case Hunter et Acceptance Auditor ne remontent aucun finding bloquant.
+- Triage : 0 decision-needed, 0 patch, 0 defer, 0 dismiss.
+- Validation ciblee review : `mvn -Dtest="ResolutionAdapterConfigurationTest,FortniteApiAdapterTest,FortniteApiAdapterIntegrationTest,FortniteApiSpringWiringTest,FortniteApiResolutionAdapterTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest" test --no-transfer-progress` -> 78 tests, 0 failure.
+- `rg -n "resolveFortniteId" src/main src/test` -> zero resultat.
+- `git diff --check` sur les fichiers cibles -> exit code 0; uniquement warnings CRLF/LF connus.
+
+---
+
+# Session 2026-04-22 - Create story BMAD sprint19-fix-ratelimit-ux
+
+## Plan
+
+- [x] Charger la skill `bmad-create-story`, les lecons projet et le workflow BMAD effectif
+- [x] Charger la config BMAD, les instructions de discovery, la checklist et le sprint status complet
+- [x] Analyser les artefacts planning/projet, les stories recentes et le code ratelimit/UX concerne
+- [x] Creer la story `sprint19-fix-ratelimit-ux.md` en `ready-for-dev`
+- [x] Mettre a jour `sprint-status.yaml`, relire la checklist BMAD et documenter le resultat
+
+## Review
+
+- [x] Story creee : `_bmad-output/implementation-artifacts/sprint19-fix-ratelimit-ux.md`
+- [x] Sprint status synchronise : `sprint19-fix-ratelimit-ux: ready-for-dev`
+- [x] Checklist BMAD relue
+- [x] Prochaines etapes documentees
+
+Notes :
+- Workflow legacy demande par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/create-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-create-story/workflow.md`.
+- Decision encodee : scope frontend uniquement, signal d'epuisement 429 via callback explicite, evenement table -> snackbar page admin anti-spam, et nouvelle string i18n dans les 4 langues.
+- Validation documentaire : `rg` confirme la story, le statut `ready-for-dev`, la cle i18n cible et le sprint status.
+- `git diff --check` execute sur les fichiers cibles; exit code 0 avec seulement warnings CRLF/LF existants.
+- Aucun code applicatif n'a ete implemente dans cette etape; la prochaine commande doit lancer le workflow dev-story.
+- Prochaine commande BMAD : `$bmad-dev-story sprint19-fix-ratelimit-ux`.
+
+---
+
+# Session 2026-04-22 - Dev story BMAD sprint19-fix-ratelimit-ux
+
+## Plan
+
+- [x] Charger la skill `bmad-dev-story`, le workflow effectif, la config BMAD, les lecons, le project context, le sprint-status et la story cible
+- [x] Passer la story et le sprint tracking en `in-progress`
+- [x] Executer le cycle TDD Red -> Green -> Refactor sur le signal `onRateLimitExhausted` de `PipelineService`
+- [x] Executer le cycle TDD Red -> Green -> Refactor sur la propagation table -> page et le snackbar anti-spam
+- [x] Ajouter les traductions i18n dans les 4 langues sans refactor global
+- [x] Executer les validations frontend ciblees puis la suite frontend complete
+- [x] Mettre a jour la story BMAD, `sprint-status.yaml` et cette revue avec les preuves avant passage en `review`
+
+## Review
+
+- [x] Workflow et contexte charges
+- [x] Tests rouges puis verts executes
+- [x] UX rate-limit epuise implemente uniquement cote frontend
+- [x] Validations frontend executees
+- [x] Story et sprint status passes en `review`
+
+Notes :
+- Workflow legacy demande par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/dev-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-dev-story/workflow.md`.
+- Red service confirme puis green cible : `PipelineService` signale maintenant `onRateLimitExhausted` uniquement apres 4 reponses 429 consecutives, conserve `null`, et ignore le callback pour succes apres retry ou erreurs non-429.
+- Red table/page confirme puis green cible : `AdminPipelineTableComponent` emet `rateLimitExhausted`, evite le sentinel `found=false` sur epuisement 429, reset les loaders via `finalize`, et `AdminPipelinePageComponent` ouvre un snackbar i18n anti-spam.
+- Traductions ajoutees dans `fr/en/es/pt` sous `admin.pipeline.snackbar.rateLimitExhausted`; JSON valides via `node -e JSON.parse(...)`.
+- Validation ciblee : `npm run test:vitest -- src/app/features/admin/services/pipeline.service.spec.ts src/app/features/admin/pipeline/admin-pipeline-table/admin-pipeline-table.component.spec.ts src/app/features/admin/pipeline/admin-pipeline-page/admin-pipeline-page.component.spec.ts` -> `101 passed`.
+- Suite frontend complete : `npm run test:vitest` -> 1 failure pre-existante/hors-scope sur `player-catalogue-page.component.spec.ts > Demo banner (AC3-AC7) > should set isDemoData=false when getDataStatus fails (silent error)`.
+- `rg -n "getSuggestedEpicId\\(" frontend/src/app` confirme les usages alignes; `git diff --check` sur les fichiers cibles -> exit code 0 avec warnings CRLF/LF seulement.
+
+---
+
+# Session 2026-04-22 - Code review BMAD sprint19-fix-ratelimit-ux
+
+## Plan
+
+- [x] Charger la skill `bmad-code-review`, le workflow effectif, la config BMAD, le contexte projet et les lecons
+- [x] Isoler le diff cible depuis la story dans un worktree globalement sale
+- [x] Lancer les couches Blind Hunter, Edge Case Hunter et Acceptance Auditor
+- [x] Trier les findings, separer les vrais patchs des dettes hors scope et documenter le resultat
+- [x] Executer la validation frontend ciblee et synchroniser la story avec le sprint status
+
+## Review
+
+- [x] Workflow BMAD code-review execute
+- [x] Review layers termines
+- [x] Triage findings effectue
+- [x] Validation ciblee executee
+- [x] Story et sprint status synchronises
+
+Notes :
+- Workflow legacy annonce par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/code-review/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-code-review/workflow.md`.
+- Review layers : Acceptance Auditor valide les AC 1 a 10; Blind/Edge remontent 2 risques hors scope et plusieurs faux positifs/out-of-scope.
+- Triage : 0 decision-needed, 0 patch, 2 defer, 3 dismiss.
+- Defers documentes dans la story et `_bmad-output/implementation-artifacts/deferred-work.md` : auto-suggest parallele/cooldown 429, et erreurs non-429 toujours indistinctes de not-found.
+- Validation ciblee review : `npm run test:vitest -- src/app/features/admin/services/pipeline.service.spec.ts src/app/features/admin/pipeline/admin-pipeline-table/admin-pipeline-table.component.spec.ts src/app/features/admin/pipeline/admin-pipeline-page/admin-pipeline-page.component.spec.ts` -> `101 passed`.
+- `git diff --check` sur les fichiers cibles + artefacts review -> exit code 0 avec warnings CRLF/LF seulement.
+- Story et sprint status passes en `done`.
+
+---
+
+# Session 2026-04-22 - Create story BMAD sprint19-suggest-epic-id-robustness
+
+## Plan
+
+- [x] Charger la skill `bmad-create-story`, le workflow effectif, la config BMAD, les lecons et le sprint status complet
+- [x] Cartographier les artefacts planning/projet, les stories recentes et le code `suggest-epic-id` concerne
+- [x] Creer la story `sprint19-suggest-epic-id-robustness.md` en `ready-for-dev`
+- [x] Mettre a jour `sprint-status.yaml`, relire la checklist BMAD et documenter le resultat
+
+## Review
+
+- [x] Story creee : `_bmad-output/implementation-artifacts/sprint19-suggest-epic-id-robustness.md`
+- [x] Sprint status synchronise : `sprint19-suggest-epic-id-robustness: ready-for-dev`
+- [x] Checklist BMAD relue et garde-fous sous-agent integres
+- [x] Verification documentaire executee via `rg` sur la story, le sprint status et ce fichier
+
+Notes :
+- Workflow legacy demande par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/create-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-create-story/workflow.md`.
+- Decision encodee : ajouter un resultat detaille pour distinguer `FOUND`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT` et `UNAVAILABLE`, sans reintroduire `resolveFortniteId(...)` ni casser les flux `Optional`.
+- La story couvre backend + frontend minimal : HTTP 429/503 exploitables, pas de sentinel `found=false` sur erreur temporaire, purge des suggestions stale sur changement pseudo/region, et skip E2E explicite sur 429/503.
+- `git diff --check` execute sur les fichiers cibles; exit code 0 avec seulement warnings CRLF/LF existants.
+- Aucun code applicatif n'a ete implemente dans cette etape; la prochaine commande doit lancer le workflow dev-story.
+- Prochaine commande BMAD : `$bmad-dev-story sprint19-suggest-epic-id-robustness`.
+
+---
+
+# Session 2026-04-22 - Dev story BMAD sprint19-suggest-epic-id-robustness
+
+## Plan
+
+- [x] Charger la skill `bmad-dev-story`, le workflow effectif, la config BMAD, les lecons, le project context, le sprint-status et la story cible
+- [x] Passer la story et le sprint tracking en `in-progress`
+- [x] Executer le cycle TDD Red -> Green -> Refactor backend sur les resultats detailles `suggestEpicId`
+- [x] Executer le cycle TDD Red -> Green -> Refactor frontend sur indisponibilite temporaire et suggestions stale
+- [x] Adapter le preflight E2E `pipeline-suggest.spec.ts` pour skip 429/503 explicite
+- [x] Executer les validations BMAD ciblees, les suites completes pertinentes, puis documenter les preuves avant passage en `review`
+
+## Review
+
+- [x] Workflow et contexte charges
+- [x] Tests rouges puis verts executes
+- [x] Backend 429/503 et contrat Optional verifies
+- [x] UX frontend indisponibilite/stale suggestions verifiee
+- [x] Story et sprint status passes en `review`
+
+Notes :
+- Workflow legacy demande par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/dev-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-dev-story/workflow.md`.
+- Worktree deja tres sale avant cette session; ne pas revert les changements hors scope.
+- Backend: `PlayerResolutionResult` ajoute, `ResolutionPort`/`FortniteApiPort` et adapters etendus en mode detaille, `suggestEpicId` mappe `RATE_LIMITED` vers `SYS_004` et `TIMEOUT`/`UNAVAILABLE` vers `SYS_002`.
+- Frontend: `503`/reseau signale `resolutionUnavailable`, snackbar i18n anti-spam ajoute, pas de sentinel `found=false` sur incident temporaire, stale suggestions purgees et reponses async obsoletes ignorees.
+- Validation ciblee backend finale : `mvn -Dtest="FortniteApiAdapterTest,FortniteApiResolutionAdapterTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest,SecurityConfigAdminPipelineAuthorizationTest" test --no-transfer-progress` -> `87 tests`, 0 failure.
+- Validation compatibilite backend : `ResolutionQueueServiceTest`, `FortnitePlayerSearchServiceTest`, `FortniteApiAdapterIntegrationTest`, `FortniteApiSpringWiringTest` -> `25 tests`, 0 failure.
+- Validation ciblee frontend : `npm run test:vitest -- src/app/features/admin/services/pipeline.service.spec.ts src/app/features/admin/pipeline/admin-pipeline-table/admin-pipeline-table.component.spec.ts src/app/features/admin/pipeline/admin-pipeline-page/admin-pipeline-page.component.spec.ts` -> `111 passed`.
+- E2E : `BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 npx playwright test e2e/pipeline-suggest.spec.ts` -> `2 passed`.
+- Controles : JSON i18n `fr/en/es/pt` valides; `rg -n "resolveFortniteId" src/main src/test` -> zero resultat; `git diff --check` sur fichiers cibles -> exit code 0 avec warnings CRLF/LF seulement.
+- Suites globales hors scope : `npm run test:vitest` echoue sur `player-catalogue-page.component.spec.ts > should set isDemoData=false when getDataStatus fails`; `mvn test --no-transfer-progress` echoue sur `CouplingTest`, `GameDataIntegrationTest`, `GameStatisticsServiceTddTest.shouldMapNullPlayerIdsToUnknown`; `npm run build` echoue sur typage `Game.status` dans `game-detail`/`game-home`.
+
+---
+
+# Session 2026-04-23 - Follow-up review fixes sprint19-suggest-epic-id-robustness
+
+## Plan
+
+- [x] Mettre a jour le suivi session et capturer la lecon projet sur la langue de reponse BMAD
+- [x] Corriger le fallback frontend pour traiter les erreurs `5xx` temporaires sans sentinel `found=false`
+- [x] Ajouter une preuve HTTP Spring MVC pour `suggest-epic-id` sur les mappings `SYS_004 -> 429` et `SYS_002 -> 503`
+- [x] Durcir `frontend/e2e/pipeline-suggest.spec.ts` pour reduire le preflight, expliciter les skips `429/503`, et prouver le re-trigger manuel
+- [x] Rejouer les validations ciblees backend/frontend et documenter le resultat
+
+## Review
+
+- [x] Suivi et lecons mis a jour
+- [x] Fallback frontend `5xx` durci
+- [x] Contrat HTTP backend prouve
+- [x] E2E durci sans ambiguite de skip/re-trigger
+- [x] Validations ciblees executees
+
+Notes :
+- Lecon projet ajoutee dans `tasks/lessons.md` : repondre en francais par defaut sur les workflows BMAD francophones et verifier la langue de sortie avant la conclusion.
+- Frontend service : `PipelineService` traite maintenant toute erreur `5xx`/reseau comme indisponibilite temporaire via `onResolutionUnavailable`, ce qui evite de stocker un sentinel `found=false` sur incident serveur inattendu.
+- Backend MVC : `SecurityConfigAdminPipelineAuthorizationTest` prouve maintenant `SYS_004 -> HTTP 429` et `SYS_002 -> HTTP 503` sur `GET /api/admin/players/{playerId}/suggest-epic-id`.
+- Frontend table : ajout de `data-player-id` sur les lignes et d'un test unitaire associe; l'E2E utilise ce selecteur quand disponible et replie sinon sur l'ordre API avec verification `username + region`, ce qui permet de valider aussi l'instance locale servie avec un bundle plus ancien.
+- Validation backend ciblee : `mvn test -Dtest="FortniteApiAdapterTest,FortniteApiResolutionAdapterTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest,SecurityConfigAdminPipelineAuthorizationTest" --no-transfer-progress` -> `89 tests`, `0 failure`.
+- Validation frontend ciblee : `npm run test:vitest -- src/app/features/admin/services/pipeline.service.spec.ts src/app/features/admin/pipeline/admin-pipeline-table/admin-pipeline-table.component.spec.ts src/app/features/admin/pipeline/admin-pipeline-page/admin-pipeline-page.component.spec.ts` -> `112 passed`.
+- Validation E2E ciblee : `BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 npx playwright test e2e/pipeline-suggest.spec.ts` -> `2 passed`.
+- Garde-fous : `rg -n "resolveFortniteId" src/main src/test` -> zero resultat; `git diff --check` cible -> exit code 0 avec warnings CRLF/LF seulement.
+- Tentative de rebuild local `docker compose -f docker-compose.local.yml up -d --build app` bloquee par un `npm run build --prod` hors scope deja connu sur le typage `Game.status` dans `game-detail`/`game-home`; non requis pour la validation ciblee finale car Playwright a pu etre rejoue contre `http://localhost:8080`.

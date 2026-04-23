@@ -1,8 +1,9 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { Subject } from 'rxjs';
 import { PipelineService } from './pipeline.service';
 import { environment } from '../../../../environments/environment';
-import { PlayerIdentityEntry, PipelineAlertStatus, ScrapeLogEntry } from '../models/admin.models';
+import { EpicIdSuggestion, PlayerIdentityEntry, PipelineAlertStatus, ScrapeLogEntry, AdapterInfo } from '../models/admin.models';
 
 const BASE = `${environment.apiUrl}/api/admin/players`;
 const SCRAPE_BASE = `${environment.apiUrl}/api/admin/scraping`;
@@ -132,6 +133,173 @@ describe('PipelineService', () => {
 
       httpMock
         .expectOne(`${SCRAPE_BASE}/alert`)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getSuggestedEpicId retry on 429', () => {
+    const url = `${BASE}/p1/suggest-epic-id`;
+    const MOCK_SUGGESTION: EpicIdSuggestion = {
+      suggestedEpicId: 'epic_retry_ok',
+      displayName: 'Bughaboo',
+      confidenceScore: 85,
+      found: true
+    };
+
+    it('retries once on 429 and returns success on 2nd attempt', fakeAsync(() => {
+      let result: EpicIdSuggestion | null | undefined;
+
+      service.getSuggestedEpicId('p1').subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'Too Many Requests' });
+      tick(1_000);
+
+      httpMock.expectOne(url).flush(MOCK_SUGGESTION);
+
+      expect(result).toEqual(MOCK_SUGGESTION);
+    }));
+
+    it('signals exhausted rate limit once after 3 retries all 429 and returns null', fakeAsync(() => {
+      const onRetry = vi.fn();
+      const onRateLimitExhausted = vi.fn();
+      let result: EpicIdSuggestion | null | undefined;
+
+      service
+        .getSuggestedEpicId('p1', { onRetry, onRateLimitExhausted })
+        .subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(1_000);
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(2_000);
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(4_000);
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+
+      expect(onRetry).toHaveBeenCalledTimes(3);
+      expect(onRateLimitExhausted).toHaveBeenCalledTimes(1);
+      expect(result).toBeNull();
+    }));
+
+    it('does not signal exhausted rate limit when 429 retries eventually succeed', fakeAsync(() => {
+      const onRetry = vi.fn();
+      const onRateLimitExhausted = vi.fn();
+      let result: EpicIdSuggestion | null | undefined;
+
+      service
+        .getSuggestedEpicId('p1', { onRetry, onRateLimitExhausted })
+        .subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(1_000);
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(2_000);
+
+      httpMock.expectOne(url).flush(MOCK_SUGGESTION);
+
+      expect(onRetry).toHaveBeenCalledTimes(2);
+      expect(onRateLimitExhausted).not.toHaveBeenCalled();
+      expect(result).toEqual(MOCK_SUGGESTION);
+    }));
+
+    it('signals temporary resolution unavailable on non-429 server errors (500)', fakeAsync(() => {
+      const onRetry = vi.fn();
+      const onRateLimitExhausted = vi.fn();
+      const onResolutionUnavailable = vi.fn();
+      let result: EpicIdSuggestion | null | undefined;
+
+      service
+        .getSuggestedEpicId('p1', { onRetry, onRateLimitExhausted, onResolutionUnavailable })
+        .subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 500, statusText: 'Internal Server Error' });
+
+      expect(onRetry).not.toHaveBeenCalled();
+      expect(onRateLimitExhausted).not.toHaveBeenCalled();
+      expect(onResolutionUnavailable).toHaveBeenCalledTimes(1);
+      expect(result).toBeNull();
+      httpMock.verify();
+    }));
+
+    it('signals temporary resolution unavailable on 503 without rate-limit callback', fakeAsync(() => {
+      const onRateLimitExhausted = vi.fn();
+      const onResolutionUnavailable = vi.fn();
+      let result: EpicIdSuggestion | null | undefined;
+
+      service
+        .getSuggestedEpicId('p1', { onRateLimitExhausted, onResolutionUnavailable })
+        .subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      expect(onRateLimitExhausted).not.toHaveBeenCalled();
+      expect(onResolutionUnavailable).toHaveBeenCalledTimes(1);
+      expect(result).toBeNull();
+    }));
+
+    it('signals temporary resolution unavailable on network failure without rate-limit callback', fakeAsync(() => {
+      const onRateLimitExhausted = vi.fn();
+      const onResolutionUnavailable = vi.fn();
+      let result: EpicIdSuggestion | null | undefined;
+
+      service
+        .getSuggestedEpicId('p1', { onRateLimitExhausted, onResolutionUnavailable })
+        .subscribe(r => (result = r));
+
+      httpMock.expectOne(url).flush(null, { status: 0, statusText: 'Unknown Error' });
+
+      expect(onRateLimitExhausted).not.toHaveBeenCalled();
+      expect(onResolutionUnavailable).toHaveBeenCalledTimes(1);
+      expect(result).toBeNull();
+    }));
+
+    it('calls onRetry callback on each 429 before retry delay', fakeAsync(() => {
+      const onRetry = vi.fn();
+
+      service.getSuggestedEpicId('p1', { onRetry }).subscribe();
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(1_000);
+
+      expect(onRetry).toHaveBeenCalledTimes(1);
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(2_000);
+
+      expect(onRetry).toHaveBeenCalledTimes(2);
+
+      httpMock.expectOne(url).flush(null, { status: 429, statusText: 'TRM' });
+      tick(4_000);
+
+      expect(onRetry).toHaveBeenCalledTimes(3);
+
+      httpMock.expectOne(url).flush(MOCK_SUGGESTION);
+    }));
+  });
+
+  describe('getAdapterInfo', () => {
+    it('returns adapter info from GET /pipeline/adapter-info', () => {
+      const mockInfo: AdapterInfo = { adapter: 'stub' };
+      let result: AdapterInfo | null | undefined;
+
+      service.getAdapterInfo().subscribe(r => (result = r));
+
+      const req = httpMock.expectOne(`${BASE}/pipeline/adapter-info`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockInfo);
+
+      expect(result).toEqual({ adapter: 'stub' });
+    });
+
+    it('returns null on HTTP error', () => {
+      let result: AdapterInfo | null | undefined;
+
+      service.getAdapterInfo().subscribe(r => (result = r));
+
+      httpMock
+        .expectOne(`${BASE}/pipeline/adapter-info`)
         .flush(null, { status: 503, statusText: 'Service Unavailable' });
 
       expect(result).toBeNull();

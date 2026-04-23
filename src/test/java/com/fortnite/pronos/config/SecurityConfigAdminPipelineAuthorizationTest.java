@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fortnite.pronos.controller.AdminPlayerPipelineController;
+import com.fortnite.pronos.core.error.ErrorCode;
+import com.fortnite.pronos.core.error.FortnitePronosException;
+import com.fortnite.pronos.dto.admin.EpicIdSuggestionResponse;
 import com.fortnite.pronos.service.admin.AdminAuditLogService;
 import com.fortnite.pronos.service.admin.ErrorJournalService;
 import com.fortnite.pronos.service.admin.PlayerIdentityPipelineService;
@@ -76,6 +81,18 @@ class SecurityConfigAdminPipelineAuthorizationTest {
     assertThat(status).isIn(401, 403);
   }
 
+  @Test
+  @DisplayName("Anonymous cannot access GET /api/admin/players/{playerId}/suggest-epic-id")
+  void anonymousCannotAccessSuggestEpicId() throws Exception {
+    int status =
+        mockMvc
+            .perform(get("/api/admin/players/{playerId}/suggest-epic-id", UUID.randomUUID()))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+    assertThat(status).isIn(401, 403);
+  }
+
   // ── Non-admin ────────────────────────────────────────────────────────────
 
   @Test
@@ -94,6 +111,17 @@ class SecurityConfigAdminPipelineAuthorizationTest {
       roles = {"USER"})
   void nonAdminForbiddenFromCount() throws Exception {
     mockMvc.perform(get("/api/admin/players/pipeline/count")).andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("Non-admin is forbidden from GET /api/admin/players/{playerId}/suggest-epic-id")
+  @WithMockUser(
+      username = "user",
+      roles = {"USER"})
+  void nonAdminForbiddenFromSuggestEpicId() throws Exception {
+    mockMvc
+        .perform(get("/api/admin/players/{playerId}/suggest-epic-id", UUID.randomUUID()))
+        .andExpect(status().isForbidden());
   }
 
   // ── Admin ─────────────────────────────────────────────────────────────────
@@ -116,5 +144,53 @@ class SecurityConfigAdminPipelineAuthorizationTest {
   void adminCanAccessResolved() throws Exception {
     when(pipelineService.getResolved(anyInt(), anyInt())).thenReturn(List.of());
     mockMvc.perform(get("/api/admin/players/resolved")).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("Admin can access GET /api/admin/players/{playerId}/suggest-epic-id")
+  @WithMockUser(
+      username = "admin",
+      roles = {"ADMIN"})
+  void adminCanAccessSuggestEpicId() throws Exception {
+    UUID playerId = UUID.randomUUID();
+    when(pipelineService.suggestEpicId(playerId)).thenReturn(EpicIdSuggestionResponse.notFound());
+
+    mockMvc
+        .perform(get("/api/admin/players/{playerId}/suggest-epic-id", playerId))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("Admin gets HTTP 429 when suggest-epic-id hits rate limit")
+  @WithMockUser(
+      username = "admin",
+      roles = {"ADMIN"})
+  void adminGets429WhenSuggestEpicIdIsRateLimited() throws Exception {
+    UUID playerId = UUID.randomUUID();
+    when(pipelineService.suggestEpicId(playerId))
+        .thenThrow(new FortnitePronosException(ErrorCode.SYS_004, "Rate limit exceeded"));
+
+    mockMvc
+        .perform(get("/api/admin/players/{playerId}/suggest-epic-id", playerId))
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.code").value("SYS_004"));
+  }
+
+  @Test
+  @DisplayName("Admin gets HTTP 503 when suggest-epic-id is temporarily unavailable")
+  @WithMockUser(
+      username = "admin",
+      roles = {"ADMIN"})
+  void adminGets503WhenSuggestEpicIdIsUnavailable() throws Exception {
+    UUID playerId = UUID.randomUUID();
+    when(pipelineService.suggestEpicId(playerId))
+        .thenThrow(
+            new FortnitePronosException(
+                ErrorCode.SYS_002, "Suggestion Epic ID temporairement indisponible"));
+
+    mockMvc
+        .perform(get("/api/admin/players/{playerId}/suggest-epic-id", playerId))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("SYS_002"));
   }
 }
