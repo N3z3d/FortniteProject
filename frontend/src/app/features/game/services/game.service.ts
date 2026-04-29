@@ -45,6 +45,7 @@ export class GameService {
   joinGame(gameId: string): Observable<boolean> { return this.command.joinGame(gameId); }
   joinGameWithCode(invitationCode: string): Observable<Game> { return this.command.joinGameWithCode(invitationCode); }
   generateInvitationCode(gameId: string): Observable<InvitationCode> { return this.command.generateInvitationCode(gameId); }
+  deleteInvitationCode(gameId: string): Observable<Game> { return this.command.deleteInvitationCode(gameId); }
   regenerateInvitationCode(
     gameId: string,
     duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'

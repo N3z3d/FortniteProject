@@ -102,6 +102,15 @@ export class GameCommandService {
     );
   }
 
+  deleteInvitationCode(gameId: string): Observable<Game> {
+    return this.http.delete<Game>(`${this.apiUrl}/games/${gameId}/invitation-code`).pipe(
+      catchError(error => {
+        this.logger.error('GameCommandService: failed to delete invitation code', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   renameGame(gameId: string, newName: string): Observable<Game> {
     return this.http.post<Game>(`${this.apiUrl}/games/${gameId}/rename`, { name: newName }).pipe(
       tap(() => {

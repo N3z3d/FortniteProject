@@ -20,6 +20,8 @@ public interface GameCreationUseCase {
 
   GameDto regenerateInvitationCode(UUID gameId, String duration);
 
+  GameDto deleteInvitationCode(UUID gameId);
+
   GameDto renameGame(UUID gameId, String newName);
 
   GameDto configureCompetitionPeriod(UUID gameId, LocalDate startDate, LocalDate endDate);

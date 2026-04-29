@@ -7,10 +7,12 @@ import {
   joinWithInvitationCode,
   loginWithProfile,
   waitForInvitationCodePersistence,
+  waitForInvitationCodeRemoval,
 } from './helpers/app-helpers';
 
 const USER_A = 'marcel';
 const USER_B = 'teddy';
+const USER_C = 'thibaut';
 const FULL_FLOW_PREFIX = 'E2E-FF-';
 
 /**
@@ -34,8 +36,10 @@ test.describe('FULL-FLOW: Complete game lifecycle', () => {
 
   let contextA: BrowserContext;
   let contextB: BrowserContext;
+  let contextC: BrowserContext;
   let pageA: Page;
   let pageB: Page;
+  let pageC: Page;
   let gameId: string;
   let invitationCode: string;
 
@@ -51,6 +55,7 @@ test.describe('FULL-FLOW: Complete game lifecycle', () => {
 
     await cleanupE2eGames(request, USER_A, FULL_FLOW_PREFIX);
     await cleanupE2eGames(request, USER_B, FULL_FLOW_PREFIX);
+    await cleanupE2eGames(request, USER_C, FULL_FLOW_PREFIX);
   });
 
   test('FULL-FLOW-01: User A logs in', async ({ browser }) => {
@@ -146,12 +151,71 @@ test.describe('FULL-FLOW: Complete game lifecycle', () => {
     });
   });
 
+  test('FULL-FLOW-06: creator no longer sees the invitation code after successful join', async ({
+    request,
+  }) => {
+    if (!pageA || !invitationCode) {
+      test.fixme(
+        true,
+        'Depends on FULL-FLOW-03 and FULL-FLOW-05 - run the full suite together.'
+      );
+      return;
+    }
+
+    await waitForInvitationCodeRemoval(request, USER_A, gameId);
+    await pageA.goto(`/games/${gameId}`);
+    await pageA.waitForSelector('.game-content', { timeout: 10_000 });
+
+    await expect(pageA.locator('.generate-code-btn')).toBeVisible({ timeout: 10_000 });
+    await expect(pageA.locator('.delete-code-btn')).toHaveCount(0);
+    await expect(pageA.locator('.expiry-chip, .expired-chip')).toHaveCount(0);
+    await expect(pageA.locator('span.code-value').first()).toContainText('-', {
+      timeout: 5_000,
+    });
+  });
+
+  test('FULL-FLOW-07: a second user cannot reuse the consumed invitation code', async ({
+    browser,
+  }) => {
+    if (!invitationCode) {
+      test.fixme(
+        true,
+        'Depends on FULL-FLOW-03 and FULL-FLOW-05 - run the full suite together.'
+      );
+      return;
+    }
+
+    contextC = await browser.newContext();
+    pageC = await contextC.newPage();
+
+    await loginWithProfile(pageC, USER_C);
+    await pageC.goto('/games/join');
+    await pageC.locator('.join-game-card').first().waitFor({
+      state: 'visible',
+      timeout: 10_000,
+    });
+
+    const codeInput = pageC.locator('input[name="invitationCode"]').first();
+    await codeInput.fill(invitationCode);
+    await codeInput.press('Enter');
+
+    const errorFeedback = pageC.locator('.join-feedback--error, [role="alert"]').first();
+    await expect(errorFeedback).toBeVisible({ timeout: 10_000 });
+    await expect(errorFeedback).toContainText(
+      /code invalide|invalid code|partie indisponible|unavailable game|partida no disponible|partida indispon[ií]vel/i
+    );
+    await expect(pageC).toHaveURL(/\/games\/join$/, { timeout: 5_000 });
+  });
+
   test.afterAll(async () => {
     if (contextA) {
       await contextA.close().catch(() => undefined);
     }
     if (contextB) {
       await contextB.close().catch(() => undefined);
+    }
+    if (contextC) {
+      await contextC.close().catch(() => undefined);
     }
   });
 });

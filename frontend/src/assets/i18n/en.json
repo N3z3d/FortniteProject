@@ -507,6 +507,7 @@
       "expired": "Expired",
       "expiresOn": "Expires:",
       "copyCode": "Copy code",
+      "deleteCode": "Delete code",
       "regenerateCode": "Regenerate code (choose duration)",
       "draftPhase": "Draft Phase",
       "draftSubtitle": "Participants are selecting their players",
@@ -558,6 +559,8 @@
         "invitationCodeWithValue": "{verb}: {code}",
         "invitationCodeWithoutValue": "{verb}.",
         "invitationCodeGenerationFailed": "Unable to generate invitation code.",
+        "invitationCodeDeleteSuccess": "Invitation code deleted.",
+        "invitationCodeDeleteFailed": "Unable to delete invitation code.",
         "invitationCodeRegeneratedAnnounce": "Invitation code regenerated successfully.",
         "renameSuccess": "Game renamed successfully.",
         "renameError": "Error while renaming game.",
@@ -597,6 +600,12 @@
           "title": "Delete game",
           "message": "This action is permanent. Do you really want to delete this game?",
           "confirm": "Delete",
+          "cancel": "Cancel"
+        },
+        "deleteInvitationCode": {
+          "title": "Delete invitation code",
+          "message": "This invitation code will stop working immediately. Do you want to continue?",
+          "confirm": "Delete code",
           "cancel": "Cancel"
         },
         "startDraft": {

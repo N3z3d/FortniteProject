@@ -507,6 +507,7 @@
       "expired": "Expiré",
       "expiresOn": "Expire:",
       "copyCode": "Copier le code",
+      "deleteCode": "Supprimer le code",
       "regenerateCode": "Régénérer le code (choisir durée)",
       "draftPhase": "Phase de Draft",
       "draftSubtitle": "Les participants sélectionnent leurs joueurs",
@@ -558,6 +559,8 @@
         "invitationCodeWithValue": "{verb} : {code}",
         "invitationCodeWithoutValue": "{verb}.",
         "invitationCodeGenerationFailed": "Impossible de generer le code d'invitation.",
+        "invitationCodeDeleteSuccess": "Code d'invitation supprime.",
+        "invitationCodeDeleteFailed": "Impossible de supprimer le code d'invitation.",
         "invitationCodeRegeneratedAnnounce": "Code d'invitation regenere avec succes.",
         "renameSuccess": "Partie renommee avec succes.",
         "renameError": "Erreur lors du renommage de la partie.",
@@ -597,6 +600,12 @@
           "title": "Supprimer la partie",
           "message": "Cette action est definitive. Voulez-vous vraiment supprimer cette partie ",
           "confirm": "Supprimer",
+          "cancel": "Annuler"
+        },
+        "deleteInvitationCode": {
+          "title": "Supprimer le code d'invitation",
+          "message": "Ce code d'invitation cessera de fonctionner immediatement. Voulez-vous continuer ",
+          "confirm": "Supprimer le code",
           "cancel": "Annuler"
         },
         "startDraft": {

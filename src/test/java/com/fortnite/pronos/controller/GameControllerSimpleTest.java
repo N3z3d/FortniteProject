@@ -149,10 +149,17 @@ class GameControllerSimpleTest {
     GameDto gameDto = new GameDto();
     gameDto.setId(gameId);
     gameDto.setName("Test game");
+    gameDto.setInvitationCode("CODE123");
+    gameDto.setInvitationCodeExpiresAt(java.time.LocalDateTime.now().plusHours(1));
+    GameDto updatedGameDto = new GameDto();
+    updatedGameDto.setId(gameId);
+    updatedGameDto.setName("Test game");
+
 
     when(userResolver.resolve(null, request)).thenReturn(user);
     when(gameService.getGameByInvitationCode("CODE123")).thenReturn(Optional.of(gameDto));
     when(gameService.joinGame(eq(user.getId()), any(JoinGameRequest.class))).thenReturn(true);
+    when(gameService.getGameByIdOrThrow(gameId)).thenReturn(updatedGameDto);
 
     ResponseEntity<GameDto> response =
         gameController.joinGameWithCode(
@@ -161,12 +168,15 @@ class GameControllerSimpleTest {
     assertNotNull(response.getBody());
     org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
     org.junit.jupiter.api.Assertions.assertEquals(gameId, response.getBody().getId());
+    assertNull(response.getBody().getInvitationCode());
+    assertNull(response.getBody().getInvitationCodeExpiresAt());
 
     verify(gameService).getGameByInvitationCode("CODE123");
     verify(invitationCodeAttemptGuard)
         .registerAttemptOrThrow(user.getId(), request.getRemoteAddr());
     verify(validationService).validateJoinGameRequest(any(JoinGameRequest.class));
     verify(gameService).joinGame(eq(user.getId()), any(JoinGameRequest.class));
+    verify(gameService).getGameByIdOrThrow(gameId);
   }
 
   @Test
@@ -370,6 +380,61 @@ class GameControllerSimpleTest {
     assertNotNull(response.getBody());
     org.junit.jupiter.api.Assertions.assertEquals(
         "NEWCODE1", response.getBody().getInvitationCode());
+  }
+
+  @Test
+  void shouldDeleteInvitationCodeWhenCreatorIsResolved() {
+    UUID gameId = UUID.randomUUID();
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+    gameDto.setCreatorId(user.getId());
+
+    GameDto updatedGame = new GameDto();
+    updatedGame.setId(gameId);
+    updatedGame.setInvitationCode(null);
+
+    when(userResolver.resolve(null, request)).thenReturn(user);
+    when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+    when(gameService.deleteInvitationCode(gameId)).thenReturn(updatedGame);
+
+    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+
+    org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNotNull(response.getBody());
+    org.junit.jupiter.api.Assertions.assertNull(response.getBody().getInvitationCode());
+    verify(gameService).deleteInvitationCode(gameId);
+  }
+
+  @Test
+  void shouldReturnUnauthorizedOnDeleteInvitationCodeWhenUserMissing() {
+    UUID gameId = UUID.randomUUID();
+    when(userResolver.resolve(null, request)).thenReturn(null);
+
+    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    assertNull(response.getBody());
+  }
+
+  @Test
+  void shouldReturnForbiddenOnDeleteInvitationCodeWhenUserIsNotCreator() {
+    UUID gameId = UUID.randomUUID();
+    User anotherUser = new User();
+    anotherUser.setId(UUID.randomUUID());
+    anotherUser.setUsername("other");
+
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+    gameDto.setCreatorId(user.getId());
+
+    when(userResolver.resolve(null, request)).thenReturn(anotherUser);
+    when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+
+    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+
+    org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    assertNull(response.getBody());
   }
 
   @Test

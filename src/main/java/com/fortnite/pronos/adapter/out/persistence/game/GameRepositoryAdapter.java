@@ -160,6 +160,11 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
   }
 
   @Override
+  public Optional<Game> findByInvitationCodeForUpdate(String invitationCode) {
+    return gameRepository.findByInvitationCodeForUpdate(invitationCode).map(mapper::toDomain);
+  }
+
+  @Override
   public boolean existsById(UUID id) {
     return gameCrudRepository().existsById(id);
   }

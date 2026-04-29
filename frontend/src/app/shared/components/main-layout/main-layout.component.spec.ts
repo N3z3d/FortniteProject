@@ -415,6 +415,21 @@ describe('MainLayoutComponent', () => {
     expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
   });
 
+  it('should show invalid-or-unavailable feedback for consumed or manually deleted code in sidebar flow', () => {
+    component.showJoinCodeInput = true;
+    component.invitationCode = 'USED123';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('Game not found with invitation code: USED123'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe(
+      component.t.t('games.joinDialog.invalidOrUnavailableCode')
+    );
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
   describe('openJoinDialog / cancelJoin', () => {
     it('opens join code input and clears feedback', () => {
       component.joinFeedbackMessage = 'old error';

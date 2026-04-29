@@ -322,6 +322,11 @@ public final class Game {
     return LocalDateTime.now().isAfter(invitationCodeExpiresAt);
   }
 
+  public void clearInvitationCode() {
+    this.invitationCode = null;
+    this.invitationCodeExpiresAt = null;
+  }
+
   // ===============================
   // REGION RULES
   // ===============================

@@ -128,6 +128,25 @@ class GameCreationServiceDomainMigrationTest {
   }
 
   @Test
+  void deleteInvitationCodeClearsCodeAndExpirationAndReturnsUpdatedDto() {
+    Game game = buildDomainGame(GameStatus.CREATING);
+    LocalDateTime expiration = LocalDateTime.of(2026, 2, 7, 18, 30);
+    game.setInvitationCode("DELETE42");
+    game.setInvitationCodeExpiresAt(expiration);
+    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(gameDomainRepository.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    GameDto result = service.deleteInvitationCode(gameId);
+
+    assertThat(result.getInvitationCode()).isNull();
+    assertThat(result.getInvitationCodeExpiresAt()).isNull();
+    assertThat(game.getInvitationCode()).isNull();
+    assertThat(game.getInvitationCodeExpiresAt()).isNull();
+    verify(gameDomainRepository).save(game);
+  }
+
+  @Test
   void regenerateInvitationCodeThrowsWhenGameDoesNotExist() {
     when(gameDomainRepository.findById(gameId)).thenReturn(Optional.empty());
 

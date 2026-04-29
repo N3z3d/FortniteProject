@@ -270,7 +270,7 @@
             </div>
 
             <!-- Invitation Code -->
-            <div class="info-item invitation-code-item" *ngIf="game.invitationCode || canRegenerateCode()">
+            <div class="info-item invitation-code-item" *ngIf="canRegenerateCode()">
               <mat-icon>vpn_key</mat-icon>
               <div class="info-content">
                 <span class="info-label">{{ t.t('games.detail.invitationCode') }}</span>
@@ -292,6 +292,14 @@
                           [matTooltip]="t.t('games.detail.copyCode')"
                           class="copy-btn">
                     <mat-icon>content_copy</mat-icon>
+                  </button>
+                  <button mat-icon-button
+                          *ngIf="canRegenerateCode()"
+                          (click)="confirmDeleteInvitationCode()"
+                          [matTooltip]="t.t('games.detail.deleteCode')"
+                          [attr.aria-label]="t.t('games.detail.deleteCode')"
+                          class="delete-code-btn">
+                    <mat-icon>delete</mat-icon>
                   </button>
                   <button mat-icon-button
                           *ngIf="canRegenerateCode()"

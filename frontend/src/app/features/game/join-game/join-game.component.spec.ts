@@ -295,6 +295,18 @@ describe('JoinGameComponent', () => {
     expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
   });
 
+  it('should map consumed or manually deleted code to invalid or unavailable message', () => {
+    component.invitationCode = 'USED123';
+    gameService.joinGameWithCode.and.returnValue(
+      throwError(() => new Error('Game not found with invitation code: USED123'))
+    );
+
+    component.joinWithCode();
+
+    expect(component.joinFeedbackMessage).toBe('games.joinDialog.invalidOrUnavailableCode');
+    expect(uiFeedback.showSuccessWithAction).not.toHaveBeenCalled();
+  });
+
   it('should navigate to games on cancel', () => {
     component.joinFeedbackMessage = 'games.joinDialog.alreadyInGame';
     component.cancel();

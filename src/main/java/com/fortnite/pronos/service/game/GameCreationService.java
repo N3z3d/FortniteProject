@@ -113,6 +113,21 @@ public class GameCreationService implements GameCreationUseCase {
     return GameDtoMapper.fromDomainGame(savedGame);
   }
 
+  /** Deletes the current invitation code for a game. */
+  @Override
+  @Transactional
+  public GameDto deleteInvitationCode(UUID gameId) {
+    log.debug("Deleting invitation code for game {}", gameId);
+
+    Game game = findDomainGameOrThrow(gameId);
+    game.clearInvitationCode();
+
+    Game savedGame = saveDomainGame(game);
+
+    log.info("Invitation code deleted for game {}", gameId);
+    return GameDtoMapper.fromDomainGame(savedGame);
+  }
+
   /** Configures the competition period (start and end dates) for a game. */
   @Override
   @Transactional

@@ -70,6 +70,13 @@ public class GameService {
     return updatedGame;
   }
 
+  /** Deletes the invitation code for a game. */
+  public GameDto deleteInvitationCode(UUID gameId) {
+    GameDto updatedGame = gameCreationService.deleteInvitationCode(gameId);
+    publishGameUpdate(gameId);
+    return updatedGame;
+  }
+
   /** Renames a game */
   public GameDto renameGame(UUID gameId, String newName) {
     GameDto updatedGame = gameCreationService.renameGame(gameId, newName);

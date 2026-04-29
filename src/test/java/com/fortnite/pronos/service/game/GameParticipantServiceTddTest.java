@@ -93,13 +93,13 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("VALIDCODE");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("VALIDCODE")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("VALIDCODE")).thenReturn(Optional.of(game));
       when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
 
       boolean result = service.joinGame(userId, request);
 
       assertThat(result).isTrue();
-      verify(gameRepository).findByInvitationCode("VALIDCODE");
+      verify(gameRepository).findByInvitationCodeForUpdate("VALIDCODE");
       verify(gameRepository).save(game);
     }
 
@@ -111,12 +111,61 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("FUTUREXP");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("FUTUREXP")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("FUTUREXP")).thenReturn(Optional.of(game));
       when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
 
       boolean result = service.joinGame(userId, request);
 
       assertThat(result).isTrue();
+    }
+
+    @Test
+    void joinWithValidCode_consumesCodeAndExpiryAfterSuccessfulJoin() {
+      LocalDateTime expiration = LocalDateTime.now().plusHours(24);
+      game.setInvitationCode("ONESHOT1");
+      game.setInvitationCodeExpiresAt(expiration);
+      JoinGameRequest request = new JoinGameRequest();
+      request.setInvitationCode("ONESHOT1");
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(gameRepository.findByInvitationCodeForUpdate("ONESHOT1")).thenReturn(Optional.of(game));
+      when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      boolean result = service.joinGame(userId, request);
+
+      assertThat(result).isTrue();
+      assertThat(game.getInvitationCode()).isNull();
+      assertThat(game.getInvitationCodeExpiresAt()).isNull();
+      verify(gameRepository).save(game);
+    }
+
+    @Test
+    void joinWithValidCode_cannotBeReusedAfterFirstSuccessfulJoin() {
+      UUID secondUserId = UUID.randomUUID();
+      User secondUser = new User();
+      secondUser.setId(secondUserId);
+      secondUser.setUsername("player2");
+
+      game.setInvitationCode("ONESHOT2");
+      game.setInvitationCodeExpiresAt(LocalDateTime.now().plusHours(24));
+      JoinGameRequest request = new JoinGameRequest();
+      request.setInvitationCode("ONESHOT2");
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.findById(secondUserId)).thenReturn(Optional.of(secondUser));
+      when(gameRepository.findByInvitationCodeForUpdate("ONESHOT2"))
+          .thenAnswer(
+              ignored ->
+                  "ONESHOT2".equals(game.getInvitationCode())
+                      ? Optional.of(game)
+                      : Optional.empty());
+      when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      assertThat(service.joinGame(userId, request)).isTrue();
+
+      assertThatThrownBy(() -> service.joinGame(secondUserId, request))
+          .isInstanceOf(GameNotFoundException.class)
+          .hasMessageContaining("ONESHOT2");
     }
 
     @Test
@@ -127,7 +176,7 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("EXPIREDX");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("EXPIREDX")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("EXPIREDX")).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(InvalidInvitationCodeException.class)
@@ -149,6 +198,7 @@ class GameParticipantServiceTddTest {
 
       assertThat(result).isTrue();
       verify(gameRepository).findById(gameId);
+      verify(gameRepository, never()).findByInvitationCodeForUpdate(any());
       verify(gameRepository, never()).findByInvitationCode(any());
     }
 
@@ -158,7 +208,7 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("UNKNOWN1");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("UNKNOWN1")).thenReturn(Optional.empty());
+      when(gameRepository.findByInvitationCodeForUpdate("UNKNOWN1")).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(GameNotFoundException.class);
@@ -170,6 +220,8 @@ class GameParticipantServiceTddTest {
     void joinWithValidCode_gameFull_throwsGameFullException() {
       // maxParticipants = 4 with a full game (3 non-creator participants + 1 creator slot)
       game.setInvitationCode("FULLGAME");
+      LocalDateTime expiration = LocalDateTime.now().plusHours(24);
+      game.setInvitationCodeExpiresAt(expiration);
       game.addParticipant(
           new com.fortnite.pronos.domain.game.model.GameParticipant(
               UUID.randomUUID(), "p1", false));
@@ -183,12 +235,14 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("FULLGAME");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("FULLGAME")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("FULLGAME")).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(GameFullException.class);
 
       verify(gameRepository, never()).save(any(Game.class));
+      assertThat(game.getInvitationCode()).isEqualTo("FULLGAME");
+      assertThat(game.getInvitationCodeExpiresAt()).isEqualTo(expiration);
     }
 
     @Test
@@ -200,7 +254,7 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("ALREADYIN");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("ALREADYIN")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("ALREADYIN")).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(UserAlreadyInGameException.class);
@@ -234,7 +288,8 @@ class GameParticipantServiceTddTest {
       request.setInvitationCode("ACTIVECD");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("ACTIVECD")).thenReturn(Optional.of(draftingGame));
+      when(gameRepository.findByInvitationCodeForUpdate("ACTIVECD"))
+          .thenReturn(Optional.of(draftingGame));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(InvalidGameStateException.class);

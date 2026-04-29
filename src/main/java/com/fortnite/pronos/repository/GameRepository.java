@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -58,6 +61,11 @@ public interface GameRepository
   /** Trouver une game par son code d'invitation (exclut soft deleted) */
   @Query("SELECT g FROM Game g WHERE g.invitationCode = :code AND g.deletedAt IS NULL")
   Optional<Game> findByInvitationCode(@Param("code") String code);
+
+  /** Trouver et verrouiller une game par code pour consommer le code une seule fois. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT g FROM Game g WHERE g.invitationCode = :code AND g.deletedAt IS NULL")
+  Optional<Game> findByInvitationCodeForUpdate(@Param("code") String code);
 
   /** Vérifier si un code d'invitation existe (inclut soft deleted pour unicité) */
   boolean existsByInvitationCode(String invitationCode);

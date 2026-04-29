@@ -21,6 +21,8 @@ public interface GameDomainRepositoryPort {
 
   Optional<Game> findByInvitationCode(String invitationCode);
 
+  Optional<Game> findByInvitationCodeForUpdate(String invitationCode);
+
   boolean existsById(UUID id);
 
   long countByCreatorAndStatusIn(UUID creatorId, List<GameStatus> statuses);

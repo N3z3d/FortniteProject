@@ -70,7 +70,9 @@ async function getPersistedInvitationCode(
   );
 
   if (!response.ok()) {
-    return '';
+    throw new Error(
+      `Unable to fetch game ${gameId} for invitation-code check: HTTP ${response.status()}`
+    );
   }
 
   const game = (await response.json()) as GameApiDto;
@@ -356,6 +358,19 @@ export async function waitForInvitationCodePersistence(
       { timeout: 10_000 }
     )
     .toBe(invitationCode);
+}
+
+export async function waitForInvitationCodeRemoval(
+  request: APIRequestContext,
+  username: string,
+  gameId: string
+): Promise<void> {
+  await expect
+    .poll(
+      async () => getPersistedInvitationCode(request, username, gameId),
+      { timeout: 10_000 }
+    )
+    .toBe('');
 }
 
 export async function loginAsAdmin(page: Page): Promise<boolean> {

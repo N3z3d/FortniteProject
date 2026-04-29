@@ -8,10 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.persistence.LockModeType;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.CrudRepository;
 
 import com.fortnite.pronos.domain.game.model.GameStatus;
@@ -122,6 +126,32 @@ class GameRepositoryAdapterTest {
 
     assertThat(result).isPresent();
     assertThat(result.orElseThrow().getInvitationCode()).isEqualTo("INV-ABC");
+  }
+
+  @Test
+  void findByInvitationCodeForUpdateMapsDomainGame() {
+    UUID gameId = UUID.randomUUID();
+    UUID creatorId = UUID.randomUUID();
+    Game entity = buildEntityGame(gameId, creatorId, com.fortnite.pronos.model.GameStatus.CREATING);
+    entity.setInvitationCode("INV-LOCK");
+    when(gameRepository.findByInvitationCodeForUpdate("INV-LOCK")).thenReturn(Optional.of(entity));
+
+    Optional<com.fortnite.pronos.domain.game.model.Game> result =
+        adapter.findByInvitationCodeForUpdate("INV-LOCK");
+
+    assertThat(result).isPresent();
+    assertThat(result.orElseThrow().getInvitationCode()).isEqualTo("INV-LOCK");
+    verify(gameRepository).findByInvitationCodeForUpdate("INV-LOCK");
+  }
+
+  @Test
+  void findByInvitationCodeForUpdateUsesPessimisticWriteLock() throws NoSuchMethodException {
+    Method method = GameRepository.class.getMethod("findByInvitationCodeForUpdate", String.class);
+
+    Lock lock = method.getAnnotation(Lock.class);
+
+    assertThat(lock).isNotNull();
+    assertThat(lock.value()).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
   }
 
   @Test

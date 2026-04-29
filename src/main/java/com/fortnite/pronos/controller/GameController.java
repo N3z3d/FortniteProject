@@ -385,6 +385,30 @@ public class GameController {
     return ResponseEntity.ok(game);
   }
 
+  @DeleteMapping("/{id:" + UUID_PATH_PATTERN + "}/invitation-code")
+  public ResponseEntity<GameDto> deleteInvitationCode(
+      @PathVariable UUID id,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    log.info("GameController: deleteInvitationCode requested - gameId={}", id);
+
+    User user = userResolver.resolve(username, httpRequest);
+    if (user == null) {
+      log.warn("GameController: deleteInvitationCode unauthorized - gameId={}", id);
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
+    if (!user.getId().equals(gameDto.getCreatorId())) {
+      log.warn("GameController: deleteInvitationCode forbidden - gameId={}", id);
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    GameDto updatedGame = gameService.deleteInvitationCode(id);
+    log.info("GameController: deleteInvitationCode succeeded - gameId={}", id);
+    return ResponseEntity.ok(updatedGame);
+  }
+
   @Operation(summary = "Rename game", description = "Renames an existing game")
   @ApiResponses(
       value = {
@@ -488,7 +512,7 @@ public class GameController {
     gameService.joinGame(userId, joinRequest);
     log.info(
         "GameController: joinGameWithCode succeeded - gameId={}, userId={}", game.getId(), userId);
-    return ResponseEntity.ok(game);
+    return ResponseEntity.ok(gameService.getGameByIdOrThrow(game.getId()));
   }
 
   private ResponseEntity<GameDto> notFoundByInvitationCode(UUID userId, String normalizedCode) {

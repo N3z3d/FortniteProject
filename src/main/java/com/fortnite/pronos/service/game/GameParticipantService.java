@@ -47,9 +47,10 @@ public class GameParticipantService {
 
     com.fortnite.pronos.model.User user = findUserOrThrow(userId);
     Game game = findGameFromRequest(request);
+    boolean joinedWithInvitationCode = isJoinWithInvitationCode(request);
 
     validateUserCanJoinGame(user, game);
-    addUserToGame(user, game);
+    addUserToGame(user, game, joinedWithInvitationCode);
 
     log.info("User {} successfully joined game {}", user.getUsername(), game.getName());
     return true;
@@ -104,7 +105,7 @@ public class GameParticipantService {
     if (request.getInvitationCode() != null && !request.getInvitationCode().isBlank()) {
       Game game =
           gameRepository
-              .findByInvitationCode(request.getInvitationCode())
+              .findByInvitationCodeForUpdate(request.getInvitationCode())
               .orElseThrow(
                   () ->
                       new GameNotFoundException(
@@ -147,7 +148,12 @@ public class GameParticipantService {
     return game.getCreatorId().equals(user.getId());
   }
 
-  private void addUserToGame(com.fortnite.pronos.model.User user, Game game) {
+  private boolean isJoinWithInvitationCode(JoinGameRequest request) {
+    return request.getInvitationCode() != null && !request.getInvitationCode().isBlank();
+  }
+
+  private void addUserToGame(
+      com.fortnite.pronos.model.User user, Game game, boolean joinedWithInvitationCode) {
     GameParticipant participant =
         GameParticipant.restore(
             UUID.randomUUID(),
@@ -160,6 +166,9 @@ public class GameParticipantService {
             List.of());
     if (!game.addParticipant(participant)) {
       throw new InvalidGameStateException("Game is not accepting new participants");
+    }
+    if (joinedWithInvitationCode) {
+      game.clearInvitationCode();
     }
     gameRepository.save(game);
     ensureCreatorParticipantPersisted(game);

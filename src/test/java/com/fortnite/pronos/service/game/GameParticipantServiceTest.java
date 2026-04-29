@@ -206,21 +206,21 @@ class GameParticipantServiceTest {
     }
 
     @Test
-    @DisplayName("finds game by invitation code when provided")
+    @DisplayName("finds game by locked invitation code when provided")
     void findsGameByInvitationCode() {
       game.setInvitationCode("TESTCODE"); // valid: no expiry → permanent
       JoinGameRequest request = new JoinGameRequest();
       request.setInvitationCode("TESTCODE");
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findByInvitationCode("TESTCODE")).thenReturn(Optional.of(game));
+      when(gameRepository.findByInvitationCodeForUpdate("TESTCODE")).thenReturn(Optional.of(game));
       when(gameRepository.save(any(Game.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       boolean result = service.joinGame(userId, request);
 
       assertThat(result).isTrue();
-      verify(gameRepository).findByInvitationCode("TESTCODE");
+      verify(gameRepository).findByInvitationCodeForUpdate("TESTCODE");
       verify(gameRepository).save(game);
     }
   }

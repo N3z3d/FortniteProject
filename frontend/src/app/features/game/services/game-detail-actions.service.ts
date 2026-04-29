@@ -208,6 +208,19 @@ export class GameDetailActionsService {
     });
   }
 
+  deleteInvitationCode(gameId: string, onSuccess?: (game: Game) => void): void {
+    this.gameService.deleteInvitationCode(gameId).subscribe({
+      next: updatedGame => {
+        this.uiFeedback.showSuccessFromKey('games.detail.actions.invitationCodeDeleteSuccess');
+        onSuccess?.(updatedGame);
+      },
+      error: error => {
+        this.uiFeedback.showError(error, 'games.detail.actions.invitationCodeDeleteFailed');
+        this.logActionError('deleteInvitationCode', gameId, error);
+      }
+    });
+  }
+
   /**
    * Renomme la partie
    */
@@ -271,6 +284,19 @@ export class GameDetailActionsService {
         confirmColor: 'warn'
       },
       () => this.permanentlyDeleteGame(gameId)
+    );
+  }
+
+  confirmDeleteInvitationCode(gameId: string, onSuccess?: (game: Game) => void): void {
+    this.openConfirmationDialog(
+      {
+        title: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.title'),
+        message: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.message'),
+        confirmText: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.confirm'),
+        cancelText: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.cancel'),
+        confirmColor: 'warn'
+      },
+      () => this.deleteInvitationCode(gameId, onSuccess)
     );
   }
 

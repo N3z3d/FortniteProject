@@ -45,6 +45,7 @@ describe('GameDetailActionsService', () => {
       'deleteGame',
       'joinGame',
       'regenerateInvitationCode',
+      'deleteInvitationCode',
       'renameGame'
     ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
@@ -65,7 +66,8 @@ describe('GameDetailActionsService', () => {
         'games.detail.actions.invitationCodeGenerateVerb': 'Generate invitation code',
         'games.detail.actions.invitationCodeRegenerateVerb': 'Regenerate invitation code',
         'games.detail.actions.invitationCodeWithValue': '{verb}: {code}',
-        'games.detail.actions.invitationCodeWithoutValue': '{verb}.'
+        'games.detail.actions.invitationCodeWithoutValue': '{verb}.',
+        'games.detail.actions.invitationCodeDeleteSuccess': 'Invitation code deleted.'
       };
       return templates[key] || key;
     });
@@ -220,6 +222,24 @@ describe('GameDetailActionsService', () => {
     expect(onSuccess).toHaveBeenCalledWith(mockGame);
   });
 
+  it('deletes invitation code and forwards updated game', () => {
+    const onSuccess = jasmine.createSpy('onSuccess');
+    const updatedGame = {
+      ...mockGame,
+      invitationCode: undefined,
+      invitationCodeExpiresAt: undefined,
+      isInvitationCodeExpired: false
+    };
+    gameServiceSpy.deleteInvitationCode.and.returnValue(of(updatedGame));
+
+    service.deleteInvitationCode('game1', onSuccess);
+
+    expect(uiFeedbackSpy.showSuccessFromKey).toHaveBeenCalledWith(
+      'games.detail.actions.invitationCodeDeleteSuccess'
+    );
+    expect(onSuccess).toHaveBeenCalledWith(updatedGame);
+  });
+
   it('renames game and shows translated success message', () => {
     const onSuccess = jasmine.createSpy('onSuccess');
     const renamedGame = { ...mockGame, name: 'Renamed Game' };
@@ -274,6 +294,16 @@ describe('GameDetailActionsService', () => {
     expect(regenerateSpy).toHaveBeenCalledWith('game1', '7d', 'generate', undefined);
   });
 
+
+  it('opens confirmation dialog and deletes invitation code when confirmed', () => {
+    const deleteSpy = spyOn(service, 'deleteInvitationCode').and.stub();
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
+
+    service.confirmDeleteInvitationCode('game1');
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+    expect(deleteSpy).toHaveBeenCalledWith('game1', undefined);
+  });
   it('opens rename dialog and renames game when a new name is submitted', () => {
     const renameSpy = spyOn(service, 'renameGame').and.stub();
     dialogSpy.open.and.returnValue({ afterClosed: () => of('New Game Name') } as any);

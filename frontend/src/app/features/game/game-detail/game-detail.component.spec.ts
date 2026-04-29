@@ -65,6 +65,7 @@ describe('GameDetailComponent', () => {
       'copyInvitationCode',
       'regenerateInvitationCode',
       'promptRegenerateCode',
+      'confirmDeleteInvitationCode',
       'promptRenameGame'
     ]);
     gameDetailPermissionsSpy = jasmine.createSpyObj('GameDetailPermissionsService', [
@@ -607,6 +608,57 @@ describe('GameDetailComponent', () => {
     expect(deleteButton?.disabled).toBeTrue();
     expect(reason?.textContent).toContain('games.detail.deleteDisabledStatus');
   }));
+
+  it('should show delete invitation code button when code exists and creator can manage it', fakeAsync(() => {
+    const gameWithCode: Game = {
+      ...mockGame,
+      invitationCode: 'INVITE123',
+      invitationCodeExpiresAt: new Date().toISOString(),
+      isInvitationCodeExpired: false
+    };
+    gameDataServiceSpy.getGameById.and.returnValue(of(gameWithCode));
+    gameDataServiceSpy.getGameParticipants.and.returnValue(of(mockParticipants));
+    gameDetailPermissionsSpy.canRegenerateCode.and.returnValue(true);
+
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.delete-code-btn')).not.toBeNull();
+  }));
+
+  it('should delegate delete invitation code confirmation and apply updated invitation fields', () => {
+    component.game = {
+      ...mockGame,
+      invitationCode: 'INVITE123',
+      invitationCodeExpiresAt: '2026-04-24T07:00:00Z',
+      isInvitationCodeExpired: true
+    };
+
+    component.confirmDeleteInvitationCode();
+
+    expect(gameDetailActionsSpy.confirmDeleteInvitationCode).toHaveBeenCalledWith(
+      '1',
+      jasmine.any(Function)
+    );
+
+    const [, onSuccess] = gameDetailActionsSpy.confirmDeleteInvitationCode.calls.mostRecent().args as [
+      string,
+      (game: Game) => void
+    ];
+
+    onSuccess({
+      ...mockGame,
+      invitationCode: undefined,
+      invitationCodeExpiresAt: undefined,
+      isInvitationCodeExpired: false
+    });
+
+    expect(component.game?.invitationCode).toBeUndefined();
+    expect(component.game?.invitationCodeExpiresAt).toBeUndefined();
+    expect(component.game?.isInvitationCodeExpired).toBeFalse();
+  });
 
   it('should hide delete action for non host users', fakeAsync(() => {
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));

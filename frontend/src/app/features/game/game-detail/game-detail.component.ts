@@ -324,23 +324,25 @@ export class GameDetailComponent implements OnInit, OnDestroy {
 
   regenerateInvitationCode(duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): void {
     if (!this.game) return;
-    this.actions.regenerateInvitationCode(this.gameId, duration, 'regenerate', (updatedGame) => {
-      if (this.game) {
-        this.game.invitationCode = updatedGame.invitationCode;
-        this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
-        this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
-      }
+    this.actions.regenerateInvitationCode(this.game.id || this.gameId, duration, 'regenerate', (updatedGame) => {
+      this.applyInvitationCodeState(updatedGame);
     });
   }
 
   promptRegenerateCode(): void {
     const hasExistingCode = !!this.game?.invitationCode;
-    this.actions.promptRegenerateCode(this.gameId, hasExistingCode, (updatedGame) => {
-      if (this.game) {
-        this.game.invitationCode = updatedGame.invitationCode;
-        this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
-        this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
-      }
+    this.actions.promptRegenerateCode(this.game?.id || this.gameId, hasExistingCode, (updatedGame) => {
+      this.applyInvitationCodeState(updatedGame);
+    });
+  }
+
+  confirmDeleteInvitationCode(): void {
+    if (!this.game?.invitationCode) {
+      return;
+    }
+
+    this.actions.confirmDeleteInvitationCode(this.game.id || this.gameId, (updatedGame) => {
+      this.applyInvitationCodeState(updatedGame);
     });
   }
 
@@ -388,6 +390,16 @@ export class GameDetailComponent implements OnInit, OnDestroy {
   getDraftRoute(game: Game): string[] {
     const mode = game.draftMode === 'SIMULTANEOUS' ? 'simultaneous' : 'snake';
     return ['/games', game.id, 'draft', mode];
+  }
+
+  private applyInvitationCodeState(updatedGame: Game): void {
+    if (!this.game) {
+      return;
+    }
+
+    this.game.invitationCode = updatedGame.invitationCode;
+    this.game.invitationCodeExpiresAt = updatedGame.invitationCodeExpiresAt;
+    this.game.isInvitationCodeExpired = updatedGame.isInvitationCodeExpired;
   }
 
   private isNotFoundError(error: Error): boolean {
