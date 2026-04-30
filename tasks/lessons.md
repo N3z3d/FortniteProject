@@ -22,3 +22,15 @@
 
 - Quand l'utilisateur travaille via BMAD en francais, repondre en francais par defaut, y compris pour les sorties de review et les resumes de validation.
 - Avant d'envoyer la conclusion d'une review BMAD, relire la langue de sortie et corriger immediatement si elle ne correspond pas au contexte projet/utilisateur.
+- Avant de qualifier un changement comme hors-scope BMAD, verifier son origine dans `sprint-status.yaml` et les stories precedentes pour distinguer une vraie derive de perimetre d'une feature heritee deja livree.
+
+## 2026-04-24
+
+- Quand l'utilisateur rejette une correction percue comme une bidouille, reformuler le sujet en termes de contrat, d'invariant et de cible d'architecture au lieu de proposer un simple revert local.
+- Si un finding touche une compatibilite de migration encore vivante, ne pas presenter sa preservation comme un "patch legacy"; expliciter la source de verite cible, la migration necessaire, puis la simplification finale.
+- Ne pas laisser une story fonctionnelle introduire en douce un changement de contrat metier annexe; isoler clairement ce qui releve du scope de la story et ce qui doit faire l'objet d'une decision produit/architecture dediee.
+
+## 2026-04-25
+
+- Quand l'utilisateur demande la commande exacte "sans l'executer", ne lancer aucun test ni aucune commande associee, meme si cette execution serait utile a la verification.
+- Dans ce cas, repondre avec la commande exacte seulement, puis attendre une instruction explicite avant toute action locale.

@@ -892,3 +892,248 @@ Notes :
 - Validation E2E ciblee : `BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 npx playwright test e2e/pipeline-suggest.spec.ts` -> `2 passed`.
 - Garde-fous : `rg -n "resolveFortniteId" src/main src/test` -> zero resultat; `git diff --check` cible -> exit code 0 avec warnings CRLF/LF seulement.
 - Tentative de rebuild local `docker compose -f docker-compose.local.yml up -d --build app` bloquee par un `npm run build --prod` hors scope deja connu sur le typage `Game.status` dans `game-detail`/`game-home`; non requis pour la validation ciblee finale car Playwright a pu etre rejoue contre `http://localhost:8080`.
+
+---
+
+# Session 2026-04-23 - Follow-up implementation review sprint19-suggest-epic-id-robustness
+
+## Plan
+
+- [x] Assainir les logs backend `suggest-epic-id` pour ne plus exposer `e.getMessage()` dans les chemins temporaires
+- [x] Durcir `frontend/e2e/pipeline-suggest.spec.ts` pour skipper aussi sur les `429/503` de la vraie requete UI auto-suggest
+- [x] Trier le finding `adapter-info` contre l'historique BMAD et synchroniser la trace sans revert d'une story anterieure
+- [x] Rejouer les validations cibles backend/frontend/E2E et documenter le resultat
+
+## Review
+
+- [x] Logs backend assainis
+- [x] E2E auto-suggest rerunnable durci
+- [x] Triage BMAD `adapter-info` documente
+- [x] Validations cibles executees
+
+Notes :
+- Logs backend : suppression des `e.getMessage()` dans `FortniteApiAdapter`, `FortniteApiResolutionAdapter` et `PlayerIdentityPipelineService`; les warnings gardent le contexte utile sans exposer de details techniques upstream.
+- E2E : `pipeline-suggest.spec.ts` attend maintenant aussi la vraie requete UI `suggest-epic-id` et skippe explicitement si l'auto-suggest renvoie `429` ou `503`, au lieu d'echouer comme un faux negatif.
+- Triage BMAD : `GET /api/admin/players/pipeline/adapter-info` est herite de `sprint18-adapter-info-endpoint` (A17a) et documente comme tel dans `sprint-status.yaml` et la story source; aucun revert n'a ete applique sur cette feature deja livree.
+- Validation backend ciblee : `mvn -Dtest="FortniteApiAdapterTest,FortniteApiResolutionAdapterTest,PlayerIdentityPipelineServiceTest,AdminPlayerPipelineControllerTest,SecurityConfigAdminPipelineAuthorizationTest" test --no-transfer-progress` -> `89 tests`, `0 failure` apres `mvn spotless:apply --no-transfer-progress`.
+- Validation frontend ciblee : `npm run test:vitest -- src/app/features/admin/services/pipeline.service.spec.ts src/app/features/admin/pipeline/admin-pipeline-table/admin-pipeline-table.component.spec.ts src/app/features/admin/pipeline/admin-pipeline-page/admin-pipeline-page.component.spec.ts` -> `112 passed`.
+- Validation E2E ciblee : `BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 npx playwright test e2e/pipeline-suggest.spec.ts` -> `1 passed`, `1 skipped`; le skip est maintenant un comportement rerunnable attendu sur incident temporaire ou cible non exploitable, plus un faux echec.
+
+---
+
+# Session 2026-04-23 - Create story BMAD sprint19-feat-invitation-code-advanced
+
+## Plan
+
+- [x] Charger le workflow BMAD create-story effectif, les lecons projet, la config et le sprint-status
+- [x] Cartographier le flux invitation-code existant backend/frontend/tests pour eviter une story vague ou hors conventions
+- [x] Creer la story `_bmad-output/implementation-artifacts/sprint19-feat-invitation-code-advanced.md` en `ready-for-dev`
+- [x] Synchroniser `sprint-status.yaml`, relire la checklist BMAD et documenter le resultat
+
+## Review
+
+- [x] Workflow BMAD create-story effectif relu
+- [x] Story Sprint 19 creee en `ready-for-dev`
+- [x] Sprint status synchronise
+- [x] Verification finale de coherence effectuee
+
+Notes :
+- Workflow legacy reference par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/create-story/workflow.md`; workflow effectif utilise: `_bmad/bmm/4-implementation/bmad-create-story/workflow.md`.
+- Story creee: `_bmad-output/implementation-artifacts/sprint19-feat-invitation-code-advanced.md`.
+- Decision cle: conserver "pas de code a la creation", consommer le code uniquement apres un join reussi persiste, et ajouter une suppression manuelle createur-only via un endpoint dedie.
+- La story reutilise le feedback de join existant `invalidOrUnavailableCode` pour les codes consommes/supprimes, afin d'eviter une taxonomie d'erreurs inutile.
+- Le endpoint legacy frontend `POST /api/games/{id}/invitation-code` a ete documente comme heritage a ne pas ressusciter dans cette story.
+- Synchronisation BMAD effectuee dans `_bmad-output/implementation-artifacts/sprint-status.yaml` avec `sprint19-feat-invitation-code-advanced: ready-for-dev`.
+- Validation de cette session: revue documentaire et coherence croisee story/status/todo; aucun test automatise lance car aucun code runtime n'a ete modifie.
+
+---
+
+# Session 2026-04-23 - Dev story BMAD sprint19-feat-invitation-code-advanced
+
+## Plan
+
+- [x] Passer la story Sprint 19 en `in-progress` et verrouiller le scope contre les regressions hors perimetre
+- [x] Ecrire les tests rouges backend pour la consommation unique du code et la suppression manuelle createur-only
+- [x] Implementer le backend domaine/service/controller pour consommer et supprimer le code sans changer le flux de creation
+- [x] Ecrire les tests rouges frontend puis implementer l'action supprimer et la non-regression du feedback join
+- [x] Etendre la preuve E2E existante, executer les validations ciblees, puis mettre a jour les artefacts BMAD
+
+## Review
+
+- [x] Story et sprint tracking alignes
+- [x] Backend invitation-code valide
+- [x] Frontend invitation-code valide
+- [x] Validations automatisees executees
+
+Notes :
+- Workflow legacy reference par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/dev-story/workflow.md`; workflow effectif utilise: `_bmad/bmm/4-implementation/bmad-dev-story/workflow.md`.
+- Scope confirme depuis la story: pas de code auto a la creation, consommation apres join reussi uniquement, suppression manuelle createur-only, et reutilisation du message join existant pour code consomme/supprime.
+- Worktree deja tres sale avant cette session; ne rien revert hors scope et verifier les fichiers invitation-code avant toute edition.
+- Backend cible: `mvn spotless:apply --no-transfer-progress` puis `mvn -Dtest="GameParticipantServiceTddTest,GameCreationServiceDomainMigrationTest,GameControllerSimpleTest,GameServiceTddTest,GameDomainModelTest,CreateGameUseCaseTest" test --no-transfer-progress` -> `129 tests`, `0 failure`.
+- Frontend cible final: `npm run test:vitest -- src/app/features/game/services/game-command.service.spec.ts src/app/features/game/services/game-detail-actions.service.spec.ts src/app/features/game/game-detail/game-detail.component.spec.ts src/app/features/game/join-game/join-game.component.spec.ts src/app/shared/components/main-layout/main-layout.component.spec.ts` -> `184 passed`.
+- Build frontend production: `npm run build -- --configuration production` -> success.
+- Rebuild runtime local: `docker compose -f docker-compose.local.yml up -d --build app` -> success apres correction minimale de typage `GameStatus` dans `game-detail` et `game-home`.
+- Playwright cible: `BASE_URL=http://localhost:8080 BACKEND_URL=http://localhost:8080 npx playwright test e2e/full-game-flow.spec.ts e2e/game-lifecycle.spec.ts` -> `17 passed`.
+
+---
+
+# Session 2026-04-24 - Code review BMAD sprint19-feat-invitation-code-advanced
+
+## Plan
+
+- [x] Recharger le workflow BMAD code-review effectif, la story Sprint 19, le sprint status et les lecons projet
+- [x] Reconstruire le diff reviewable a partir du `File List` de la story dans un worktree deja sale
+- [x] Lancer la review principale et les trois angles BMAD paralleles, puis trier les findings retenus
+- [x] Verifier la couverture ciblee existante pour mesurer ce que les tests laissent passer
+- [x] Formaliser les suites propres: correctifs invitation-code immediats vs sujets d'architecture a traiter explicitement
+
+## Review
+
+- [x] Diff et contexte Sprint 19 reconstitues
+- [x] Findings BMAD consolides et dedupliques
+- [x] Verification ciblee executee
+- [x] Suites de travail separees entre patchs clairs et decisions d'architecture
+
+Notes :
+- Workflow legacy reference par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/code-review/workflow.md`; workflow effectif utilise: `_bmad/bmm/4-implementation/bmad-code-review/workflow.md`.
+- Le worktree etait deja tres sale et aucune branche dediee a `sprint19-feat-invitation-code-advanced` n'etait disponible; la review a ete reconstruite a partir du `File List` de la story et comparee a `HEAD`.
+- Findings retenus:
+- `Game.getTotalParticipantCount()` a ete simplifie en `participants.size()` alors que `GameParticipantService.ensureCreatorParticipantPersisted(...)` documente encore une compatibilite de migration pour les parties ou le createur n'est pas persiste comme participant.
+- `GameCreationService.addRegionRules(...)` injecte maintenant des regles par defaut quand `regionRules` est absent, ce qui change le contrat de `createGame()` alors que la story invitation-code demandait de ne pas modifier ce flux.
+- Les nouvelles cles de suppression du code d'invitation restent en anglais dans `frontend/src/assets/i18n/es.json` et `frontend/src/assets/i18n/pt.json`.
+- Verification ciblee: `mvn -Dtest="GameDomainModelTest,GameCreationServiceDomainMigrationTest,GameParticipantServiceTddTest,GameControllerSimpleTest" test --no-transfer-progress` -> `100 tests`, `0 failure`, `0 error`.
+- Conclusion de review: ne pas bricoler un revert opportuniste. Traiter separement:
+- `invitation-code`: traductions ES/PT et correctifs strictement dans le scope de la story.
+- `modele Game`: definir la cible long terme "createur toujours participant canonique" puis migrer avant de supprimer la compatibilite.
+- `createGame()/regionRules`: prendre une decision produit/contrat explicite avant tout changement de comportement par defaut.
+- Follow-up applique dans le scope sur: `frontend/src/assets/i18n/es.json` et `frontend/src/assets/i18n/pt.json` pour localiser les messages et la confirmation de suppression du code d'invitation en ES/PT.
+
+---
+
+# Session 2026-04-25 - Closeout BMAD code-review sprint19-feat-invitation-code-advanced
+
+## Plan
+
+- [x] Terminer le workflow BMAD courant sans lancer une nouvelle commande ou une autre story
+- [x] Appliquer la recommandation de review: ne pas passer la story en `done`
+- [x] Repasser les artefacts BMAD de `review` a `in-progress` tant que les findings ouverts restent a traiter
+- [x] Capturer la lecon projet sur les commandes exactes demandees sans execution
+
+## Review
+
+- [x] Story BMAD repassee en `in-progress`
+- [x] `sprint-status.yaml` synchronise
+- [x] Aucun nouveau workflow BMAD lance
+- [x] Lecon projet ajoutee
+
+Notes :
+- Decision appliquee: finir la commande courante en cloturant la review avec retour en `in-progress`, pas en ouvrant une nouvelle story ou une nouvelle commande BMAD.
+- Artefacts modifies: `_bmad-output/implementation-artifacts/sprint19-feat-invitation-code-advanced.md` et `_bmad-output/implementation-artifacts/sprint-status.yaml`.
+- Motif: findings ouverts encore actifs sur la story invitation-code; elle ne doit ni passer en `done` ni etre laissee implicitement "validee".
+- Lecon ajoutee dans `tasks/lessons.md`: quand le user demande une commande exacte sans execution, ne rien lancer localement.
+
+---
+
+# Session 2026-04-28 - Resolve review findings sprint19-feat-invitation-code-advanced
+
+## Plan
+
+- [x] Corriger le risque de double redemption concurrente du code d'invitation
+- [x] Ajouter/mettre a jour les tests unitaires cibles sur le verrou invitation-code
+- [x] Localiser les chaines invitation-code restantes en anglais dans `es/pt`
+- [x] Waiver explicitement les findings `createGame()/regionRules` et createur-participant reroutes vers stories dediees
+- [x] Rejouer les validations ciblees et resynchroniser les artefacts BMAD
+
+## Review
+
+- [x] Follow-ups BMAD ajoutes a la story
+- [x] Correctifs code appliques
+- [x] Waivers documentes
+- [x] Validations executees
+
+Notes :
+- Correctif backend: `GameParticipantService` utilise maintenant `GameDomainRepositoryPort.findByInvitationCodeForUpdate(...)` sur les joins par code; l'adapter delegue vers `GameRepository.findByInvitationCodeForUpdate(...)` annote `@Lock(PESSIMISTIC_WRITE)`.
+- Correctif i18n: les trois chaines invitation-code restantes en anglais ont ete localisees dans `frontend/src/assets/i18n/es.json` et `frontend/src/assets/i18n/pt.json`.
+- Waiver `createGame()/regionRules`: hors scope de cette story, deja pris par `sprint19-contract-create-game-region-rules` en `review`.
+- Waiver createur-participant: hors scope de cette story, conserve par `sprint19-migrate-canonical-game-participants` en `backlog`.
+- Validation backend: `mvn clean -Dmaven.repo.local=.m2/repository -Dtest=GameParticipantServiceTddTest,GameParticipantServiceTest,GameRepositoryAdapterTest test --no-transfer-progress` -> `50 tests`, `0 failure`, `0 error`.
+- Validation frontend/i18n: `npm run test:vitest -- src/app/core/services/translation.service.spec.ts src/app/core/services/translation.service.es.spec.ts src/app/core/services/translation.service.pt.spec.ts` -> `38 tests`, `0 failure`.
+- Validation format/JSON: `mvn -Dmaven.repo.local=.m2/repository spotless:check --no-transfer-progress`, parse JSON ES/PT via `ConvertFrom-Json`, et recherche locale des chaines anglaises ciblees -> OK.
+
+---
+
+# Session 2026-04-24 - Correct course BMAD sprint19 invitation-code
+
+## Plan
+
+- [x] Charger le workflow BMAD `correct-course`, la configuration projet, les lecons et verifier l'acces aux artefacts requis
+- [x] Clarifier avec le user le declencheur exact du correct-course et le mode d'execution (`incremental` recommande ou `batch`)
+- [x] Executer la checklist d'impact sur la story Sprint 19, les epics, le PRD, l'architecture, l'UX et les artefacts secondaires
+- [x] Rediger la Sprint Change Proposal avec propositions de changement explicites et handoff recommande
+- [x] Obtenir l'approbation explicite du user, mettre a jour les artefacts approuves, puis documenter la revue finale
+
+## Review
+
+- [x] Declencheur du changement confirme
+- [x] Checklist d'impact completee
+- [x] Proposition de changement redigee
+- [x] Validation utilisateur obtenue
+- [x] Artefacts synchronises
+
+---
+
+# Session 2026-04-24 - Create story BMAD sprint19-contract-create-game-region-rules
+
+## Plan
+
+- [x] Charger le workflow BMAD create-story effectif, les lecons projet, la config et le sprint-status complet
+- [x] Cartographier le contrat `POST /api/games` cote backend/frontend/tests pour isoler la synthese implicite de `ACTIVE_REGIONS`
+- [x] Creer la story `_bmad-output/implementation-artifacts/sprint19-contract-create-game-region-rules.md` en `ready-for-dev`
+- [x] Synchroniser `sprint-status.yaml`, relire la checklist BMAD et documenter le resultat
+
+## Review
+
+- [x] Workflow BMAD create-story effectif relu
+- [x] Story Sprint 19 creee en `ready-for-dev`
+- [x] Sprint status synchronise
+- [x] Verification documentaire finale effectuee
+
+Notes :
+- Workflow legacy reference par la skill introuvable sous `_bmad/bmm/workflows/4-implementation/create-story/workflow.md`; workflow effectif utilise: `_bmad/bmm/4-implementation/bmad-create-story/workflow.md`.
+- `sprint19-` a ete interprete comme "creer la prochaine story backlog de Sprint 19", ce qui cible `sprint19-contract-create-game-region-rules` selon l'ordre du `sprint-status.yaml` et le handoff du correct-course du 2026-04-24.
+- La story formalise la decision d'architecture deja approuvee: `POST /api/games` ne doit plus synthetiser silencieusement `ACTIVE_REGIONS`; tout template par defaut doit etre materialise explicitement cote client.
+- Les points d'ancrage critiques traces dans la story couvrent les deux chemins backend (`CreateGameUseCase` et `GameCreationService`), la route frontend active `/games/create`, le wizard dormant et les tests qui validaient encore le fallback implicite.
+- La story soeur `sprint19-migrate-canonical-game-participants` reste explicitement hors scope; aucun recouplage avec l'invariant createur-participant n'a ete introduit.
+- Synchronisation BMAD effectuee dans `_bmad-output/implementation-artifacts/sprint-status.yaml` avec `sprint19-contract-create-game-region-rules: ready-for-dev`.
+- Validation de cette session: revue documentaire, coherence croisee story/status/todo, puis verification finale ciblee via recherches locales et diff-check; aucun test runtime n'a ete lance car aucun code applicatif n'a ete modifie.
+
+---
+
+# Session 2026-04-25 - Dev story BMAD sprint19-contract-create-game-region-rules
+
+## Plan
+
+- [x] Charger le workflow BMAD effectif, relire les lecons projet et verrouiller le scope sur le contrat `createGame()/regionRules`
+- [x] Ecrire les tests rouges backend pour l'absence / vacuite de `regionRules` et la persistance exacte des regles explicites
+- [x] Introduire un point unique backend de validation/materialisation `regionRules` puis supprimer tout fallback implicite
+- [x] Realigner la route active `/games/create` et le wizard sur un payload explicite coherent avec la configuration visible
+- [x] Executer les validations ciblees backend/frontend puis les regressions complementaires disponibles
+- [x] Mettre a jour la story BMAD, `sprint-status.yaml` et cette section avec les preuves et ecarts hors scope
+
+## Review
+
+- [x] Workflow et contexte charges
+- [x] Contrat backend explicite prouve
+- [x] Payloads frontend create-game realignes
+- [x] Validations automatisees executees
+- [x] Artefacts BMAD remis en coherence
+
+Notes :
+- Le worktree est deja tres sale avant cette session, y compris sur `GameCreationService`; ne rien revert hors scope.
+- Le workflow legacy reference par la skill est introuvable sous `_bmad/bmm/workflows/4-implementation/dev-story/workflow.md`; workflow effectif charge depuis `_bmad/bmm/4-implementation/bmad-dev-story/workflow.md`.
+- Backend: contrat centralise via `CreateGameRegionRulesContract.validateAndApply(...)`; `regionRules` absent ou vide echoue maintenant explicitement avec `InvalidGameRequestException("regionRules est requis et ne peut pas etre vide")`, sans fallback `ACTIVE_REGIONS`.
+- Frontend: `/games/create` et `GameCreationWizardComponent` envoient maintenant des `regionRules` explicites coherentes avec `maxParticipants`; le resume visible de la route active a ete realigne avec le payload.
+- Verification backend: `mvn spotless:apply --no-transfer-progress` puis `mvn -Dtest="CreateGameUseCaseTest,GameCreationServiceDomainMigrationTest,GameControllerSimpleTest,CreateGameIntegrationTest,CreateGameRequestValidationTest,CreateGameRequestTest,ValidationServiceTddTest" test --no-transfer-progress` -> `147 tests`, `0 failure`, `0 error`.
+- Verification frontend ciblee: `npm run test:vitest -- src/app/features/game/create-game/create-game.component.spec.ts src/app/features/game/create-game/game-creation-wizard.component.spec.ts src/app/features/game/create-game/create-game-region-rules.util.spec.ts src/app/features/game/services/game-command.service.spec.ts src/app/features/game/services/game.service.spec.ts` -> `70 passed`.
+- Verification frontend complete tentee: `npm run test:vitest` echoue encore hors scope sur `src/app/features/catalogue/pages/player-catalogue-page/player-catalogue-page.component.spec.ts` avec erreur `network`.
+- Verification Playwright ciblee: `npx playwright test e2e/draft-full-flow.spec.ts e2e/trade-swap-flow.spec.ts` -> `draft-full-flow` vert, `trade-swap-flow` TS-01 vert, puis TS-02 bloque par `page.goto: net::ERR_CONNECTION_REFUSED` sur `http://localhost:4200/login`; blocage runtime externe documente, pas un echec du contrat `regionRules`.

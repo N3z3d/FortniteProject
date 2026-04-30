@@ -39,6 +39,7 @@ project: FortniteProject
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
+last_updated: 2026-04-30
 
 # Low findings counter (retro action G4b)
 low_findings_pending: 39
@@ -1361,13 +1362,13 @@ sprint-19:
   sprint19-fix-resolution-adapter-config: done
 
   # A18d — Feedback épuisement rate-limit : snackbar après 3 retries 429 épuisés
-  sprint19-fix-ratelimit-ux: backlog
+  sprint19-fix-ratelimit-ux: done
 
   # A18e — Story suggest-epic-id-robustness : gestion rate-limit/timeout côté service
-  sprint19-suggest-epic-id-robustness: backlog
+  sprint19-suggest-epic-id-robustness: done  # 2026-04-23: review follow-up clos - logs backend assainis, E2E skip explicite sur la vraie requete UI 429/503, triage `adapter-info` confirme comme heritage de sprint18; validations ciblees: backend 89 verts, frontend 112 verts, Playwright 1 pass / 1 skip rerunnable
 
   # Review follow-up — fortnite-api sans FORTNITE_API_KEY doit echouer au boot ou afficher une erreur config explicite
-  sprint19-fix-fortnite-api-key-config: backlog
+  sprint19-fix-fortnite-api-key-config: done
 
   # ----------------------------------------------------------
   # P3 : Feature code invitation (non bloquant, à faire si capacity)
@@ -1376,6 +1377,11 @@ sprint-19:
   # FEAT-S19-G — Code invitation : usage unique + suppression manuelle
   # Une fois le code utilisé → invalidé automatiquement
   # Bouton "Supprimer le code" côté créateur
-  sprint19-feat-invitation-code-advanced: backlog
+  sprint19-feat-invitation-code-advanced: done
+
+  # Correct-course approuve le 2026-04-24 - garder la story invitation-code strictement
+  # dans son scope. Les 2 sujets ci-dessous deviennent des stories dediees.
+  sprint19-contract-create-game-region-rules: done
+  sprint19-migrate-canonical-game-participants: done
 
   sprint19-retrospective: optional
