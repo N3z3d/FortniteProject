@@ -12,6 +12,7 @@ import {
   GameParticipant,
   InvitationCode
 } from '../models/game.interface';
+import { buildBalancedRegionRules } from '../create-game/create-game-region-rules.util';
 
 describe('GameService', () => {
   let service: GameService;
@@ -161,7 +162,8 @@ describe('GameService', () => {
   it('delegates command operations to GameCommandService', () => {
     const createRequest: CreateGameRequest = {
       name: 'New Game',
-      maxParticipants: 8
+      maxParticipants: 8,
+      regionRules: buildBalancedRegionRules(8)
     };
 
     const commandCases = [

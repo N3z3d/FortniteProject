@@ -1,10 +1,12 @@
 package com.fortnite.pronos.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.util.Collections;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
 import com.fortnite.pronos.service.JwtService;
@@ -47,6 +51,8 @@ class CreateGameIntegrationTest {
   @Autowired private WebApplicationContext webApplicationContext;
 
   @Autowired private UserRepository userRepository;
+
+  @Autowired private GameDomainRepositoryPort gameDomainRepository;
 
   @Autowired private JwtService jwtService;
 
@@ -83,6 +89,7 @@ class CreateGameIntegrationTest {
 
   @Test
   void shouldCreateGameSuccessfully() throws Exception {
+    long initialCount = gameDomainRepository.count();
     // Créer une requête de création de game
     CreateGameRequest request =
         CreateGameRequest.builder()
@@ -94,7 +101,7 @@ class CreateGameIntegrationTest {
             .draftTimeLimit(300)
             .autoPickDelay(43200)
             .currentSeason(2025)
-            .regionRules(Collections.emptyMap())
+            .regionRules(Map.of(Player.Region.EU, 3, Player.Region.NAC, 2))
             .build();
 
     // Envoyer la requête de création
@@ -113,7 +120,55 @@ class CreateGameIntegrationTest {
         .andExpect(jsonPath("$.creatorName").value("testuser"))
         .andExpect(jsonPath("$.status").value("CREATING"));
 
+    assertThat(gameDomainRepository.count()).isEqualTo(initialCount + 1);
+
     log.info("[OK] Game creation test passed successfully");
+  }
+
+  @Test
+  void shouldRejectGameCreationWithoutRegionRules() throws Exception {
+    long initialCount = gameDomainRepository.count();
+
+    CreateGameRequest request =
+        CreateGameRequest.builder().name("Missing Region Rules").maxParticipants(5).build();
+
+    mockMvc
+        .perform(
+            post("/api/games")
+                .header("X-Test-User", TEST_USERNAME)
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.validationErrors.regionRules").value(containsString("regionRules")));
+
+    assertThat(gameDomainRepository.count()).isEqualTo(initialCount);
+  }
+
+  @Test
+  void shouldRejectGameCreationWithEmptyRegionRules() throws Exception {
+    long initialCount = gameDomainRepository.count();
+
+    CreateGameRequest request =
+        CreateGameRequest.builder()
+            .name("Empty Region Rules")
+            .maxParticipants(5)
+            .regionRules(Map.of())
+            .build();
+
+    mockMvc
+        .perform(
+            post("/api/games")
+                .header("X-Test-User", TEST_USERNAME)
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.validationErrors.regionRules").value(containsString("regionRules")));
+
+    assertThat(gameDomainRepository.count()).isEqualTo(initialCount);
   }
 
   @Test
@@ -124,6 +179,7 @@ class CreateGameIntegrationTest {
             .name("") // Nom vide - invalide
             .maxParticipants(5)
             .description("Test game description")
+            .regionRules(Map.of(Player.Region.EU, 5))
             .build();
 
     // Envoyer la requête de création
@@ -148,6 +204,7 @@ class CreateGameIntegrationTest {
             .name("Test Game")
             .maxParticipants(5)
             .description("Test game description")
+            .regionRules(Map.of(Player.Region.EU, 5))
             .build();
 
     // Envoyer la requête sans Authorization header

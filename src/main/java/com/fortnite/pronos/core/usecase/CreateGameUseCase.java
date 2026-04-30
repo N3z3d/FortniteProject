@@ -1,7 +1,6 @@
 package com.fortnite.pronos.core.usecase;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -10,9 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
-import com.fortnite.pronos.domain.game.model.GameRegionRule;
 import com.fortnite.pronos.domain.game.model.GameStatus;
-import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
@@ -21,6 +18,7 @@ import com.fortnite.pronos.dto.mapper.GameDtoMapper;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.ValidationService;
+import com.fortnite.pronos.service.game.CreateGameRegionRulesContract;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +33,6 @@ public class CreateGameUseCase {
   private static final int USER_MAX_ACTIVE_GAMES = 5;
   private static final int AUTO_USERNAME_PREFIX_LENGTH = 8;
   private static final int DEFAULT_FALLBACK_SEASON = 2025;
-  private static final int DEFAULT_PLAYERS_PER_REGION = 7;
 
   private final GameDomainRepositoryPort gameDomainRepositoryPort;
   private final UserRepositoryPort userRepositoryPort;
@@ -75,7 +72,8 @@ public class CreateGameUseCase {
     if (request.getCompetitionEnd() != null) {
       game.setCompetitionEnd(request.getCompetitionEnd());
     }
-    addRegionRules(game, request.getRegionRules());
+    CreateGameRegionRulesContract.validateAndApply(
+        game, request.getRegionRules(), validationService);
 
     GameParticipant creatorParticipant =
         new GameParticipant(creator.getId(), creator.getUsername(), true);
@@ -113,30 +111,11 @@ public class CreateGameUseCase {
   }
 
   private void validateGameRequest(CreateGameRequest request) {
-    validationService.validateCreateGameRequest(request);
-
-    if (request.getRegionRules() != null && !request.getRegionRules().isEmpty()) {
-      try {
-        validationService.validateRegionRules(request.getRegionRules());
-      } catch (IllegalArgumentException e) {
-        throw new InvalidGameRequestException("Invalid region rules: " + e.getMessage());
-      }
+    try {
+      validationService.validateCreateGameRequest(request);
+    } catch (IllegalArgumentException e) {
+      throw new InvalidGameRequestException(e.getMessage(), e);
     }
-  }
-
-  private void addRegionRules(
-      Game game, Map<com.fortnite.pronos.model.Player.Region, Integer> regionRules) {
-    if (regionRules == null || regionRules.isEmpty()) {
-      PlayerRegion.ACTIVE_REGIONS.forEach(
-          region -> game.addRegionRule(new GameRegionRule(region, DEFAULT_PLAYERS_PER_REGION)));
-      return;
-    }
-
-    regionRules.forEach(
-        (region, maxPlayers) -> {
-          PlayerRegion domainRegion = PlayerRegion.valueOf(region.name());
-          game.addRegionRule(new GameRegionRule(domainRegion, maxPlayers));
-        });
   }
 
   private synchronized User createFallbackUser(UUID userId) {

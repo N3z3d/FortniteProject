@@ -1,7 +1,6 @@
 package com.fortnite.pronos.service.game;
 
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -11,9 +10,7 @@ import com.fortnite.pronos.application.usecase.GameCreationUseCase;
 import com.fortnite.pronos.domain.game.model.DraftMode;
 import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
-import com.fortnite.pronos.domain.game.model.GameRegionRule;
 import com.fortnite.pronos.domain.game.model.GameStatus;
-import com.fortnite.pronos.domain.game.model.PlayerRegion;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
@@ -52,7 +49,8 @@ public class GameCreationService implements GameCreationUseCase {
     validateGameRequest(request);
 
     Game game = buildDomainGame(creator, request);
-    addRegionRules(game, request.getRegionRules());
+    CreateGameRegionRulesContract.validateAndApply(
+        game, request.getRegionRules(), validationService);
     addCreatorAsParticipant(game, creator);
 
     Game savedGame = saveDomainGame(game);
@@ -79,6 +77,17 @@ public class GameCreationService implements GameCreationUseCase {
     game.softDelete();
     saveDomainGame(game);
     log.info("Game {} soft deleted successfully", gameId);
+  }
+
+  /** Archives a game via soft-delete regardless of its current status. */
+  @Override
+  @Transactional
+  public void archiveGame(UUID gameId) {
+    log.debug("Archiving game {}", gameId);
+    Game game = findDomainGameOrThrow(gameId);
+    game.softDelete();
+    saveDomainGame(game);
+    log.info("Game {} archived successfully", gameId);
   }
 
   /** Regenerates the invitation code for a game (permanent by default) */
@@ -178,14 +187,10 @@ public class GameCreationService implements GameCreationUseCase {
   }
 
   private void validateGameRequest(CreateGameRequest request) {
-    validationService.validateCreateGameRequest(request);
-
-    if (request.getRegionRules() != null && !request.getRegionRules().isEmpty()) {
-      try {
-        validationService.validateRegionRules(request.getRegionRules());
-      } catch (IllegalArgumentException e) {
-        throw new InvalidGameRequestException("Invalid region rules: " + e.getMessage());
-      }
+    try {
+      validationService.validateCreateGameRequest(request);
+    } catch (IllegalArgumentException e) {
+      throw new InvalidGameRequestException(e.getMessage(), e);
     }
   }
 
@@ -213,18 +218,6 @@ public class GameCreationService implements GameCreationUseCase {
       game.setCompetitionEnd(request.getCompetitionEnd());
     }
     return game;
-  }
-
-  private void addRegionRules(
-      Game game, Map<com.fortnite.pronos.model.Player.Region, Integer> regionRules) {
-    if (regionRules == null) {
-      return;
-    }
-    regionRules.forEach(
-        (region, maxPlayers) -> {
-          PlayerRegion domainRegion = PlayerRegion.valueOf(region.name());
-          game.addRegionRule(new GameRegionRule(domainRegion, maxPlayers));
-        });
   }
 
   private void addCreatorAsParticipant(Game game, com.fortnite.pronos.model.User creator) {

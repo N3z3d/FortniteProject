@@ -14,6 +14,7 @@ import {
   GameResponse,
   InvitationCode
 } from '../models/game.interface';
+import { buildBalancedRegionRules } from '../create-game/create-game-region-rules.util';
 
 describe('GameCommandService', () => {
   let service: GameCommandService;
@@ -121,7 +122,8 @@ describe('GameCommandService', () => {
   it('sends command requests and maps responses', () => {
     const createRequest: CreateGameRequest = {
       name: 'New Game',
-      maxParticipants: 8
+      maxParticipants: 8,
+      regionRules: buildBalancedRegionRules(8)
     };
 
     service.createGame(createRequest).subscribe(game => expect(game).toEqual(mockGame));
@@ -265,7 +267,11 @@ describe('GameCommandService', () => {
   });
 
   it('maps 401 with translated message in shared error handler', () => {
-    const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
+    const createRequest: CreateGameRequest = {
+      name: 'Error Game',
+      maxParticipants: 8,
+      regionRules: buildBalancedRegionRules(8)
+    };
 
     service.createGame(createRequest).subscribe({
       next: () => fail('expected error'),
@@ -282,7 +288,11 @@ describe('GameCommandService', () => {
   });
 
   it('uses generic translated message for HTTP 500 error payloads', () => {
-    const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
+    const createRequest: CreateGameRequest = {
+      name: 'Error Game',
+      maxParticipants: 8,
+      regionRules: buildBalancedRegionRules(8)
+    };
 
     service.createGame(createRequest).subscribe({
       next: () => fail('expected error'),
@@ -298,7 +308,11 @@ describe('GameCommandService', () => {
   });
 
   it('keeps user-safe backend message for HTTP 400 validation error', () => {
-    const createRequest: CreateGameRequest = { name: 'Error Game', maxParticipants: 8 };
+    const createRequest: CreateGameRequest = {
+      name: 'Error Game',
+      maxParticipants: 8,
+      regionRules: buildBalancedRegionRules(8)
+    };
 
     service.createGame(createRequest).subscribe({
       next: () => fail('expected error'),

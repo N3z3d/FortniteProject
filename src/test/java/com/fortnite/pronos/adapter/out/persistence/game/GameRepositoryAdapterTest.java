@@ -28,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.CrudRepository;
 
+import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.model.Pagination;
 import com.fortnite.pronos.model.Game;
@@ -83,6 +84,30 @@ class GameRepositoryAdapterTest {
   }
 
   @Test
+  void findByIdForUpdateMapsDomainGame() {
+    UUID gameId = UUID.randomUUID();
+    UUID creatorId = UUID.randomUUID();
+    Game entity = buildEntityGame(gameId, creatorId, com.fortnite.pronos.model.GameStatus.CREATING);
+    when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(entity));
+
+    Optional<com.fortnite.pronos.domain.game.model.Game> result = adapter.findByIdForUpdate(gameId);
+
+    assertThat(result).isPresent();
+    assertThat(result.orElseThrow().getId()).isEqualTo(gameId);
+    verify(gameRepository).findByIdForUpdate(gameId);
+  }
+
+  @Test
+  void findByIdForUpdateUsesPessimisticWriteLock() throws NoSuchMethodException {
+    Method method = GameRepository.class.getMethod("findByIdForUpdate", UUID.class);
+
+    Lock lock = method.getAnnotation(Lock.class);
+
+    assertThat(lock).isNotNull();
+    assertThat(lock.value()).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
+  }
+
+  @Test
   void saveCreatesOrUpdatesAndReturnsMappedDomainGame() {
     UUID gameId = UUID.randomUUID();
     UUID creatorId = UUID.randomUUID();
@@ -99,6 +124,54 @@ class GameRepositoryAdapterTest {
     assertThat(saved.getCreatorId()).isEqualTo(creatorId);
     assertThat(saved.getName()).isEqualTo("Domain Save");
     verify(gameCrudRepository).save(any(Game.class));
+  }
+
+  @Test
+  void savePersistsCreatorParticipantExactlyOnce() {
+    UUID gameId = UUID.randomUUID();
+    UUID creatorId = UUID.randomUUID();
+    User creator = buildUser(creatorId, "creator");
+    LocalDateTime now = LocalDateTime.now();
+    GameParticipant creatorParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(), creatorId, "creator", 1, now, null, true, List.of());
+    com.fortnite.pronos.domain.game.model.Game domainGame =
+        com.fortnite.pronos.domain.game.model.Game.restore(
+            gameId,
+            "Domain Save",
+            "description",
+            creatorId,
+            6,
+            GameStatus.CREATING,
+            now,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            List.of(creatorParticipant),
+            null,
+            false,
+            5,
+            null,
+            2026);
+
+    when(userCrudRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+    when(gameCrudRepository.save(any(Game.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    adapter.save(domainGame);
+
+    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
+    verify(gameCrudRepository).save(gameCaptor.capture());
+    assertThat(gameCaptor.getValue().getParticipants())
+        .singleElement()
+        .satisfies(
+            participant -> {
+              assertThat(participant.getUser().getId()).isEqualTo(creatorId);
+              assertThat(participant.getCreator()).isTrue();
+              assertThat(participant.getDraftOrder()).isEqualTo(1);
+            });
   }
 
   @Test

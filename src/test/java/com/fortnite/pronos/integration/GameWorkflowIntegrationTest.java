@@ -320,7 +320,20 @@ class GameWorkflowIntegrationTest {
     game.setCreator(creator);
     game.setMaxParticipants(10);
     game.setStatus(GameStatus.CREATING);
-    return ((GameRepositoryPort) gameRepository).save(game);
+    Game savedGame = ((GameRepositoryPort) gameRepository).save(game);
+
+    GameParticipant creatorParticipant =
+        GameParticipant.builder()
+            .game(savedGame)
+            .user(creator)
+            .draftOrder(1)
+            .joinedAt(java.time.LocalDateTime.now())
+            .creator(true)
+            .build();
+    entityManager.persist(creatorParticipant);
+    savedGame.getParticipants().add(creatorParticipant);
+
+    return savedGame;
   }
 
   private void joinGameAs(UUID gameId, UUID userId, String actorUsername) throws Exception {

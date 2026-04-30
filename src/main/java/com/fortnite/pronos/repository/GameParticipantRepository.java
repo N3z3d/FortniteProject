@@ -189,6 +189,16 @@ public interface GameParticipantRepository
   Optional<GameParticipant> findByUserIdAndGameId(
       @Param("userId") UUID userId, @Param("gameId") UUID gameId);
 
+  /** Finds creator participant rows that exist but are not marked as creator yet. */
+  @Query(
+      "SELECT gp FROM GameParticipant gp "
+          + "JOIN FETCH gp.game g "
+          + "JOIN FETCH gp.user u "
+          + "WHERE g.deletedAt IS NULL "
+          + "AND g.creator.id = u.id "
+          + "AND (gp.creator IS NULL OR gp.creator = false)")
+  List<GameParticipant> findNonDeletedCreatorParticipantsWithoutCreatorFlag();
+
   /** OPTIMISÉ: Trouve les participants d'une game par ID avec utilisateur */
   @Query(
       "SELECT DISTINCT gp FROM GameParticipant gp "

@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of sprint19-migrate-canonical-game-participants (2026-04-30)
+
+- Creer un epic/story dedie `git-worktree-hygiene`: separer les changements applicatifs des regenerations BMAD/IDE, auditer les suppressions `.claude`/`.cursor`/`_bmad`, definir une strategie de branches par story et documenter une procedure de push/commit propre. Le worktree actuel est trop large pour etre nettoye sans risque dans une story fonctionnelle.
+
+## Deferred from: code review of sprint19-feat-invitation-code-advanced (2026-04-30)
+
+- `POST /api/games/join` avec `gameId` et `invitationCode` incoherents peut rejoindre la partie du code mais publier `GAME_JOINED` sur le `gameId` fourni. Dette pre-existing du endpoint legacy; le flux runtime de cette story passe par `/api/games/join-with-code`, qui reconstruit un `JoinGameRequest` coherent.
+
 ## Deferred from: code review of sprint19-fix-resolution-adapter-config (2026-04-22)
 
 - D1 - `fortnite-api` peut demarrer sans `FORTNITE_API_KEY`, puis retourner silencieusement `not found` au premier lookup [FortniteApiAdapter.java:35] - dette de configuration pre-existante; la story courante cible uniquement la validation de `resolution.adapter`. Tracking cree : `sprint19-fix-fortnite-api-key-config`.
@@ -88,6 +96,11 @@
 
 - D1 - `ResolutionQueueService` n'a pas de trigger runtime de production [ResolutionQueueService.java:44] - dette d'architecture pre-existante; la story de cleanup interdit d'ajouter endpoint/config/flux Spring.
 - D2 - `tryResolveEntry()` conserve un catch large autour de `compute`, `entry.resolve` et `identityRepository.save` [ResolutionQueueService.java:69] - pattern pre-existant; a traiter dans un durcissement transactionnel separe.
+
+## Deferred from: code review of sprint19-fix-ratelimit-ux (2026-04-22)
+
+- D1 - Auto-suggest reste parallele et n'a pas de politique de cooldown dediee apres 429 epuise [admin-pipeline-table.component.ts:95] - pre-existing dans le flux `autoSuggestNewEntries()`; a traiter avec `sprint19-suggest-epic-id-robustness` si backpressure/cooldown devient requis.
+- D2 - Erreurs non-429 (ex: 500) emettent toujours `null` et peuvent etre traitees comme not-found [pipeline.service.ts:103] - dette pre-existing deja reliee a `sprint19-suggest-epic-id-robustness`.
 
 ## Deferred from: code review de sprint19-fix-leaderboard-regression (2026-04-18)
 

@@ -16,6 +16,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,12 @@ import lombok.NoArgsConstructor;
 
 /** Entity representing a participant in a game. */
 @Entity
-@Table(name = "game_participants")
+@Table(
+    name = "game_participants",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_game_participant",
+            columnNames = {"game_id", "user_id"}))
 @Data
 @Builder
 @NoArgsConstructor

@@ -19,6 +19,7 @@ class CreateGameRequestValidationTest {
   @BeforeEach
   void setUp() {
     request = new CreateGameRequest();
+    request.setRegionRules(Map.of(Player.Region.EU, 1));
   }
 
   @Test
@@ -157,6 +158,30 @@ class CreateGameRequestValidationTest {
     // Then
     assertThat(isValid).isTrue();
     assertThat(request.getValidationErrors()).isEmpty();
+  }
+
+  @Test
+  void should_BeInvalid_When_RegionRulesAreMissing() {
+    request.setName("Test Game");
+    request.setMaxParticipants(5);
+    request.setRegionRules(null);
+
+    boolean isValid = request.isValid();
+
+    assertThat(isValid).isFalse();
+    assertThat(request.getValidationErrors()).anyMatch(error -> error.contains("regionRules"));
+  }
+
+  @Test
+  void should_BeInvalid_When_RegionRulesAreEmpty() {
+    request.setName("Test Game");
+    request.setMaxParticipants(5);
+    request.setRegionRules(new HashMap<>());
+
+    boolean isValid = request.isValid();
+
+    assertThat(isValid).isFalse();
+    assertThat(request.getValidationErrors()).anyMatch(error -> error.contains("regionRules"));
   }
 
   @Test

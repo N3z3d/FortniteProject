@@ -62,6 +62,11 @@ public interface GameRepository
   @Query("SELECT g FROM Game g WHERE g.invitationCode = :code AND g.deletedAt IS NULL")
   Optional<Game> findByInvitationCode(@Param("code") String code);
 
+  /** Trouver et verrouiller une game par ID pour serialiser les joins directs. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT g FROM Game g WHERE g.id = :id AND g.deletedAt IS NULL")
+  Optional<Game> findByIdForUpdate(@Param("id") UUID id);
+
   /** Trouver et verrouiller une game par code pour consommer le code une seule fois. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT g FROM Game g WHERE g.invitationCode = :code AND g.deletedAt IS NULL")
@@ -204,6 +209,19 @@ public interface GameRepository
   @Query(
       "SELECT COUNT(p) > 0 FROM GameParticipant p WHERE p.game.id = :gameId AND p.user.id = :userId")
   boolean isUserParticipant(@Param("gameId") UUID gameId, @Param("userId") UUID userId);
+
+  /** Audit data quality: non-deleted games whose creator is not persisted as a participant. */
+  @Query(
+      "SELECT g FROM Game g "
+          + "JOIN FETCH g.creator c "
+          + "WHERE g.deletedAt IS NULL "
+          + "AND c.id IS NOT NULL "
+          + "AND NOT EXISTS ("
+          + "  SELECT 1 FROM GameParticipant gp "
+          + "  WHERE gp.game.id = g.id AND gp.user.id = c.id"
+          + ") "
+          + "ORDER BY g.createdAt ASC")
+  List<Game> findNonDeletedGamesMissingCreatorParticipant();
 
   // ============== MÉTHODES PAGINÉES POUR GRANDES DATASETS ==============
 

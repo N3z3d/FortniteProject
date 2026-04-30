@@ -175,11 +175,7 @@ public class GameEntityMapper {
     }
 
     List<GameRegionRule> domainRules = toDomainRegionRules(entity.getRegionRules());
-    List<GameParticipant> domainParticipants =
-        ensureCreatorParticipant(
-            toDomainParticipants(entity.getParticipants()),
-            entity.getCreator(),
-            entity.getCreatedAt());
+    List<GameParticipant> domainParticipants = toDomainParticipants(entity.getParticipants());
 
     return com.fortnite.pronos.domain.game.model.Game.restore(
         entity.getId(),
@@ -206,29 +202,6 @@ public class GameEntityMapper {
         MappingUtils.safeBool(entity.getTranchesEnabled()),
         entity.getCompetitionStart(),
         entity.getCompetitionEnd());
-  }
-
-  private List<GameParticipant> ensureCreatorParticipant(
-      List<GameParticipant> participants, User creator, java.time.LocalDateTime createdAt) {
-    if (creator == null || creator.getId() == null) {
-      return participants;
-    }
-
-    boolean creatorAlreadyPresent =
-        participants.stream()
-            .filter(Objects::nonNull)
-            .anyMatch(participant -> creator.getId().equals(participant.getUserId()));
-    if (creatorAlreadyPresent) {
-      return participants;
-    }
-
-    java.time.LocalDateTime joinedAt =
-        createdAt != null ? createdAt : java.time.LocalDateTime.now();
-    java.util.ArrayList<GameParticipant> withCreator = new java.util.ArrayList<>(participants);
-    withCreator.add(
-        GameParticipant.restore(
-            null, creator.getId(), creator.getUsername(), null, joinedAt, null, true, List.of()));
-    return withCreator;
   }
 
   private List<GameRegionRule> toDomainRegionRules(

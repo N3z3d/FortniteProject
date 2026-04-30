@@ -11,7 +11,6 @@ import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
@@ -37,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GameParticipantService {
 
   private final GameDomainRepositoryPort gameRepository;
-  private final GameRepositoryPort legacyGameRepository;
   private final GameParticipantRepositoryPort gameParticipantRepository;
   private final UserRepositoryPort userRepository;
 
@@ -97,7 +95,7 @@ public class GameParticipantService {
 
   private Game findGameOrThrow(UUID gameId) {
     return gameRepository
-        .findById(gameId)
+        .findByIdForUpdate(gameId)
         .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
   }
 
@@ -171,7 +169,6 @@ public class GameParticipantService {
       game.clearInvitationCode();
     }
     gameRepository.save(game);
-    ensureCreatorParticipantPersisted(game);
   }
 
   private void removeUserFromGame(com.fortnite.pronos.model.User user, Game game) {
@@ -182,42 +179,5 @@ public class GameParticipantService {
             .orElseThrow(() -> new InvalidGameStateException("Participant not found in game"));
     game.removeParticipant(participant);
     gameRepository.save(game);
-  }
-
-  /**
-   * Compatibility layer during migration: some legacy flows create games without persisting the
-   * creator in game_participants. Keep creator row present for existing integrations relying on it.
-   */
-  private void ensureCreatorParticipantPersisted(Game domainGame) {
-    UUID creatorId = domainGame.getCreatorId();
-    UUID gameId = domainGame.getId();
-    if (creatorId == null || gameId == null) {
-      return;
-    }
-    if (gameParticipantRepository.existsByUserIdAndGameId(creatorId, gameId)) {
-      return;
-    }
-
-    java.util.Optional<com.fortnite.pronos.model.User> creatorOptional =
-        userRepository.findById(creatorId);
-    if (creatorOptional == null || creatorOptional.isEmpty()) {
-      return;
-    }
-    java.util.Optional<com.fortnite.pronos.model.Game> legacyGameOptional =
-        legacyGameRepository.findById(gameId);
-    if (legacyGameOptional == null || legacyGameOptional.isEmpty()) {
-      return;
-    }
-
-    // Do not pre-assign ID — let @GeneratedValue handle it so that Spring Data JPA calls
-    // persist() (new entity) instead of merge() (which fails in Hibernate 6.6 for unknown IDs).
-    com.fortnite.pronos.model.GameParticipant creatorParticipant =
-        com.fortnite.pronos.model.GameParticipant.builder()
-            .game(legacyGameOptional.orElseThrow())
-            .user(creatorOptional.orElseThrow())
-            .creator(true)
-            .joinedAt(LocalDateTime.now())
-            .build();
-    gameParticipantRepository.save(creatorParticipant);
   }
 }

@@ -375,20 +375,21 @@ class ValidationServiceTddTest {
     }
 
     @Test
-    @DisplayName("Should handle null region rules")
-    void shouldHandleNullRegionRules() {
-      // RED: Test null region rules handling
-      assertThatCode(() -> validationService.validateRegionRules(null)).doesNotThrowAnyException();
+    @DisplayName("Should reject null region rules")
+    void shouldRejectNullRegionRules() {
+      assertThatThrownBy(() -> validationService.validateRegionRules(null))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("regionRules");
     }
 
     @Test
-    @DisplayName("Should handle empty region rules")
-    void shouldHandleEmptyRegionRules() {
-      // RED: Test empty region rules handling
+    @DisplayName("Should reject empty region rules")
+    void shouldRejectEmptyRegionRules() {
       Map<Player.Region, Integer> emptyRules = new HashMap<>();
 
-      assertThatCode(() -> validationService.validateRegionRules(emptyRules))
-          .doesNotThrowAnyException();
+      assertThatThrownBy(() -> validationService.validateRegionRules(emptyRules))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("regionRules");
     }
 
     @Test

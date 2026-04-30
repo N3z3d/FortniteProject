@@ -45,6 +45,16 @@
         </div>
       </div>
 
+      <!-- Tranche toggle -->
+      <div class="tranche-toggle">
+        <mat-slide-toggle formControlName="tranchesEnabled" color="primary">
+          {{ t.t('games.create.tranchesEnabled') }}
+        </mat-slide-toggle>
+        <p class="tranche-hint" *ngIf="gameForm.get('tranchesEnabled')?.value">
+          {{ t.t('games.create.tranchesHint') }}
+        </p>
+      </div>
+
       <!-- Ultra-Fast Actions -->
       <div class="instant-actions">
         <button
@@ -90,13 +100,13 @@
       <mat-form-field appearance="outline">
         <mat-label>{{ t.t('games.create.maxParticipantsLabel') }}</mat-label>
         <mat-select formControlName="maxParticipants">
-          <mat-option value="2">{{ t.t('games.create.nPlayers').replace('{n}', '2') }}</mat-option>
-          <mat-option value="3">{{ t.t('games.create.nPlayers').replace('{n}', '3') }}</mat-option>
-          <mat-option value="4">{{ t.t('games.create.nPlayers').replace('{n}', '4') }}</mat-option>
-          <mat-option value="5">{{ t.t('games.create.nPlayers').replace('{n}', '5') }}</mat-option>
-          <mat-option value="6">{{ t.t('games.create.nPlayers').replace('{n}', '6') }}</mat-option>
-          <mat-option value="8">{{ t.t('games.create.nPlayers').replace('{n}', '8') }}</mat-option>
-          <mat-option value="10">{{ t.t('games.create.nPlayers').replace('{n}', '10') }}</mat-option>
+          <mat-option [value]="2">{{ t.t('games.create.nPlayers').replace('{n}', '2') }}</mat-option>
+          <mat-option [value]="3">{{ t.t('games.create.nPlayers').replace('{n}', '3') }}</mat-option>
+          <mat-option [value]="4">{{ t.t('games.create.nPlayers').replace('{n}', '4') }}</mat-option>
+          <mat-option [value]="5">{{ t.t('games.create.nPlayers').replace('{n}', '5') }}</mat-option>
+          <mat-option [value]="6">{{ t.t('games.create.nPlayers').replace('{n}', '6') }}</mat-option>
+          <mat-option [value]="8">{{ t.t('games.create.nPlayers').replace('{n}', '8') }}</mat-option>
+          <mat-option [value]="10">{{ t.t('games.create.nPlayers').replace('{n}', '10') }}</mat-option>
         </mat-select>
       </mat-form-field>
 

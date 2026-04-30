@@ -12,6 +12,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { finalize } from 'rxjs/operators';
 import { GameService } from '../services/game.service';
@@ -20,6 +21,7 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { buildBalancedRegionRules } from './create-game-region-rules.util';
 
 @Component({
   selector: 'app-create-game',
@@ -37,12 +39,17 @@ import { LoggerService } from '../../../core/services/logger.service';
     MatChipsModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatSlideToggleModule
   ],
   templateUrl: './create-game.component.html',
   styleUrls: ['./create-game.component.scss']
 })
 export class CreateGameComponent implements OnInit {
+  private readonly DEFAULT_MAX_PARTICIPANTS = 5;
+  private readonly DEFAULT_REGION_CONFIG =
+    buildBalancedRegionRules(this.DEFAULT_MAX_PARTICIPANTS);
+
   public readonly t = inject(TranslationService);
 
   gameForm!: FormGroup;
@@ -51,19 +58,8 @@ export class CreateGameComponent implements OnInit {
   selectedRegion = '';
   selectedCount = 1;
   useDefaultConfig = true;
-  showAdvancedOptions = false; // Mode simplifié par défaut
+  showAdvancedOptions = false; // Mode simplifie par defaut
   gameType = 'casual'; // Default game type
-
-  // Configuration par défaut : 7 joueurs par région
-  private readonly DEFAULT_REGION_CONFIG = {
-    'EU': 7,
-    'NAC': 7,
-    'BR': 7,
-    'ASIA': 7,
-    'OCE': 7,
-    'NAW': 7,
-    'ME': 7
-  };
 
   constructor(
     private formBuilder: FormBuilder,
@@ -85,13 +81,14 @@ export class CreateGameComponent implements OnInit {
         Validators.minLength(3),
         Validators.maxLength(30)
       ]],
-      maxParticipants: [5, [
+      maxParticipants: [this.DEFAULT_MAX_PARTICIPANTS, [
         Validators.required,
         Validators.min(2),
         Validators.max(10)
       ]],
       regionRules: [{}], // Simplified - no complex region rules by default
-      useDefaultConfig: [true]
+      useDefaultConfig: [true],
+      tranchesEnabled: [true]
     });
   }
 
@@ -104,18 +101,16 @@ export class CreateGameComponent implements OnInit {
   }
 
   private applyDefaultConfig(): void {
-    const totalPlayers = Object.values(this.DEFAULT_REGION_CONFIG).reduce((sum, count) => sum + count, 0);
-    
     this.gameForm.patchValue({
       regionRules: this.DEFAULT_REGION_CONFIG,
-      maxParticipants: totalPlayers
+      maxParticipants: this.DEFAULT_MAX_PARTICIPANTS
     });
   }
 
   private clearRegionRules(): void {
     this.gameForm.patchValue({
       regionRules: {},
-      maxParticipants: 5
+      maxParticipants: this.DEFAULT_MAX_PARTICIPANTS
     });
   }
 
@@ -123,35 +118,58 @@ export class CreateGameComponent implements OnInit {
     return Object.values(regionRules).reduce((sum, count) => sum + count, 0);
   }
 
+  private resolveMaxParticipants(): number {
+    const rawValue = this.showAdvancedOptions
+      ? this.gameForm.value.maxParticipants
+      : this.DEFAULT_MAX_PARTICIPANTS;
+    return Number(rawValue);
+  }
+
+  private resolveRegionRules(maxParticipants: number): { [key: string]: number } {
+    const formRegionRules = this.gameForm.value.regionRules ?? {};
+    const hasExplicitRules = Object.keys(formRegionRules).length > 0;
+
+    if (
+      this.showAdvancedOptions &&
+      hasExplicitRules &&
+      this.calculateTotalPlayers(formRegionRules) === maxParticipants
+    ) {
+      return { ...formRegionRules };
+    }
+
+    return buildBalancedRegionRules(maxParticipants);
+  }
+
   onSubmit(): void {
     if (this.gameForm.invalid) {
       return;
     }
 
-    this.loading = true;
-    this.error = null;
+    const maxParticipants = this.resolveMaxParticipants();
+    const regionRules = this.resolveRegionRules(maxParticipants);
 
-    // Ultra-simplified game creation with smart defaults
     const formData: CreateGameRequest = {
       name: this.gameForm.value.name,
-      maxParticipants: this.showAdvancedOptions ? this.gameForm.value.maxParticipants : 5,
-      description: `Game créée le ${new Date().toLocaleDateString()}`,
+      maxParticipants,
+      description: `Game creee le ${new Date().toLocaleDateString()}`,
       isPrivate: false,
       autoStartDraft: true,
       draftTimeLimit: 300, // 5 minutes per pick
       autoPickDelay: 43200, // 12 hours for auto-pick
       currentSeason: new Date().getFullYear(),
-      regionRules: {} // Simplified - no complex region rules for now
+      regionRules,
+      tranchesEnabled: this.gameForm.value.tranchesEnabled ?? true
     };
+
+    this.loading = true;
+    this.error = null;
 
     this.gameService.createGame(formData).pipe(
       finalize(() => { this.loading = false; })
     ).subscribe({
       next: (game) => {
-        // Add the new game to the store so sidebar refreshes immediately
         this.userGamesStore.addGame(game);
         this.uiFeedback.showSuccessMessage(this.buildCreateSuccessMessage(game.invitationCode), 2000);
-        // Navigate directly to the game to start playing
         this.router.navigate(['/games', game.id], {
           queryParams: { created: 'true' }
         });
@@ -170,8 +188,7 @@ export class CreateGameComponent implements OnInit {
     const regionRules = this.gameForm.get('regionRules')?.value || {};
     regionRules[region] = count;
     this.gameForm.patchValue({ regionRules });
-    
-    // Mettre à jour le nombre total de participants
+
     const totalPlayers = this.calculateTotalPlayers(regionRules);
     this.gameForm.patchValue({ maxParticipants: totalPlayers });
   }
@@ -180,8 +197,7 @@ export class CreateGameComponent implements OnInit {
     const regionRules = this.gameForm.get('regionRules')?.value || {};
     delete regionRules[region];
     this.gameForm.patchValue({ regionRules });
-    
-    // Mettre à jour le nombre total de participants
+
     const totalPlayers = this.calculateTotalPlayers(regionRules);
     this.gameForm.patchValue({ maxParticipants: Math.max(totalPlayers, 2) });
   }
@@ -234,7 +250,8 @@ export class CreateGameComponent implements OnInit {
   getDefaultConfigSummary(): string {
     const totalPlayers = Object.values(this.DEFAULT_REGION_CONFIG).reduce((sum, count) => sum + count, 0);
     const regions = Object.keys(this.DEFAULT_REGION_CONFIG).length;
-    return `${totalPlayers} joueurs répartis sur ${regions} régions (7 par région)`;
+    const playersPerRegion = Object.values(this.DEFAULT_REGION_CONFIG)[0];
+    return `${totalPlayers} joueurs repartis sur ${regions} regions (${playersPerRegion} par region)`;
   }
 
   private buildCreateSuccessMessage(invitationCode?: string): string {
@@ -244,5 +261,4 @@ export class CreateGameComponent implements OnInit {
 
     return `Game creee ! Code d'invitation : ${invitationCode}`;
   }
-
 }

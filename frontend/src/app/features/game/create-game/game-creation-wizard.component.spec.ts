@@ -8,6 +8,7 @@ import { TranslationService } from '../../../core/services/translation.service';
 import { CreateGameRequest, Game } from '../models/game.interface';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { buildBalancedRegionRules } from './create-game-region-rules.util';
 
 describe('GameCreationWizardComponent', () => {
   let component: GameCreationWizardComponent;
@@ -220,7 +221,11 @@ describe('GameCreationWizardComponent', () => {
 
     tick(); // Wait for observable completion
 
-    expect(gameService.createGame).toHaveBeenCalled();
+    expect(gameService.createGame).toHaveBeenCalledWith(jasmine.objectContaining({
+      name: 'Test Game',
+      maxParticipants: 5,
+      regionRules: buildBalancedRegionRules(5)
+    }));
     expect(component.loading).toBeFalse(); // Loading completed
     expect(uiFeedback.showSuccessMessage).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(

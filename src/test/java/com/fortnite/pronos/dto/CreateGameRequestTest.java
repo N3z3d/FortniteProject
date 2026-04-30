@@ -29,6 +29,7 @@ class CreateGameRequestTest {
     createGameRequest.setDraftTimeLimit(300); // 5 minutes
     createGameRequest.setAutoPickDelay(43200); // 12 heures
     createGameRequest.setCurrentSeason(2025);
+    createGameRequest.setRegionRules(Map.of(Player.Region.EU, 1));
   }
 
   @Test
@@ -336,7 +337,52 @@ class CreateGameRequestTest {
   }
 
   @Test
-  @DisplayName("Ne devrait pas valider des règles de région avec des valeurs négatives")
+  @DisplayName("Ne devrait pas valider un CreateGameRequest sans regionRules")
+  void shouldNotValidateCreateGameRequestWithoutRegionRules() {
+    // Given
+    createGameRequest.setRegionRules(null);
+
+    // When
+    boolean isValid = createGameRequest.isValid();
+
+    // Then
+    assertThat(isValid).isFalse();
+    assertThat(createGameRequest.getValidationErrors())
+        .anyMatch(error -> error.contains("regionRules"));
+  }
+
+  @Test
+  @DisplayName("Ne devrait pas valider un CreateGameRequest avec des regionRules vides")
+  void shouldNotValidateCreateGameRequestWithEmptyRegionRules() {
+    // Given
+    createGameRequest.setRegionRules(new HashMap<>());
+
+    // When
+    boolean isValid = createGameRequest.isValid();
+
+    // Then
+    assertThat(isValid).isFalse();
+    assertThat(createGameRequest.getValidationErrors())
+        .anyMatch(error -> error.contains("regionRules"));
+  }
+
+  @Test
+  @DisplayName("Ne devrait pas valider une regle de region avec valeur null")
+  void shouldRejectNullRegionRuleValueWithoutThrowing() {
+    Map<Player.Region, Integer> regionRules = new HashMap<>();
+    regionRules.put(Player.Region.EU, null);
+    createGameRequest.setRegionRules(regionRules);
+
+    boolean isValid = createGameRequest.isValid();
+
+    assertThat(isValid).isFalse();
+    assertThat(createGameRequest.getValidationErrors())
+        .anyMatch(error -> error.contains("positif"));
+    assertThat(createGameRequest.getTotalPlayersFromRegionRules()).isZero();
+  }
+
+  @Test
+  @DisplayName("Ne devrait pas valider des regles de region avec des valeurs negatives")
   void shouldNotValidateRegionRulesWithNegativeValues() {
     // Given
     Map<Player.Region, Integer> regionRules = new HashMap<>();
@@ -353,7 +399,7 @@ class CreateGameRequestTest {
   }
 
   @Test
-  @DisplayName("Ne devrait pas valider des règles de région avec des valeurs trop grandes")
+  @DisplayName("Ne devrait pas valider des regles de region avec des valeurs trop grandes")
   void shouldNotValidateRegionRulesWithTooLargeValues() {
     // Given
     Map<Player.Region, Integer> regionRules = new HashMap<>();
@@ -389,6 +435,8 @@ class CreateGameRequestTest {
   @Test
   @DisplayName("Devrait retourner 0 pour le total de joueurs sans règles de région")
   void shouldReturnZeroForTotalPlayersWithoutRegionRules() {
+    createGameRequest.setRegionRules(null);
+
     // When
     int totalPlayers = createGameRequest.getTotalPlayersFromRegionRules();
 
@@ -466,6 +514,7 @@ class CreateGameRequestTest {
     request2.setDraftTimeLimit(300);
     request2.setAutoPickDelay(43200);
     request2.setCurrentSeason(2025);
+    request2.setRegionRules(Map.of(Player.Region.EU, 1));
 
     // When & Then
     assertThat(createGameRequest).isEqualTo(request2).hasSameHashCodeAs(request2);

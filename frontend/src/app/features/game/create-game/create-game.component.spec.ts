@@ -10,6 +10,7 @@ import { CreateGameRequest } from '../models/game.interface';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { buildBalancedRegionRules } from './create-game-region-rules.util';
 
 describe('CreateGameComponent', () => {
   let component: CreateGameComponent;
@@ -92,10 +93,8 @@ describe('CreateGameComponent', () => {
       
       component.onDefaultConfigChange();
       
-      expect(component.gameForm.get('maxParticipants')?.value).toBe(49);
-      expect(component.gameForm.get('regionRules')?.value).toEqual({
-        'EU': 7, 'NAC': 7, 'BR': 7, 'ASIA': 7, 'OCE': 7, 'NAW': 7, 'ME': 7
-      });
+      expect(component.gameForm.get('maxParticipants')?.value).toBe(5);
+      expect(component.gameForm.get('regionRules')?.value).toEqual(buildBalancedRegionRules(5));
     });
 
     it('should clear region rules when useDefaultConfig is false', () => {
@@ -144,7 +143,7 @@ describe('CreateGameComponent', () => {
       expect(gameService.createGame).toHaveBeenCalledWith(jasmine.objectContaining({
         name: 'Test Game',
         maxParticipants: 5,
-        regionRules: {},
+        regionRules: buildBalancedRegionRules(5),
         isPrivate: false,
         autoStartDraft: true,
         draftTimeLimit: 300,
@@ -157,6 +156,38 @@ describe('CreateGameComponent', () => {
         2000
       );
       expect(router.navigate).toHaveBeenCalledWith(['/games', '1'], { queryParams: { created: 'true' } });
+    });
+
+    it('should coerce advanced maxParticipants selection before building region rules', () => {
+      component.ngOnInit();
+      component.showAdvancedOptions = true;
+      component.gameForm.patchValue({
+        name: 'Advanced Game',
+        maxParticipants: '8' as any,
+        regionRules: {}
+      });
+
+      component.onSubmit();
+
+      const callArg: CreateGameRequest = gameService.createGame.calls.mostRecent().args[0] as CreateGameRequest;
+      expect(callArg.maxParticipants).toBe(8);
+      expect(callArg.regionRules).toEqual(buildBalancedRegionRules(8));
+    });
+
+    it('should preserve explicit custom region rules when they match maxParticipants', () => {
+      component.ngOnInit();
+      component.showAdvancedOptions = true;
+      component.gameForm.patchValue({
+        name: 'Custom Region Game',
+        maxParticipants: 8,
+        regionRules: { EU: 5, NAC: 3 }
+      });
+
+      component.onSubmit();
+
+      const callArg: CreateGameRequest = gameService.createGame.calls.mostRecent().args[0] as CreateGameRequest;
+      expect(callArg.regionRules).toEqual({ EU: 5, NAC: 3 });
+      expect(callArg.maxParticipants).toBe(8);
     });
 
     it('should handle error when creating game fails', () => {
@@ -285,7 +316,7 @@ describe('CreateGameComponent', () => {
     it('should return correct default config summary', () => {
       const summary = component.getDefaultConfigSummary();
       
-      expect(summary).toBe('49 joueurs répartis sur 7 régions (7 par région)');
+      expect(summary).toBe('5 joueurs repartis sur 5 regions (1 par region)');
     });
   });
 
@@ -383,8 +414,37 @@ describe('CreateGameComponent', () => {
   describe('onCancel', () => {
     it('should navigate back to games', () => {
       component.onCancel();
-      
+
       expect(router.navigate).toHaveBeenCalledWith(['/games']);
+    });
+  });
+
+  describe('SIMULTANEOUS draft mode disabled', () => {
+    it('should not expose a SIMULTANEOUS option in the creation form', () => {
+      fixture.detectChanges();
+
+      // The form has no draftMode FormControl — no mode selection at all
+      expect(component.gameForm.contains('draftMode')).toBe(false);
+    });
+
+    it('should not render any element with value SIMULTANEOUS in the template', () => {
+      fixture.detectChanges();
+
+      const nativeEl: HTMLElement = fixture.nativeElement;
+      const textContent = nativeEl.textContent ?? '';
+      // No "SIMULTANEOUS" text should be visible in the creation form
+      expect(textContent.toUpperCase().includes('SIMULTANEOUS')).toBe(false);
+    });
+
+    it('should not have a draftMode field in CreateGameRequest (SIMULTANEOUS cannot be submitted)', () => {
+      component.ngOnInit();
+      component.gameForm.patchValue({ name: 'My Game' });
+      component.onSubmit();
+
+      expect(gameService.createGame).toHaveBeenCalled();
+      const callArg: CreateGameRequest = gameService.createGame.calls.mostRecent().args[0] as CreateGameRequest;
+      // CreateGameRequest has no draftMode property — SIMULTANEOUS cannot be sent
+      expect((callArg as any)['draftMode']).toBeUndefined();
     });
   });
 });

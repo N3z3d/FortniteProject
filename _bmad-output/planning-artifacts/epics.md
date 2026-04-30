@@ -456,6 +456,56 @@ So that l admin puisse investiguer rapidement.
 **Then** le systeme rejette la requete avec un message d erreur explicite
 **And** aucun etat invalide n est persiste
 
+### Story 3.5: Contrat explicite de creation de partie pour `regionRules`
+
+As a game creator,
+I want the game creation API to rely on an explicit `regionRules` contract,
+So that the backend does not invent silent defaults that change the configured gameplay.
+
+**FR refs:** FR-15, FR-16
+
+**Acceptance Criteria:**
+
+**Given** un appel `POST /api/games` contient `regionRules`
+**When** la partie est creee
+**Then** les regions persistantes correspondent exactement au payload recu
+**And** aucun fallback implicite serveur ne modifie la configuration demandee.
+
+**Given** un appel `POST /api/games` ne contient pas `regionRules`
+**When** le backend traite la requete
+**Then** le comportement applique correspond explicitement a la decision produit approuvee
+**And** il n'y a pas de synthese silencieuse de `ACTIVE_REGIONS` hors contrat documente.
+
+**Given** l'UI souhaite proposer un template par defaut
+**When** elle soumet la creation
+**Then** ce template est materialise explicitement dans le payload
+**And** des tests prouvent la coherence front/back de ce contrat.
+
+### Story 3.6: Invariant canonique createur-participant
+
+As a system maintainer,
+I want the game creator to always be persisted as a canonical participant,
+So that participant counts, capacity checks and draft readiness all rely on one source of truth.
+
+**FR refs:** FR-17, FR-18
+
+**Acceptance Criteria:**
+
+**Given** des games legacy n'ont pas de ligne createur dans `game_participants`
+**When** le backfill ou la migration dediee est execute
+**Then** les lignes canoniques manquantes sont creees de facon sure
+**And** le resultat est verifie sur les donnees ciblees.
+
+**Given** une game est creee apres la migration
+**When** elle est persistee
+**Then** le createur existe toujours comme participant canonique
+**And** aucun helper de compatibilite post-persistence n'est requis pour maintenir le count.
+
+**Given** l'invariant canonique est prouve
+**When** le domaine et les services sont simplifies
+**Then** `ensureCreatorParticipantPersisted(...)` est retire ou explicitement desactive
+**And** tous les counts et garde-fous de participation restent corrects.
+
 ## Epic 4: Draft complet (serpent + simultane + regles + admin override)
 
 Offrir un moteur de draft robuste couvrant les deux modes, les regles de tranche, la resolution de conflits et les operations admin de roster.

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -74,6 +75,7 @@ public class CreateGameRequest {
 
   private LocalDate competitionEnd;
 
+  @NotEmpty(message = "regionRules est requis et ne peut pas etre vide")
   @Valid
   private Map<
           Player.Region,
@@ -211,7 +213,8 @@ public class CreateGameRequest {
 
   /** Valider les règles de région */
   private void validateRegionRules() {
-    if (regionRules == null) {
+    if (regionRules == null || regionRules.isEmpty()) {
+      validationErrors.add("regionRules est requis et ne peut pas etre vide");
       return;
     }
 
@@ -254,7 +257,7 @@ public class CreateGameRequest {
     if (regionRules == null) {
       return 0;
     }
-    return regionRules.values().stream().mapToInt(Integer::intValue).sum();
+    return regionRules.values().stream().filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
   }
 
   /** Vérifier si les règles de région sont cohérentes avec maxParticipants */

@@ -56,6 +56,7 @@ class CreateGameUseCaseTest {
             .name("Test Game")
             .description("Test Description")
             .maxParticipants(10)
+            .regionRules(Map.of(Player.Region.EU, 5, Player.Region.NAC, 5))
             .build();
     user = new User();
     user.setId(userId);
@@ -81,10 +82,19 @@ class CreateGameUseCaseTest {
     assertThat(result.getInvitationCode()).isNull();
     assertThat(request.getCreatorId()).isEqualTo(userId);
 
+    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
     verify(validationService).validateCreateGameRequest(request);
     verify(userRepositoryPort).findById(userId);
     verify(gameDomainRepositoryPort).countByCreatorAndStatusIn(eq(userId), anyList());
-    verify(gameDomainRepositoryPort).save(any(Game.class));
+    verify(gameDomainRepositoryPort).save(gameCaptor.capture());
+    assertThat(gameCaptor.getValue().getParticipants())
+        .singleElement()
+        .satisfies(
+            participant -> {
+              assertThat(participant.getUserId()).isEqualTo(userId);
+              assertThat(participant.isCreator()).isTrue();
+              assertThat(participant.getDraftOrder()).isEqualTo(1);
+            });
     // No invitation code generated at creation (manual generation policy)
   }
 
@@ -117,20 +127,31 @@ class CreateGameUseCaseTest {
   }
 
   @Test
-  void shouldPopulateDefaultRegionRulesWhenRequestOmitsThem() {
+  void shouldRejectWhenRequestOmitsRegionRules() {
+    request.setRegionRules(null);
     when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
     when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(0L);
-    when(gameDomainRepositoryPort.save(any(Game.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    createGameUseCase.execute(userId, request);
+    assertThatThrownBy(() -> createGameUseCase.execute(userId, request))
+        .isInstanceOf(InvalidGameRequestException.class)
+        .hasMessageContaining("regionRules");
 
-    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
-    verify(gameDomainRepositoryPort).save(gameCaptor.capture());
+    verify(userRepositoryPort).findById(userId);
+    verify(gameDomainRepositoryPort, never()).save(any(Game.class));
+  }
 
-    assertThat(gameCaptor.getValue().getRegionRules())
-        .extracting(rule -> rule.getRegion())
-        .containsExactlyInAnyOrderElementsOf(PlayerRegion.ACTIVE_REGIONS);
+  @Test
+  void shouldRejectWhenRequestContainsEmptyRegionRules() {
+    request.setRegionRules(Map.of());
+    when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+    when(gameDomainRepositoryPort.countByCreatorAndStatusIn(eq(userId), anyList())).thenReturn(0L);
+
+    assertThatThrownBy(() -> createGameUseCase.execute(userId, request))
+        .isInstanceOf(InvalidGameRequestException.class)
+        .hasMessageContaining("regionRules");
+
+    verify(userRepositoryPort).findById(userId);
+    verify(gameDomainRepositoryPort, never()).save(any(Game.class));
   }
 
   @Test

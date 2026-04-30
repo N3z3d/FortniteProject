@@ -47,7 +47,8 @@ export interface CreateGameRequest {
   draftTimeLimit?: number;
   autoPickDelay?: number;
   currentSeason?: number;
-  regionRules?: { [region: string]: number };
+  regionRules: { [region: string]: number };
+  tranchesEnabled?: boolean;
 }
 
 export interface JoinGameRequest {

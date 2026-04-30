@@ -21,6 +21,7 @@ import { CreateGameRequest } from '../models/game.interface';
 import { TranslationService } from '../../../core/services/translation.service';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
+import { buildBalancedRegionRules } from './create-game-region-rules.util';
 
 interface GameTemplate {
   id: string;
@@ -316,7 +317,7 @@ export class GameCreationWizardComponent implements OnInit {
       draftTimeLimit: this.rulesForm.value.draftTimeLimit,
       autoPickDelay: this.rulesForm.value.autoPickDelay,
       currentSeason: 2025,
-      regionRules: {} // Simplified for now - can be enhanced later
+      regionRules: buildBalancedRegionRules(this.rulesForm.value.maxParticipants)
     };
 
     this.gameService.createGame(gameData).subscribe({

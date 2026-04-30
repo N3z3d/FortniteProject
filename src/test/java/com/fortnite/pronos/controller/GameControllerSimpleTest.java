@@ -7,8 +7,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Locale;
 import java.util.Map;
@@ -17,19 +21,26 @@ import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.fortnite.pronos.application.usecase.GameQueryUseCase;
+import com.fortnite.pronos.config.GameExceptionHandler;
+import com.fortnite.pronos.config.GlobalExceptionHandler;
 import com.fortnite.pronos.core.error.ErrorCode;
 import com.fortnite.pronos.core.error.FortnitePronosException;
 import com.fortnite.pronos.core.usecase.CreateGameUseCase;
@@ -39,11 +50,14 @@ import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.dto.JoinGameWithCodeRequest;
 import com.fortnite.pronos.dto.RenameGameRequest;
+import com.fortnite.pronos.exception.GameNotFoundException;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.GameService;
 import com.fortnite.pronos.service.InvitationCodeAttemptGuard;
 import com.fortnite.pronos.service.UserResolver;
 import com.fortnite.pronos.service.ValidationService;
+import com.fortnite.pronos.service.admin.ErrorJournalService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -62,10 +76,14 @@ class GameControllerSimpleTest {
 
   @Mock private InvitationCodeAttemptGuard invitationCodeAttemptGuard;
 
-  @InjectMocks private GameController gameController;
+  @Mock private ErrorJournalService errorJournalService;
+
+  private GameController gameController;
 
   private User user;
   private HttpServletRequest request;
+  private MockMvc mockMvc;
+  private ObjectMapper objectMapper;
 
   @BeforeEach
   void setUp() {
@@ -73,6 +91,28 @@ class GameControllerSimpleTest {
     user.setId(UUID.randomUUID());
     user.setUsername("tester");
     request = new MockHttpServletRequest();
+    objectMapper = new ObjectMapper();
+    GameInvitationCodeRequestHandler invitationCodeRequestHandler =
+        new GameInvitationCodeRequestHandler(
+            gameService,
+            gameQueryUseCase,
+            validationService,
+            userResolver,
+            invitationCodeAttemptGuard);
+    gameController =
+        new GameController(
+            gameService,
+            gameQueryUseCase,
+            validationService,
+            userResolver,
+            createGameUseCase,
+            invitationCodeRequestHandler);
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(gameController)
+            .setControllerAdvice(
+                new GameExceptionHandler(errorJournalService),
+                new GlobalExceptionHandler(errorJournalService))
+            .build();
   }
 
   @Test
@@ -86,6 +126,7 @@ class GameControllerSimpleTest {
     CreateGameRequest createRequest = new CreateGameRequest();
     createRequest.setName("Game test");
     createRequest.setMaxParticipants(8);
+    createRequest.setRegionRules(Map.of(Player.Region.EU, 8));
     createRequest.setCreatorId(spoofedCreatorId);
 
     GameDto createdGame = new GameDto();
@@ -101,6 +142,45 @@ class GameControllerSimpleTest {
     org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.CREATED, response.getStatusCode());
     org.junit.jupiter.api.Assertions.assertEquals(user.getId(), createRequest.getCreatorId());
     verify(createGameUseCase).execute(eq(user.getId()), any(CreateGameRequest.class));
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenCreateGamePayloadOmitsRegionRules() throws Exception {
+    when(userResolver.resolve(any(), any())).thenReturn(user);
+
+    mockMvc
+        .perform(
+            post("/api/games")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of("name", "Game test", "maxParticipants", 5))))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.validationErrors.regionRules")
+                .value(Matchers.containsString("regionRules")));
+
+    verify(createGameUseCase, never()).execute(any(), any(CreateGameRequest.class));
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenCreateGamePayloadContainsEmptyRegionRules() throws Exception {
+    when(userResolver.resolve(any(), any())).thenReturn(user);
+
+    mockMvc
+        .perform(
+            post("/api/games")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        Map.of(
+                            "name", "Game test", "maxParticipants", 5, "regionRules", Map.of()))))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.validationErrors.regionRules")
+                .value(Matchers.containsString("regionRules")));
+
+    verify(createGameUseCase, never()).execute(any(), any(CreateGameRequest.class));
   }
 
   @Test
@@ -154,7 +234,6 @@ class GameControllerSimpleTest {
     GameDto updatedGameDto = new GameDto();
     updatedGameDto.setId(gameId);
     updatedGameDto.setName("Test game");
-
 
     when(userResolver.resolve(null, request)).thenReturn(user);
     when(gameService.getGameByInvitationCode("CODE123")).thenReturn(Optional.of(gameDto));
@@ -383,6 +462,19 @@ class GameControllerSimpleTest {
   }
 
   @Test
+  void shouldReturnUnauthorizedOnRegenerateWhenUserMissing() {
+    UUID gameId = UUID.randomUUID();
+    when(userResolver.resolve(null, request)).thenReturn(null);
+
+    ResponseEntity<GameDto> response =
+        gameController.regenerateInvitationCode(gameId, null, request, "permanent");
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    assertNull(response.getBody());
+  }
+
+  @Test
   void shouldDeleteInvitationCodeWhenCreatorIsResolved() {
     UUID gameId = UUID.randomUUID();
     GameDto gameDto = new GameDto();
@@ -438,16 +530,61 @@ class GameControllerSimpleTest {
   }
 
   @Test
-  void shouldReturnUnauthorizedOnRegenerateWhenUserMissing() {
+  void archiveGame_whenCreator_returns200() {
+    UUID gameId = UUID.randomUUID();
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+    gameDto.setCreatorId(user.getId());
+
+    when(userResolver.resolve(null, request)).thenReturn(user);
+    when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+
+    ResponseEntity<Map<String, Object>> response =
+        gameController.archiveGame(gameId, null, request);
+
+    org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    verify(gameService).archiveGame(gameId);
+  }
+
+  @Test
+  void archiveGame_whenNotAuthenticated_returns401() {
     UUID gameId = UUID.randomUUID();
     when(userResolver.resolve(null, request)).thenReturn(null);
 
-    ResponseEntity<GameDto> response =
-        gameController.regenerateInvitationCode(gameId, null, request, "permanent");
+    ResponseEntity<Map<String, Object>> response =
+        gameController.archiveGame(gameId, null, request);
 
     org.junit.jupiter.api.Assertions.assertEquals(
         HttpStatus.UNAUTHORIZED, response.getStatusCode());
-    assertNull(response.getBody());
+  }
+
+  @Test
+  void archiveGame_whenNotCreator_returns403() {
+    UUID gameId = UUID.randomUUID();
+    User otherUser = new User();
+    otherUser.setId(UUID.randomUUID());
+    GameDto gameDto = new GameDto();
+    gameDto.setId(gameId);
+    gameDto.setCreatorId(user.getId());
+
+    when(userResolver.resolve(null, request)).thenReturn(otherUser);
+    when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
+
+    ResponseEntity<Map<String, Object>> response =
+        gameController.archiveGame(gameId, null, request);
+
+    org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+  }
+
+  @Test
+  void archiveGame_whenGameNotFound_throwsGameNotFoundException() {
+    UUID gameId = UUID.randomUUID();
+    when(userResolver.resolve(null, request)).thenReturn(user);
+    when(gameQueryUseCase.getGameByIdOrThrow(gameId))
+        .thenThrow(new GameNotFoundException("Game not found: " + gameId));
+
+    assertThrows(
+        GameNotFoundException.class, () -> gameController.archiveGame(gameId, null, request));
   }
 
   @Test

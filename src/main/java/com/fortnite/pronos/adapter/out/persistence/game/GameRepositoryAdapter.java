@@ -59,6 +59,11 @@ public class GameRepositoryAdapter implements GameDomainRepositoryPort {
   }
 
   @Override
+  public Optional<Game> findByIdForUpdate(UUID id) {
+    return gameRepository.findByIdForUpdate(id).map(mapper::toDomain);
+  }
+
+  @Override
   public Game save(Game game) {
     Objects.requireNonNull(game, "Game cannot be null");
     User creator = findRequiredCreator(game.getCreatorId());

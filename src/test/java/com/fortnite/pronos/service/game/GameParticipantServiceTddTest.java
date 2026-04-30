@@ -24,7 +24,6 @@ import com.fortnite.pronos.domain.game.model.Game;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
@@ -39,7 +38,6 @@ import com.fortnite.pronos.model.User;
 class GameParticipantServiceTddTest {
 
   @Mock private GameDomainRepositoryPort gameRepository;
-  @Mock private GameRepositoryPort legacyGameRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private UserRepositoryPort userRepository;
 
@@ -61,6 +59,9 @@ class GameParticipantServiceTddTest {
     user.setId(userId);
     user.setUsername("player1");
 
+    com.fortnite.pronos.domain.game.model.GameParticipant creatorParticipant =
+        com.fortnite.pronos.domain.game.model.GameParticipant.restore(
+            UUID.randomUUID(), creatorId, "creator", 1, LocalDateTime.now(), null, true, List.of());
     game =
         Game.restore(
             gameId,
@@ -75,7 +76,7 @@ class GameParticipantServiceTddTest {
             null,
             null,
             List.of(),
-            List.of(),
+            List.of(creatorParticipant),
             null,
             false,
             5,
@@ -191,15 +192,16 @@ class GameParticipantServiceTddTest {
       request.setGameId(gameId); // no invitationCode → finds by ID
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
       when(gameRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
 
       boolean result = service.joinGame(userId, request);
 
       assertThat(result).isTrue();
-      verify(gameRepository).findById(gameId);
-      verify(gameRepository, never()).findByInvitationCodeForUpdate(any());
+      verify(gameRepository).findByIdForUpdate(gameId);
+      verify(gameRepository, never()).findById(gameId);
       verify(gameRepository, never()).findByInvitationCode(any());
+      verify(gameRepository, never()).findByInvitationCodeForUpdate(any());
     }
 
     @Test

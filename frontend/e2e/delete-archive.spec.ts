@@ -16,6 +16,7 @@
 import { APIRequestContext, APIResponse, Page, expect, test } from '@playwright/test';
 
 import { softDeleteLocalGamesByPrefix } from './helpers/local-db-helpers';
+import { buildSingleRegionRules } from '../src/app/features/game/create-game/create-game-region-rules.util';
 
 const BASE_URL = process.env['BASE_URL'] ?? 'http://localhost:4200';
 const BACKEND_URL = process.env['BACKEND_URL'] ?? 'http://localhost:8080';
@@ -64,7 +65,7 @@ async function createGame(
 ): Promise<string> {
   const res = await request.post(`${BACKEND_URL}/api/games`, {
     headers: jsonAuthHeaders(username),
-    data: { name, maxParticipants: 2, teamSize: 1 },
+    data: { name, maxParticipants: 2, teamSize: 1, regionRules: buildSingleRegionRules(2, 'EU') },
   });
   expect(res.status()).toBe(201);
   const body = await res.json();
@@ -334,27 +335,16 @@ test.describe('POST-ACTION REDIRECT — regression guard (Sprint 14 fix)', () =>
     await page.waitForLoadState('domcontentloaded');
 
     // Click the delete button (class="delete-game-btn", game is in CREATING status)
+    // Hard fail if not visible — button absence may indicate a real regression
     const deleteBtn = page.locator('button.delete-game-btn').first();
-    try {
-      await deleteBtn.waitFor({ state: 'visible', timeout: 12_000 });
-      await deleteBtn.click();
-    } catch {
-      // Button not visible — game detail may not have loaded correctly
-      console.warn('DA-05: delete button not visible — skipping (game detail may not have loaded)');
-      test.skip();
-      return;
-    }
+    await deleteBtn.waitFor({ state: 'visible', timeout: 12_000 });
+    await deleteBtn.click();
 
     // Confirm the dialog — wait for the button itself to be visible (accounts for Material animation)
+    // Hard fail if dialog does not appear — this is the critical assertion path
     const deleteConfirmBtn = page.locator('[role="dialog"]').getByRole('button', { name: 'Supprimer' });
-    try {
-      await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 8_000 });
-      await deleteConfirmBtn.click();
-    } catch {
-      console.warn('DA-05: confirm dialog did not appear or closed unexpectedly — skipping');
-      test.skip();
-      return;
-    }
+    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 8_000 });
+    await deleteConfirmBtn.click();
 
     // Assert redirect to /games (not /login) — regression guard
     await page.waitForURL(url => url.pathname === '/games', { timeout: 10_000 });
@@ -389,27 +379,17 @@ test.describe('POST-ACTION REDIRECT — regression guard (Sprint 14 fix)', () =>
     await page.waitForLoadState('domcontentloaded');
 
     // Click the leave button (timeout 15s: canLeaveGame() waits on async participants load)
+    // Hard fail if not visible — button absence may indicate a real regression (canLeaveGame() broken)
     const leaveBtn = page.locator('button.leave-game-btn').first();
-    try {
-      await leaveBtn.waitFor({ state: 'visible', timeout: 15_000 });
-      await leaveBtn.scrollIntoViewIfNeeded();
-      await leaveBtn.click();
-    } catch {
-      console.warn('DA-06: leave button not visible — skipping (participants may not have loaded)');
-      test.skip();
-      return;
-    }
+    await leaveBtn.waitFor({ state: 'visible', timeout: 15_000 });
+    await leaveBtn.scrollIntoViewIfNeeded();
+    await leaveBtn.click();
 
     // Confirm dialog — wait for the button itself to be visible (accounts for Material animation)
+    // Hard fail if dialog does not appear — this is the critical assertion path
     const leaveConfirmBtn = page.locator('[role="dialog"]').getByRole('button', { name: /^Quitter$/i });
-    try {
-      await leaveConfirmBtn.waitFor({ state: 'visible', timeout: 8_000 });
-      await leaveConfirmBtn.click();
-    } catch {
-      console.warn('DA-06: confirm dialog did not appear or closed unexpectedly — skipping');
-      test.skip();
-      return;
-    }
+    await leaveConfirmBtn.waitFor({ state: 'visible', timeout: 8_000 });
+    await leaveConfirmBtn.click();
 
     // Assert redirect to /games (not /login) — regression guard
     await page.waitForURL(url => url.pathname === '/games', { timeout: 10_000 });

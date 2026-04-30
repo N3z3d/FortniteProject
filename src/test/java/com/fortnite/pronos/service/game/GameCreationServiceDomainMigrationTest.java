@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -195,7 +196,11 @@ class GameCreationServiceDomainMigrationTest {
   void createGameHappyPath() {
     User creator = mockUser(creatorId, "PlayerOne");
     CreateGameRequest request =
-        CreateGameRequest.builder().name("My Game").maxParticipants(8).build();
+        CreateGameRequest.builder()
+            .name("My Game")
+            .maxParticipants(8)
+            .regionRules(Map.of(Player.Region.EU, 8))
+            .build();
     when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
     when(gameDomainRepository.save(any(Game.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -217,6 +222,7 @@ class GameCreationServiceDomainMigrationTest {
             .name("Described Game")
             .maxParticipants(4)
             .description("A cool game")
+            .regionRules(Map.of(Player.Region.EU, 4))
             .build();
     when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
     when(gameDomainRepository.save(any(Game.class)))
@@ -249,16 +255,36 @@ class GameCreationServiceDomainMigrationTest {
   }
 
   @Test
-  void createGameWithNullRegionRulesSkipsRegionValidation() {
+  void createGameRejectsMissingRegionRules() {
     User creator = mockUser(creatorId, "NoRegion");
     CreateGameRequest request =
         CreateGameRequest.builder().name("No Region Game").maxParticipants(4).build();
     when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
-    when(gameDomainRepository.save(any(Game.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    service.createGame(creatorId, request);
+    assertThatThrownBy(() -> service.createGame(creatorId, request))
+        .isInstanceOf(InvalidGameRequestException.class)
+        .hasMessageContaining("regionRules");
 
+    verify(gameDomainRepository, never()).save(any(Game.class));
+    verify(validationService, never()).validateRegionRules(any());
+  }
+
+  @Test
+  void createGameRejectsEmptyRegionRules() {
+    User creator = mockUser(creatorId, "EmptyRegion");
+    CreateGameRequest request =
+        CreateGameRequest.builder()
+            .name("Empty Region Game")
+            .maxParticipants(4)
+            .regionRules(Map.of())
+            .build();
+    when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+
+    assertThatThrownBy(() -> service.createGame(creatorId, request))
+        .isInstanceOf(InvalidGameRequestException.class)
+        .hasMessageContaining("regionRules");
+
+    verify(gameDomainRepository, never()).save(any(Game.class));
     verify(validationService, never()).validateRegionRules(any());
   }
 
@@ -292,7 +318,7 @@ class GameCreationServiceDomainMigrationTest {
 
     assertThatThrownBy(() -> service.createGame(creatorId, request))
         .isInstanceOf(InvalidGameRequestException.class)
-        .hasMessageContaining("Invalid region rules");
+        .hasMessageContaining("Too many players");
 
     verify(gameDomainRepository, never()).save(any(Game.class));
   }
@@ -301,14 +327,27 @@ class GameCreationServiceDomainMigrationTest {
   void createGameAddsCreatorAsHostParticipant() {
     User creator = mockUser(creatorId, "HostPlayer");
     CreateGameRequest request =
-        CreateGameRequest.builder().name("Host Game").maxParticipants(6).build();
+        CreateGameRequest.builder()
+            .name("Host Game")
+            .maxParticipants(6)
+            .regionRules(Map.of(Player.Region.EU, 6))
+            .build();
     when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
     when(gameDomainRepository.save(any(Game.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     GameDto result = service.createGame(creatorId, request);
 
-    assertThat(result.getCurrentParticipantCount()).isGreaterThanOrEqualTo(1);
+    ArgumentCaptor<Game> gameCaptor = ArgumentCaptor.forClass(Game.class);
+    verify(gameDomainRepository).save(gameCaptor.capture());
+    assertThat(result.getCurrentParticipantCount()).isEqualTo(1);
+    assertThat(gameCaptor.getValue().getParticipants())
+        .singleElement()
+        .satisfies(
+            participant -> {
+              assertThat(participant.getUserId()).isEqualTo(creatorId);
+              assertThat(participant.isCreator()).isTrue();
+            });
   }
 
   @Test

@@ -9,9 +9,10 @@ export { softDeleteLocalGamesByPrefix } from './local-db-helpers';
 export const DEFAULT_TRADE_SWAP_PREFIX = 'E2E-TS-';
 const TRADE_RELATED_GAME_PREFIXES = [DEFAULT_TRADE_SWAP_PREFIX, 'E2E-FF-', 'E2E-GL-'] as const;
 const PLACEHOLDER_USER_ID = '00000000-0000-0000-0000-000000000000';
+const DRAFT_REGION = 'EU';
 
 export const TRADE_SWAP_PLAYER_IDS = {
-  adminOpening: '10000000-0000-0000-0000-000000000011',
+  adminOpening: '10000000-0000-0000-0000-000000000003',
   thibautOpening: '10000000-0000-0000-0000-000000000001',
   teddyOpening: '10000000-0000-0000-0000-000000000002',
   happySwapIn: '10000000-0000-0000-0000-000000000005',
@@ -280,6 +281,7 @@ async function createGame(request: APIRequestContext, gameName: string): Promise
       draftMode: 'SNAKE',
       teamSize: 2,
       tranchesEnabled: false,
+      regionRules: { EU: 3 },
     },
   });
 
@@ -372,7 +374,7 @@ async function fetchCurrentTurn(
   gameId: string
 ): Promise<SnakeTurnDto> {
   const turnResponse = await request.get(
-    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=GLOBAL`,
+    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=${DRAFT_REGION}`,
     { headers: authHeaders(CREATOR_USERNAME) }
   );
 
@@ -412,7 +414,7 @@ async function submitSnakePick(
 ): Promise<void> {
   const response = await request.post(`${BACKEND_URL}/api/games/${gameId}/draft/snake/pick?user=${username}`, {
     headers: jsonAuthHeaders(username),
-    data: { playerId, region: 'GLOBAL' },
+    data: { playerId, region: DRAFT_REGION },
   });
 
   expect(response.ok()).toBeTruthy();

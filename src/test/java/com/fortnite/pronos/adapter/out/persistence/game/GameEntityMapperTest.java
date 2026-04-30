@@ -45,6 +45,14 @@ class GameEntityMapperTest {
     entity.setInvitationCode("INV12345");
     entity.setInvitationCodeExpiresAt(now.minusMinutes(10));
 
+    com.fortnite.pronos.model.GameParticipant creatorParticipant =
+        new com.fortnite.pronos.model.GameParticipant();
+    creatorParticipant.setId(UUID.randomUUID());
+    creatorParticipant.setUser(creator);
+    creatorParticipant.setDraftOrder(1);
+    creatorParticipant.setJoinedAt(now.minusDays(2));
+    creatorParticipant.setCreator(true);
+
     com.fortnite.pronos.model.GameParticipant participant =
         new com.fortnite.pronos.model.GameParticipant();
     participant.setId(participantId);
@@ -65,7 +73,7 @@ class GameEntityMapperTest {
     regionRule.setRegion(Player.Region.EU);
     regionRule.setMaxPlayers(3);
 
-    entity.setParticipants(List.of(participant));
+    entity.setParticipants(List.of(creatorParticipant, participant));
     entity.setRegionRules(List.of(regionRule));
 
     com.fortnite.pronos.domain.game.model.Game domain = mapper.toDomain(entity);
@@ -120,15 +128,12 @@ class GameEntityMapperTest {
 
     com.fortnite.pronos.domain.game.model.Game domain = mapper.toDomain(entity);
 
-    assertThat(domain.getParticipants()).hasSize(1);
-    assertThat(domain.getParticipants().get(0).getUserId()).isEqualTo(creatorId);
-    assertThat(domain.getParticipants().get(0).getUsername()).isEqualTo("creator");
-    assertThat(domain.getParticipants().get(0).isCreator()).isTrue();
+    assertThat(domain.getParticipants()).isEmpty();
     assertThat(domain.getRegionRules()).isEmpty();
   }
 
   @Test
-  void toDomainAddsSyntheticCreatorParticipantWhenMissing() {
+  void toDomainDoesNotAddSyntheticCreatorParticipantWhenMissing() {
     UUID gameId = UUID.randomUUID();
     UUID creatorId = UUID.randomUUID();
     UUID participantUserId = UUID.randomUUID();
@@ -148,14 +153,8 @@ class GameEntityMapperTest {
 
     com.fortnite.pronos.domain.game.model.Game domain = mapper.toDomain(entity);
 
-    assertThat(domain.getParticipants()).hasSize(2);
-    assertThat(domain.getParticipants())
-        .anySatisfy(
-            p -> {
-              assertThat(p.getUserId()).isEqualTo(creatorId);
-              assertThat(p.getUsername()).isEqualTo("thibaut");
-              assertThat(p.isCreator()).isTrue();
-            });
+    assertThat(domain.getParticipants()).hasSize(1);
+    assertThat(domain.getParticipants()).noneMatch(p -> creatorId.equals(p.getUserId()));
   }
 
   @Test

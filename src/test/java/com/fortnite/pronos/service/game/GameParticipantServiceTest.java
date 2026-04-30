@@ -26,7 +26,6 @@ import com.fortnite.pronos.domain.game.model.GameParticipant;
 import com.fortnite.pronos.domain.game.model.GameStatus;
 import com.fortnite.pronos.domain.port.out.GameDomainRepositoryPort;
 import com.fortnite.pronos.domain.port.out.GameParticipantRepositoryPort;
-import com.fortnite.pronos.domain.port.out.GameRepositoryPort;
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.exception.GameFullException;
@@ -43,7 +42,6 @@ import com.fortnite.pronos.model.User;
 class GameParticipantServiceTest {
 
   @Mock private GameDomainRepositoryPort gameRepository;
-  @Mock private GameRepositoryPort legacyGameRepository;
   @Mock private GameParticipantRepositoryPort gameParticipantRepository;
   @Mock private UserRepositoryPort userRepository;
 
@@ -68,6 +66,16 @@ class GameParticipantServiceTest {
     user.setId(userId);
     user.setUsername("testuser");
 
+    GameParticipant creatorParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(),
+            creator.getId(),
+            "creator",
+            1,
+            LocalDateTime.now(),
+            null,
+            true,
+            List.of());
     game =
         Game.restore(
             gameId,
@@ -82,7 +90,7 @@ class GameParticipantServiceTest {
             null,
             null,
             List.of(),
-            List.of(),
+            List.of(creatorParticipant),
             null,
             false,
             5,
@@ -114,7 +122,7 @@ class GameParticipantServiceTest {
       request.setGameId(gameId);
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(GameNotFoundException.class);
@@ -127,7 +135,7 @@ class GameParticipantServiceTest {
       request.setGameId(gameId);
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
       when(gameRepository.save(any(Game.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -145,7 +153,7 @@ class GameParticipantServiceTest {
       game.addParticipant(new GameParticipant(userId, user.getUsername(), false));
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(UserAlreadyInGameException.class);
@@ -162,7 +170,7 @@ class GameParticipantServiceTest {
       game.addParticipant(new GameParticipant(UUID.randomUUID(), "p2", false));
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(GameFullException.class);
@@ -197,7 +205,7 @@ class GameParticipantServiceTest {
               2026);
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(activeGame));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(activeGame));
 
       assertThatThrownBy(() -> service.joinGame(userId, request))
           .isInstanceOf(InvalidGameStateException.class);
@@ -242,7 +250,7 @@ class GameParticipantServiceTest {
     @DisplayName("throws GameNotFoundException when game does not exist")
     void throwsGameNotFoundWhenGameDoesNotExist() {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.empty());
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.leaveGame(userId, gameId))
           .isInstanceOf(GameNotFoundException.class);
@@ -256,7 +264,7 @@ class GameParticipantServiceTest {
       creatorUser.setUsername("creator");
 
       when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creatorUser));
-      when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
 
       assertThatThrownBy(() -> service.leaveGame(creator.getId(), gameId))
           .isInstanceOf(UnauthorizedAccessException.class);

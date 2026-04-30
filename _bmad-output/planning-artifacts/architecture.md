@@ -675,6 +675,24 @@ catalogue.cache.name=playerCatalogue
 
 ---
 
+### Clarifications approuvees - 2026-04-24
+
+#### Invariant de participation des games
+
+- Regle canonique : le createur d une game doit toujours etre persiste comme participant canonique.
+- Regle de migration : toute game legacy sans ligne createur dans `game_participants` doit etre backfill avant suppression des couches de compatibilite.
+- Regle d implementation : les counts de participants, les checks de capacite, la readiness draft et les lectures associees doivent tous reposer sur cette meme source de verite.
+- Consequence : `ensureCreatorParticipantPersisted(...)` est un mecanisme transitoire de compatibilite, pas la cible d architecture.
+
+#### Contrat de creation de game - `regionRules`
+
+- Regle de frontiere : `POST /api/games` ne doit pas synthetiser silencieusement des regions par defaut cote serveur.
+- Si le produit veut proposer un template par defaut, le client doit le materialiser explicitement dans le payload de creation.
+- Toute decision future "toutes les regions actives par defaut" doit etre documentee dans les artefacts planning avant implementation.
+- Consequence : le fallback runtime actuel sur `ACTIVE_REGIONS` doit etre traite comme un sujet de contrat dedie, pas comme un comportement implicite durable.
+
+---
+
 ## Architecture Validation Results
 
 ### Cohérence ✅

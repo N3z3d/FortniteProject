@@ -21,10 +21,12 @@
 import { APIRequestContext, expect, test } from '@playwright/test';
 
 import { softDeleteLocalGamesByPrefix } from './helpers/local-db-helpers';
+import { buildSingleRegionRules } from '../src/app/features/game/create-game/create-game-region-rules.util';
 
 const BACKEND_URL = process.env['BACKEND_URL'] ?? 'http://localhost:8080';
 const DRAFT_FULL_PREFIX = 'E2E-DF-';
 const PLACEHOLDER_USER_ID = '00000000-0000-0000-0000-000000000000';
+const DRAFT_REGION = 'EU';
 
 /** EU Tranche 1 players from V1001__seed_e2e_users_and_players.sql */
 const BUGHA_EU_T1 = '10000000-0000-0000-0000-000000000001';
@@ -94,6 +96,7 @@ async function createGame(request: APIRequestContext, gameName: string): Promise
       draftMode: 'SNAKE',
       teamSize: 1,
       tranchesEnabled: false,
+      regionRules: buildSingleRegionRules(2, 'EU'),
     },
   });
 
@@ -164,7 +167,7 @@ async function fetchCurrentTurn(
   gameId: string
 ): Promise<SnakeTurnDto | null> {
   const response = await request.get(
-    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=GLOBAL`,
+    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=${DRAFT_REGION}`,
     { headers: authHeaders('admin') }
   );
 
@@ -232,7 +235,7 @@ async function submitSnakePick(
     `${BACKEND_URL}/api/games/${gameId}/draft/snake/pick?user=${username}`,
     {
       headers: jsonAuthHeaders(username),
-      data: { playerId, region: 'GLOBAL' },
+      data: { playerId, region: DRAFT_REGION },
     }
   );
 

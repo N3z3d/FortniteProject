@@ -17,6 +17,8 @@ public interface GameDomainRepositoryPort {
 
   Optional<Game> findById(UUID id);
 
+  Optional<Game> findByIdForUpdate(UUID id);
+
   Game save(Game game);
 
   Optional<Game> findByInvitationCode(String invitationCode);

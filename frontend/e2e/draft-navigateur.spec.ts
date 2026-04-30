@@ -34,10 +34,12 @@ import { APIRequestContext, BrowserContext, Page, expect, test } from '@playwrig
 
 import { forceLoginWithProfile } from './helpers/app-helpers';
 import { softDeleteLocalGamesByPrefix } from './helpers/local-db-helpers';
+import { buildSingleRegionRules } from '../src/app/features/game/create-game/create-game-region-rules.util';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BACKEND_URL = process.env['BACKEND_URL'] ?? 'http://localhost:8080';
+const DRAFT_REGION = 'EU';
 
 /** Prefix for the shared game (DRAFT-NAV-02 + NAV-03) */
 const SUITE_PREFIX = 'E2E-NAV-';
@@ -96,6 +98,7 @@ async function createGame(
       draftMode: 'SNAKE',
       teamSize: 1,
       tranchesEnabled: false,
+      regionRules: buildSingleRegionRules(2, 'EU'),
     },
   });
 
@@ -159,7 +162,7 @@ async function fetchCurrentTurn(
   gameId: string
 ): Promise<SnakeTurnDto | null> {
   const response = await request.get(
-    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=GLOBAL`,
+    `${BACKEND_URL}/api/games/${gameId}/draft/snake/turn?region=${DRAFT_REGION}`,
     { headers: authHeaders('thibaut') }
   );
 
@@ -200,7 +203,7 @@ async function submitSnakePick(
     `${BACKEND_URL}/api/games/${gameId}/draft/snake/pick?user=${username}`,
     {
       headers: jsonAuthHeaders(username),
-      data: { playerId, region: 'GLOBAL' },
+      data: { playerId, region: DRAFT_REGION },
     }
   );
 

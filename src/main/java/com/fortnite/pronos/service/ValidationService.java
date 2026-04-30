@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"java:S1640", "java:S6353"})
 public class ValidationService {
 
+  private static final String REQUIRED_REGION_RULES_MESSAGE =
+      "regionRules est requis et ne peut pas etre vide";
   private static final Pattern EMAIL_PATTERN =
       Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{1,}$");
   private static final int MAX_TOTAL_REGION_PLAYERS = 20;
@@ -97,14 +99,8 @@ public class ValidationService {
       Map<com.fortnite.pronos.model.Player.Region, Integer> regionRules) {
     log.info("Validation des règles de région");
 
-    if (regionRules == null) {
-      log.info("Aucune règle de région définie - validation réussie");
-      return;
-    }
-
-    if (regionRules.isEmpty()) {
-      log.info("Règles de région vides - validation réussie");
-      return;
+    if (regionRules == null || regionRules.isEmpty()) {
+      throw new IllegalArgumentException(REQUIRED_REGION_RULES_MESSAGE);
     }
 
     // Validation de base
