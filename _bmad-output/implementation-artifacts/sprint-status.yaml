@@ -1384,4 +1384,7 @@ sprint-19:
   sprint19-contract-create-game-region-rules: done
   sprint19-migrate-canonical-game-participants: done
 
+  # Process follow-up - separer code applicatif, artefacts BMAD et regenerations agents/IDE
+  sprint19-git-worktree-hygiene: backlog
+
   sprint19-retrospective: optional
