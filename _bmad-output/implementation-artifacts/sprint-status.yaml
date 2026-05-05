@@ -284,7 +284,7 @@ development_status:
   sprint3-a3a-cicd-pipeline-minimal: done  # .github/workflows/ci.yml créé, 3 jobs: backend+frontend+docker
 
   # A3b — Pipeline complet : docker build + push registry + deploy staging (stretch)
-  sprint3-a3b-cicd-pipeline-complet: backlog
+  sprint3-a3b-cicd-pipeline-complet: review
 
   # ----------------------------------------------------------
   # Phase 4 — Sécurité résiduelle (TECH-017F plan résiduel)

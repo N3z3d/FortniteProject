@@ -87,18 +87,31 @@ jobs:
       - name: Install dependencies (npm ci)
         run: npm ci --silent
 
-      # Note : le projet n'a pas de script "lint" dans package.json.
-      # ng lint est utilisé directement. Le || true évite un échec bloquant
-      # si eslint n'est pas configuré dans ce projet (pas de .eslintrc détecté).
-      - name: Lint Angular (ng lint)
-        run: npx ng lint --no-progress || true
+      # Le projet n'a pas de target lint Angular configuree. Ce check reste
+      # explicite pour eviter un faux vert via "ng lint || true".
+      - name: Lint Angular configuration
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('angular.json', 'utf8'));
+          const projects = Object.values(config.projects ?? {});
+          const hasLintTarget = projects.some((project) => Boolean(
+            project?.architect?.lint ?? project?.targets?.lint
+          ));
+
+          if (hasLintTarget) {
+            console.error('Angular lint target detected; wire it explicitly in CI instead of skipping it.');
+            process.exit(1);
+          }
+
+          console.log('No Angular lint target configured; Vitest and production build remain the frontend gates.');
+          NODE
 
       # Tests Vitest (unitaires) — exécutés explicitement en CI.
-      # continue-on-error: true → le job frontend reste vert même si des tests
-      # échouent (pre-existing ou flaky). Le résultat réel est capturé dans le log.
+      # Le step est bloquant : un test rouge frontend doit faire echouer le job.
       - name: Tests Vitest (unitaires)
         id: vitest
-        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
@@ -116,7 +129,15 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ "${{ steps.vitest.outcome }}" = "failure" ]; then
+          vitest_outcome="${{ steps.vitest.outcome }}"
+
+          if [ "$vitest_outcome" = "success" ]; then
+            {
+              echo "## Frontend Vitest"
+              echo ""
+              echo "- Result: passed"
+            } >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$vitest_outcome" = "failure" ]; then
             {
               echo "## Frontend Vitest"
               echo ""
@@ -127,7 +148,8 @@ jobs:
             {
               echo "## Frontend Vitest"
               echo ""
-              echo "- Result: passed"
+              echo "- Result: not run"
+              echo "- Outcome: ${vitest_outcome}"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -182,3 +204,14 @@ jobs:
             .
           docker push "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:${{ github.sha }}"
+
+      - name: Staging deploy summary (guarded skip)
+        shell: bash
+        run: |
+          {
+            echo "## Staging deploy"
+            echo ""
+            echo "- Result: skipped"
+            echo "- Reason: hosting decision absent; no GitHub Environment/secrets are declared in this repository."
+            echo "- Image published: ${IMAGE_NAME}:${{ github.sha }}"
+          } >> "$GITHUB_STEP_SUMMARY"
