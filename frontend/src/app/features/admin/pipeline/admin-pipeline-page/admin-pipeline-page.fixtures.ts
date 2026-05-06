@@ -108,7 +108,8 @@ export function makePipelineServiceSpy(
     'correctMetadata',
     'getScrapeLog',
     'getUnresolvedAlertStatus',
-    'getAvailableRegions'
+    'getAvailableRegions',
+    'getSuggestedEpicId'
   ]);
   if (overrides.failLoad) {
     spy.getUnresolved.and.returnValue(throwError(() => new Error('fail')));
@@ -144,5 +145,6 @@ export function makePipelineServiceSpy(
   spy.rejectPlayer.and.returnValue(of(rejectResult));
   spy.correctMetadata.and.returnValue(of(correctResult));
   spy.getAvailableRegions.and.returnValue(of([]));
+  spy.getSuggestedEpicId.and.returnValue(of(null));
   return spy;
 }

@@ -113,7 +113,7 @@ class GameNotificationServiceTest {
   class DraftStartedNotifications {
 
     @Test
-    @DisplayName("Should send notification when draft starts")
+    @DisplayName("Should send notification when draft starts (with JPA entity)")
     void shouldSendDraftStartedNotification() {
       // Given
       Game game = createTestGame();
@@ -122,6 +122,20 @@ class GameNotificationServiceTest {
 
       // When
       gameNotificationService.notifyDraftStarted(game);
+
+      // Then
+      verify(messagingTemplate).convertAndSend(eq(expectedTopic), any(GameNotification.class));
+    }
+
+    @Test
+    @DisplayName("Should send notification when draft starts (with gameId only)")
+    void shouldSendDraftStartedNotificationByGameId() {
+      // Given
+      UUID gameId = UUID.randomUUID();
+      String expectedTopic = "/topic/games/" + gameId + "/events";
+
+      // When
+      gameNotificationService.notifyDraftStarted(gameId);
 
       // Then
       verify(messagingTemplate).convertAndSend(eq(expectedTopic), any(GameNotification.class));

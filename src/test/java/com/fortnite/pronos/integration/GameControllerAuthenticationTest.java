@@ -59,15 +59,7 @@ class GameControllerAuthenticationTest {
   @DisplayName("Devrait créer une game avec un utilisateur authentifié")
   void shouldCreateGameWithAuthenticatedUser() {
     // Given
-    Map<String, Object> gameRequest = new HashMap<>();
-    gameRequest.put("name", "Tournoi Test TDD");
-    gameRequest.put("maxParticipants", 4);
-
-    Map<String, Integer> regionRules = new HashMap<>();
-    regionRules.put("EU", 2);
-    regionRules.put("NAW", 1);
-    regionRules.put("BR", 1);
-    gameRequest.put("regionRules", regionRules);
+    Map<String, Object> gameRequest = validGameRequest();
 
     // When
     ResponseEntity<Map<String, Object>> response =
@@ -87,9 +79,7 @@ class GameControllerAuthenticationTest {
   @DisplayName("Devrait rejeter la création de game sans utilisateur")
   void shouldRejectGameCreationWithoutUser() {
     // Given
-    Map<String, Object> gameRequest = new HashMap<>();
-    gameRequest.put("name", "Tournoi Test TDD");
-    gameRequest.put("maxParticipants", 4);
+    Map<String, Object> gameRequest = validGameRequest();
 
     // When
     ResponseEntity<Void> response =
@@ -107,9 +97,7 @@ class GameControllerAuthenticationTest {
   @DisplayName("Devrait rejeter la création de game avec un utilisateur inexistant")
   void shouldRejectGameCreationWithNonExistentUser() {
     // Given
-    Map<String, Object> gameRequest = new HashMap<>();
-    gameRequest.put("name", "Tournoi Test TDD");
-    gameRequest.put("maxParticipants", 4);
+    Map<String, Object> gameRequest = validGameRequest();
 
     // When
     ResponseEntity<Void> response =
@@ -127,15 +115,7 @@ class GameControllerAuthenticationTest {
   @DisplayName("Devrait retourner les games de l'utilisateur authentifié")
   void shouldReturnUserGames() {
     // Given - Créer d'abord une game
-    Map<String, Object> gameRequest = new HashMap<>();
-    gameRequest.put("name", "Tournoi Test TDD");
-    gameRequest.put("maxParticipants", 4);
-
-    Map<String, Integer> regionRules = new HashMap<>();
-    regionRules.put("EU", 2);
-    regionRules.put("NAW", 1);
-    regionRules.put("BR", 1);
-    gameRequest.put("regionRules", regionRules);
+    Map<String, Object> gameRequest = validGameRequest();
 
     restTemplate.exchange(
         "http://localhost:" + port + "/api/games?user=Thibaut",
@@ -186,5 +166,18 @@ class GameControllerAuthenticationTest {
     org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
     headers.add("X-Test-User", username);
     return headers;
+  }
+
+  private Map<String, Object> validGameRequest() {
+    Map<String, Object> gameRequest = new HashMap<>();
+    gameRequest.put("name", "Tournoi Test TDD");
+    gameRequest.put("maxParticipants", 4);
+
+    Map<String, Integer> regionRules = new HashMap<>();
+    regionRules.put("EU", 2);
+    regionRules.put("NAW", 1);
+    regionRules.put("BR", 1);
+    gameRequest.put("regionRules", regionRules);
+    return gameRequest;
   }
 }

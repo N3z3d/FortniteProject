@@ -52,6 +52,8 @@ class GameServiceTddTest {
 
   @Mock private TeamDomainRepositoryPort teamDomainRepository;
 
+  @Mock private GameNotificationService gameNotificationService;
+
   @InjectMocks private GameService gameService;
 
   private UUID creatorId;

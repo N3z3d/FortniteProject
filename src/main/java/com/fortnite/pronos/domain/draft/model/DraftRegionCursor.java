@@ -1,5 +1,6 @@
 package com.fortnite.pronos.domain.draft.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,8 +10,7 @@ import java.util.UUID;
 /**
  * Pure domain aggregate representing the snake draft cursor for a single region.
  *
- * <p>Each region has an independent snake order and pick position. The common timer is shared at
- * the draft level (not per-cursor).
+ * <p>Each region has an independent snake order, pick position, and turn start timestamp.
  */
 public final class DraftRegionCursor {
 
@@ -19,16 +19,23 @@ public final class DraftRegionCursor {
   private final int currentRound;
   private final int currentPick;
   private final List<UUID> snakeOrder;
+  private final Instant turnStartedAt;
 
   /** Business constructor for a brand-new cursor (round 1, pick 1). */
   public DraftRegionCursor(UUID draftId, String region, List<UUID> snakeOrder) {
-    this(draftId, region, 1, 1, snakeOrder);
+    this(draftId, region, 1, 1, snakeOrder, Instant.now());
   }
 
   private DraftRegionCursor(
-      UUID draftId, String region, int currentRound, int currentPick, List<UUID> snakeOrder) {
+      UUID draftId,
+      String region,
+      int currentRound,
+      int currentPick,
+      List<UUID> snakeOrder,
+      Instant turnStartedAt) {
     Objects.requireNonNull(draftId, "draftId cannot be null");
     Objects.requireNonNull(region, "region cannot be null");
+    Objects.requireNonNull(turnStartedAt, "turnStartedAt cannot be null");
     if (snakeOrder == null || snakeOrder.isEmpty()) {
       throw new IllegalArgumentException("snakeOrder cannot be null or empty");
     }
@@ -41,12 +48,25 @@ public final class DraftRegionCursor {
     this.currentRound = currentRound;
     this.currentPick = currentPick;
     this.snakeOrder = Collections.unmodifiableList(new ArrayList<>(snakeOrder));
+    this.turnStartedAt = turnStartedAt;
   }
 
-  /** Reconstitution factory — for persistence mapping only. */
+  /** Reconstitution factory for persistence mapping only. */
   public static DraftRegionCursor restore(
       UUID draftId, String region, int currentRound, int currentPick, List<UUID> snakeOrder) {
-    return new DraftRegionCursor(draftId, region, currentRound, currentPick, snakeOrder);
+    return restore(draftId, region, currentRound, currentPick, snakeOrder, Instant.now());
+  }
+
+  /** Reconstitution factory for persistence mapping only. */
+  public static DraftRegionCursor restore(
+      UUID draftId,
+      String region,
+      int currentRound,
+      int currentPick,
+      List<UUID> snakeOrder,
+      Instant turnStartedAt) {
+    return new DraftRegionCursor(
+        draftId, region, currentRound, currentPick, snakeOrder, turnStartedAt);
   }
 
   // ===== BUSINESS METHODS =====
@@ -62,7 +82,7 @@ public final class DraftRegionCursor {
       nextPick = 1;
       nextRound = currentRound + 1;
     }
-    return new DraftRegionCursor(draftId, region, nextRound, nextPick, snakeOrder);
+    return new DraftRegionCursor(draftId, region, nextRound, nextPick, snakeOrder, Instant.now());
   }
 
   // ===== GETTERS =====
@@ -85,6 +105,10 @@ public final class DraftRegionCursor {
 
   public List<UUID> getSnakeOrder() {
     return snakeOrder;
+  }
+
+  public Instant getTurnStartedAt() {
+    return turnStartedAt;
   }
 
   // ===== EQUALS / HASHCODE =====

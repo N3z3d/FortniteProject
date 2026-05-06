@@ -158,7 +158,7 @@ class GameDtoMapperTest {
     assertThat(dto.getCreatorId()).isEqualTo(creatorId);
     assertThat(dto.getCreatorUsername()).isEqualTo("entity-creator");
     assertThat(dto.getStatus()).isEqualTo(com.fortnite.pronos.model.GameStatus.ACTIVE);
-    assertThat(dto.getCurrentParticipantCount()).isEqualTo(2);
+    assertThat(dto.getCurrentParticipantCount()).isEqualTo(1);
     assertThat(dto.getRegionRules()).containsEntry(Player.Region.NA, 4);
     assertThat(dto.getParticipants()).containsEntry(participantId, "entity-participant");
   }

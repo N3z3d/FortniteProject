@@ -49,6 +49,14 @@ public class GameNotificationService {
     sendToTopic(game.getId(), notification);
   }
 
+  public void notifyDraftStarted(UUID gameId) {
+    log.info("Notifying draft started for game: {}", gameId);
+
+    GameNotification notification =
+        new GameNotification("DRAFT_STARTED", gameId, null, "DRAFTING", null, "Draft has started");
+    sendToTopic(gameId, notification);
+  }
+
   public void notifyGameFinished(com.fortnite.pronos.model.Game game) {
     log.info("Notifying game finished: {}", game.getId());
 

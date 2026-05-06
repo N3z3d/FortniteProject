@@ -3,11 +3,13 @@ package com.fortnite.pronos.service.game;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +30,7 @@ import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.InvitationCodeService;
 import com.fortnite.pronos.service.ValidationService;
@@ -58,15 +62,21 @@ class GameCreationServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
   }
 
+  private CreateGameRequest validCreateRequest(String name, int maxParticipants) {
+    CreateGameRequest request = new CreateGameRequest();
+    request.setName(name);
+    request.setMaxParticipants(maxParticipants);
+    request.setRegionRules(Map.of(Player.Region.EU, maxParticipants));
+    return request;
+  }
+
   @Nested
   class NominalCases {
 
     @Test
     void createGame_withSnakeMode_persistsAllFields() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Snake Draft Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("Snake Draft Game", 8);
       request.setDraftMode(DraftMode.SNAKE);
       request.setTeamSize(5);
       request.setTrancheSize(10);
@@ -86,9 +96,7 @@ class GameCreationServiceTest {
     @Test
     void createGame_withSimultaneousMode_persistsDraftMode() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Simultaneous Game");
-      request.setMaxParticipants(6);
+      CreateGameRequest request = validCreateRequest("Simultaneous Game", 6);
       request.setDraftMode(DraftMode.SIMULTANEOUS);
       request.setTeamSize(3);
       request.setTrancheSize(10);
@@ -102,9 +110,7 @@ class GameCreationServiceTest {
     @Test
     void createGame_withTranchesDisabled_tranchesEnabledIsFalse() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("No Tranches Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("No Tranches Game", 8);
       request.setDraftMode(DraftMode.SNAKE);
       request.setTeamSize(5);
       request.setTranchesEnabled(false);
@@ -119,9 +125,7 @@ class GameCreationServiceTest {
       stubSuccessfulSave();
       LocalDate start = LocalDate.of(2026, 3, 1);
       LocalDate end = LocalDate.of(2026, 5, 31);
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Seasonal Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("Seasonal Game", 8);
       request.setDraftMode(DraftMode.SNAKE);
       request.setTeamSize(5);
       request.setTrancheSize(10);
@@ -142,9 +146,7 @@ class GameCreationServiceTest {
     @Test
     void createGame_withNullDraftMode_defaultsToSnake() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Default Mode Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("Default Mode Game", 8);
       request.setDraftMode(null);
       request.setTeamSize(5);
       request.setTrancheSize(10);
@@ -158,9 +160,7 @@ class GameCreationServiceTest {
     @Test
     void createGame_withNullTeamSize_defaultsFive() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Default TeamSize Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("Default TeamSize Game", 8);
       request.setDraftMode(DraftMode.SNAKE);
       request.setTeamSize(null);
       request.setTrancheSize(10);
@@ -174,9 +174,7 @@ class GameCreationServiceTest {
     @Test
     void createGame_withNullTranchesEnabled_defaultsTrue() {
       stubSuccessfulSave();
-      CreateGameRequest request = new CreateGameRequest();
-      request.setName("Default Tranches Game");
-      request.setMaxParticipants(8);
+      CreateGameRequest request = validCreateRequest("Default Tranches Game", 8);
       request.setDraftMode(DraftMode.SNAKE);
       request.setTeamSize(5);
       request.setTrancheSize(10);
@@ -251,6 +249,54 @@ class GameCreationServiceTest {
       when(gameDomainRepository.findById(gameId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.regenerateInvitationCode(gameId))
+          .isInstanceOf(GameNotFoundException.class);
+    }
+  }
+
+  @Nested
+  class ArchiveGame {
+
+    @Test
+    void archiveGame_whenCreating_softDeletesGame() {
+      UUID gameId = UUID.randomUUID();
+      Game game = new Game("Test", creatorId, 8, DraftMode.SNAKE, 5, 10, true);
+      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameDomainRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      service.archiveGame(gameId);
+
+      ArgumentCaptor<Game> captor = ArgumentCaptor.forClass(Game.class);
+      verify(gameDomainRepository).save(captor.capture());
+      assertThat(captor.getValue().isDeleted()).isTrue();
+    }
+
+    @Test
+    void archiveGame_whenDrafting_softDeletesGame() {
+      UUID gameId = UUID.randomUUID();
+      // Transition to DRAFTING status via domain method
+      Game game = new Game("Test", creatorId, 8, DraftMode.SNAKE, 5, 10, true);
+      game.addParticipant(
+          new com.fortnite.pronos.domain.game.model.GameParticipant(creatorId, "creator", true));
+      game.addParticipant(
+          new com.fortnite.pronos.domain.game.model.GameParticipant(
+              UUID.randomUUID(), "player2", false));
+      game.startDraft();
+      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+      when(gameDomainRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      service.archiveGame(gameId);
+
+      ArgumentCaptor<Game> captor = ArgumentCaptor.forClass(Game.class);
+      verify(gameDomainRepository).save(captor.capture());
+      assertThat(captor.getValue().isDeleted()).isTrue();
+    }
+
+    @Test
+    void archiveGame_whenNotFound_throwsGameNotFoundException() {
+      UUID gameId = UUID.randomUUID();
+      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> service.archiveGame(gameId))
           .isInstanceOf(GameNotFoundException.class);
     }
   }

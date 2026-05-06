@@ -70,7 +70,8 @@ export class DraftPlayerListComponent {
     this.clearSearch.emit();
   }
 
-  getRegionLabel(region: string): string {
+  getRegionLabel(region: string | undefined): string {
+    if (!region) return '';
     const key = this.helperService.getRegionLabelKey(region);
     return this.t.t(key, region);
   }

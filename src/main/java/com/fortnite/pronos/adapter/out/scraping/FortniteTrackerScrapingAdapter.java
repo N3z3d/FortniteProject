@@ -167,7 +167,7 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
     if (attempt == 0 && providers.contains("scrapedo")) {
       return "scrapedo";
     }
-    int slot = Math.abs((region + "-" + page).hashCode()) % providers.size();
+    int slot = providerSlot(region, page, providers.size());
     int index = (slot + (attempt % providers.size())) % providers.size();
     return providers.get(index);
   }
@@ -200,7 +200,7 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
     if (attempt == 0 && available.contains("scrapedo")) {
       return "scrapedo";
     }
-    int slot = Math.abs((region + "-" + page).hashCode()) % available.size();
+    int slot = providerSlot(region, page, available.size());
     int index = (slot + (attempt % available.size())) % available.size();
     return available.get(index);
   }
@@ -211,6 +211,14 @@ public class FortniteTrackerScrapingAdapter implements PrRegionCsvSourcePort {
       return "";
     }
     return keys.get(attempt % keys.size());
+  }
+
+  int providerSlot(String region, int page, int providerCount) {
+    return stableSlot(region + "-" + page, providerCount);
+  }
+
+  int stableSlot(String seed, int providerCount) {
+    return Math.floorMod(seed.hashCode(), providerCount);
   }
 
   List<String> getAvailableProviders() {

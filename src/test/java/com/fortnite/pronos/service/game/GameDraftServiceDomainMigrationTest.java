@@ -63,12 +63,15 @@ class GameDraftServiceDomainMigrationTest {
     creatorId = UUID.randomUUID();
     draftId = UUID.randomUUID();
 
+    GameParticipant creatorParticipant =
+        GameParticipant.restore(
+            UUID.randomUUID(), creatorId, "creator", 1, LocalDateTime.now(), null, true, List.of());
     GameParticipant participant =
         GameParticipant.restore(
             UUID.randomUUID(),
             UUID.randomUUID(),
             "other-user",
-            1,
+            2,
             LocalDateTime.now(),
             null,
             false,
@@ -88,7 +91,7 @@ class GameDraftServiceDomainMigrationTest {
             null,
             null,
             List.of(),
-            List.of(participant),
+            List.of(creatorParticipant, participant),
             null,
             false,
             5,
@@ -109,7 +112,7 @@ class GameDraftServiceDomainMigrationTest {
             null,
             null,
             List.of(),
-            List.of(participant),
+            List.of(creatorParticipant, participant),
             null,
             false,
             5,

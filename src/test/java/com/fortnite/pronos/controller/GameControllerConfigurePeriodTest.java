@@ -30,7 +30,6 @@ import com.fortnite.pronos.dto.ConfigureCompetitionPeriodRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.GameService;
-import com.fortnite.pronos.service.InvitationCodeAttemptGuard;
 import com.fortnite.pronos.service.UserResolver;
 import com.fortnite.pronos.service.ValidationService;
 
@@ -44,7 +43,7 @@ class GameControllerConfigurePeriodTest {
   @Mock private ValidationService validationService;
   @Mock private UserResolver userResolver;
   @Mock private CreateGameUseCase createGameUseCase;
-  @Mock private InvitationCodeAttemptGuard invitationCodeAttemptGuard;
+  @Mock private GameInvitationCodeRequestHandler invitationCodeRequestHandler;
 
   @InjectMocks private GameController controller;
 

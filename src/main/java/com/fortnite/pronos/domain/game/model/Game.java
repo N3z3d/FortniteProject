@@ -223,14 +223,7 @@ public final class Game {
   }
 
   public int getTotalParticipantCount() {
-    boolean creatorAlreadyCounted =
-        participants.stream()
-            .anyMatch(p -> p.getUserId() != null && p.getUserId().equals(creatorId));
-    int count = participants.size();
-    if (!creatorAlreadyCounted && creatorId != null) {
-      count += 1;
-    }
-    return count;
+    return participants.size();
   }
 
   public int getAvailableSpots() {
@@ -527,11 +520,12 @@ public final class Game {
   }
 
   private boolean isInvalidParticipant(GameParticipant participant) {
-    boolean creatorParticipant = participant.getUserId().equals(this.creatorId);
     boolean duplicateParticipant =
         participants.stream().anyMatch(p -> p.getUserId().equals(participant.getUserId()));
+    boolean creatorWithoutRole =
+        participant.getUserId().equals(creatorId) && !participant.isCreator();
     boolean gameCannotAcceptParticipants = isFull() || !canAddParticipants();
-    return creatorParticipant || duplicateParticipant || gameCannotAcceptParticipants;
+    return duplicateParticipant || creatorWithoutRole || gameCannotAcceptParticipants;
   }
 
   private String generateRandomCode() {

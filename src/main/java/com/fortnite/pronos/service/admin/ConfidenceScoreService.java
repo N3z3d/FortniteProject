@@ -3,6 +3,7 @@ package com.fortnite.pronos.service.admin;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.fortnite.pronos.domain.player.identity.model.PlayerIdentityEntry;
@@ -29,18 +30,33 @@ public class ConfidenceScoreService {
    * @return score in [0, 100]
    */
   public int compute(PlayerIdentityEntry entry, String epicId) {
+    return compute(entry, epicId, null);
+  }
+
+  /**
+   * Computes confidence score for associating {@code epicId} with the given entry, enriched with
+   * the API-returned display name for a more meaningful username comparison.
+   *
+   * @param entry the pipeline entry (contains playerUsername, playerRegion)
+   * @param epicId the proposed Epic Games ID
+   * @param displayName the display name returned by the Fortnite API (may be null)
+   * @return score in [0, 100]
+   */
+  public int compute(PlayerIdentityEntry entry, String epicId, @Nullable String displayName) {
+    String comparand = displayName != null ? displayName : epicId;
     int score = BASE_SCORE;
-    score += usernameBonus(entry.getPlayerUsername(), epicId);
+    score += usernameBonus(entry.getPlayerUsername(), comparand);
     return Math.min(score, MAX_SCORE);
   }
 
-  private int usernameBonus(String playerUsername, String epicId) {
+  private int usernameBonus(String playerUsername, String comparand) {
     String normalizedPlayer = normalize(playerUsername);
-    String normalizedEpic = normalize(epicId);
-    if (normalizedPlayer.equals(normalizedEpic)) {
+    String normalizedComparand = normalize(comparand);
+    if (normalizedPlayer.equals(normalizedComparand)) {
       return USERNAME_EXACT_BONUS + REGION_BONUS;
     }
-    if (normalizedPlayer.contains(normalizedEpic) || normalizedEpic.contains(normalizedPlayer)) {
+    if (normalizedPlayer.contains(normalizedComparand)
+        || normalizedComparand.contains(normalizedPlayer)) {
       return USERNAME_PARTIAL_BONUS;
     }
     return 0;

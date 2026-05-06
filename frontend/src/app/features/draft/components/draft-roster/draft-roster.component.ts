@@ -20,7 +20,8 @@ export class DraftRosterComponent {
   @Input() team: Player[] = [];
   @Input() remainingSlots = 0;
 
-  getRegionLabel(region: string): string {
+  getRegionLabel(region: string | undefined): string {
+    if (!region) return '';
     const key = this.helperService.getRegionLabelKey(region);
     return this.t.t(key, region);
   }

@@ -40,4 +40,38 @@ class ConfidenceScoreServiceTest {
     assertThatCode(() -> ConfidenceScoreService.class.getDeclaredField("NON_ALPHANUMERIC_PATTERN"))
         .doesNotThrowAnyException();
   }
+
+  @Test
+  @DisplayName("displayName exact match gives max score")
+  void displayName_exact_match_gives_max_score() {
+    PlayerIdentityEntry entry =
+        new PlayerIdentityEntry(UUID.randomUUID(), "Bugha", "EU", LocalDateTime.now());
+
+    int score = service.compute(entry, "33f85e8ed7124d15ae29cfaf53340239", "Bugha");
+
+    assertThat(score).isEqualTo(100);
+  }
+
+  @Test
+  @DisplayName("displayName partial match gives partial bonus")
+  void displayName_partial_gives_partial_bonus() {
+    PlayerIdentityEntry entry =
+        new PlayerIdentityEntry(UUID.randomUUID(), "Bugha_EU", "EU", LocalDateTime.now());
+
+    int score = service.compute(entry, "33f85e8ed7124d15ae29cfaf53340239", "Bugha");
+
+    assertThat(score).isGreaterThan(30).isLessThan(100);
+  }
+
+  @Test
+  @DisplayName("null displayName falls back to epicId comparison")
+  void null_displayName_falls_back_to_epicId_comparison() {
+    PlayerIdentityEntry entry =
+        new PlayerIdentityEntry(UUID.randomUUID(), "igamer", "EU", LocalDateTime.now());
+
+    int withNull = service.compute(entry, "igamer", null);
+    int withoutDisplayName = service.compute(entry, "igamer");
+
+    assertThat(withNull).isEqualTo(withoutDisplayName).isEqualTo(100);
+  }
 }

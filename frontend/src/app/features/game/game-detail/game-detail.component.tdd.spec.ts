@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { GameDetailComponent } from './game-detail.component';
 import { GameService } from '../services/game.service';
@@ -11,6 +11,7 @@ import { GameApiMapper } from '../mappers/game-api.mapper';
 import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
+import { WebSocketService } from '../../../core/services/websocket.service';
 
 describe('GameDetailComponent - TDD Tests', () => {
   let component: GameDetailComponent;
@@ -68,6 +69,9 @@ describe('GameDetailComponent - TDD Tests', () => {
     const gamesRealtimeServiceSpy = jasmine.createSpyObj('GamesRealtimeService', [], {
       events$: of({ type: 'CONNECTED' })
     });
+    const websocketServiceSpy = jasmine.createSpyObj('WebSocketService', ['subscribeToGameEvents', 'unsubscribeFromGameEvents'], {
+      gameNotifications: new Subject<any>().asObservable()
+    });
     const userContextSpy = jasmine.createSpyObj('UserContextService', ['getCurrentUser']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const userGamesStoreSpy = jasmine.createSpyObj('UserGamesStore', ['removeGame', 'refreshGames']);
@@ -102,6 +106,7 @@ describe('GameDetailComponent - TDD Tests', () => {
         { provide: UserGamesStore, useValue: userGamesStoreSpy },
         { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
         { provide: GamesRealtimeService, useValue: gamesRealtimeServiceSpy },
+        { provide: WebSocketService, useValue: websocketServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]

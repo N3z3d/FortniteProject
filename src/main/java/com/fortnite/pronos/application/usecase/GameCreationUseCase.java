@@ -16,6 +16,8 @@ public interface GameCreationUseCase {
 
   void deleteGame(UUID gameId);
 
+  void archiveGame(UUID gameId);
+
   GameDto regenerateInvitationCode(UUID gameId);
 
   GameDto regenerateInvitationCode(UUID gameId, String duration);

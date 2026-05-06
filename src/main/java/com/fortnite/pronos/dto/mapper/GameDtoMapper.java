@@ -170,41 +170,19 @@ public final class GameDtoMapper {
   }
 
   private static int countDomainParticipants(com.fortnite.pronos.domain.game.model.Game game) {
-    int participantCount =
-        (int)
-            game.getParticipants().stream()
-                .filter(Objects::nonNull)
-                .filter(participant -> participant.getUserId() != null)
-                .count();
-    boolean creatorInParticipants =
+    return (int)
         game.getParticipants().stream()
             .filter(Objects::nonNull)
             .filter(participant -> participant.getUserId() != null)
-            .anyMatch(participant -> participant.getUserId().equals(game.getCreatorId()));
-    if (game.getCreatorId() != null && !creatorInParticipants) {
-      participantCount += 1;
-    }
-    return participantCount;
+            .count();
   }
 
   private static int countEntityParticipants(com.fortnite.pronos.model.Game game) {
-    int participantCount =
-        (int)
-            game.getParticipants().stream()
-                .filter(Objects::nonNull)
-                .filter(participant -> participant.getUser() != null)
-                .count();
-    boolean creatorInParticipants =
-        game.getCreator() != null
-            && game.getParticipants().stream()
-                .filter(Objects::nonNull)
-                .map(com.fortnite.pronos.model.GameParticipant::getUser)
-                .filter(Objects::nonNull)
-                .anyMatch(user -> user.getId().equals(game.getCreator().getId()));
-    if (game.getCreator() != null && !creatorInParticipants) {
-      participantCount += 1;
-    }
-    return participantCount;
+    return (int)
+        game.getParticipants().stream()
+            .filter(Objects::nonNull)
+            .filter(participant -> participant.getUser() != null)
+            .count();
   }
 
   private static boolean hasText(String value) {

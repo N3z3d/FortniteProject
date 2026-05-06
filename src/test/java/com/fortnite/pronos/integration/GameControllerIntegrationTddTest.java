@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.fortnite.pronos.domain.port.out.UserRepositoryPort;
 import com.fortnite.pronos.dto.CreateGameRequest;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.UserRepository;
 
@@ -70,6 +71,7 @@ class GameControllerIntegrationTddTest {
             300,
             43200,
             2025);
+    validGameRequest.addRegionRule(Player.Region.EU, 10);
   }
 
   @Test
@@ -157,8 +159,8 @@ class GameControllerIntegrationTddTest {
             300,
             43200,
             2025);
-    requestWithRegions.addRegionRule(com.fortnite.pronos.model.Player.Region.EU, 3);
-    requestWithRegions.addRegionRule(com.fortnite.pronos.model.Player.Region.NAC, 2);
+    requestWithRegions.addRegionRule(Player.Region.EU, 3);
+    requestWithRegions.addRegionRule(Player.Region.NAC, 2);
 
     // When & Then
     performWithUser(
@@ -205,6 +207,8 @@ class GameControllerIntegrationTddTest {
     CreateGameRequest game2 =
         new CreateGameRequest(
             "Game 2 - Multi", 10, "Deuxième game", false, false, 300, 43200, 2025);
+    game1.addRegionRule(Player.Region.EU, 8);
+    game2.addRegionRule(Player.Region.EU, 10);
 
     // When & Then - Première game
     performWithUser(

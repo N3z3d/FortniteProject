@@ -24,6 +24,7 @@ import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.JoinGameRequest;
 import com.fortnite.pronos.model.Game;
 import com.fortnite.pronos.model.GameStatus;
+import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.repository.GameRepository;
 import com.fortnite.pronos.repository.UserRepository;
@@ -79,6 +80,7 @@ class GameControllerIntegrationTest {
     CreateGameRequest request = new CreateGameRequest();
     request.setName("Test Game Integration");
     request.setMaxParticipants(4);
+    request.setRegionRules(Map.of(Player.Region.EU, 4));
 
     // When
     ResponseEntity<GameDto> response =
@@ -98,6 +100,7 @@ class GameControllerIntegrationTest {
     CreateGameRequest request = new CreateGameRequest();
     request.setName("Test Game No User");
     request.setMaxParticipants(4);
+    request.setRegionRules(Map.of(Player.Region.EU, 4));
 
     // When
     ResponseEntity<GameDto> response = restTemplate.postForEntity(baseUrl, request, GameDto.class);
@@ -113,6 +116,7 @@ class GameControllerIntegrationTest {
     CreateGameRequest request = new CreateGameRequest();
     request.setName("Test Game Invalid User");
     request.setMaxParticipants(4);
+    request.setRegionRules(Map.of(Player.Region.EU, 4));
 
     // When - Use a header with non-existent user (don't use postWithUser which adds valid user)
     org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();

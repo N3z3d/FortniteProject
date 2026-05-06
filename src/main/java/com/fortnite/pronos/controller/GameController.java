@@ -1,6 +1,5 @@
 package com.fortnite.pronos.controller;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +27,6 @@ import com.fortnite.pronos.dto.JoinGameWithCodeRequest;
 import com.fortnite.pronos.dto.RenameGameRequest;
 import com.fortnite.pronos.model.User;
 import com.fortnite.pronos.service.GameService;
-import com.fortnite.pronos.service.InvitationCodeAttemptGuard;
 import com.fortnite.pronos.service.UserResolver;
 import com.fortnite.pronos.service.ValidationService;
 
@@ -65,7 +63,7 @@ public class GameController {
   private final ValidationService validationService;
   private final UserResolver userResolver;
   private final CreateGameUseCase createGameUseCase;
-  private final InvitationCodeAttemptGuard invitationCodeAttemptGuard;
+  private final GameInvitationCodeRequestHandler invitationCodeRequestHandler;
 
   @Operation(
       summary = "Create a new fantasy league game",
@@ -177,31 +175,7 @@ public class GameController {
       @Valid @RequestBody(required = false) JoinGameWithCodeRequest payload,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
-    log.info(
-        "GameController: joinGameWithCode requested - requestedUser={}",
-        username != null ? username : "-");
-
-    User user = userResolver.resolve(username, httpRequest);
-    if (user == null) {
-      log.warn(
-          "GameController: joinGameWithCode unauthorized - requestedUser={}, remoteAddr={}",
-          username != null ? username : "-",
-          httpRequest.getRemoteAddr());
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
-
-    String invitationCode = payload == null ? null : payload.resolveInvitationCode();
-    if (invitationCode == null || invitationCode.isBlank()) {
-      log.warn("GameController: joinGameWithCode invalid payload - userId={}", user.getId());
-      return ResponseEntity.badRequest().build();
-    }
-
-    String normalizedCode = normalizeInvitationCode(invitationCode);
-    invitationCodeAttemptGuard.registerAttemptOrThrow(user.getId(), httpRequest.getRemoteAddr());
-    return gameService
-        .getGameByInvitationCode(normalizedCode)
-        .map(game -> joinUserToGameByInvitationCode(game, user.getId(), normalizedCode))
-        .orElseGet(() -> notFoundByInvitationCode(user.getId(), normalizedCode));
+    return invitationCodeRequestHandler.joinGameWithCode(payload, username, httpRequest);
   }
 
   @Operation(
@@ -302,29 +276,18 @@ public class GameController {
       @PathVariable UUID id,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
-    log.info(
-        "GameController: deleteGame requested - gameId={}, requestedUser={}",
-        id,
-        username != null ? username : "-");
+    log.info("GameController: deleteGame requested - gameId={}", id);
 
     User user = userResolver.resolve(username, httpRequest);
     if (user == null) {
-      log.warn(
-          "GameController: deleteGame unauthorized - gameId={}, requestedUser={}, remoteAddr={}",
-          id,
-          username != null ? username : "-",
-          httpRequest.getRemoteAddr());
+      log.warn("GameController: deleteGame unauthorized - gameId={}", id);
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
           .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
     }
 
     GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (!user.getId().equals(gameDto.getCreatorId())) {
-      log.warn(
-          "GameController: deleteGame forbidden - gameId={}, userId={}, creatorId={}",
-          id,
-          user.getId(),
-          gameDto.getCreatorId());
+      log.warn("GameController: deleteGame forbidden - gameId={}", id);
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body(Map.of(ERROR_KEY, "Seul le createur peut supprimer cette partie"));
     }
@@ -332,6 +295,42 @@ public class GameController {
     gameService.deleteGame(id);
     log.info("GameController: deleteGame succeeded - gameId={}, userId={}", id, user.getId());
     return ResponseEntity.ok(Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Game supprimee avec succes"));
+  }
+
+  @Operation(
+      summary = "Archive game",
+      description = "Archives a game via soft-delete regardless of its status (only creator)")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Game archived successfully"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "403", description = "Not authorized to archive this game"),
+        @ApiResponse(responseCode = "404", description = "Game not found")
+      })
+  @PostMapping("/{id:" + UUID_PATH_PATTERN + "}/archive")
+  public ResponseEntity<Map<String, Object>> archiveGame(
+      @PathVariable UUID id,
+      @RequestParam(name = "user", required = false) String username,
+      HttpServletRequest httpRequest) {
+    log.info("GameController: archiveGame requested - gameId={}", id);
+
+    User user = userResolver.resolve(username, httpRequest);
+    if (user == null) {
+      log.warn("GameController: archiveGame unauthorized - gameId={}", id);
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(Map.of(ERROR_KEY, USER_REQUIRED_MESSAGE));
+    }
+
+    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
+    if (!user.getId().equals(gameDto.getCreatorId())) {
+      log.warn("GameController: archiveGame forbidden - gameId={}", id);
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(Map.of(ERROR_KEY, "Seul le createur peut archiver cette partie"));
+    }
+
+    gameService.archiveGame(id);
+    log.info("GameController: archiveGame succeeded - gameId={}, userId={}", id, user.getId());
+    return ResponseEntity.ok(Map.of(SUCCESS_KEY, true, MESSAGE_KEY, "Partie archivee avec succes"));
   }
 
   @Operation(
@@ -350,39 +349,8 @@ public class GameController {
       HttpServletRequest httpRequest,
       @RequestParam(name = "duration", required = false, defaultValue = "permanent")
           String duration) {
-    log.info(
-        "GameController: regenerateInvitationCode requested - gameId={}, duration={}, requestedUser={}",
-        id,
-        duration,
-        username != null ? username : "-");
-
-    User user = userResolver.resolve(username, httpRequest);
-    if (user == null) {
-      log.warn(
-          "GameController: regenerateInvitationCode unauthorized - gameId={}, requestedUser={}, remoteAddr={}",
-          id,
-          username != null ? username : "-",
-          httpRequest.getRemoteAddr());
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
-
-    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
-    if (!user.getId().equals(gameDto.getCreatorId())) {
-      log.warn(
-          "GameController: regenerateInvitationCode forbidden - gameId={}, userId={}, creatorId={}",
-          id,
-          user.getId(),
-          gameDto.getCreatorId());
-      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-
-    GameDto game = gameService.regenerateInvitationCode(id, duration);
-    log.info(
-        "GameController: regenerateInvitationCode succeeded - gameId={}, userId={}, duration={}",
-        id,
-        user.getId(),
-        duration);
-    return ResponseEntity.ok(game);
+    return invitationCodeRequestHandler.regenerateInvitationCode(
+        id, username, httpRequest, duration);
   }
 
   @DeleteMapping("/{id:" + UUID_PATH_PATTERN + "}/invitation-code")
@@ -390,23 +358,7 @@ public class GameController {
       @PathVariable UUID id,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
-    log.info("GameController: deleteInvitationCode requested - gameId={}", id);
-
-    User user = userResolver.resolve(username, httpRequest);
-    if (user == null) {
-      log.warn("GameController: deleteInvitationCode unauthorized - gameId={}", id);
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
-
-    GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
-    if (!user.getId().equals(gameDto.getCreatorId())) {
-      log.warn("GameController: deleteInvitationCode forbidden - gameId={}", id);
-      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-
-    GameDto updatedGame = gameService.deleteInvitationCode(id);
-    log.info("GameController: deleteInvitationCode succeeded - gameId={}", id);
-    return ResponseEntity.ok(updatedGame);
+    return invitationCodeRequestHandler.deleteInvitationCode(id, username, httpRequest);
   }
 
   @Operation(summary = "Rename game", description = "Renames an existing game")
@@ -422,28 +374,17 @@ public class GameController {
       @Valid @RequestBody(required = false) RenameGameRequest request,
       @RequestParam(name = "user", required = false) String username,
       HttpServletRequest httpRequest) {
-    log.info(
-        "GameController: renameGame requested - gameId={}, requestedUser={}",
-        id,
-        username != null ? username : "-");
+    log.info("GameController: renameGame requested - gameId={}", id);
 
     User user = userResolver.resolve(username, httpRequest);
     if (user == null) {
-      log.warn(
-          "GameController: renameGame unauthorized - gameId={}, requestedUser={}, remoteAddr={}",
-          id,
-          username != null ? username : "-",
-          httpRequest.getRemoteAddr());
+      log.warn("GameController: renameGame unauthorized - gameId={}", id);
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     GameDto gameDto = gameQueryUseCase.getGameByIdOrThrow(id);
     if (!user.getId().equals(gameDto.getCreatorId())) {
-      log.warn(
-          "GameController: renameGame forbidden - gameId={}, userId={}, creatorId={}",
-          id,
-          user.getId(),
-          gameDto.getCreatorId());
+      log.warn("GameController: renameGame forbidden - gameId={}", id);
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
@@ -496,31 +437,6 @@ public class GameController {
         id,
         user.getId());
     return ResponseEntity.ok(updated);
-  }
-
-  private String normalizeInvitationCode(String invitationCode) {
-    return invitationCode.trim().toUpperCase(Locale.ROOT);
-  }
-
-  private ResponseEntity<GameDto> joinUserToGameByInvitationCode(
-      GameDto game, UUID userId, String normalizedCode) {
-    JoinGameRequest joinRequest = new JoinGameRequest();
-    joinRequest.setGameId(game.getId());
-    joinRequest.setUserId(userId);
-    joinRequest.setInvitationCode(normalizedCode);
-    validationService.validateJoinGameRequest(joinRequest);
-    gameService.joinGame(userId, joinRequest);
-    log.info(
-        "GameController: joinGameWithCode succeeded - gameId={}, userId={}", game.getId(), userId);
-    return ResponseEntity.ok(gameService.getGameByIdOrThrow(game.getId()));
-  }
-
-  private ResponseEntity<GameDto> notFoundByInvitationCode(UUID userId, String normalizedCode) {
-    log.warn(
-        "GameController: joinGameWithCode notFound - userId={}, codeLength={}",
-        userId,
-        normalizedCode.length());
-    return ResponseEntity.notFound().build();
   }
 
   private ResponseEntity<Map<String, Object>> validateStartDraftRequest(

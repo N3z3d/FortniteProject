@@ -41,6 +41,7 @@ public class GameService {
   private final GameDraftService gameDraftService;
   private final TeamDomainRepositoryPort teamDomainRepository;
   private final GameRealtimeEventService gameRealtimeEventService;
+  private final GameNotificationService gameNotificationService;
 
   // Game Creation Operations
 
@@ -53,6 +54,13 @@ public class GameService {
   public void deleteGame(UUID gameId) {
     Set<UUID> participants = getParticipantIdsOrEmpty(gameId);
     gameCreationService.deleteGame(gameId);
+    publishRealtimeEventSafely(participants, GameRealtimeEventService.GAME_DELETED, gameId);
+  }
+
+  /** Archives a game (soft-delete regardless of status) */
+  public void archiveGame(UUID gameId) {
+    Set<UUID> participants = getParticipantIdsOrEmpty(gameId);
+    gameCreationService.archiveGame(gameId);
     publishRealtimeEventSafely(participants, GameRealtimeEventService.GAME_DELETED, gameId);
   }
 
@@ -192,6 +200,7 @@ public class GameService {
   public DraftDto startDraft(UUID gameId, UUID creatorId) {
     DraftDto draft = gameDraftService.startDraft(gameId, creatorId);
     publishParticipantEvent(gameId, creatorId, GameRealtimeEventService.GAME_UPDATED);
+    gameNotificationService.notifyDraftStarted(gameId);
     return draft;
   }
 

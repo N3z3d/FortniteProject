@@ -186,6 +186,12 @@ class FortniteTrackerScrapingAdapterTest {
       String attempt1 = multiAdapter.pickProvider("EU", 1, 1);
       assertThat(attempt0).isNotEqualTo(attempt1);
     }
+
+    @Test
+    @DisplayName("computes a non-negative slot for Integer.MIN_VALUE hashes")
+    void stableSlot_minHashCode_returnsValidSlot() {
+      assertThat(adapter.stableSlot("polygenelubricants", 3)).isBetween(0, 2);
+    }
   }
 
   @Nested

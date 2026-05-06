@@ -150,6 +150,13 @@ export interface PlayerIdentityEntry {
   correctedAt: string | null;
 }
 
+export interface EpicIdSuggestion {
+  suggestedEpicId: string | null;
+  displayName: string | null;
+  confidenceScore: number;
+  found: boolean;
+}
+
 export interface CorrectMetadataRequest {
   newUsername?: string;
   newRegion?: string;
@@ -256,4 +263,8 @@ export interface SqlQueryResult {
   rows: Record<string, unknown>[];
   totalRows: number;
   truncated: boolean;
+}
+
+export interface AdapterInfo {
+  adapter: string;
 }

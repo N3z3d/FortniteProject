@@ -97,9 +97,15 @@ class GameDomainModelTest {
     }
 
     @Test
-    void rejectsCreatorAsParticipant() {
+    void rejectsCreatorParticipantWithoutCreatorRole() {
       GameParticipant creator = new GameParticipant(CREATOR_ID, "creator", false);
       assertThat(game.addParticipant(creator)).isFalse();
+    }
+
+    @Test
+    void addsCreatorParticipantWhenMarkedAsCreator() {
+      assertThat(game.addParticipant(creatorParticipant())).isTrue();
+      assertThat(game.getParticipants()).singleElement().matches(GameParticipant::isCreator);
     }
 
     @Test
@@ -112,17 +118,17 @@ class GameDomainModelTest {
 
     @Test
     void rejectsParticipantWhenFull() {
-      // maxParticipants = 4 (including creator counted as 1)
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(UUID.randomUUID(), "p1", false));
       game.addParticipant(new GameParticipant(UUID.randomUUID(), "p2", false));
       game.addParticipant(new GameParticipant(UUID.randomUUID(), "p3", false));
-      // Total = 4 (creator + 3 participants) = full
       assertThat(game.addParticipant(new GameParticipant(UUID.randomUUID(), "p4", false)))
           .isFalse();
     }
 
     @Test
     void rejectsParticipantAfterDraftStarted() {
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(UUID.randomUUID(), "p1", false));
       game.startDraft();
       assertThat(game.addParticipant(new GameParticipant(UUID.randomUUID(), "p2", false)))
@@ -146,15 +152,19 @@ class GameDomainModelTest {
     }
 
     @Test
-    void totalParticipantCountIncludesCreator() {
-      assertThat(game.getTotalParticipantCount()).isEqualTo(1); // creator only
+    void totalParticipantCountUsesExplicitParticipants() {
+      assertThat(game.getTotalParticipantCount()).isZero();
+      game.addParticipant(creatorParticipant());
+      assertThat(game.getTotalParticipantCount()).isEqualTo(1);
       game.addParticipant(new GameParticipant(USER_ID, "player1", false));
       assertThat(game.getTotalParticipantCount()).isEqualTo(2);
     }
 
     @Test
     void availableSpotsDecreases() {
-      assertThat(game.getAvailableSpots()).isEqualTo(3); // 4 - 1 creator
+      assertThat(game.getAvailableSpots()).isEqualTo(4);
+      game.addParticipant(creatorParticipant());
+      assertThat(game.getAvailableSpots()).isEqualTo(3);
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       assertThat(game.getAvailableSpots()).isEqualTo(2);
     }
@@ -173,6 +183,7 @@ class GameDomainModelTest {
 
     @Test
     void startsDraftWithEnoughParticipants() {
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       assertThat(game.startDraft()).isTrue();
       assertThat(game.getStatus()).isEqualTo(GameStatus.DRAFTING);
@@ -180,13 +191,14 @@ class GameDomainModelTest {
 
     @Test
     void cannotStartDraftWithTooFewParticipants() {
-      // Only creator (1 participant) - need at least 2
+      game.addParticipant(creatorParticipant());
       assertThat(game.startDraft()).isFalse();
       assertThat(game.getStatus()).isEqualTo(GameStatus.CREATING);
     }
 
     @Test
     void cannotStartDraftTwice() {
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       game.startDraft();
       assertThat(game.startDraft()).isFalse();
@@ -194,6 +206,7 @@ class GameDomainModelTest {
 
     @Test
     void completesDraftToActive() {
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       game.startDraft();
       assertThat(game.completeDraft()).isTrue();
@@ -207,6 +220,7 @@ class GameDomainModelTest {
 
     @Test
     void finishesActiveGame() {
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       game.startDraft();
       game.completeDraft();
@@ -223,6 +237,7 @@ class GameDomainModelTest {
     @Test
     void isDraftingReturnsCorrectly() {
       assertThat(game.isDrafting()).isFalse();
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       game.startDraft();
       assertThat(game.isDrafting()).isTrue();
@@ -231,6 +246,7 @@ class GameDomainModelTest {
     @Test
     void isActiveReturnsCorrectly() {
       assertThat(game.isActive()).isFalse();
+      game.addParticipant(creatorParticipant());
       game.addParticipant(new GameParticipant(USER_ID, "p1", false));
       game.startDraft();
       game.completeDraft();
@@ -407,5 +423,9 @@ class GameDomainModelTest {
       assertThat(restored.getRegionRules()).isEmpty();
       assertThat(restored.getParticipants()).isEmpty();
     }
+  }
+
+  private GameParticipant creatorParticipant() {
+    return new GameParticipant(CREATOR_ID, "creator", true);
   }
 }

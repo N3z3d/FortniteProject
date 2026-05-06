@@ -12,6 +12,7 @@ import { UserGamesStore } from '../../../core/services/user-games.store';
 import { UiErrorFeedbackService } from '../../../core/services/ui-error-feedback.service';
 import { LoggerService } from '../../../core/services/logger.service';
 import { GamesRealtimeService } from '../../../core/services/games-realtime.service';
+import { WebSocketService, GameNotification } from '../../../core/services/websocket.service';
 
 const mockGame: Game = {
   id: '1',
@@ -43,6 +44,8 @@ describe('GameDetailComponent', () => {
   let loggerSpy: jasmine.SpyObj<LoggerService>;
   let gamesRealtimeServiceSpy: jasmine.SpyObj<GamesRealtimeService>;
   let realtimeEventsSubject: Subject<any>;
+  let websocketServiceSpy: jasmine.SpyObj<WebSocketService>;
+  let gameNotificationsSubject: Subject<GameNotification>;
   let activatedRouteStub: any;
 
   beforeEach(async () => {
@@ -113,6 +116,12 @@ describe('GameDetailComponent', () => {
     gamesRealtimeServiceSpy = jasmine.createSpyObj<GamesRealtimeService>('GamesRealtimeService', [], {
       events$: realtimeEventsSubject.asObservable()
     });
+    gameNotificationsSubject = new Subject<GameNotification>();
+    websocketServiceSpy = jasmine.createSpyObj<WebSocketService>(
+      'WebSocketService',
+      ['subscribeToGameEvents', 'unsubscribeFromGameEvents'],
+      { gameNotifications: gameNotificationsSubject.asObservable() }
+    );
     activatedRouteStub = { params: of({ id: '1' }) };
 
     gameDataServiceSpy.getGameById.and.returnValue(of(mockGame));
@@ -145,6 +154,7 @@ describe('GameDetailComponent', () => {
         { provide: UiErrorFeedbackService, useValue: uiFeedbackSpy },
         { provide: LoggerService, useValue: loggerSpy },
         { provide: GamesRealtimeService, useValue: gamesRealtimeServiceSpy },
+        { provide: WebSocketService, useValue: websocketServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRouteStub }
       ],
