@@ -2,7 +2,7 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;INIT=CREATE DOMAIN IF NOT EXISTS region_enum AS VARCHAR(255)\;CREATE DOMAIN IF NOT EXISTS user_role AS VARCHAR(255)\;CREATE DOMAIN IF NOT EXISTS pr_region AS VARCHAR(255)
+    url: jdbc:h2:mem:${random.uuid};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;INIT=CREATE DOMAIN IF NOT EXISTS region_enum AS VARCHAR(255)\;CREATE DOMAIN IF NOT EXISTS user_role AS VARCHAR(255)\;CREATE DOMAIN IF NOT EXISTS pr_region AS VARCHAR(255)\;CREATE DOMAIN IF NOT EXISTS draft_region_slot AS VARCHAR(255)
     username: sa
     password:
     driver-class-name: org.h2.Driver

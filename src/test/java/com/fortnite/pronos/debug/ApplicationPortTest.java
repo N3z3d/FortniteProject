@@ -10,7 +10,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 import com.fortnite.pronos.PronosApplication;
 import com.fortnite.pronos.config.TestSecurityConfig;
@@ -23,11 +22,6 @@ import com.fortnite.pronos.config.TestSecurityConfig;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = {PronosApplication.class, TestSecurityConfig.class})
 @ActiveProfiles("test")
-@TestPropertySource(
-    properties = {
-      "spring.datasource.url=jdbc:h2:mem:testdb",
-      "spring.jpa.hibernate.ddl-auto=create-drop"
-    })
 @DisplayName("Test TDD - Application sur Port 8080")
 class ApplicationPortTest {
 
