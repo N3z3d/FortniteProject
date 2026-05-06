@@ -1,15 +1,16 @@
 package com.fortnite.pronos.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -17,6 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import com.fortnite.pronos.controller.DraftSimultaneousController;
 import com.fortnite.pronos.service.admin.ErrorJournalService;
@@ -25,14 +28,15 @@ import com.fortnite.pronos.service.draft.DraftSimultaneousService;
 import com.fortnite.pronos.service.draft.DraftTrancheService;
 
 @WebMvcTest(controllers = DraftSimultaneousController.class)
-@AutoConfigureMockMvc(addFilters = true)
 @Import({SecurityConfig.class, SecurityTestBeansConfig.class})
 @ActiveProfiles("security-it")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @DisplayName("SecurityConfig — DraftSimultaneousController authorization")
 class SecurityConfigSimultaneousDraftAuthorizationTest {
 
-  @Autowired private MockMvc mockMvc;
+  @Autowired private WebApplicationContext webApplicationContext;
+
+  private MockMvc mockMvc;
 
   @org.springframework.boot.test.mock.mockito.MockBean
   private UserDetailsService userDetailsService;
@@ -62,6 +66,12 @@ class SecurityConfigSimultaneousDraftAuthorizationTest {
           + "\"playerId\":\""
           + UUID.randomUUID()
           + "\"}";
+
+  @BeforeEach
+  void configureSecurityAwareMockMvc() {
+    mockMvc =
+        MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+  }
 
   @Test
   @DisplayName("Unauthenticated user receives 401/403 on POST open-window")
