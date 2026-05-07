@@ -65,7 +65,8 @@ so that the project has a trustworthy CI/CD baseline without reintroducing obsol
   - [x] 5.2 Lancer `npm run test:vitest` depuis `frontend/`.
   - [x] 5.3 Lancer `npm run build` depuis `frontend/`.
   - [x] 5.4 Lancer `docker build --target production -t fortnite-ci-local .`.
-  - [ ] 5.5 Pousser sur `main` ou fournir la preuve du run GitHub Actions vert avant de passer la story en `done`.
+  - [x] 5.5 Fournir la preuve du run GitHub Actions vert sur la branche de stabilisation.
+  - [ ] 5.6 Avant passage `done`, merger/pousser sur `main` et verifier le run `main` avec Docker/GHCR non-skipped.
 
 ### Review Findings
 
@@ -172,6 +173,9 @@ GPT-5 Codex
 - 2026-04-30: Validations: check absence `continue-on-error` OK; check lint config OK; `mvn verify -B --no-transfer-progress` OK hors sandbox; `npm run test:vitest` OK; `npm run build` OK; `docker build --target production -t fortnite-ci-local .` OK.
 - 2026-05-05: Code review BMad executee; 2 patches appliques: summary Vitest robuste quand le step n'a pas tourne, et preuve GitHub Actions `main` remise en attente avant `done`.
 - 2026-05-05: Validations post-review: parse YAML `.github/workflows/ci.yml` OK; check lint config OK; `npm run test:vitest` OK; `npm run build` OK; `mvn verify -B --no-transfer-progress` OK; `docker build --target production -t fortnite-ci-local .` OK apres redemarrage Docker Desktop.
+- 2026-05-07: Branche `story/sprint19-bmad-stabilization` poussee et rendue verte en GitHub Actions apres corrections de stabilite tests Spring/H2/SecurityContext.
+- 2026-05-07: Run GitHub Actions vert `25480698230` sur `d2dff1a`: backend success, frontend success, Docker/GHCR skipped attendu hors `main`.
+- 2026-05-07: Validations locales complementaires: `mvn verify -B --no-transfer-progress`, sequence ciblee security/DB, sequence ciblee Linux via Docker.
 
 ### Completion Notes List
 
@@ -180,21 +184,30 @@ GPT-5 Codex
 - Le lint Angular n'est plus masque par `|| true`; l'absence de target lint est verifiee explicitement et echouera si une target apparait sans cablage CI.
 - Le job Docker GHCR conserve le push `latest` + SHA avec image lowercase et permissions minimales.
 - Le staging/deploy reste volontairement skipped avec un resume explicite; aucun hebergement ni secret n'a ete invente.
-- La story passe en `review`, pas en `done`: la preuve d'un run GitHub Actions vert sur `main` reste requise avant `done`.
+- La story reste en `review`, pas en `done`: le run de branche est vert, mais le run `main` reste requis pour verifier Docker/GHCR avant fermeture.
 - Les findings de code review ont ete traites; aucun item HIGH/MEDIUM ouvert ne reste dans la section Review Findings.
+- Les echecs CI backend observes apres push ont ete corriges sans elargir le scope staging: isolation H2, attachement explicite de Spring Security dans le test MVC, nettoyage du `SecurityContextHolder`.
 
 ### File List
 
 - `.github/workflows/ci.yml`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `_bmad-output/implementation-artifacts/sprint3-a3b-cicd-pipeline-complet.md`
+- `src/test/resources/application-test.yml`
+- `src/test/java/com/fortnite/pronos/debug/ApplicationPortTest.java`
+- `src/test/java/com/fortnite/pronos/debug/ApplicationStartupDiagnosticTest.java`
+- `src/test/java/com/fortnite/pronos/integration/DatabaseIntegrationTest.java`
+- `src/test/java/com/fortnite/pronos/config/SecurityConfigSimultaneousDraftAuthorizationTest.java`
+- `src/test/java/com/fortnite/pronos/config/WebSocketAuthInterceptorTest.java`
 
 ### Change Log
 
 - 2026-04-30: CI Vitest rendu bloquant, lint Angular remplace par check explicite, resume staging skipped ajoute, validations locales terminees.
 - 2026-05-05: Review follow-ups appliques: summary Vitest `not run` si skipped, task 5.5 reouverte jusqu'a preuve CI `main`.
+- 2026-05-07: CI de branche rendue verte (`25480698230`) via stabilisation des tests backend; passage `done` garde le gate `main`/GHCR.
 
 ### Questions / Decisions to Confirm Before `done`
 
 - Une vraie cible staging existe-t-elle deja dans GitHub Environments avec secrets configures ? Si non, la partie deploy doit rester explicitement skipped et ne doit pas bloquer la consolidation CI/GHCR.
-- Le repo veut-il migrer le job Docker CLI vers les actions Docker officielles, ou garder le CLI direct pour minimiser le diff ? Les deux sont acceptables si les AC sont satisfaits et documentes.
+- Decision prise: garder le Docker CLI direct pour minimiser le diff tant que les AC sont satisfaits; migrer vers les actions Docker officielles seulement dans une story dediee.
+- Action risquee restante: merger/pousser sur `main` pour obtenir le run `main` et le Docker/GHCR non-skipped avant `done`.
