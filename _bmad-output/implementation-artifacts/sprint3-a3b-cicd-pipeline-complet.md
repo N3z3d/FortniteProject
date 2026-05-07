@@ -1,6 +1,6 @@
 # Story Sprint3-A3b: Pipeline CI/CD complet
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint3-a3b-cicd-pipeline-complet
@@ -66,7 +66,7 @@ so that the project has a trustworthy CI/CD baseline without reintroducing obsol
   - [x] 5.3 Lancer `npm run build` depuis `frontend/`.
   - [x] 5.4 Lancer `docker build --target production -t fortnite-ci-local .`.
   - [x] 5.5 Fournir la preuve du run GitHub Actions vert sur la branche de stabilisation.
-  - [ ] 5.6 Avant passage `done`, merger/pousser sur `main` et verifier le run `main` avec Docker/GHCR non-skipped.
+  - [x] 5.6 Avant passage `done`, merger/pousser sur `main` et verifier le run `main` avec Docker/GHCR non-skipped.
 
 ### Review Findings
 
@@ -176,6 +176,7 @@ GPT-5 Codex
 - 2026-05-07: Branche `story/sprint19-bmad-stabilization` poussee et rendue verte en GitHub Actions apres corrections de stabilite tests Spring/H2/SecurityContext.
 - 2026-05-07: Run GitHub Actions vert `25480698230` sur `d2dff1a`: backend success, frontend success, Docker/GHCR skipped attendu hors `main`.
 - 2026-05-07: Validations locales complementaires: `mvn verify -B --no-transfer-progress`, sequence ciblee security/DB, sequence ciblee Linux via Docker.
+- 2026-05-07: Fast-forward `main` confirme et pousse sur `ea5ed89`; run GitHub Actions `25484065848` vert avec backend success, frontend success, Docker build + push GHCR success.
 
 ### Completion Notes List
 
@@ -184,7 +185,7 @@ GPT-5 Codex
 - Le lint Angular n'est plus masque par `|| true`; l'absence de target lint est verifiee explicitement et echouera si une target apparait sans cablage CI.
 - Le job Docker GHCR conserve le push `latest` + SHA avec image lowercase et permissions minimales.
 - Le staging/deploy reste volontairement skipped avec un resume explicite; aucun hebergement ni secret n'a ete invente.
-- La story reste en `review`, pas en `done`: le run de branche est vert, mais le run `main` reste requis pour verifier Docker/GHCR avant fermeture.
+- La story est passee en `done` apres validation `main`: le run GitHub Actions `25484065848` prouve backend, frontend et Docker/GHCR verts.
 - Les findings de code review ont ete traites; aucun item HIGH/MEDIUM ouvert ne reste dans la section Review Findings.
 - Les echecs CI backend observes apres push ont ete corriges sans elargir le scope staging: isolation H2, attachement explicite de Spring Security dans le test MVC, nettoyage du `SecurityContextHolder`.
 
@@ -205,9 +206,10 @@ GPT-5 Codex
 - 2026-04-30: CI Vitest rendu bloquant, lint Angular remplace par check explicite, resume staging skipped ajoute, validations locales terminees.
 - 2026-05-05: Review follow-ups appliques: summary Vitest `not run` si skipped, task 5.5 reouverte jusqu'a preuve CI `main`.
 - 2026-05-07: CI de branche rendue verte (`25480698230`) via stabilisation des tests backend; passage `done` garde le gate `main`/GHCR.
+- 2026-05-07: `main` fast-forward sur `ea5ed89`; CI `main` verte (`25484065848`) avec Docker/GHCR success; story fermee.
 
-### Questions / Decisions to Confirm Before `done`
+### Decisions Confirmed for `done`
 
-- Une vraie cible staging existe-t-elle deja dans GitHub Environments avec secrets configures ? Si non, la partie deploy doit rester explicitement skipped et ne doit pas bloquer la consolidation CI/GHCR.
+- Aucune cible staging publique n'est inventee dans cette story; la partie deploy reste explicitement skipped hors decision produit/hebergement.
 - Decision prise: garder le Docker CLI direct pour minimiser le diff tant que les AC sont satisfaits; migrer vers les actions Docker officielles seulement dans une story dediee.
-- Action risquee restante: merger/pousser sur `main` pour obtenir le run `main` et le Docker/GHCR non-skipped avant `done`.
+- Action risquee `main` confirmee par l'utilisateur et executee: run `25484065848` vert avec Docker/GHCR non-skipped.

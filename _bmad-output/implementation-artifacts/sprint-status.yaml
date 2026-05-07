@@ -39,7 +39,7 @@ project: FortniteProject
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
-last_updated: 2026-04-30
+last_updated: 2026-05-07
 
 # Low findings counter (retro action G4b)
 low_findings_pending: 39
@@ -284,7 +284,7 @@ development_status:
   sprint3-a3a-cicd-pipeline-minimal: done  # .github/workflows/ci.yml créé, 3 jobs: backend+frontend+docker
 
   # A3b — Pipeline complet : docker build + push registry + deploy staging (stretch)
-  sprint3-a3b-cicd-pipeline-complet: review
+  sprint3-a3b-cicd-pipeline-complet: done
 
   # ----------------------------------------------------------
   # Phase 4 — Sécurité résiduelle (TECH-017F plan résiduel)
