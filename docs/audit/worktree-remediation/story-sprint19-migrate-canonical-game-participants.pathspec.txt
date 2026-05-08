@@ -1,0 +1,12 @@
+src/main/java/com/fortnite/pronos/dto/mapper/GameDtoMapper.java
+src/main/java/com/fortnite/pronos/service/game/GameDraftLookupService.java
+src/main/java/com/fortnite/pronos/service/game/GameDraftReadinessService.java
+src/main/java/com/fortnite/pronos/service/game/GameDraftService.java
+src/test/java/com/fortnite/pronos/domain/game/model/GameDomainModelTest.java
+src/test/java/com/fortnite/pronos/dto/mapper/GameDtoMapperTest.java
+src/test/java/com/fortnite/pronos/service/game/GameCreationServiceTest.java
+src/test/java/com/fortnite/pronos/service/game/GameDraftLookupServiceTest.java
+src/test/java/com/fortnite/pronos/service/game/GameDraftReadinessServiceTest.java
+src/test/java/com/fortnite/pronos/service/game/GameDraftServiceDomainMigrationTest.java
+src/test/java/com/fortnite/pronos/service/game/GameDraftServiceTddTest.java
+src/test/java/com/fortnite/pronos/service/GameServiceTddTest.java

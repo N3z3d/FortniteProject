@@ -1,0 +1,4 @@
+frontend/src/app/features/draft/guards/draft-audit.guard.spec.ts
+frontend/src/app/features/draft/guards/draft-audit.guard.ts
+frontend/src/app/features/draft/guards/simultaneous-mode.guard.spec.ts
+frontend/src/app/features/draft/guards/simultaneous-mode.guard.ts

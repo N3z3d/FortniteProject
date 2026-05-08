@@ -1,0 +1,16 @@
+frontend/src/app/core/services/websocket.service.spec.ts
+frontend/src/app/core/services/websocket.service.ts
+frontend/src/app/features/draft/components/draft-player-list/draft-player-list.component.ts
+frontend/src/app/features/draft/components/draft-roster/draft-roster.component.ts
+frontend/src/app/features/draft/components/draft-timer/draft-timer.component.spec.ts
+frontend/src/app/features/draft/components/draft-timer/draft-timer.component.ts
+frontend/src/app/features/draft/components/draft-waiting-page/draft-waiting-page.component.html
+frontend/src/app/features/draft/components/draft-waiting-page/draft-waiting-page.component.scss
+frontend/src/app/features/draft/components/draft-waiting-page/draft-waiting-page.component.spec.ts
+frontend/src/app/features/draft/components/draft-waiting-page/draft-waiting-page.component.ts
+frontend/src/app/features/draft/components/snake-draft-page/snake-draft-page.component.html
+frontend/src/app/features/draft/components/snake-draft-page/snake-draft-page.component.scss
+frontend/src/app/features/draft/components/snake-draft-page/snake-draft-page.component.spec.ts
+frontend/src/app/features/draft/components/snake-draft-page/snake-draft-page.component.ts
+frontend/src/app/features/draft/guards/draft-status.guard.spec.ts
+frontend/src/app/features/game/game-routing.module.ts
