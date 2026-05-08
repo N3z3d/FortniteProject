@@ -1,0 +1,6 @@
+frontend/src/app/features/game/join-game/join-game.component.spec.ts
+frontend/src/app/features/game/join-game/join-game.component.ts
+frontend/src/app/features/game/services/join-error-message.resolver.ts
+frontend/src/app/shared/components/main-layout/main-layout.component.spec.ts
+src/main/java/com/fortnite/pronos/controller/GameInvitationCodeRequestHandler.java
+src/test/java/com/fortnite/pronos/repository/GameRepositoryInvitationCodeLockTest.java

@@ -1,0 +1,14 @@
+frontend/src/app/features/game/game-detail/game-detail.component.spec.ts
+frontend/src/app/features/game/game-detail/game-detail.component.tdd.spec.ts
+frontend/src/app/features/game/game-detail/game-detail.component.ts
+frontend/src/app/features/game/game-home/game-home.component.spec.ts
+frontend/src/app/features/game/game-home/game-home.component.template.spec.ts
+frontend/src/app/features/game/game-home/game-home.component.ts
+frontend/src/assets/i18n/en.json
+frontend/src/assets/i18n/es.json
+frontend/src/assets/i18n/fr.json
+frontend/src/assets/i18n/pt.json
+src/main/java/com/fortnite/pronos/controller/GameController.java
+src/main/java/com/fortnite/pronos/domain/game/model/Game.java
+src/main/java/com/fortnite/pronos/service/GameService.java
+src/test/java/com/fortnite/pronos/controller/GameControllerConfigurePeriodTest.java

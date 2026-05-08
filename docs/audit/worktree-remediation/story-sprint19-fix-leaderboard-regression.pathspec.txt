@@ -1,0 +1,2 @@
+frontend/src/app/features/leaderboard/simple-leaderboard.component.html
+frontend/src/app/features/leaderboard/simple-leaderboard.component.scss

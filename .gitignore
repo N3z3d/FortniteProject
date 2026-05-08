@@ -81,3 +81,9 @@ frontend/test-results/
 frontend/vitest-ci.log
 frontend/vitest-z1-report.json
 tmp_npm_audit_*.json
+
+# Local caches and user-scoped generated files
+.m2/
+_bmad/**/*.bak
+_bmad/config.user.toml
+_bmad/custom/*.user.toml

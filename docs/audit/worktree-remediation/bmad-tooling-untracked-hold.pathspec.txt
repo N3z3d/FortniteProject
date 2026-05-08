@@ -1,0 +1,6 @@
+_bmad/_config/skill-manifest.csv
+_bmad/config.toml
+_bmad/custom/.gitignore
+_bmad/custom/config.toml
+_bmad/scripts/resolve_config.py
+_bmad/scripts/resolve_customization.py

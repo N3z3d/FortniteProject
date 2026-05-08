@@ -1,0 +1,110 @@
+# Sprint 19 Worktree Remediation - Verification Snapshot
+
+Date: 2026-05-08
+Scope: local verification evidence for `sprint19-worktree-remediation` after re-review patches.
+
+## Commands and Results
+
+```powershell
+git status --porcelain=v1 -uall | Measure-Object
+```
+
+Result:
+
+```text
+Count    : 214
+Average  :
+Sum      :
+Maximum  :
+Minimum  :
+Property :
+```
+
+```powershell
+git status --porcelain=v1 -uall -- _bmad .claude .cursor .codex-home
+```
+
+Result:
+
+```text
+?? _bmad/_config/skill-manifest.csv
+?? _bmad/config.toml
+?? _bmad/custom/.gitignore
+?? _bmad/custom/config.toml
+?? _bmad/scripts/resolve_config.py
+?? _bmad/scripts/resolve_customization.py
+```
+
+```powershell
+git diff --cached --name-status
+```
+
+Result: empty output.
+
+```powershell
+git status --porcelain=v1 -- _bmad-output/implementation-artifacts/sprint19-fix-draft-button-guard.md
+```
+
+Result:
+
+```text
+ M _bmad-output/implementation-artifacts/sprint19-fix-draft-button-guard.md
+```
+
+```powershell
+git check-ignore -v .m2/repository/foo _bmad/config.user.toml _bmad/generated.bak .agents/skills/bmad-code-review/SKILL.md _bmad/gds/example.txt .claude/commands/example.md
+```
+
+Result:
+
+```text
+.gitignore:86:.m2/	.m2/repository/foo
+.gitignore:88:_bmad/config.user.toml	_bmad/config.user.toml
+.gitignore:87:_bmad/**/*.bak	_bmad/generated.bak
+.git/info/exclude:13:.agents/	.agents/skills/bmad-code-review/SKILL.md
+.git/info/exclude:37:_bmad/gds/	_bmad/gds/example.txt
+.git/info/exclude:31:.claude/commands/	.claude/commands/example.md
+```
+
+```powershell
+git diff --check -- .gitignore _bmad-output/implementation-artifacts/sprint-status.yaml _bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md
+```
+
+Result: exit code 0. Git emitted Windows line-ending warnings only (`LF will be replaced by CRLF`); no whitespace errors were reported.
+
+```powershell
+$problems = @()
+$paths = Get-Content docs\audit\worktree-remediation\remediation-commit.pathspec.txt | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+foreach ($p in $paths) {
+  git ls-files --error-unmatch -- $p *> $null
+  if ($LASTEXITCODE -ne 0) {
+    $output = git diff --no-index --check -- /dev/null $p 2>&1
+    $bad = $output | Where-Object { $_ -and ($_ -notmatch '^warning: in the working copy of ') }
+    if ($bad) { $problems += ($bad | ForEach-Object { "$p :: $_" }) }
+  }
+}
+if ($problems.Count -gt 0) { $problems; exit 1 } else { 'NO_WHITESPACE_ERRORS' }
+```
+
+Result:
+
+```text
+NO_WHITESPACE_ERRORS
+```
+
+```powershell
+$a = Get-Content docs\audit\worktree-remediation\remediation-docs.pathspec.txt
+$b = Get-Content docs\audit\worktree-remediation\bmad-artifacts.pathspec.txt
+$overlap = $a | Where-Object { $b -contains $_ }
+if ($overlap) { $overlap } else { 'NO_OVERLAP' }
+```
+
+Result:
+
+```text
+NO_OVERLAP
+```
+
+## Reproducibility Note
+
+The generated-directory counts are local to this worktree because broad agent/IDE patterns live in `.git/info/exclude`. To reproduce the same visible status in another clone, apply the patterns from `local-exclude-patterns.snapshot.txt` to that clone's `.git/info/exclude`, then rerun the commands above.
