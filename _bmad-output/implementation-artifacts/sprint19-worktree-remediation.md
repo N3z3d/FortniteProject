@@ -1,6 +1,6 @@
 # Story: sprint19-worktree-remediation - Remise a plat concrete du worktree Git
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint19-worktree-remediation
@@ -230,7 +230,8 @@ Tests/validations requis:
 - Les suppressions suivies d'outillage ont ete restaurees depuis `HEAD`, decision la plus fiable pour eviter un commit tooling massif non valide.
 - Les pathspecs ont ete regeneres apres remediation; `tooling-tracked-deletions.pathspec.txt` et `tooling-tracked-modified.pathspec.txt` sont maintenant vides.
 - Le worktree visible est passe d'environ 31k+ entrees a 191 entrees intentionnelles apres follow-up de review: changements applicatifs par story, artefacts BMAD, docs de remediation, 6 fichiers `_bmad` tooling en hold et fichiers racine a confirmer.
-- La story reste en `review`, et non `done`, tant que le lot de remediation n'a pas de reference Git/PR documentee.
+- Reference Git du lot remediation: `772e5da` (`docs(bmad): document sprint19 worktree remediation`).
+- La story est passee en `done` apres commit du lot remediation et documentation de la reference Git.
 - Rapport final cree: `docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md`.
 
 ### File List
@@ -282,3 +283,4 @@ Tests/validations requis:
 - 2026-05-09: Code review follow-up applique: story et sprint-status remis en `review`, controles untracked/hold renforces, procedure commit/reference Git clarifiee.
 - 2026-05-09: Code review remediation appliquee: decisions AC7 par lot ajoutees, procedure PR/push corrigee, controles status/hold/classification renforces; story conservee en `review` jusqu'a reference Git/PR.
 - 2026-05-09: Code review patches appliquees: parsing status `-z` avec conservation `XY`, diff status-aware renforce, preuve `Status: review` canonique et overlap hold bidirectionnel.
+- 2026-05-10: Lot remediation commite (`772e5da`), reference Git documentee, story et sprint-status passes en `done`.
