@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of sprint19-git-worktree-hygiene (2026-05-09)
+
+- Historical Sprint 19 `done` statuses remain plain `done` because those stories were functionally accepted before Git remediation. See `docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md` section "Decisions AC7 par lot Sprint 19" for the per-story non-commit decisions and release block. Future stories must not move to `done` without a Git/PR reference.
+
 ## Deferred from: code review of sprint19-migrate-canonical-game-participants (2026-04-30)
 
 - Creer un epic/story dedie `git-worktree-hygiene`: separer les changements applicatifs des regenerations BMAD/IDE, auditer les suppressions `.claude`/`.cursor`/`_bmad`, definir une strategie de branches par story et documenter une procedure de push/commit propre. Le worktree actuel est trop large pour etre nettoye sans risque dans une story fonctionnelle.

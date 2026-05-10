@@ -1,7 +1,7 @@
 # Sprint 19 Worktree Remediation - Verification Snapshot
 
-Date: 2026-05-08
-Scope: local verification evidence for `sprint19-worktree-remediation` after re-review patches.
+Date: 2026-05-09
+Scope: local verification evidence for `sprint19-worktree-remediation` after code review follow-up patches.
 
 ## Commands and Results
 
@@ -12,7 +12,7 @@ git status --porcelain=v1 -uall | Measure-Object
 Result:
 
 ```text
-Count    : 214
+Count    : 191
 Average  :
 Sum      :
 Maximum  :
@@ -67,10 +67,30 @@ Result:
 ```
 
 ```powershell
-git diff --check -- .gitignore _bmad-output/implementation-artifacts/sprint-status.yaml _bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md
+git diff --check -- .gitignore _bmad-output/implementation-artifacts/deferred-work.md _bmad-output/implementation-artifacts/sprint-status.yaml _bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md _bmad-output/implementation-artifacts/sprint19-worktree-remediation.md docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md docs/audit/worktree-remediation/README.md docs/audit/worktree-remediation/bmad-artifacts.pathspec.txt docs/audit/worktree-remediation/remediation-commit.pathspec.txt docs/audit/worktree-remediation/review-verification.snapshot.txt
 ```
 
 Result: exit code 0. Git emitted Windows line-ending warnings only (`LF will be replaced by CRLF`); no whitespace errors were reported.
+
+```powershell
+$storyStatusMatches = @(Select-String -Path _bmad-output\implementation-artifacts\sprint19-worktree-remediation.md -Pattern '^Status:\s+review\s*$')
+$allStoryStatusLines = @(Select-String -Path _bmad-output\implementation-artifacts\sprint19-worktree-remediation.md -Pattern '^Status:')
+if ($storyStatusMatches.Count -ne 1 -or $allStoryStatusLines.Count -ne 1 -or $storyStatusMatches[0].LineNumber -ne 3) {
+  $allStoryStatusLines
+  exit 1
+}
+$statusMatches = Select-String -Path _bmad-output\implementation-artifacts\sprint-status.yaml -Pattern '^\s*sprint19-worktree-remediation:\s+review\s*$'
+if ($statusMatches.Count -ne 1) { $statusMatches; exit 1 }
+$storyStatusMatches
+$statusMatches
+```
+
+Result:
+
+```text
+_bmad-output\implementation-artifacts\sprint19-worktree-remediation.md:3:Status: review
+_bmad-output\implementation-artifacts\sprint-status.yaml:1389:  sprint19-worktree-remediation: review
+```
 
 ```powershell
 $problems = @()
@@ -103,6 +123,92 @@ Result:
 
 ```text
 NO_OVERLAP
+```
+
+```powershell
+$commit = Get-Content docs\audit\worktree-remediation\remediation-commit.pathspec.txt | Where-Object { $_ }
+$holdFiles = @(
+  Get-ChildItem docs\audit\worktree-remediation -Filter '*hold*.pathspec.txt'
+  Get-ChildItem docs\audit\worktree-remediation -Filter '*.hold.txt'
+) | Sort-Object FullName -Unique
+function Normalize-PathspecValue($value) {
+  param($value)
+  $p = $value.Trim().Trim('"').Replace('\', '/').TrimEnd('/').ToLowerInvariant()
+  if ($p -eq '' -or $p.StartsWith('#')) { return $null }
+  return $p
+}
+$normalizedCommit = $commit | ForEach-Object { Normalize-PathspecValue $_ } | Where-Object { $_ }
+$overlaps = foreach ($file in $holdFiles) {
+  $hold = Get-Content $file.FullName | ForEach-Object { Normalize-PathspecValue $_ } | Where-Object { $_ }
+  foreach ($rawPath in $hold) {
+    foreach ($candidate in $normalizedCommit) {
+      if ($candidate -eq $rawPath -or $candidate.StartsWith("$rawPath/") -or $rawPath.StartsWith("$candidate/")) {
+        "$($file.Name): $rawPath -> $candidate"
+      }
+    }
+  }
+}
+if ($overlaps) { $overlaps } else { 'NO_COMMIT_HOLD_OVERLAP' }
+```
+
+Result:
+
+```text
+NO_COMMIT_HOLD_OVERLAP
+```
+
+```powershell
+function Normalize-PathspecValue($value) {
+  $p = $value.Trim().Trim('"').Replace('\', '/').TrimEnd('/').ToLowerInvariant()
+  if ($p -eq '' -or $p.StartsWith('#')) { return $null }
+  return $p
+}
+function Convert-GitStatusZ($text) {
+  $records = $text -split "`0" | Where-Object { $_ }
+  for ($i = 0; $i -lt $records.Count; $i++) {
+    if ($records[$i].Length -lt 4) { throw "Malformed git status record: $($records[$i])" }
+    $xy = $records[$i].Substring(0, 2)
+    $path = Normalize-PathspecValue $records[$i].Substring(3)
+    if ($xy -match '[RC]') {
+      $source = if ($i + 1 -lt $records.Count) { Normalize-PathspecValue $records[++$i] } else { '<missing-source>' }
+      [pscustomobject]@{ XY = $xy; Path = $path; Source = $source }
+    } else {
+      [pscustomobject]@{ XY = $xy; Path = $path; Source = $null }
+    }
+  }
+}
+$statusEntries = @(Convert-GitStatusZ (git status --porcelain=v1 -z -uall))
+$unsafeStatus = $statusEntries | Where-Object {
+  $_.XY -match '[DRCTU]' -or ($_.XY[0] -ne ' ' -and $_.XY -ne '??')
+}
+if ($unsafeStatus) {
+  $unsafeStatus | ForEach-Object { "UNSAFE_STATUS $($_.XY) $($_.Path)" }
+  exit 1
+}
+$statusPaths = $statusEntries.Path | Where-Object { $_ } | Sort-Object -Unique
+$files = @(
+  Get-ChildItem docs\audit\worktree-remediation\*.pathspec.txt
+  Get-ChildItem docs\audit\worktree-remediation\*.hold.txt
+) | Sort-Object FullName -Unique
+$classifiers = foreach ($file in $files) {
+  Get-Content $file.FullName | ForEach-Object { Normalize-PathspecValue $_ }
+}
+$classifiers = $classifiers | Where-Object { $_ } | Sort-Object -Unique
+$uncovered = foreach ($path in $statusPaths) {
+  $covered = $false
+  foreach ($entry in $classifiers) {
+    if ($path -eq $entry -or $path.StartsWith("$entry/")) { $covered = $true; break }
+  }
+  if (-not $covered) { $path }
+}
+if ($uncovered) { $uncovered } else { 'NO_UNSAFE_STATUS_STATES'; 'NO_UNCLASSIFIED_STATUS_PATHS' }
+```
+
+Result:
+
+```text
+NO_UNSAFE_STATUS_STATES
+NO_UNCLASSIFIED_STATUS_PATHS
 ```
 
 ## Reproducibility Note

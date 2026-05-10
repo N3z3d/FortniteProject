@@ -55,7 +55,7 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 
 ### Review Findings
 
-- [x] [Review][Decision] Decider le sort de `sprint19-worktree-remediation: done` absent du lot de revue - Resolu: statut retire du lot hygiene; la remediation devra etre revue dans son propre lot avec story/reference Git.
+- [x] [Review][Decision] Decider le sort de `sprint19-worktree-remediation: done` absent du lot de revue - Resolu: la remediation est traitee dans sa story dediee avec rapport, pathspec et preuves; le rapport hygiene reste un snapshot d'audit.
 - [x] [Review][Decision] Definir la politique pour les stories Sprint 19 deja `done` mais encore sales - Resolu: politique documentee dans le rapport; les `done` historiques sont conserves comme acceptation fonctionnelle, mais bloques release/push jusqu'a isolation, revue et reference Git.
 - [x] [Review][Patch] Inventaire des fichiers inconnus contradictoire [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:28] - Corrige: categorie inconnus/a confirmer alignee a 6 et migration V49 listee separement.
 - [x] [Review][Patch] Totaux outillage agents/IDE non reconciliables avec le detail top-level [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:25] - Corrige: total marque approximatif et ligne groupee clarifiee comme non utilisable pour suppression.
@@ -63,6 +63,16 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - [x] [Review][Patch] Audit des suppressions d'outillage trop groupe pour une decision de suppression controlee [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:67] - Corrige: rapport precise qu'il ne valide aucune suppression et donne la commande de rapport fichier par fichier.
 - [x] [Review][Patch] Commande d'aggregation top-level non documentee/reproductible [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:10] - Corrige: commande PowerShell d'aggregation ajoutee.
 - [x] [Review][Patch] `spotless:apply` presente comme validation pure alors qu'il peut modifier le worktree [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:106] - Corrige: `spotless:apply` decrit comme etape potentiellement mutante, suivie de `git diff --check` et tests.
+- [x] [Review][Decision] Scope of `sprint19-worktree-remediation: done` in hygiene review - Resolu: revue elargie au lot remediation; `sprint19-worktree-remediation` possede une story dediee, un rapport final, un pathspec de commit unique et des preuves de verification. Les corrections de follow-up ont classe `deferred-work.md` pour eviter un staging implicite hors lot.
+- [x] [Review][Patch] Historical audit snapshot lacks reproducible raw evidence/canonical category inventory - Corrige: rapport marque comme snapshot historique, renvoie vers `SPRINT19_WORKTREE_REMEDIATION_LOG.md` et `review-verification.snapshot.txt` pour les preuves executables.
+- [x] [Review][Patch] Tooling deletion audit is grouped and not sufficient for controlled deletion decisions - Corrige: le rapport hygiene precise qu'il ne valide aucune suppression; le lot remediation porte les pathspecs et decisions restantes.
+- [x] [Review][Patch] Procedure should preserve Git XY status and compare cached vs unstaged name-status before staging - Corrige: procedure renforcee avec statut `XY`, `git diff --cached --name-status` et `git diff --name-status`.
+- [x] [Review][Patch] `spotless:apply` after staging can desynchronize index/worktree - Corrige: procedure modifiee pour lancer les formatters avant staging ou reverifier/restager ensuite.
+- [x] [Review][Patch] Commit/PR reference update is documented after push without a second docs commit/PR-reference step - Corrige: procedure exige une reference Git apres commit via second commit docs ou reference PR, sans amend du meme commit pour y inscrire son propre hash.
+- [x] [Review][Patch] Deletion-report command misses staged deletions (`D  path`) - Corrige: commande de rapport controle les deux colonnes porcelain via `Status.Contains('D')`.
+- [x] [Review][Patch] `git diff --no-index -- NUL <path>` expected exit code 1 is not documented - Corrige: procedure documente que le code 1 signifie "diff trouve".
+- [x] [Review][Patch] Review metadata has stale line refs, self-certified closure, and no 2026-05-08/09 hygiene changelog entry - Corrige: findings de follow-up sans refs de lignes fragiles, changelog et File List mis a jour.
+- [x] [Review][Defer] Historical Sprint 19 `done` statuses remain plain `done` while release/push is blocked - deferred, pre-existing; see `docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md` section "Regle sprint-status".
 
 ## Dev Notes
 
@@ -94,13 +104,14 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - Les suppressions/regenerations `.claude`, `.cursor`, `.codex-home`, `_bmad`, `.agents`, `.m2` et dossiers agents/IDE sont separees du scope applicatif avec decision `ne pas committer sans validation tooling`.
 - Une procedure BMAD explicite interdit `git add -A`, impose le staging par pathspec, le controle `git diff --cached --check`, les validations ciblees et une branche par story.
 - La regle sprint-status est documentee: aucune story `done` sans hash/PR/reference Git, code review requise pour le code et File List complete.
-- Code review appliquee: statut remediation retire du lot hygiene, politique Sprint 19 release-block documentee, compteurs/commandes d'audit clarifies; la story reste en `review` jusqu'a commit/reference Git.
+- Code review appliquee: le lot hygiene reste un audit snapshot; le statut remediation est justifie par la story dediee `sprint19-worktree-remediation` et ses artefacts de verification; la story hygiene reste en `review` jusqu'a commit/reference Git du follow-up.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md`
+- `_bmad-output/implementation-artifacts/deferred-work.md`
 
 ### Change Log
 
@@ -108,3 +119,4 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - 2026-05-07: Story demarree en `in-progress` via `bmad-dev-story`.
 - 2026-05-07: Rapport d'audit Git/worktree cree; tasks 1 a 3 completees; story passee en `review`.
 - 2026-05-07: Code review hygiene appliquee; story maintenue en `review` tant que le commit/reference Git n'existe pas.
+- 2026-05-09: Follow-up code review applique: revue elargie au lot remediation, procedure hygiene renforcee, `deferred-work.md` classe dans le lot BMAD de review.
