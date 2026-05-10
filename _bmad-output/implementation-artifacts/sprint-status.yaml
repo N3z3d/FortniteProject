@@ -39,7 +39,7 @@ project: FortniteProject
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
-last_updated: 2026-05-08
+last_updated: 2026-05-09
 
 # Low findings counter (retro action G4b)
 low_findings_pending: 39
@@ -1386,6 +1386,6 @@ sprint-19:
 
   # Process follow-up - separer code applicatif, artefacts BMAD et regenerations agents/IDE
   sprint19-git-worktree-hygiene: review
-  sprint19-worktree-remediation: done
+  sprint19-worktree-remediation: review
 
   sprint19-retrospective: optional

@@ -1,1 +1,2 @@
 _bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md
+_bmad-output/implementation-artifacts/deferred-work.md

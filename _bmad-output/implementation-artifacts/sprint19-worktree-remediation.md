@@ -1,6 +1,6 @@
 # Story: sprint19-worktree-remediation - Remise a plat concrete du worktree Git
 
-Status: done
+Status: review
 
 <!-- METADATA
   story_key: sprint19-worktree-remediation
@@ -113,6 +113,24 @@ Decision de story:
 - [x] [Review][Patch] Modified `sprint19-fix-draft-button-guard.md` was hidden in historical hold [docs/audit/worktree-remediation/bmad-artifacts-historical-hold.pathspec.txt] - fixed by moving it to `bmad-artifacts-modified-hold.pathspec.txt` with a separate commit/revert decision.
 - [x] [Review][Patch] Cache `.m2/` lacked an explicit pathspec lot [docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md:16] - fixed by adding `cache-local-ignored.pathspec.txt`.
 - [x] [Review][Patch] BMAD prompt was documented as an invalid PowerShell command [docs/audit/worktree-remediation/README.md:21] - fixed by labeling it as a BMAD chat prompt, not a PowerShell command.
+- [x] [Review][Patch] Remediation story can be `done` without its own Git reference [_bmad-output/implementation-artifacts/sprint19-worktree-remediation.md:3] - fixed by returning the story and sprint-status entry to `review` until a Git reference exists.
+- [x] [Review][Patch] Untracked files are not covered by the diff comparison guard [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:145] - fixed by requiring post-staging `git status --porcelain=v1 -uall` and explicit `??` review.
+- [x] [Review][Patch] Commit-reference procedure is ordered ambiguously [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:151] - fixed by documenting commit -> second docs commit or PR reference -> push sequencing.
+- [x] [Review][Patch] Hold-overlap verification can false-negative on non-`.pathspec.txt` hold lists [docs/audit/worktree-remediation/review-verification.snapshot.txt:110] - fixed by checking both `*hold*.pathspec.txt` and `*.hold.txt` with exact and directory-prefix matching.
+- [x] [Review][Patch] Deferred AC7 evidence uses a fragile stale line reference [_bmad-output/implementation-artifacts/deferred-work.md:5] - fixed by replacing the line-number reference with stable section/file references.
+- [x] [Review][Patch] Deletion-report command parses non-`-z` porcelain output too loosely [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:98] - fixed by documenting a `git diff --name-status -z --diff-filter=D` based report.
+- [x] [Review][Patch] Hold-list staging wording can be read as excluding the hold-list file itself [docs/audit/worktree-remediation/README.md:83] - fixed by clarifying that the hold-list file is documentation staged by the remediation aggregate, while its listed content is not staged.
+- [x] [Review][Decision] AC7 remains deferred for historical `done` stories - resolved: historical `done` statuses are kept for accepted work, but each remaining uncommitted Sprint 19 lot now has an explicit temporary non-commit/release-block decision in `SPRINT19_WORKTREE_REMEDIATION_LOG.md`.
+- [x] [Review][Patch] PR reference flow still marks `done` before the initial push/PR can exist [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:164] - fixed by documenting commit -> push/open PR -> document reference -> push docs/status -> mark `done`.
+- [x] [Review][Patch] Post-staging guard only classifies `??` and unstaged `M` statuses [docs/audit/worktree-remediation/README.md:73] - fixed by requiring every non-clean porcelain entry and preserving full `XY` status.
+- [x] [Review][Patch] Hold-overlap verification does not normalize Git pathspec directory semantics [docs/audit/worktree-remediation/review-verification.snapshot.txt:120] - fixed with normalized slash/case comparison and exact plus directory-prefix matching.
+- [x] [Review][Patch] No verification proves every remaining visible status entry is classified [docs/audit/worktree-remediation/review-verification.snapshot.txt:120] - fixed by adding `NO_UNCLASSIFIED_STATUS_PATHS` verification against all story/remediation/hold pathspec files.
+- [x] [Review][Patch] Sprint-status verification can pass on stale or commented text [docs/audit/worktree-remediation/review-verification.snapshot.txt:75] - fixed with an anchored unique-match check for `sprint19-worktree-remediation: review`.
+- [x] [Review][Patch] Controlled deletion report example omits required decision fields [docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md:97] - fixed by emitting `Fichier | Raison | References | Decision` placeholders before any deletion/restoration action.
+- [x] [Review][Patch] Status classification proof drops Git `XY` state and parses non-`-z` porcelain unsafely [docs/audit/worktree-remediation/review-verification.snapshot.txt:160] - fixed by parsing `git status --porcelain=v1 -z -uall`, preserving `XY`, and failing unsafe statuses before classification.
+- [x] [Review][Patch] Status-aware diff example can miss staged-only, deleted, renamed, copied, or typechanged paths [docs/audit/worktree-remediation/README.md:56] - fixed with a full `XY` status-aware snippet and matching hygiene procedure updates.
+- [x] [Review][Patch] Story status proof does not require a unique canonical `Status: review` line [docs/audit/worktree-remediation/review-verification.snapshot.txt:76] - fixed by requiring exactly one story status line, exactly one `Status: review`, and line 3.
+- [x] [Review][Patch] Hold overlap proof only checks one directory-containment direction [docs/audit/worktree-remediation/review-verification.snapshot.txt:137] - fixed by checking exact match plus both directory-containment directions.
 
 ## Dev Notes
 
@@ -211,7 +229,8 @@ Tests/validations requis:
 - Les caches et fichiers user-scoped (`.m2`, backups `_bmad/**/*.bak`, configs `*.user.toml`) sont exclus via `.gitignore`; les dossiers agents/IDE generes restent exclus localement via `.git/info/exclude` pour ne pas masquer du tooling projet versionnable.
 - Les suppressions suivies d'outillage ont ete restaurees depuis `HEAD`, decision la plus fiable pour eviter un commit tooling massif non valide.
 - Les pathspecs ont ete regeneres apres remediation; `tooling-tracked-deletions.pathspec.txt` et `tooling-tracked-modified.pathspec.txt` sont maintenant vides.
-- Le worktree visible est passe d'environ 31k+ entrees a 214 entrees intentionnelles apres re-review: changements applicatifs par story, artefacts BMAD, docs de remediation, 6 fichiers `_bmad` tooling en hold et fichiers racine a confirmer.
+- Le worktree visible est passe d'environ 31k+ entrees a 191 entrees intentionnelles apres follow-up de review: changements applicatifs par story, artefacts BMAD, docs de remediation, 6 fichiers `_bmad` tooling en hold et fichiers racine a confirmer.
+- La story reste en `review`, et non `done`, tant que le lot de remediation n'a pas de reference Git/PR documentee.
 - Rapport final cree: `docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md`.
 
 ### File List
@@ -246,6 +265,7 @@ Tests/validations requis:
 - `docs/audit/worktree-remediation/bmad-tooling-untracked-hold.pathspec.txt`
 - `docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md`
 - `.gitignore`
+- `_bmad-output/implementation-artifacts/deferred-work.md`
 - `_bmad-output/implementation-artifacts/sprint19-git-worktree-hygiene.md`
 - `_bmad-output/implementation-artifacts/sprint19-worktree-remediation.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
@@ -258,3 +278,7 @@ Tests/validations requis:
 - 2026-05-07: Code review remediation appliquee: exclusions repo reduites aux caches/config user, exclusions agents/IDE deplacees en `.git/info/exclude`, sprint-status historique remis hors diff, rapport renforce, validations non suivies executees.
 - 2026-05-08: Follow-up code review applique: story remise en `review`, sprint status synchronise, pathspecs BMAD separes, commandes de diff/staging renforcees; re-review BMAD requise avant `done`.
 - 2026-05-08: Re-review appliquee: preuves versionnees, pathspec de commit unique, BMAD hold corrige, cache `.m2` explicite, compteurs/validation alignes; story synchronisee en `done`.
+- 2026-05-09: Follow-up hygiene/remediation applique: `deferred-work.md` classe dans le lot BMAD, compteurs visibles actualises a 191, pathspec de commit porte a 34 entrees.
+- 2026-05-09: Code review follow-up applique: story et sprint-status remis en `review`, controles untracked/hold renforces, procedure commit/reference Git clarifiee.
+- 2026-05-09: Code review remediation appliquee: decisions AC7 par lot ajoutees, procedure PR/push corrigee, controles status/hold/classification renforces; story conservee en `review` jusqu'a reference Git/PR.
+- 2026-05-09: Code review patches appliquees: parsing status `-z` avec conservation `XY`, diff status-aware renforce, preuve `Status: review` canonique et overlap hold bidirectionnel.

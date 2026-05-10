@@ -4,12 +4,16 @@ Date: 2026-05-07
 Story: `sprint19-git-worktree-hygiene`
 Scope: audit only. No cleanup, no staging, no commit, no deletion.
 
+> Snapshot historique: ce rapport capture l'etat observe le 2026-05-07 pour bloquer le staging aveugle. Le lot executable et les preuves versionnees de remediation sont maintenant dans `docs/audit/SPRINT19_WORKTREE_REMEDIATION_LOG.md` et `docs/audit/worktree-remediation/review-verification.snapshot.txt`. Pour une decision de commit, utiliser ces artefacts plus recents plutot que les compteurs agreges ci-dessous.
+
 ## Commandes source
 
 ```powershell
 git status --porcelain=v1 -uall
 git status --porcelain=v1 -uall -- src frontend e2e pom.xml Dockerfile docker-compose.local.yml package.json frontend/package.json angular.json frontend/angular.json tsconfig.json frontend/tsconfig.json
 git status --porcelain=v1 -uall -- _bmad-output AGENTS.md CLAUDE.md
+git diff --cached --name-status
+git diff --name-status
 
 # Aggregation top-level utilisee pour verifier les compteurs:
 git status --porcelain=v1 -uall |
@@ -37,6 +41,8 @@ git status --porcelain=v1 -uall |
 | Docs agents racine | M | 2 | Commit docs separe si valide |
 | Docs agents racine | ?? | 4 | A confirmer |
 | Fichiers inconnus/a confirmer | ?? | 6 | Ne pas committer avant decision explicite |
+
+Les colonnes de statut ci-dessus sont volontairement simplifiees pour l'audit. Avant toute action, conserver le statut `XY` complet de `git status --porcelain=v1 -uall`. Utiliser `git diff --cached --name-status` et `git diff --name-status` seulement pour distinguer les changements suivis dans l'index et le worktree; les fichiers non suivis restent visibles uniquement via `git status --porcelain=v1 -uall` ou un controle pathspec explicite.
 
 ## Synthese par top-level folder
 
@@ -74,7 +80,7 @@ git status --porcelain=v1 -uall |
 | `sprint19-fix-resolution-adapter-config` / `sprint19-fix-fortnite-api-key-config` | `ResolutionAdapterConfiguration`, `docker-compose.local.yml`, tests adapter config | Commit configuration pipeline separe; ne pas inclure outillage |
 | A confirmer | `V49__add_turn_started_at_to_draft_region_cursors.sql`, `code scraping.txt`, fichiers racine `AGENTS_old-*` / `CLAUDE_old-*` | Ne pas committer avant decision explicite |
 
-Le rattachement ci-dessus est volontairement au niveau story probable. Il ne remplace pas un inventaire fichier par fichier ni des pathspecs de staging. Avant tout commit applicatif, produire ou verifier un pathspec explicite par story, puis comparer chaque fichier a la File List de la story concernee avec une commande de diff consciente du statut Git: `git diff -- <path>` pour les fichiers suivis, `git diff --no-index -- NUL <path>` pour les fichiers `??`.
+Le rattachement ci-dessus est volontairement au niveau story probable. Il ne remplace pas un inventaire fichier par fichier ni des pathspecs de staging. Avant tout commit applicatif, produire ou verifier un pathspec explicite par story, puis comparer chaque fichier a la File List de la story concernee avec une commande de diff consciente du statut Git `XY`: `git diff -- <path>` pour les modifications worktree, `git diff --cached -- <path>` pour les modifications deja indexees, `git diff --no-index -- NUL <path>` pour les fichiers `??`, et arret explicite sur `D`, `R`, `C`, `T` ou `U` tant qu'une decision n'est pas documentee.
 
 ## Audit suppressions et regenerations d'outillage
 
@@ -91,9 +97,29 @@ Le rattachement ci-dessus est volontairement au niveau story probable. Il ne rem
 Ce tableau est un rapport de risque par groupe. Il ne valide aucune suppression suivie. Pour appliquer une decision de suppression/restauration, produire un rapport dedie au format `fichier | raison | references | decision`, par exemple avec:
 
 ```powershell
-git status --porcelain=v1 -uall |
-  Where-Object { $_ -match '^ D ' } |
-  ForEach-Object { $_.Substring(3) }
+$reports = foreach ($scope in @('index', 'worktree')) {
+  if ($scope -eq 'index') {
+    $raw = git diff --cached --name-status -z --diff-filter=D
+  } else {
+    $raw = git diff --name-status -z --diff-filter=D
+  }
+
+  $text = $raw -join "`0"
+  if (-not $text) { continue }
+
+  $fields = $text.Split("`0", [System.StringSplitOptions]::RemoveEmptyEntries)
+  for ($i = 0; $i -lt $fields.Length; $i += 2) {
+    [pscustomobject]@{
+      Scope = $scope
+      Status = $fields[$i]
+      Fichier = $fields[$i + 1]
+      Raison = '<a completer avant action>'
+      References = '<story/rapport/commande>'
+      Decision = '<restore|commit-tooling|delete-validee>'
+    }
+  }
+}
+$reports
 ```
 
 ## Lots proposes
@@ -123,19 +149,28 @@ git status --porcelain=v1 -uall |
 1. Creer une branche par story: `git switch -c story/<story-key>` ou `git switch -c fix/<bug-key>`.
 2. Verifier l'etat complet: `git status --porcelain=v1 -uall`.
 3. Lire la story et sa `File List`; si un fichier n'y figure pas, ne pas le stager sans justification.
-4. Revoir le diff avant staging avec une commande status-aware:
-   - fichier suivi: `git diff -- <path>`;
-   - fichier non suivi: `git diff --no-index -- NUL <path>`.
-5. Stager par pathspec explicite. Pour un fichier unique: `git add -- <path>`. Pour un fichier pathspec contenant des chemins avec espaces: `git add --pathspec-from-file=<pathspec-file>`.
-6. Verifier le staged set: `git diff --cached --name-status` puis `git diff --cached --stat`.
-7. Verifier les espaces: `git diff --cached --check`.
-8. Executer les validations minimales de la story:
-   - backend: `mvn spotless:apply --no-transfer-progress` comme etape de formatage potentiellement mutante, puis `git diff --check` et tests cibles;
+4. Revoir le diff avant staging avec une commande status-aware basee sur le statut `XY` complet:
+   - modification worktree (` M`): `git diff -- <path>`;
+   - modification deja indexee (`M ` ou `MM`): `git diff --cached -- <path>` puis decision explicite avant de garder le staging;
+   - fichier non suivi (`??`) sous Windows/PowerShell: `git diff --no-index -- NUL <path>`.
+   - statuts `D`, `R`, `C`, `T` ou `U`: arret et decision documentee avant toute action.
+   - note: `git diff --no-index` retourne normalement le code 1 quand un diff existe; ce n'est pas une erreur de validation.
+5. Executer les formatters avant staging quand ils peuvent modifier le worktree:
+   - backend: `mvn spotless:apply --no-transfer-progress`, puis `git status --porcelain=v1 -uall` et `git diff --check`;
+   - frontend: appliquer le formatter/linter eventuel avant de figer le pathspec.
+6. Stager par pathspec explicite. Pour un fichier unique: `git add -- <path>`. Pour un fichier pathspec contenant des chemins avec espaces: `git add --pathspec-from-file=<pathspec-file>`.
+7. Verifier le staged set: `git diff --cached --name-status`, `git diff --cached --stat`, puis comparer avec `git diff --name-status` pour detecter les restes suivis non stages.
+8. Verifier le worktree complet apres staging: `git status --porcelain=v1 -uall`. Toute entree non clean (`??`, ` M`, `D`, `T`, `U`, rename/copy, etc.) doit etre rattachee a un lot, un pathspec `hold`, ou une decision explicite avant commit.
+9. Verifier les espaces: `git diff --cached --check`.
+10. Executer les validations minimales de la story:
+   - backend: tests cibles apres formatage et staging verifie;
    - frontend: `npm run test:vitest -- <specs cibles>` depuis `frontend/`;
    - E2E seulement si la story touche un flux critique ou une spec Playwright.
-9. Committer avec le type et le scope de la story: `fix(draft): ...`, `feat(game): ...`, `docs(bmad): ...`, `chore(tooling): ...`.
-10. Pousser la branche: `git push -u origin HEAD`.
-11. Mettre a jour la story avec le hash ou la reference PR/commit.
+11. Committer le lot avec le type et le scope de la story: `fix(draft): ...`, `feat(game): ...`, `docs(bmad): ...`, `chore(tooling): ...`.
+12. Pousser la branche si une reference PR est choisie: `git push -u origin HEAD`, puis ouvrir la PR.
+13. Ajouter la reference Git quand elle existe: soit un second commit `docs(bmad)` avec le hash du commit precedent, soit une reference PR apres ouverture de PR. Ne pas `amend` le meme commit uniquement pour y inscrire son propre hash, car le hash changerait.
+14. Pousser le commit docs/status qui ajoute la reference, puis reverifier `git status --porcelain=v1 -uall` et `git diff --cached --name-status`.
+15. Passer la story en `done` seulement apres reference Git/PR documentee, code review terminee et aucun HIGH/MEDIUM ouvert.
 
 ## Regle sprint-status
 
