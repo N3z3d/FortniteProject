@@ -79,8 +79,8 @@ public class GameService {
   }
 
   /** Deletes the invitation code for a game. */
-  public GameDto deleteInvitationCode(UUID gameId) {
-    GameDto updatedGame = gameCreationService.deleteInvitationCode(gameId);
+  public GameDto deleteInvitationCode(UUID gameId, String expectedInvitationCode) {
+    GameDto updatedGame = gameCreationService.deleteInvitationCode(gameId, expectedInvitationCode);
     publishGameUpdate(gameId);
     return updatedGame;
   }

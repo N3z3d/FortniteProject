@@ -56,6 +56,8 @@ export class GameDetailComponent implements OnInit, OnDestroy {
   participantsError: string | null = null;
   gameId: string = '';
   isStartingDraft = false;
+  private invitationCodeOperationSequence = 0;
+  private latestInvitationCodeOperation = 0;
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -324,15 +326,17 @@ export class GameDetailComponent implements OnInit, OnDestroy {
 
   regenerateInvitationCode(duration: '24h' | '48h' | '7d' | 'permanent' = 'permanent'): void {
     if (!this.game) return;
+    const operationId = this.startInvitationCodeOperation();
     this.actions.regenerateInvitationCode(this.game.id || this.gameId, duration, 'regenerate', (updatedGame) => {
-      this.applyInvitationCodeState(updatedGame);
+      this.applyInvitationCodeState(updatedGame, operationId);
     });
   }
 
   promptRegenerateCode(): void {
     const hasExistingCode = !!this.game?.invitationCode;
+    const operationId = this.startInvitationCodeOperation();
     this.actions.promptRegenerateCode(this.game?.id || this.gameId, hasExistingCode, (updatedGame) => {
-      this.applyInvitationCodeState(updatedGame);
+      this.applyInvitationCodeState(updatedGame, operationId);
     });
   }
 
@@ -341,9 +345,14 @@ export class GameDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.actions.confirmDeleteInvitationCode(this.game.id || this.gameId, (updatedGame) => {
-      this.applyInvitationCodeState(updatedGame);
-    });
+    const operationId = this.startInvitationCodeOperation();
+    this.actions.confirmDeleteInvitationCode(
+      this.game.id || this.gameId,
+      this.game.invitationCode,
+      (updatedGame) => {
+        this.applyInvitationCodeState(updatedGame, operationId);
+      }
+    );
   }
 
   getInvitationCodeExpiry(): string {
@@ -392,8 +401,21 @@ export class GameDetailComponent implements OnInit, OnDestroy {
     return ['/games', game.id, 'draft', mode];
   }
 
-  private applyInvitationCodeState(updatedGame: Game): void {
+  private startInvitationCodeOperation(): number {
+    this.invitationCodeOperationSequence += 1;
+    this.latestInvitationCodeOperation = this.invitationCodeOperationSequence;
+    return this.latestInvitationCodeOperation;
+  }
+
+  private applyInvitationCodeState(updatedGame: Game, operationId?: number): void {
     if (!this.game) {
+      return;
+    }
+    if (operationId !== undefined && operationId !== this.latestInvitationCodeOperation) {
+      return;
+    }
+    const currentGameId = this.game.id || this.gameId;
+    if (updatedGame.id && currentGameId && updatedGame.id !== currentGameId) {
       return;
     }
 

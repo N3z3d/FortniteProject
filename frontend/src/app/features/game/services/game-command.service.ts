@@ -102,8 +102,11 @@ export class GameCommandService {
     );
   }
 
-  deleteInvitationCode(gameId: string): Observable<Game> {
-    return this.http.delete<Game>(`${this.apiUrl}/games/${gameId}/invitation-code`).pipe(
+  deleteInvitationCode(gameId: string, expectedCode: string): Observable<Game> {
+    return this.http.delete<Game>(
+      `${this.apiUrl}/games/${gameId}/invitation-code`,
+      { params: { expectedCode: expectedCode.trim().toUpperCase() } }
+    ).pipe(
       catchError(error => {
         this.logger.error('GameCommandService: failed to delete invitation code', error);
         return throwError(() => error);

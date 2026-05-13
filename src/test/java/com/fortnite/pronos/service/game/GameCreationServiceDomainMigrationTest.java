@@ -30,6 +30,7 @@ import com.fortnite.pronos.dto.CreateGameRequest;
 import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
+import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.model.Player;
 import com.fortnite.pronos.model.User;
@@ -94,7 +95,7 @@ class GameCreationServiceDomainMigrationTest {
   void regenerateInvitationCodeUpdatesCodeAndExpiration() {
     Game game = buildDomainGame(GameStatus.CREATING);
     LocalDateTime fixedExpiration = LocalDateTime.of(2026, 2, 7, 12, 0);
-    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
     when(invitationCodeService.generateUniqueCode()).thenReturn("NEWCODE1");
     when(invitationCodeService.calculateExpirationDate(InvitationCodeService.CodeDuration.HOURS_24))
         .thenReturn(fixedExpiration);
@@ -112,7 +113,7 @@ class GameCreationServiceDomainMigrationTest {
   @Test
   void regenerateInvitationCodeWithNullDurationUsesPermanent() {
     Game game = buildDomainGame(GameStatus.CREATING);
-    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
     when(invitationCodeService.generateUniqueCode()).thenReturn("NEWCODE2");
     when(invitationCodeService.calculateExpirationDate(
             InvitationCodeService.CodeDuration.PERMANENT))
@@ -134,11 +135,11 @@ class GameCreationServiceDomainMigrationTest {
     LocalDateTime expiration = LocalDateTime.of(2026, 2, 7, 18, 30);
     game.setInvitationCode("DELETE42");
     game.setInvitationCodeExpiresAt(expiration);
-    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
     when(gameDomainRepository.save(any(Game.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    GameDto result = service.deleteInvitationCode(gameId);
+    GameDto result = service.deleteInvitationCode(gameId, "DELETE42");
 
     assertThat(result.getInvitationCode()).isNull();
     assertThat(result.getInvitationCodeExpiresAt()).isNull();
@@ -148,8 +149,21 @@ class GameCreationServiceDomainMigrationTest {
   }
 
   @Test
+  void deleteInvitationCodeRejectsStaleExpectedCode() {
+    Game game = buildDomainGame(GameStatus.CREATING);
+    game.setInvitationCode("CURRENT1");
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
+
+    assertThatThrownBy(() -> service.deleteInvitationCode(gameId, "STALE1"))
+        .isInstanceOf(InvalidGameStateException.class)
+        .hasMessageContaining("changed before deletion");
+
+    verify(gameDomainRepository, never()).save(any(Game.class));
+  }
+
+  @Test
   void regenerateInvitationCodeThrowsWhenGameDoesNotExist() {
-    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.empty());
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.regenerateInvitationCode(gameId, "24h"))
         .isInstanceOf(GameNotFoundException.class)
@@ -353,7 +367,7 @@ class GameCreationServiceDomainMigrationTest {
   @Test
   void regenerateInvitationCodeWithNoDurationDelegatesToOverload() {
     Game game = buildDomainGame(GameStatus.CREATING);
-    when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(game));
+    when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(game));
     when(invitationCodeService.generateUniqueCode()).thenReturn("OVERLOAD");
     when(invitationCodeService.calculateExpirationDate(
             InvitationCodeService.CodeDuration.PERMANENT))

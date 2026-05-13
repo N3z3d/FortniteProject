@@ -129,7 +129,7 @@ describe('GameCommandService', () => {
     service.createGame(createRequest).subscribe(game => expect(game).toEqual(mockGame));
     service.joinGameWithCode(' invite ').subscribe(game => expect(game).toEqual(mockGame));
     service.generateInvitationCode('game-1').subscribe(code => expect(code).toEqual(invitationCode));
-    service.deleteInvitationCode('game-1').subscribe(game => expect(game).toEqual(mockGame));
+    service.deleteInvitationCode('game-1', ' invite ').subscribe(game => expect(game).toEqual(mockGame));
     service.startDraft('game-1').subscribe(success => expect(success).toBeTrue());
     service.leaveGame('game-1').subscribe(success => expect(success).toBeTrue());
     service.initializeDraft('game-1').subscribe(state => expect(state).toEqual(draftState));
@@ -151,6 +151,7 @@ describe('GameCommandService', () => {
     const deleteInvitationCodeReq = httpMock.expectOne(
       req => req.method === 'DELETE' && req.url === `${apiBaseUrl}/games/game-1/invitation-code`
     );
+    expect(deleteInvitationCodeReq.request.params.get('expectedCode')).toBe('INVITE');
     deleteInvitationCodeReq.flush(mockGame);
     httpMock.expectOne(`${apiBaseUrl}/games/game-1/start-draft`).flush(successResponse);
     httpMock.expectOne(`${apiBaseUrl}/games/game-1/leave`).flush(successResponse);

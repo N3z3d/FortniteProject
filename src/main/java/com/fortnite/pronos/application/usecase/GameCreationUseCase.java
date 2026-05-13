@@ -22,7 +22,7 @@ public interface GameCreationUseCase {
 
   GameDto regenerateInvitationCode(UUID gameId, String duration);
 
-  GameDto deleteInvitationCode(UUID gameId);
+  GameDto deleteInvitationCode(UUID gameId, String expectedInvitationCode);
 
   GameDto renameGame(UUID gameId, String newName);
 

@@ -1,6 +1,7 @@
 package com.fortnite.pronos.service.game;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import com.fortnite.pronos.dto.GameDto;
 import com.fortnite.pronos.dto.mapper.GameDtoMapper;
 import com.fortnite.pronos.exception.GameNotFoundException;
 import com.fortnite.pronos.exception.InvalidGameRequestException;
+import com.fortnite.pronos.exception.InvalidGameStateException;
 import com.fortnite.pronos.exception.UserNotFoundException;
 import com.fortnite.pronos.service.InvitationCodeService;
 import com.fortnite.pronos.service.ValidationService;
@@ -103,7 +105,7 @@ public class GameCreationService implements GameCreationUseCase {
   public GameDto regenerateInvitationCode(UUID gameId, String duration) {
     log.debug("Regenerating invitation code for game {} with duration {}", gameId, duration);
 
-    Game game = findDomainGameOrThrow(gameId);
+    Game game = findDomainGameForUpdateOrThrow(gameId);
 
     String newCode = invitationCodeService.generateUniqueCode();
     game.setInvitationCode(newCode);
@@ -125,10 +127,11 @@ public class GameCreationService implements GameCreationUseCase {
   /** Deletes the current invitation code for a game. */
   @Override
   @Transactional
-  public GameDto deleteInvitationCode(UUID gameId) {
+  public GameDto deleteInvitationCode(UUID gameId, String expectedInvitationCode) {
     log.debug("Deleting invitation code for game {}", gameId);
 
-    Game game = findDomainGameOrThrow(gameId);
+    Game game = findDomainGameForUpdateOrThrow(gameId);
+    validateExpectedInvitationCode(game, expectedInvitationCode);
     game.clearInvitationCode();
 
     Game savedGame = saveDomainGame(game);
@@ -180,6 +183,24 @@ public class GameCreationService implements GameCreationUseCase {
     return gameDomainRepository
         .findById(gameId)
         .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
+  }
+
+  private Game findDomainGameForUpdateOrThrow(UUID gameId) {
+    return gameDomainRepository
+        .findByIdForUpdate(gameId)
+        .orElseThrow(() -> new GameNotFoundException("Game not found: " + gameId));
+  }
+
+  private void validateExpectedInvitationCode(Game game, String expectedInvitationCode) {
+    if (expectedInvitationCode == null || expectedInvitationCode.isBlank()) {
+      throw new InvalidGameRequestException("Expected invitation code is required");
+    }
+
+    String currentCode = game.getInvitationCode();
+    String normalizedExpectedCode = expectedInvitationCode.trim().toUpperCase(Locale.ROOT);
+    if (currentCode == null || !currentCode.equals(normalizedExpectedCode)) {
+      throw new InvalidGameStateException("Invitation code changed before deletion");
+    }
   }
 
   private Game saveDomainGame(Game game) {

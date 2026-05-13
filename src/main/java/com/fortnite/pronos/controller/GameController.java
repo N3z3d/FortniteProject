@@ -357,8 +357,10 @@ public class GameController {
   public ResponseEntity<GameDto> deleteInvitationCode(
       @PathVariable UUID id,
       @RequestParam(name = "user", required = false) String username,
+      @RequestParam(name = "expectedCode", required = false) String expectedCode,
       HttpServletRequest httpRequest) {
-    return invitationCodeRequestHandler.deleteInvitationCode(id, username, httpRequest);
+    return invitationCodeRequestHandler.deleteInvitationCode(
+        id, username, httpRequest, expectedCode);
   }
 
   @Operation(summary = "Rename game", description = "Renames an existing game")

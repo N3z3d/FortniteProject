@@ -219,7 +219,7 @@ class GameCreationServiceTest {
 
     @Test
     void regenerateCode_withNullDuration_returnsCodeWithNullExpiry() {
-      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(existingGame));
+      when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(existingGame));
       when(invitationCodeService.generateUniqueCode()).thenReturn("NEWCODE1");
       when(invitationCodeService.calculateExpirationDate(any())).thenReturn(null);
       when(gameDomainRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -233,7 +233,7 @@ class GameCreationServiceTest {
     @Test
     void regenerateCode_withDuration_returnsCodeWithExpiry() {
       LocalDateTime expiry = LocalDateTime.now().plusHours(48);
-      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.of(existingGame));
+      when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.of(existingGame));
       when(invitationCodeService.generateUniqueCode()).thenReturn("NEWCODE2");
       when(invitationCodeService.calculateExpirationDate(any())).thenReturn(expiry);
       when(gameDomainRepository.save(any(Game.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -246,7 +246,7 @@ class GameCreationServiceTest {
 
     @Test
     void regenerateCode_withUnknownGameId_throwsGameNotFoundException() {
-      when(gameDomainRepository.findById(gameId)).thenReturn(Optional.empty());
+      when(gameDomainRepository.findByIdForUpdate(gameId)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.regenerateInvitationCode(gameId))
           .isInstanceOf(GameNotFoundException.class);

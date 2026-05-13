@@ -84,7 +84,7 @@ class GameInvitationCodeRequestHandler {
   }
 
   ResponseEntity<GameDto> deleteInvitationCode(
-      UUID id, String username, HttpServletRequest httpRequest) {
+      UUID id, String username, HttpServletRequest httpRequest, String expectedCode) {
     log.info("GameController: deleteInvitationCode requested - gameId={}", id);
 
     User user = userResolver.resolve(username, httpRequest);
@@ -99,7 +99,7 @@ class GameInvitationCodeRequestHandler {
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
-    GameDto updatedGame = gameService.deleteInvitationCode(id);
+    GameDto updatedGame = gameService.deleteInvitationCode(id, expectedCode);
     log.info("GameController: deleteInvitationCode succeeded - gameId={}", id);
     return ResponseEntity.ok(updatedGame);
   }

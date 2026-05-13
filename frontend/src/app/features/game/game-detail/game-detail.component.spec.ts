@@ -650,10 +650,12 @@ describe('GameDetailComponent', () => {
 
     expect(gameDetailActionsSpy.confirmDeleteInvitationCode).toHaveBeenCalledWith(
       '1',
+      'INVITE123',
       jasmine.any(Function)
     );
 
-    const [, onSuccess] = gameDetailActionsSpy.confirmDeleteInvitationCode.calls.mostRecent().args as [
+    const [, , onSuccess] = gameDetailActionsSpy.confirmDeleteInvitationCode.calls.mostRecent().args as [
+      string,
       string,
       (game: Game) => void
     ];
@@ -668,6 +670,83 @@ describe('GameDetailComponent', () => {
     expect(component.game?.invitationCode).toBeUndefined();
     expect(component.game?.invitationCodeExpiresAt).toBeUndefined();
     expect(component.game?.isInvitationCodeExpired).toBeFalse();
+  });
+
+  it('should ignore stale delete invitation code response after navigating to another game', () => {
+    component.game = {
+      ...mockGame,
+      id: 'game-a',
+      invitationCode: 'INVITE-A',
+      invitationCodeExpiresAt: '2026-04-24T07:00:00Z',
+      isInvitationCodeExpired: false
+    };
+
+    component.confirmDeleteInvitationCode();
+    component.game = {
+      ...mockGame,
+      id: 'game-b',
+      invitationCode: 'INVITE-B',
+      invitationCodeExpiresAt: '2026-04-25T07:00:00Z',
+      isInvitationCodeExpired: false
+    };
+
+    const [, , onSuccess] = gameDetailActionsSpy.confirmDeleteInvitationCode.calls.mostRecent().args as [
+      string,
+      string,
+      (game: Game) => void
+    ];
+
+    onSuccess({
+      ...mockGame,
+      id: 'game-a',
+      invitationCode: undefined,
+      invitationCodeExpiresAt: undefined,
+      isInvitationCodeExpired: false
+    });
+
+    expect(component.game?.id).toBe('game-b');
+    expect(component.game?.invitationCode).toBe('INVITE-B');
+    expect(component.game?.invitationCodeExpiresAt).toBe('2026-04-25T07:00:00Z');
+  });
+
+  it('should ignore stale invitation code response for the same game after a newer operation', () => {
+    component.game = {
+      ...mockGame,
+      invitationCode: 'INVITE-A',
+      invitationCodeExpiresAt: '2026-04-24T07:00:00Z',
+      isInvitationCodeExpired: false
+    };
+
+    component.confirmDeleteInvitationCode();
+    const [, , deleteSuccess] = gameDetailActionsSpy.confirmDeleteInvitationCode.calls.mostRecent().args as [
+      string,
+      string,
+      (game: Game) => void
+    ];
+
+    component.regenerateInvitationCode('permanent');
+    const [, , , regenerateSuccess] = gameDetailActionsSpy.regenerateInvitationCode.calls.mostRecent().args as [
+      string,
+      '24h' | '48h' | '7d' | 'permanent',
+      'generate' | 'regenerate',
+      (game: Game) => void
+    ];
+
+    regenerateSuccess({
+      ...mockGame,
+      invitationCode: 'INVITE-B',
+      invitationCodeExpiresAt: '2026-04-25T07:00:00Z',
+      isInvitationCodeExpired: false
+    });
+    deleteSuccess({
+      ...mockGame,
+      invitationCode: undefined,
+      invitationCodeExpiresAt: undefined,
+      isInvitationCodeExpired: false
+    });
+
+    expect(component.game?.invitationCode).toBe('INVITE-B');
+    expect(component.game?.invitationCodeExpiresAt).toBe('2026-04-25T07:00:00Z');
   });
 
   it('should hide delete action for non host users', fakeAsync(() => {

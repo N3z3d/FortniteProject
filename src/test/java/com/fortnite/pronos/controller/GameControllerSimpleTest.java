@@ -487,14 +487,15 @@ class GameControllerSimpleTest {
 
     when(userResolver.resolve(null, request)).thenReturn(user);
     when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
-    when(gameService.deleteInvitationCode(gameId)).thenReturn(updatedGame);
+    when(gameService.deleteInvitationCode(gameId, "DELETE42")).thenReturn(updatedGame);
 
-    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+    ResponseEntity<GameDto> response =
+        gameController.deleteInvitationCode(gameId, null, "DELETE42", request);
 
     org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
     org.junit.jupiter.api.Assertions.assertNull(response.getBody().getInvitationCode());
-    verify(gameService).deleteInvitationCode(gameId);
+    verify(gameService).deleteInvitationCode(gameId, "DELETE42");
   }
 
   @Test
@@ -502,7 +503,8 @@ class GameControllerSimpleTest {
     UUID gameId = UUID.randomUUID();
     when(userResolver.resolve(null, request)).thenReturn(null);
 
-    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+    ResponseEntity<GameDto> response =
+        gameController.deleteInvitationCode(gameId, null, "DELETE42", request);
 
     org.junit.jupiter.api.Assertions.assertEquals(
         HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -523,7 +525,8 @@ class GameControllerSimpleTest {
     when(userResolver.resolve(null, request)).thenReturn(anotherUser);
     when(gameQueryUseCase.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
 
-    ResponseEntity<GameDto> response = gameController.deleteInvitationCode(gameId, null, request);
+    ResponseEntity<GameDto> response =
+        gameController.deleteInvitationCode(gameId, null, "DELETE42", request);
 
     org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     assertNull(response.getBody());

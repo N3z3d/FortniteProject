@@ -208,8 +208,12 @@ export class GameDetailActionsService {
     });
   }
 
-  deleteInvitationCode(gameId: string, onSuccess?: (game: Game) => void): void {
-    this.gameService.deleteInvitationCode(gameId).subscribe({
+  deleteInvitationCode(
+    gameId: string,
+    expectedCode: string,
+    onSuccess?: (game: Game) => void
+  ): void {
+    this.gameService.deleteInvitationCode(gameId, expectedCode).subscribe({
       next: updatedGame => {
         this.uiFeedback.showSuccessFromKey('games.detail.actions.invitationCodeDeleteSuccess');
         onSuccess?.(updatedGame);
@@ -287,7 +291,11 @@ export class GameDetailActionsService {
     );
   }
 
-  confirmDeleteInvitationCode(gameId: string, onSuccess?: (game: Game) => void): void {
+  confirmDeleteInvitationCode(
+    gameId: string,
+    expectedCode: string,
+    onSuccess?: (game: Game) => void
+  ): void {
     this.openConfirmationDialog(
       {
         title: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.title'),
@@ -296,7 +304,7 @@ export class GameDetailActionsService {
         cancelText: this.t.t('games.detail.confirmDialogs.deleteInvitationCode.cancel'),
         confirmColor: 'warn'
       },
-      () => this.deleteInvitationCode(gameId, onSuccess)
+      () => this.deleteInvitationCode(gameId, expectedCode, onSuccess)
     );
   }
 

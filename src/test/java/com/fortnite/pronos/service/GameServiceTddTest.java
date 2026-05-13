@@ -137,13 +137,13 @@ class GameServiceTddTest {
     @Test
     @DisplayName("Should delete invitation code via GameCreationService and publish game update")
     void shouldDeleteInvitationCodeAndPublishGameUpdate() {
-      when(gameCreationService.deleteInvitationCode(gameId)).thenReturn(gameDto);
+      when(gameCreationService.deleteInvitationCode(gameId, "DELETE42")).thenReturn(gameDto);
       when(gameQueryService.getGameByIdOrThrow(gameId)).thenReturn(gameDto);
 
-      GameDto result = gameService.deleteInvitationCode(gameId);
+      GameDto result = gameService.deleteInvitationCode(gameId, "DELETE42");
 
       assertThat(result).isEqualTo(gameDto);
-      verify(gameCreationService).deleteInvitationCode(gameId);
+      verify(gameCreationService).deleteInvitationCode(gameId, "DELETE42");
       verify(gameRealtimeEventService)
           .publishToUsers(anySet(), eq(GameRealtimeEventService.GAME_UPDATED), eq(gameId));
     }

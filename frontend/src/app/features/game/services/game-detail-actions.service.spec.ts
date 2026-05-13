@@ -232,7 +232,8 @@ describe('GameDetailActionsService', () => {
     };
     gameServiceSpy.deleteInvitationCode.and.returnValue(of(updatedGame));
 
-    service.deleteInvitationCode('game1', onSuccess);
+    service.deleteInvitationCode('game1', 'ABC123', onSuccess);
+    expect(gameServiceSpy.deleteInvitationCode).toHaveBeenCalledWith('game1', 'ABC123');
 
     expect(uiFeedbackSpy.showSuccessFromKey).toHaveBeenCalledWith(
       'games.detail.actions.invitationCodeDeleteSuccess'
@@ -299,10 +300,10 @@ describe('GameDetailActionsService', () => {
     const deleteSpy = spyOn(service, 'deleteInvitationCode').and.stub();
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
-    service.confirmDeleteInvitationCode('game1');
+    service.confirmDeleteInvitationCode('game1', 'ABC123');
 
     expect(dialogSpy.open).toHaveBeenCalled();
-    expect(deleteSpy).toHaveBeenCalledWith('game1', undefined);
+    expect(deleteSpy).toHaveBeenCalledWith('game1', 'ABC123', undefined);
   });
   it('opens rename dialog and renames game when a new name is submitted', () => {
     const renameSpy = spyOn(service, 'renameGame').and.stub();
