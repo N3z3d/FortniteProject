@@ -1,6 +1,6 @@
 # Story: sprint19-git-worktree-hygiene
 
-Status: review
+Status: done
 
 <!-- METADATA
   story_key: sprint19-git-worktree-hygiene
@@ -104,7 +104,13 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - Les suppressions/regenerations `.claude`, `.cursor`, `.codex-home`, `_bmad`, `.agents`, `.m2` et dossiers agents/IDE sont separees du scope applicatif avec decision `ne pas committer sans validation tooling`.
 - Une procedure BMAD explicite interdit `git add -A`, impose le staging par pathspec, le controle `git diff --cached --check`, les validations ciblees et une branche par story.
 - La regle sprint-status est documentee: aucune story `done` sans hash/PR/reference Git, code review requise pour le code et File List complete.
-- Code review appliquee: le lot hygiene reste un audit snapshot; le statut remediation est justifie par la story dediee `sprint19-worktree-remediation` et ses artefacts de verification; la story hygiene reste en `review` jusqu'a commit/reference Git du follow-up.
+- Code review appliquee: le lot hygiene reste un audit snapshot; le statut remediation est justifie par la story dediee `sprint19-worktree-remediation` et ses artefacts de verification.
+- Revue finale 2026-05-13: diff scoped `f5af9d0^..772e5da` relu contre la story et le project context; aucun finding bloquant restant.
+
+### Git References
+
+- `f5af9d0` - `docs(bmad): close sprint19 worktree remediation`
+- `772e5da` - `docs(bmad): document sprint19 worktree remediation`
 
 ### File List
 
@@ -112,6 +118,10 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/audit/SPRINT19_GIT_WORKTREE_HYGIENE.md`
 - `_bmad-output/implementation-artifacts/deferred-work.md`
+- `docs/audit/worktree-remediation/README.md`
+- `docs/audit/worktree-remediation/bmad-artifacts.pathspec.txt`
+- `docs/audit/worktree-remediation/remediation-commit.pathspec.txt`
+- `docs/audit/worktree-remediation/review-verification.snapshot.txt`
 
 ### Change Log
 
@@ -120,3 +130,4 @@ Ce melange rend dangereux un `git add -A` et complique les reviews BMAD, car une
 - 2026-05-07: Rapport d'audit Git/worktree cree; tasks 1 a 3 completees; story passee en `review`.
 - 2026-05-07: Code review hygiene appliquee; story maintenue en `review` tant que le commit/reference Git n'existe pas.
 - 2026-05-09: Follow-up code review applique: revue elargie au lot remediation, procedure hygiene renforcee, `deferred-work.md` classe dans le lot BMAD de review.
+- 2026-05-13: Revue finale scoped sans nouveau finding bloquant; references Git documentees; story passee en `done`.
